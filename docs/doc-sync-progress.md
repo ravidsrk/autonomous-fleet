@@ -1,17 +1,20 @@
 # doc-sync progress ledger
 
-PHASE: FIXING
+PHASE: DONE
 
 ## DRIFT INDEX
 
-- D1 README layout `.agents/` description → CLOSED via PR#TBD
-- D2 README skill-creator bundled claim → CLOSED via PR#TBD
-- D3 README missing `.agents/` gitignore note → CLOSED via PR#TBD
-- D4 README validate prerequisite clarity → CLOSED via PR#TBD
+- D1 → CLOSED via PR#1
+- D2 → CLOSED via PR#1
+- D3 → CLOSED via PR#1
+- D4 → CLOSED via PR#1
 
 ## Tasks
 
 | Task | WRITTEN | PR_OPEN | REVIEWED | MERGED | PR# |
 |------|---------|---------|----------|--------|-----|
-| T-FIX-readme-setup | t | f | f | f | — |
-| T-FINAL | f | f | f | f | — |
+| T-AUDIT | t | — | — | — | — |
+| T-FIX-readme-setup | t | t | t | t | 1 |
+| T-FINAL | t | t | t | t | — |
+
+DONE: all DRIFT items CLOSED, `docs/doc-sync-readiness.md` exists.
