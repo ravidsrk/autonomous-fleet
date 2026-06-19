@@ -63,7 +63,8 @@ Uses [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill
 
 ### 4. Run a mission
 
-Open the **target repo** and trigger in plain language:
+Trigger the umbrella skill (`autonomous-fleet`) to route an vague request, or name a mission
+directly. Open the **target repo** and use plain language:
 
 - *"sync the docs"* → `doc-sync`
 - *"raise test coverage on payments"* → `test-coverage`
@@ -79,6 +80,7 @@ Each mission activates `autonomous-fleet-core` + your runtime adapter automatica
 ```
 autonomous-fleet/
 ├── skills/                              # publishable skills (npx skills discovers these)
+│   ├── autonomous-fleet/                # umbrella entry-point (routes to mission + core + adapter)
 │   ├── autonomous-fleet-core/
 │   │   ├── SKILL.md                     # entry point
 │   │   └── references/engine.md         # full engine spec
@@ -110,6 +112,7 @@ primitives; adapters map primitives to runtime commands.
 
 | Skill | Type | Notes |
 |-------|------|-------|
+| `autonomous-fleet` | Umbrella | Entry point — routes to mission + core + adapter |
 | `autonomous-fleet-core` | Engine | Required for every run |
 | `autonomous-fleet-adapter-orca` | Adapter | Orca orchestration |
 | `autonomous-fleet-adapter-claude-code` | Adapter | Claude Code |
