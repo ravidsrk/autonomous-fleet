@@ -1,0 +1,88 @@
+---
+name: landing-page-convergence
+description: >-
+  [Tier 2 · moderate autonomy · full review gate] Force a production landing page that has
+  DIVERGED from an approved design into full fidelity with that design — section by section, with
+  a named divergence checklist as the forcing function so it converges instead of drifting. Use
+  when a live page no longer matches its design export and needs to be brought back into line (a
+  single page/site, not a whole app — that's design-integration). Extracts the design system,
+  diffs production against it, and closes each divergence as its own PR. Runs via the
+  autonomous-fleet-core engine. Trigger on: "make the landing page match the design", "the
+  production page diverged from the design", "bring the landing page into parity", "fix the
+  landing page to match the mockup".
+---
+
+# Mission: landing-page-convergence
+
+Apply the **autonomous-fleet-core** engine on your active adapter (load the core; load your runtime adapter; follow all core machinery) with the
+parameters below.
+
+**Empirical note:** front-end fidelity work (~0.80-0.81 merge) — full review gate. The thing that
+makes it converge rather than drift is a NAMED DIVERGENCE CHECKLIST that is part of the
+termination condition: the run isn't done until every listed divergence is closed, and each PR
+declares which divergence it closes.
+
+## DESIGN SOURCE (the user supplies one)
+A Claude Design export/URL or design file. A worker fetches/opens it and READS ITS README first,
+then extracts the EXACT design system. This export's values are authoritative — match precisely,
+don't approximate.
+
+## DIVERGENCE CHECKLIST (the forcing function)
+If the user names specific divergences, transcribe them as D1..Dn — these are the floor. T2 (the
+production diff) confirms/details each AND surfaces any additional divergences (add as new
+D-items). Each D-item is a FIX the build must close and the reviewer must verify against the
+design export. The run terminates only when every D-item is CLOSED.
+
+## GOAL
+Bring the production landing page to full fidelity with the design export — same composition, type
+scale, spacing rhythm, sections, component treatment. The design is the TARGET; production
+changes. Converge, do not reinterpret or "improve on" the design. Keep existing copy and working
+links/CTAs unless the design's section structure requires content the page lacks (then build it to
+match the design).
+
+## ROLE PIPELINE
+- @claude EXTRACTS the design + DIFFS production + rebuilds each section.
+- @codex REVIEWS each PR (fresh, build-blind): matches the design export
+  (tokens/spacing/type/layout), the claimed D-item is actually closed, responsive, no
+  placeholders.
+- @claude is the INTEGRATOR: opens PR, conflict-aware merge, worktree cleanup.
+
+## LEDGER
+`docs/landing-progress.md`. Per-task flags: `BUILT=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
+MERGED=<t/f>`. Plus the DIVERGENCE CHECKLIST D1..Dn, each `OPEN | CLOSED via PR#n`.
+
+## TASK STRUCTURE
+- **T1 DESIGN EXTRACTION [@claude]** — fetch/open the design export (README first); extract the
+  EXACT system (tokens color/type/spacing/radii, component styles, type scale + weights, spacing
+  rhythm, section-by-section layout). Output docs/design-extract.md + place assets.
+- **T2 PRODUCTION DIFF [@claude, gated on T1]** — diff the current production page section by
+  section against docs/design-extract.md; confirm and detail each known D-item with the exact
+  production files responsible; surface any additional divergences (add as D-items). Output
+  docs/landing-diff.md. Write the full checklist to the ledger.
+- **T-CONVERGE… [per section/D-item, loop]** — each is one PR. @claude rebuilds that section to
+  MATCH the design exactly (correct tokens, spacing, type, layout, component treatment), closing
+  its D-item(s), responsive, real content → @codex reviews (fidelity + D-item closed + responsive)
+  → @claude merges. Do global-craft items (tokens/type scale/spacing rhythm/eyebrow labels) FIRST
+  as a foundation pass so per-section fixes inherit them. Parallelize non-overlapping sections;
+  serialize same-file. Update D-item close-status.
+- **T-FINAL [@claude]** — build green, lint clean. Walk the page across mobile/tablet/desktop;
+  EVERY D-item CLOSED; matches docs/design-extract.md in tokens/spacing/type/layout/section
+  structure; fully responsive; no placeholders/dead links/console errors. Output
+  docs/landing-readiness.md (each D-item CLOSED with its PR, fidelity summary, all PRs). Ship as
+  the final PR.
+
+## DONE
+Every D-item `CLOSED`, every task `BUILT=t PR_OPEN=t REVIEWED=t MERGED=t`, page matches the design
+export, docs/landing-readiness.md exists. Then send the FINAL report.
+
+## DECISION DEFAULTS (mission-specific)
+- The design export is the TARGET; production changes to match. Converge, don't reinterpret or
+  "improve."
+- The export's exact token/spacing/type values are authoritative; match precisely, don't
+  approximate.
+- Keep existing copy and working links/CTAs UNLESS the design's structure requires content the
+  page lacks (then build it to match the design).
+- Close global-craft items (tokens, type scale, spacing rhythm, eyebrow labels) early so
+  per-section fixes inherit them.
+- Real content/assets; no placeholders on the shipping page. Mobile-first/responsive + a11y.
+- Any ambiguity → the closest fidelity to the design export while converging.
