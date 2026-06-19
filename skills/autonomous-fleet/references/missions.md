@@ -35,7 +35,8 @@ artifacts for Tier 2–3.
 |-------|---------|
 | `autonomous-fleet-adapter-orca` | Orca orchestration (most battle-tested) |
 | `autonomous-fleet-adapter-claude-code` | Claude Code (subagents + ledger) |
-| `autonomous-fleet-adapter-grok` | Grok Build (subagents + ledger) |
+| `autonomous-fleet-adapter-grok` | Grok Build (subagents + ledger + `update_goal`) |
+| `autonomous-fleet-adapter-codex` | OpenAI Codex (`/goal` + subagents) |
 | `autonomous-fleet-adapter-template` | Authoring guide for new runtimes |
 
 ## Programs

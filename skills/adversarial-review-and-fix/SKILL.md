@@ -26,7 +26,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -119,6 +119,18 @@ list + recorded decisions.
   starting with **`fleet-outcome` YAML** (`p0_open`, `p1_open`, `findings_open`, `ops_queue_count`;
   see fleet-outcome.md), then finding status, OPS queue, **Recommended next missions**, all PRs.
   Ship as the final PR.
+
+## Runtime goal
+
+After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
+`## Runtime goal` in `docs/arch-build-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+
+```
+Mission adversarial-review-and-fix DONE: docs/arch-build-progress.md all task flags true,
+docs/arch-build-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
+```
+
 
 ## DONE
 Review frozen; every confirmed finding CLOSED or CODE_CLOSED(+OPS recorded); every fix task

@@ -26,7 +26,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -93,6 +93,18 @@ and the compatibility/cutover strategy.
   half-migrated state. Output `docs/migration-readiness.md` with **`fleet-outcome` YAML**
   (`migration_items_open`, `old_axis_removed`), migration index done, old axis
   removed, behaviour preserved, all PRs). Ship as the final PR.
+
+## Runtime goal
+
+After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
+`## Runtime goal` in `docs/migration-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+
+```
+Mission targeted-migration DONE: docs/migration-progress.md all task flags true,
+docs/migration-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
+```
+
 
 ## DONE
 Every MIGRATION-INDEX item `DONE`, old axis removed, every task terminal, suite green,

@@ -17,8 +17,15 @@ fleet-outcome:
     - id: bug-batch
       reason: "..."
       blocker: null
+  run:                            # optional — operational telemetry
+    duration_min: <n>
+    coordinator_turns: <n>
+    worker_retries: <n>
 ---
 ```
+
+`run` is optional. Record when the host exposes timing/retries; use for dogfood comparisons and
+tier validation. Do not branch campaign edges on `run` fields.
 
 Then markdown body: human summary, indexes, **Recommended next missions** table (duplicate of
 `deferred_missions` for readers).

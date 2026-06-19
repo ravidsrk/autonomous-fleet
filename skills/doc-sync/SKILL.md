@@ -27,7 +27,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -98,6 +98,18 @@ CLOSED via PR#n`.
   starting with **`fleet-outcome` YAML** (`drift_open`, `code_bug_findings` in metrics; see
   `autonomous-fleet-core/references/fleet-outcome.md`), then drift summary + **Recommended next
   missions**. Ship as the final PR.
+
+## Runtime goal
+
+After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
+`## Runtime goal` in `docs/doc-sync-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+
+```
+Mission doc-sync DONE: docs/doc-sync-progress.md all task flags true,
+docs/doc-sync-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
+```
+
 
 ## DONE
 Every DRIFT-INDEX item `CLOSED`, every task `WRITTEN=t PR_OPEN=t REVIEWED=t MERGED=t`,

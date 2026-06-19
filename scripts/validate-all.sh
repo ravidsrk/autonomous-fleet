@@ -13,6 +13,10 @@ echo "== validate-fleet-outcome =="
 ./scripts/validate-fleet-outcome.sh
 
 echo ""
+echo "== validate-goal-condition =="
+./scripts/validate-goal-condition.sh --scan-docs
+
+echo ""
 echo "== pytest =="
 VENV_PYTHON="$ROOT/.venv/bin/python"
 if [[ ! -x "$VENV_PYTHON" ]]; then
