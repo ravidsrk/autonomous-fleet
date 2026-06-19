@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install skill-creator
+        run: npx skills add https://github.com/anthropics/skills --skill skill-creator -y -p
+
+      - name: Install Python test deps
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install pyyaml pytest
+
+      - name: Run all validators and tests
+        run: ./scripts/validate-all.sh
