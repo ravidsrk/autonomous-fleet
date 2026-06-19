@@ -53,6 +53,39 @@ pass on an unfamiliar repo.
 | 1 | `bug-batch` |
 | 2 | `test-coverage` |
 
+## ship-with-proof
+
+**When:** Harden a branch before merge or PR — audit, prove with tests, sync docs. Optional
+gstack post-gates (`ship`, `qa`) after the chain. Campaign YAML:
+`scripts/campaigns/ship-with-proof.yaml`. See [campaigns.md](campaigns.md).
+
+| # | Mission |
+|---|---------|
+| 1 | `adversarial-review-and-fix` |
+| 2 | `test-coverage` |
+| 3 | `doc-sync` |
+
+## align-then-ship
+
+**When:** Stalled product → shippable (Tier 3 — explicit user request). Pre-gate: `grill-with-docs`
+or `gstack-office-hours`. Campaign: `scripts/campaigns/align-then-ship.yaml`.
+
+| # | Mission |
+|---|---------|
+| 1 | `take-product-to-completion` |
+
+## quality-gate
+
+**When:** Production-readiness check without full doc-sync pass. Optional report-only QA after chain.
+Campaign: `scripts/campaigns/quality-gate.yaml`.
+
+| # | Mission |
+|---|---------|
+| 1 | `adversarial-review-and-fix` |
+| 2 | `test-coverage` |
+
+Community skill hooks: [community-skills.md](../../autonomous-fleet-core/references/community-skills.md).
+
 ## Custom chains
 
 User-specified order wins. Rules:

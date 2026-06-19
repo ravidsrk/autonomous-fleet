@@ -39,6 +39,12 @@ artifacts for Tier 2–3.
 | `autonomous-fleet-adapter-codex` | OpenAI Codex (`/goal` + subagents) |
 | `autonomous-fleet-adapter-template` | Authoring guide for new runtimes |
 
+## Setup
+
+| Skill | Use when |
+|-------|----------|
+| `setup-autonomous-fleet` | First fleet run on a repo — adapter, branch prefix, default bundle |
+
 ## Programs
 
 | Skill | Use when |
@@ -46,8 +52,13 @@ artifacts for Tier 2–3.
 | `fleet-program` | Mission chains and conditional campaign DAGs on one repo |
 
 Presets: `skills/fleet-program/references/programs.md` (linear),
-`skills/fleet-program/references/campaigns.md` (if-outcome). One mission at a time per repo;
-`fleet-outcome` YAML on every readiness doc.
+`skills/fleet-program/references/campaigns.md` (if-outcome). Headless presets also under
+`scripts/campaigns/` (`repo-health`, `ship-with-proof`, `align-then-ship`, `quality-gate`).
+One mission at a time per repo; `fleet-outcome` YAML on every readiness doc.
+
+Third-party skills (gstack, agent-skills, mattpocock): attach via Optional/Worker slots only —
+see `skills/autonomous-fleet-core/references/community-skills.md` and
+`docs/research-community-skills.md`.
 
 ## Composition reminder
 

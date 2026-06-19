@@ -1,0 +1,15 @@
+campaign: quality-gate
+repo: single
+base: fleet/quality-gate-base
+start: audit
+nodes:
+  audit: { mission: adversarial-review-and-fix }
+  tests: { mission: test-coverage }
+post_gates:
+  - skill: gstack-qa-only
+    when: staging URL available
+  - skill: gstack-health
+    when: user wants composite score
+edges:
+  audit: [{ to: tests, if: always }]
+  tests: []

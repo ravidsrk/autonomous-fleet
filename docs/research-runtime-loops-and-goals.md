@@ -357,6 +357,7 @@ Do **not** replace mission coordinator with Ralph for full missions — Ralph la
 | Fleet program | `skills/fleet-program/SKILL.md` |
 | Fleet outcomes | `skills/autonomous-fleet-core/references/fleet-outcome.md` |
 | Composition research | `docs/research-skill-composition.md` |
+| Community skills research | `docs/research-community-skills.md` |
 
 ---
 
