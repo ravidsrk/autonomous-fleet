@@ -38,6 +38,13 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 |-------|---------------|----------------|
 | — | — | — |
 
+## Worker skills
+
+| Role | Skills | If unavailable |
+|------|--------|----------------|
+| @claude (repro test, fix, integrator) | — | Repo test conventions |
+| @codex (review) | — | Mission review gate only |
+
 ## Deferred missions
 
 Record in `docs/bug-batch-readiness.md` under **Recommended next missions** and in DECISIONS.md.
@@ -88,7 +95,8 @@ SKIPPED (reason)`.
   Parallelize bugs in non-overlapping files; serialize same-file (hot-file rule). Update the BUG
   INDEX.
 - **T-FINAL [@claude]** — full suite green incl. every new reproducing test; walk the BUG INDEX,
-  every bug `FIXED` or `SKIPPED/NEEDS-INFO` with reason. Output `docs/bug-batch-readiness.md` (bug
+  every bug `FIXED` or `SKIPPED/NEEDS-INFO` with reason. Output `docs/bug-batch-readiness.md`
+  with **`fleet-outcome` YAML** (`bugs_open`, `bugs_skipped`), bug
   index resolution, the reproducing test per fix, skips/needs-info, all PRs). Ship as the final
   PR.
 

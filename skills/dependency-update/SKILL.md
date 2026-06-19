@@ -38,6 +38,12 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 |-------|---------------|----------------|
 | — | — | — |
 
+## Worker skills
+
+| Role | Skills | If unavailable |
+|------|--------|----------------|
+| @claude (bump, fix, integrator) | — | Package manager docs + changelogs |
+
 ## Deferred missions
 
 Record in `docs/dependency-update-readiness.md` under **Recommended next missions** and in DECISIONS.md.
@@ -81,7 +87,8 @@ flag, `OPEN | DONE via PR#n`.
   groups that touch shared config; parallelize independent ones. Security fixes first. Update the
   UPDATE INDEX.
 - **T-FINAL [@claude]** — build green, full suite green, no remaining known-vulnerable versions
-  in scope. Output `docs/dependency-update-readiness.md` (update index done, versions
+  in scope. Output `docs/dependency-update-readiness.md` with **`fleet-outcome` YAML**
+  (`advisories_open`, `majors_deferred`), update index done, versions
   before/after, advisories cleared, any deferred majors with reasoning, all PRs). Ship as the
   final PR.
 

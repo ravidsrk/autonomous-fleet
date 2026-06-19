@@ -36,7 +36,14 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
-| `gstack` / browser QA | Visual before/after on production URL | Screenshot + @codex review only |
+| `gstack` / browser QA | Coordinator spot-checks production URL | Screenshot + @codex review only |
+
+## Worker skills
+
+| Role | Skills | If unavailable |
+|------|--------|----------------|
+| @claude / @grok (build sections) | `frontend-design` | Design extract values exactly |
+| @codex (review) | — | Mission fidelity gate |
 
 ## Deferred missions
 
@@ -98,8 +105,8 @@ MERGED=<t/f>`. Plus the DIVERGENCE CHECKLIST D1..Dn, each `OPEN | CLOSED via PR#
 - **T-FINAL [@claude]** — build green, lint clean. Walk the page across mobile/tablet/desktop;
   EVERY D-item CLOSED; matches docs/design-extract.md in tokens/spacing/type/layout/section
   structure; fully responsive; no placeholders/dead links/console errors. Output
-  docs/landing-readiness.md (each D-item CLOSED with its PR, fidelity summary, all PRs). Ship as
-  the final PR.
+  `docs/landing-readiness.md` with **`fleet-outcome` YAML** (`divergences_open`), D-item summary,
+  **Recommended next missions**, all PRs. Ship as the final PR.
 
 ## DONE
 Every D-item `CLOSED`, every task `BUILT=t PR_OPEN=t REVIEWED=t MERGED=t`, page matches the design

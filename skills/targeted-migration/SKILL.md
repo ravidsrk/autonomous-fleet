@@ -38,6 +38,12 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 |-------|---------------|----------------|
 | — | — | — |
 
+## Worker skills
+
+| Role | Skills | If unavailable |
+|------|--------|----------------|
+| @grok (migrate) | Stack skill matching repo if installed (`nextjs`, `wrangler`, etc.) | Target framework docs + migration guide |
+
 ## Deferred missions
 
 Record in `docs/migration-readiness.md` under **Recommended next missions** and in DECISIONS.md.
@@ -84,7 +90,8 @@ and the compatibility/cutover strategy.
 - **T-CLEANUP [@claude]** — once every usage is migrated, remove the old axis (dependency,
   adapter/shim, dead compatibility code). Confirm nothing references it.
 - **T-FINAL [@claude]** — build green, full suite green, the old axis fully gone, no
-  half-migrated state. Output `docs/migration-readiness.md` (migration index done, old axis
+  half-migrated state. Output `docs/migration-readiness.md` with **`fleet-outcome` YAML**
+  (`migration_items_open`, `old_axis_removed`), migration index done, old axis
   removed, behaviour preserved, all PRs). Ship as the final PR.
 
 ## DONE

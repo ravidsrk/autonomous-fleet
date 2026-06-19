@@ -38,6 +38,12 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 |-------|---------------|----------------|
 | Repo dead-code tooling | T-SCAN needs knip/ts-prune/etc. | Use grep, coverage, and linter output only |
 
+## Worker skills
+
+| Role | Skills | If unavailable |
+|------|--------|----------------|
+| @claude (scan, clean, integrator) | — | Repo linters + characterization tests |
+
 ## Deferred missions
 
 Record in `docs/cleanup-readiness.md` under **Recommended next missions** and in DECISIONS.md.
@@ -82,8 +88,8 @@ with location, `OPEN | DONE via PR#n`.
   → @claude merges. Parallelize non-overlapping files; serialize same-file. Update the CLEANUP
   INDEX.
 - **T-FINAL [@claude]** — build green, full suite green, no behaviour change, the targeted smells
-  gone. Output `docs/cleanup-readiness.md` (cleanup index done, what was removed/refactored,
-  **Recommended next missions**, all PRs). Ship as the final PR.
+  gone. Output `docs/cleanup-readiness.md` with **`fleet-outcome` YAML** (`cleanup_items_open`),
+  cleanup summary, **Recommended next missions**, all PRs. Ship as the final PR.
 
 ## DONE
 Every CLEANUP-INDEX item `DONE`, every task terminal, suite green, behaviour preserved,

@@ -355,7 +355,20 @@ Record in readiness doc and DECISIONS.md; do not start another mission in the sa
 
 ---
 
-## 11. References
+## 11. Implementation status (2026-06-20 follow-up)
+
+| Recommendation | Status |
+|----------------|--------|
+| `## Required / Optional / Deferred` on missions | Shipped |
+| `fleet-program` sequential chains | Shipped |
+| `## Worker skills` + DISPATCH injection | Shipped (engine + adapters + missions) |
+| `fleet-outcome` YAML on readiness docs | Shipped (`references/fleet-outcome.md`) |
+| Conditional campaign DAGs | Shipped (`fleet-program/references/campaigns.md`) |
+| Parallel same-repo missions | Explicitly not built |
+
+---
+
+## 12. References
 
 - [agentskills.io specification](https://agentskills.io/specification)
 - [Best practices for skill creators](https://agentskills.io/skill-creation/best-practices)

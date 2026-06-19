@@ -42,13 +42,15 @@ artifacts for Tier 2–3.
 
 | Skill | Use when |
 |-------|----------|
-| `fleet-program` | Ordered mission chain on one repo (e.g. doc-sync → test-coverage → cleanup) |
+| `fleet-program` | Mission chains and conditional campaign DAGs on one repo |
 
-Presets: `skills/fleet-program/references/programs.md`. One mission runs at a time; never load
-two mission skills concurrently.
+Presets: `skills/fleet-program/references/programs.md` (linear),
+`skills/fleet-program/references/campaigns.md` (if-outcome). One mission at a time per repo;
+`fleet-outcome` YAML on every readiness doc.
 
 ## Composition reminder
 
 Single mission = `autonomous-fleet-core` + **one adapter** + **one mission**. Each mission has
-`## Required skills`, `## Optional skills`, and `## Deferred missions`. Multi-mission =
-`fleet-program` + core + adapter. See `skills/autonomous-fleet-core/references/composition.md`.
+`## Required skills`, `## Optional skills`, `## Worker skills`, and `## Deferred missions`.
+Multi-mission = `fleet-program` + core + adapter. See `skills/autonomous-fleet-core/references/composition.md`
+and `fleet-outcome.md`.
