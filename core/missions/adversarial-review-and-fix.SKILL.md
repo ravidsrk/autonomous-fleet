@@ -69,7 +69,9 @@ list + recorded decisions.
   sets. Update the doc inline. Set PHASE=REVIEW_FROZEN. Confirmed = Phase 1 spec; refuted = never
   fixed.
 - **BOOTSTRAP** — transcribe confirmed finding IDs into the ledger CLOSE-INDEX (waves from the
-  ranking: P0s first, then FOUNDATION, then rest); task-create each in Orca. Set PHASE=FIXING.
+  ranking: P0s first, then FOUNDATION, then rest); register each as a fix task in the ledger and
+  SYNC_TASK_STATE(ready) via the active adapter (create native tasks if the adapter supports
+  them). Set PHASE=FIXING.
 - **FIX LOOP [Phase 1]** — P0s first, FOUNDATION early, parallel across non-colliding files, one
   in-flight task per hot file. Each fix runs the engine's PR-per-task pipeline (CODE→PR→REVIEW→
   FIX→SHIP conflict-aware). Reviewer independently re-demonstrates each finding's acceptance.

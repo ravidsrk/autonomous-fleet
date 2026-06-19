@@ -13,7 +13,8 @@ description: >-
 # Adapter: Orca
 
 Runtime: [Orca](https://www.onorca.dev) orchestration (Settings → Experimental must be enabled;
-`orca status --json` must show a running runtime). Branch prefix default: `ravidsrk/`.
+`orca status --json` must show a running runtime). Branch prefix: use `BRANCH_PREFIX` from core
+self-orientation (default `fleet/`; recorded in DECISIONS.md).
 
 This adapter resolves the core's PRIMITIVES to Orca commands. Where Orca's CLI differs across
 versions, the adapter says "try X, fall back to Y" — never hard-fail on one syntax.
@@ -76,7 +77,7 @@ Heartbeat likewise (payload `{"taskId","dispatchId","phase"}` OR `--task-id --di
   `gate-create`/`gate-resolve` ONLY for your own DAG decisions, never to answer a worker's ask.
 
 ### OPEN_PR / MERGE_PR(conflict-aware) / CLEANUP
-- OPEN_PR: `gh pr create --base BASE --head ravidsrk/<slug> --title "<title>" --body "<body>"`.
+- OPEN_PR: `gh pr create --base BASE --head <BRANCH_PREFIX><slug> --title "<title>" --body "<body>"`.
 - MERGE_PR: check conflicts first (`gh pr view <n> --json mergeable,mergeStateStatus` or a trial
   rebase). If conflicts: `git fetch origin BASE && git rebase origin/BASE`, resolve, re-test green,
   re-review if logic changed, force-push. Then `gh pr merge <n> --merge --delete-branch` (merge

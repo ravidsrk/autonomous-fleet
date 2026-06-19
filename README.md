@@ -35,6 +35,7 @@ autonomous-fleet/
 └── adapters/
     ├── orca/autonomous-fleet-adapter-orca.SKILL.md            ← Orca binding (full)
     ├── claude-code/autonomous-fleet-adapter-claude-code.SKILL.md ← Claude Code binding
+    ├── grok/autonomous-fleet-adapter-grok.SKILL.md            ← Grok Build binding
     └── autonomous-fleet-adapter-TEMPLATE.SKILL.md             ← write a new tool's binding
 ```
 
@@ -50,6 +51,7 @@ tool's real commands. The missions never mention a tool.
 |---------|---------|-------------------|
 | **orca** | [Orca](https://www.onorca.dev) orchestration | Persistent orchestration daemon; worktrees + terminals; `check --wait` supervision |
 | **claude-code** | Claude Code | Coordinator is the main session; workers are subagents (Task tool) + worktree sub-sessions; file ledger is the authority, TodoWrite mirrors it |
+| **grok** | Grok Build | Coordinator is the main session; workers are subagents (Task tool) + worktree sub-sessions; file ledger is the authority |
 | **TEMPLATE** | any (codex, gemini-cli, raw CLIs, …) | copy the template, implement the primitives |
 
 To add a tool: copy `adapters/autonomous-fleet-adapter-TEMPLATE.SKILL.md`, fill in how that runtime
@@ -91,7 +93,10 @@ Minimum to run on Orca:
 <skills-dir>/doc-sync/SKILL.md        (and any other missions you want)
 ```
 For Claude Code, install `autonomous-fleet-adapter-claude-code` instead of (or alongside) the Orca
-adapter.
+adapter. For Grok Build, install `autonomous-fleet-adapter-grok`.
+
+At run start the core derives `BRANCH_PREFIX` (default `fleet/`, or slugified from the maintainer's
+git user.name) and ensures `docs/` exists for mission ledgers — both recorded in `DECISIONS.md`.
 
 If you downloaded the bundle with prefixed filenames, rename each to `SKILL.md` inside its own
 directory (e.g. `mv doc-sync.SKILL.md doc-sync/SKILL.md`), or recreate the directory layout shown in

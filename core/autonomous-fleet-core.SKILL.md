@@ -5,7 +5,7 @@ description: >-
   Mission skills (doc-sync, test-coverage, dependency-update, cleanup, bug-batch,
   adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence,
   legacy-rebuild, take-product-to-completion) invoke THIS engine plus exactly one ADAPTER
-  (orca, claude-code, or another runtime). This core holds everything that does NOT depend on the
+  (orca, claude-code, grok, or another runtime). This core holds everything that does NOT depend on
   orchestration tool: self-orientation, fully-autonomous coordinator behaviour with file-ledger
   boolean gates, context-handoff to survive compaction, the worker-placement DECISION LOGIC
   (dependent vs independent), the PR-per-task pipeline with commits-preserved + conflict-aware
@@ -64,8 +64,14 @@ path, product, maintainer identity, or scope — figure them out and record in D
    assumes; confirm the capability it assumes is missing). If the repo does NOT match, do NOT
    blindly execute — adapt to what THIS repo needs toward the mission's intent, record the
    adaptation and why, proceed. The mission's INTENT governs; its literal premises are assumptions.
-Everywhere below: REPO_ROOT = resolved path, MAINTAINER = derived author, BASE = the integration
-branch the mission specifies (default: a NEW branch off the default branch at current HEAD).
+5. LEDGER DIRECTORY: ensure `docs/` exists under REPO_ROOT (`mkdir -p docs/` if missing). Missions
+   write progress ledgers and readiness docs there; create it before the first ledger write.
+6. BRANCH_PREFIX: default `fleet/`. Override by slugifying MAINTAINER's git user.name (lowercase,
+   non-alphanumeric → `-`, trailing slash) — e.g. `Jane Doe` → `jane-doe/`. Record the chosen
+   prefix in DECISIONS.md; every adapter uses it for isolated branches (`<prefix><slug>`).
+Everywhere below: REPO_ROOT = resolved path, MAINTAINER = derived author, BRANCH_PREFIX = from
+step 6, BASE = the integration branch the mission specifies (default: a NEW branch off the default
+branch at current HEAD).
 
 ═══════════════════════════════════════════════════════════
 ORCHESTRATOR DIRECTIVE — fully autonomous.

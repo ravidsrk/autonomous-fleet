@@ -14,7 +14,8 @@ description: >-
 
 Runtime: Claude Code (the coordinator is the main session; workers are subagents via the Task
 tool, or sub-sessions scoped to a git worktree). No separate orchestration daemon — so the FILE
-LEDGER is the authority and TodoWrite is the live mirror. Branch prefix default: `fleet/`.
+LEDGER is the authority and TodoWrite is the live mirror. Branch prefix: use `BRANCH_PREFIX` from
+core self-orientation (default `fleet/`; recorded in DECISIONS.md).
 
 This adapter resolves the core's PRIMITIVES to Claude Code mechanics. Where Claude Code cannot
 provide a primitive natively (e.g. cross-session blocking message queues), the adapter substitutes
@@ -39,8 +40,8 @@ concurrently within one coordinator turn. There is no persistent external task d
 ## PRIMITIVE → CLAUDE CODE MECHANIC
 
 ### PLACE(kind)
-- `independent` → `git worktree add ../<repo>-<slug> -b fleet/<slug> BASE` (isolated checkout on
-  its own branch for a parallel PR).
+- `independent` → `git worktree add ../<repo>-<slug> -b <BRANCH_PREFIX><slug> BASE` (isolated
+  checkout on its own branch for a parallel PR).
 - `dependent` → operate in the current checkout/branch (a fresh subagent or sub-session; no new
   worktree).
 
@@ -80,7 +81,7 @@ BASE` via Bash. TodoWrite reflects current state for visibility. None of these c
   defaults — never escalates to the user.
 
 ### OPEN_PR / MERGE_PR(conflict-aware) / CLEANUP — all via Bash + gh
-- OPEN_PR: `gh pr create --base BASE --head fleet/<slug> --title "<title>" --body "<body>"`.
+- OPEN_PR: `gh pr create --base BASE --head <BRANCH_PREFIX><slug> --title "<title>" --body "<body>"`.
 - MERGE_PR: check conflicts (`gh pr view <n> --json mergeable,mergeStateStatus` or trial rebase).
   If conflicts: `git fetch origin BASE && git rebase origin/BASE`, resolve, re-test green,
   re-review (relaunch the reviewer subagent on the rebased diff) if logic changed, force-push.
