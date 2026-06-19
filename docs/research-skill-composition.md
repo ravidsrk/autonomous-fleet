@@ -40,7 +40,7 @@ From the [specification](https://agentskills.io/specification) and [client imple
 
 ### Cross-client install layout
 
-`npx skills` and `.agents/skills/` are the interoperability surface. autonomous-fleet publishes 17 skills under `skills/*/`; installs copy into `.agents/skills/`. Project skills can shadow user skills (project wins).
+`npx skills` and `.agents/skills/` are the interoperability surface. autonomous-fleet publishes **20** skills under `skills/*/` (umbrella, program, setup, core, 5 adapters, 11 missions); installs copy into `.agents/skills/`. Project skills can shadow user skills (project wins).
 
 **Takeaway for fleet:** Required stack (core + adapter + mission) fits tier-2 activation. `references/engine.md` is correct tier-3 usage. Optional third-party skills should be tier-2 **only when triggered**, with explicit “read when …” lines to avoid catalog bloat.
 
