@@ -98,6 +98,7 @@ Not executed. Edge `code_bug_findings > 0` evaluated **false** via:
 
 ## Follow-up (operational proof)
 
-- `scripts/run-campaign.sh` — mechanical node driver with `--dry-run`
-- [external-dogfood/README.md](external-dogfood/README.md) — repo-health on github/gemoji
+- `scripts/run-campaign.sh` — mechanical node driver with `--dry-run` and `--repo PATH`
+- [external-dogfood/README.md](external-dogfood/README.md) — repo-health + **ship-with-proof** on github/gemoji ([evidence](external-dogfood/ship-with-proof-evidence.md))
+- [community-skills.md](../skills/autonomous-fleet-core/references/community-skills.md) — third-party skill mix-and-match
 - Mission skills include `## Runtime goal` + `mission_registry.py` for artifact paths

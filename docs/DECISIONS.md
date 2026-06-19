@@ -17,6 +17,12 @@
 - Dogfood PR merges into `fleet/composition-e2e-base`; promotion to `main` is human meta-PR.
 - Added executable validators so fleet-outcome and campaign edges are testable, not skill-only.
 
+## doc-sync (2026-06-20)
+
+- Pass: community-skills + PR #7 scope — D6–D14 in `docs/doc-sync-audit.md`
+- Verified: `validate-all.sh` 20/20 skills, pytest 11 pass
+- BASE for doc edits: `fleet/community-skills-and-dogfood`
+
 ## Prior runs
 
 See git history for doc-sync trial on `fleet/doc-sync-base` (pre fleet-outcome).

@@ -1,22 +1,28 @@
-# doc-sync progress — composition-e2e
+# doc-sync progress — community-skills pass
 
 PHASE: DONE
-BASE: fleet/composition-e2e-base
+BASE: fleet/community-skills-and-dogfood
 
 ## Tasks
 
 | Task | WRITTEN | PR_OPEN | REVIEWED | MERGED |
 |------|---------|---------|----------|--------|
-| T-AUDIT | t | t | t | t |
-| T-FIX-readme-install | t | t | t | t |
-| T-FINAL | t | t | t | t |
+| T-AUDIT | t | — | — | — |
+| T-FIX-readme-layout | t | — | — | — |
+| T-FIX-readiness-research | t | — | — | — |
+| T-REFRESH-skills-lock | t | — | — | — |
+| T-FINAL | t | — | — | — |
 
 ## DRIFT INDEX
 
 | ID | Status |
 |----|--------|
-| D1 | CLOSED via PR |
-| D2 | CLOSED via PR |
-| D3 | CLOSED via PR |
-| D4 | CLOSED via PR |
-| D5 | CLOSED via PR |
+| D6 | CLOSED |
+| D7 | CLOSED |
+| D8 | CLOSED |
+| D9 | CLOSED |
+| D10 | CLOSED |
+| D11 | CLOSED |
+| D12 | CLOSED |
+| D13 | CLOSED |
+| D14 | CLOSED |

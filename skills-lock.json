@@ -4,77 +4,87 @@
     "adversarial-review-and-fix": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "400b5b1e29a0624dafaf26d149370ff441d4e3068824cfc3af0d80eae55a8760"
+      "computedHash": "f68d0c4f9f726547e3d8bc999b9e7a6888d5163ddf4289bf9c066c2667e4b9f4"
     },
     "autonomous-fleet": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "cffce3993fc6a73c41da6728a2901dbd511cd1fe190ea7ecc06d8fe8af747cf3"
+      "computedHash": "ec22ee118e2355a064b080f63b3ba6bcdb67335c48021d134e06722f5425d8f0"
     },
     "autonomous-fleet-adapter-claude-code": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "338025b791f72ce8ab2707b1cdbf070928e8376a07b064eb3f8652033881341e"
+      "computedHash": "9e3341550984d89ea04e9a13129aef9903ed3ac6a1c29e3e8376902b4201c68d"
+    },
+    "autonomous-fleet-adapter-codex": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "b4343e1b7e77368cb74513dd6703a9bc0c4990a52e4937dd4787d3859fb871ce"
     },
     "autonomous-fleet-adapter-grok": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "b23d83e40d52ea5ab339b72a6a78e58a7cfbc87f0c5d2854dc9b0fc3d13083ee"
+      "computedHash": "5b72c23824b106492200d812be3eb9c20513bf4b9635baae5ece4fe1078e5c80"
     },
     "autonomous-fleet-adapter-orca": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "1d5ca0a5918a0d36691cea010527be0d1ae2b60071d6cf891bc092f1756ff7a9"
+      "computedHash": "769b3cd66ad21de1d35490fa26e53cb9c057e76f473f1e6c4793dc9fa78ac690"
     },
     "autonomous-fleet-adapter-template": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "9f749f6be9a79722b360c0f467c6aa57d8fec61bcf7c20c6c6ac84e40e2d2d01"
+      "computedHash": "5705d02942f62b6f505d05bee9e486e469067735563873a6818c923554e8c1f4"
     },
     "autonomous-fleet-core": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "7a2fb39e906ab69a79c328886123c51fcef4f8b6f45c2ddf81198876538a743b"
+      "computedHash": "0cce884f6e7f47f2e55838444a3fe3206c5bbe9a6947dfdc011d2121a69addd1"
     },
     "bug-batch": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "5cfd22287abd0b23577ce804f5fcd98d923399de452f77f30dec65dcab201add"
+      "computedHash": "520c5df49ca12ae121781c18b5368b1c382766d6e36890f8f1b378baf670d33c"
     },
     "cleanup": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "d14b571281ed0a96f4ebc50ae02577562ffd3f58569cd9fe56945fe40779d2a0"
+      "computedHash": "672199da71224644318ac967db2e63af3b39d9a09cb55be3561d97295bd84f03"
     },
     "dependency-update": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "0307381b0629ebbcf52934b462a19ce9a528df25f7a1c748891cbd0ee6e7d922"
+      "computedHash": "d27eb660e17f4af9ce77e3f7e649881a55cfdf9afcbd1451d8c2172d419ce3ce"
     },
     "design-integration": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "ca295d5f2f2e4a209d9e112dfbb961a16e85e64fae37d8d85a50e9361bcba6cd"
+      "computedHash": "d60decb7f6af01757d454a49efa49b97e838d044527dd856efcb3550812d3659"
     },
     "doc-sync": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "6c3e8675814b403584988e177e44390a311fd0414a9fa6f7e2657b19f9f1407a"
+      "computedHash": "9b3c08d4ee7fbc0f71ce05d96a9ca6c0a142f81a5cc1035838b084b87e05cbb3"
     },
     "fleet-program": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "0a5e1f6cf8721b2ec3dd067471266db9c205a4bc25ca21e85c83a8c47cbe2d18"
+      "computedHash": "dd02a4f4befee436dbd1812446cba562e54555d0cde06eb9942ccf415436c287"
     },
     "landing-page-convergence": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "5cfae57c3b721fa13423a44087b1efc7f062b3afca8d75a0959f3d16f1115bae"
+      "computedHash": "d6dfe57ea9405e94671a9636b35a7d72aa1f89569db8fe22840b9cfe82a4771e"
     },
     "legacy-rebuild": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "df1b0a42db2aa1479136a63ca39e1aaaa706db88915391681b8c01e7fbf7281e"
+      "computedHash": "c32de272675629b92d0e158b95f8c202dc1f903d7aef82edb9ccfd4c37abd481"
+    },
+    "setup-autonomous-fleet": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "6a9b5ff5cebd6bcd58b78ab0bacb50d750d4b5f428d678139988d427250b6f8b"
     },
     "skill-creator": {
       "source": "anthropics/skills",
@@ -85,17 +95,17 @@
     "take-product-to-completion": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "f2442c40498c8750dce18159b7dc7bb63bba248da409758b15c5b42e0f3c19a0"
+      "computedHash": "3041f31149220e6c6fc2a6f46a8ece0ef66c62cadec2c21ef27d386a70c4d1b3"
     },
     "targeted-migration": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "3d610d0dc739ddb858664d2fd35f1b7d1767f28e7ebb9fe440d1fec9a544df0c"
+      "computedHash": "39cfdee8998a9fff5c5394e2a659713d6c132014812dc795a12f29d98c98513e"
     },
     "test-coverage": {
       "source": "/Users/ravindra/projects/autonomous-fleet",
       "sourceType": "local",
-      "computedHash": "b19478b32a12510c21ba39b7a4efc9cdd3aa11cd7c79ba7a90a7f300226f061c"
+      "computedHash": "cdf14dbf721d46ef0c543b684a8cf1e650fb42987b81be8bf348ce9da3ea11b6"
     }
   }
 }
