@@ -89,6 +89,16 @@ Use `fleet-program` for sequential chains **and** conditional DAGs (campaigns). 
 
 Keep mission `SKILL.md` under ~500 lines; move bulky reference material to `references/`.
 
+## Community skills (third-party)
+
+Attach gstack, agent-skills, mattpocock/skills, and other catalogs **only** as Optional
+(coordinator) or Worker (DISPATCH) — never as a second mission skill. Use `fleet-program`
+presets (`ship-with-proof`, `align-then-ship`, `quality-gate`) for multi-step runs that
+optionally call community **pre-gates** and **post-gates**.
+
+Full install matrix, bundles, and anti-patterns: [community-skills.md](community-skills.md).
+Research: `docs/research-community-skills.md`.
+
 ## Readiness doc: fleet-outcome + Recommended next missions
 
 Every mission's final readiness doc must:

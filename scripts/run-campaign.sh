@@ -5,6 +5,7 @@
 #   ./scripts/run-campaign.sh grok --preset repo-health [--dry-run]
 #   ./scripts/run-campaign.sh grok --campaign docs/composition-e2e-campaign.yaml
 #   ./scripts/run-campaign.sh claude --preset repo-health --max-turns 60
+#   ./scripts/run-campaign.sh grok --preset ship-with-proof --repo /tmp/gemoji
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -13,6 +14,7 @@ cd "$ROOT"
 RUNTIME=""
 CAMPAIGN_FILE=""
 PRESET=""
+REPO_ROOT=""
 DRY_RUN=0
 MAX_TURNS=50
 YOLO=1
@@ -24,6 +26,7 @@ Usage: run-campaign.sh <grok|claude|codex> (--preset NAME | --campaign PATH) [op
 Options:
   --preset NAME       Built-in under scripts/campaigns/<NAME>.yaml
   --campaign PATH     Campaign YAML file
+  --repo PATH         Target git repo for missions (default: autonomous-fleet clone)
   --dry-run           Print plan only; do not invoke agents
   --max-turns N       Per-node turn budget (default: 50)
   --no-yolo           Pass --no-yolo to run-mission-headless (Grok)
@@ -46,6 +49,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --campaign)
       CAMPAIGN_FILE="${2:?}"
+      shift 2
+      ;;
+    --repo)
+      REPO_ROOT="${2:?}"
       shift 2
       ;;
     --dry-run)
@@ -81,6 +88,17 @@ if [[ -z "$CAMPAIGN_FILE" || ! -f "$CAMPAIGN_FILE" ]]; then
   exit 1
 fi
 
+if [[ -n "$REPO_ROOT" ]]; then
+  REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
+else
+  REPO_ROOT="$ROOT"
+fi
+
+if [[ ! -d "$REPO_ROOT/.git" ]]; then
+  echo "error: --repo '$REPO_ROOT' is not a git repository" >&2
+  exit 1
+fi
+
 VENV_PYTHON="$ROOT/.venv/bin/python"
 if [[ ! -x "$VENV_PYTHON" ]]; then
   python3 -m venv "$ROOT/.venv"
@@ -106,6 +124,7 @@ mission_for_node() {
 
 echo "== run-campaign =="
 echo "runtime:  $RUNTIME"
+echo "repo:     $REPO_ROOT"
 echo "campaign: $CAMPAIGN_FILE"
 echo "start:    $START"
 echo "dry-run:  $DRY_RUN"
@@ -127,34 +146,36 @@ while [[ -n "$CURRENT" ]]; do
 
   echo "--- step $STEP: node=$CURRENT mission=$MISSION ---"
 
+  READINESS_ABS="$REPO_ROOT/$READINESS"
+
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "  would run: run-mission-headless.sh $RUNTIME $MISSION --max-turns $MAX_TURNS"
-    echo "  expect:    $READINESS with fleet-outcome.status done"
+    echo "  would run: run-mission-headless.sh $RUNTIME $MISSION --repo $REPO_ROOT --max-turns $MAX_TURNS"
+    echo "  expect:    $READINESS_ABS with fleet-outcome.status done"
   else
-    EXTRA=()
+    EXTRA=(--repo "$REPO_ROOT")
     [[ "$YOLO" -eq 0 ]] && EXTRA+=(--no-yolo)
     "$ROOT/scripts/run-mission-headless.sh" "$RUNTIME" "$MISSION" --max-turns "$MAX_TURNS" "${EXTRA[@]}"
-    if [[ -f "$READINESS" ]]; then
-      ./scripts/validate-fleet-outcome.sh "$READINESS"
+    if [[ -f "$READINESS_ABS" ]]; then
+      ./scripts/validate-fleet-outcome.sh "$READINESS_ABS"
     else
-      echo "warn: $READINESS not found after node $CURRENT" >&2
+      echo "warn: $READINESS_ABS not found after node $CURRENT" >&2
     fi
   fi
 
   VISITED="${VISITED:+$VISITED }$CURRENT"
 
-  if [[ "$DRY_RUN" -eq 1 && ! -f "$READINESS" ]]; then
-    echo "  next:     (dry-run stops — no readiness at $READINESS)"
+  if [[ "$DRY_RUN" -eq 1 && ! -f "$READINESS_ABS" ]]; then
+    echo "  next:     (dry-run stops — no readiness at $READINESS_ABS)"
     break
   fi
 
-  if [[ "$DRY_RUN" -eq 0 && ! -f "$READINESS" ]]; then
-    echo "error: cannot pick next node without $READINESS" >&2
+  if [[ "$DRY_RUN" -eq 0 && ! -f "$READINESS_ABS" ]]; then
+    echo "error: cannot pick next node without $READINESS_ABS" >&2
     exit 1
   fi
 
-  if [[ -f "$READINESS" ]]; then
-    NEXT_JSON="$(./scripts/eval-campaign-edge.sh --readiness "$READINESS" --campaign "$CAMPAIGN_FILE" --current-node "$CURRENT")"
+  if [[ -f "$READINESS_ABS" ]]; then
+    NEXT_JSON="$(./scripts/eval-campaign-edge.sh --readiness "$READINESS_ABS" --campaign "$CAMPAIGN_FILE" --current-node "$CURRENT")"
     NEXT="$(echo "$NEXT_JSON" | "$VENV_PYTHON" -c "import sys,json; print(json.load(sys.stdin).get('next') or '')")"
     echo "  next:     ${NEXT:-<campaign done>}"
     CURRENT="$NEXT"

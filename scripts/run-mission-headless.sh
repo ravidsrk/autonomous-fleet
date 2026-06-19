@@ -6,7 +6,8 @@
 #   ./scripts/run-mission-headless.sh claude fleet-program --max-turns 80
 #   ./scripts/run-mission-headless.sh codex test-coverage --max-turns 60
 #
-# Requires: grok or claude CLI on PATH; git repo with autonomous-fleet skills installed.
+# Requires: grok or claude CLI on PATH (grok must be authenticated for -p); git repo with skills installed.
+# External repo: --repo /path/to/target (agent cwd); scripts still run from autonomous-fleet clone.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -17,12 +18,14 @@ MISSION="${2:-}"
 MAX_TURNS=50
 HANDOFF=""
 YOLO=1
+REPO_ROOT=""
 
 usage() {
   cat <<'EOF'
 Usage: run-mission-headless.sh <grok|claude|codex> <mission-or-fleet-program> [options]
 
 Options:
+  --repo PATH       Target git repo (default: autonomous-fleet clone). Agent --cwd is REPO.
   --max-turns N     Agent turn budget (default: 50)
   --handoff PATH    Prompt file (default: generated minimal handoff)
   --no-yolo         Do not auto-approve tools (Grok only: omit --yolo)
@@ -41,6 +44,10 @@ fi
 shift 2 || true
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --repo)
+      REPO_ROOT="${2:?}"
+      shift 2
+      ;;
     --max-turns)
       MAX_TURNS="${2:?}"
       shift 2
@@ -65,6 +72,17 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+if [[ -n "$REPO_ROOT" ]]; then
+  REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
+else
+  REPO_ROOT="$ROOT"
+fi
+
+if [[ ! -d "$REPO_ROOT/.git" ]]; then
+  echo "error: --repo '$REPO_ROOT' is not a git repository" >&2
+  exit 1
+fi
+
 if [[ -n "$HANDOFF" && -f "$HANDOFF" ]]; then
   PROMPT="$(cat "$HANDOFF")"
 else
@@ -84,18 +102,19 @@ fi
 echo "== run-mission-headless =="
 echo "runtime:  $RUNTIME"
 echo "mission:  $MISSION"
+echo "repo:     $REPO_ROOT"
 echo "turns:    $MAX_TURNS"
 echo ""
 
 case "$RUNTIME" in
   grok)
-    CMD=(grok -p "$PROMPT" --max-turns "$MAX_TURNS" --output-format json --cwd "$ROOT")
+    CMD=(grok -p "$PROMPT" --max-turns "$MAX_TURNS" --output-format json --cwd "$REPO_ROOT")
     [[ "$YOLO" -eq 1 ]] && CMD+=(--yolo)
     "${CMD[@]}"
     ;;
   claude)
     # Claude /goal in non-interactive prompt (v2.1.139+)
-    claude -p "$PROMPT" --cwd "$ROOT"
+    claude -p "$PROMPT" --cwd "$REPO_ROOT"
     ;;
   codex)
     # Codex: pass goal in thread prompt; non-interactive per local Codex CLI if available
