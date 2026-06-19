@@ -104,6 +104,99 @@ edges:
   docs: []
 ```
 
+## Preset: ship-with-proof (linear + post-gates)
+
+**When:** "ship this branch safely", "harden then open PR", "prove it before merge".
+
+Audit → tests → docs. Optional community **post-gates** after the last node (not fleet mission
+nodes): `gstack-ship` if the user wants a PR; `gstack-qa` if a staging URL exists. See
+[community-skills.md](../../autonomous-fleet-core/references/community-skills.md).
+
+```yaml
+campaign: ship-with-proof
+start: audit
+nodes:
+  audit: { mission: adversarial-review-and-fix }
+  tests: { mission: test-coverage }
+  docs: { mission: doc-sync }
+post_gates:
+  - skill: gstack-ship
+    when: user asked to open PR
+  - skill: gstack-qa
+    when: staging URL available
+edges:
+  audit: [{ to: tests, if: always }]
+  tests: [{ to: docs, if: always }]
+  docs: []
+```
+
+Headless: `./scripts/run-campaign.sh <runtime> --preset ship-with-proof`
+
+## Preset: align-then-ship (Tier 3 + pre-gate)
+
+**When:** "finish this stalled product", "take it to shippable", "complete the whole product".
+
+Single Tier 3 node. **Pre-gate** (before `NODE-complete`): user or coordinator runs
+`grill-with-docs` (mattpocock) or `gstack-office-hours` when intent or boundary is fuzzy; save
+artifact path in program ledger **Handoff notes**. Optional post-gate: `gstack-qa` with staging URL.
+
+```yaml
+campaign: align-then-ship
+start: complete
+pre_gates:
+  - skill: grill-with-docs
+    alt: gstack-office-hours
+    when: product boundary or intent ambiguous
+nodes:
+  complete: { mission: take-product-to-completion }
+post_gates:
+  - skill: gstack-qa
+    when: staging URL available
+edges:
+  complete: []
+```
+
+**Requires explicit user request** for Tier 3 — do not default vague "clean up" intent here.
+
+Headless: `./scripts/run-campaign.sh <runtime> --preset align-then-ship`
+
+## Preset: quality-gate (linear + post-gates)
+
+**When:** "is this production-ready?", "quality gate before release", "acceptance check".
+
+Lighter than `ship-with-proof` (no doc-sync node). Post-gates are report-only:
+`gstack-qa-only`, optional `gstack-health` scorecard.
+
+```yaml
+campaign: quality-gate
+start: audit
+nodes:
+  audit: { mission: adversarial-review-and-fix }
+  tests: { mission: test-coverage }
+post_gates:
+  - skill: gstack-qa-only
+    when: staging URL available
+  - skill: gstack-health
+    when: user wants composite score
+edges:
+  audit: [{ to: tests, if: always }]
+  tests: []
+```
+
+Headless: `./scripts/run-campaign.sh <runtime> --preset quality-gate`
+
+## Community skill hooks
+
+Campaign YAML may include `pre_gates` and `post_gates` for documentation. The mechanical campaign
+driver (`scripts/run-campaign.sh`) runs **mission nodes only**; coordinators execute gates per
+[community-skills.md](../../autonomous-fleet-core/references/community-skills.md).
+
+| Preset | Pre-gate | Post-gate |
+|--------|----------|-----------|
+| `ship-with-proof` | — | ship, qa |
+| `align-then-ship` | grill / office-hours | qa |
+| `quality-gate` | — | qa-only, health |
+
 ## Cross-repo parallel (different repos only)
 
 **Not** concurrent missions on one repo. For multiple repositories, run **separate coordinator

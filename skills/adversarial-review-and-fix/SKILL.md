@@ -26,7 +26,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -37,13 +37,16 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
 | `gstack-cso` | User asked for security-audit depth beyond mission defaults | Proceed with mission skeptic + review gate only |
+| `gstack-health` | User wants composite quality scorecard (`quality-gate` / `ship-with-proof` tail) | Mission metrics in readiness doc only |
+
+Community catalog: `autonomous-fleet-core` → `references/community-skills.md`.
 
 ## Worker skills
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude (Phase 0 audit, skeptic) | `gstack-cso` when security depth requested | Code-only audit per mission |
-| @grok (fix loop) | — | In-tree primitives per frozen review |
+| @claude (Phase 0 audit, skeptic) | `security-and-hardening`; `gstack-cso` when Optional `gstack-cso` active | Code-only audit per mission |
+| @grok (fix loop) | `code-simplification` when fix touches >50 lines or adds new abstraction | In-tree primitives per frozen review |
 | @codex (review) | — | Mission review gate only |
 
 ## Deferred missions

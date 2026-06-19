@@ -137,7 +137,7 @@ autonomous-fleet/
 │   ├── eval-campaign-edge.py
 │   ├── run-campaign.sh
 │   ├── run-mission-headless.sh
-│   ├── campaigns/repo-health.yaml
+│   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate
 │   ├── lib/fleet_outcome.py
 │   └── install-skills.sh
 ├── tests/

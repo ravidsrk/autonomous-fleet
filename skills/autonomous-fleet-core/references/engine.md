@@ -50,8 +50,10 @@ path, product, maintainer identity, or scope — figure them out and record in D
 5. LEDGER DIRECTORY: ensure `docs/` exists under REPO_ROOT (`mkdir -p docs/` if missing). Missions
    write progress ledgers and readiness docs there; create it before the first ledger write.
 6. BRANCH_PREFIX: default `fleet/`. Override by slugifying MAINTAINER's git user.name (lowercase,
-   non-alphanumeric → `-`, trailing slash) — e.g. `Jane Doe` → `jane-doe/`. Record the chosen
-   prefix in DECISIONS.md; every adapter uses it for isolated branches (`<prefix><slug>`).
+   non-alphanumeric → `-`, trailing slash) — e.g. `Jane Doe` → `jane-doe/`. If
+   `docs/agents/fleet-config.md` exists (from `setup-autonomous-fleet`), use its `BRANCH_PREFIX`
+   and recorded adapter/default-bundle hints. Record the chosen prefix in DECISIONS.md; every
+   adapter uses it for isolated branches (`<prefix><slug>`).
 Everywhere below: REPO_ROOT = resolved path, MAINTAINER = derived author, BRANCH_PREFIX = from
 step 6, BASE = the integration branch the mission specifies (default: a NEW branch off the default
 branch at current HEAD).
@@ -70,6 +72,50 @@ DECISION DEFAULTS, record it in DECISIONS.md, proceed. A reasonable default now 
 - MERGE POLICY: PRs an approving reviewer passes auto-merge into BASE via the integrator, WITH
   conflict resolution. Merging is NOT deploying (see SAFETY RAILS). The BASE→main promotion is a
   human meta-PR, out of scope, unless the mission says otherwise.
+
+═══════════════════════════════════════════════════════════
+COORDINATOR BEHAVIORS — non-negotiable across all missions (adapted from agent-skills).
+═══════════════════════════════════════════════════════════
+The coordinator applies these at orientation, phase gates, task specs, and the FINAL report.
+Workers receive the abbreviated block below via DISPATCH when the mission lists worker skills.
+
+**1. Surface assumptions (coordinator).** After SELF-ORIENTATION and mission-fit, append to
+DECISIONS.md:
+
+```
+ASSUMPTIONS:
+1. [requirements / scope]
+2. [architecture / stack]
+3. [what is explicitly OUT of scope]
+→ Proceeding unless a hard-dependency gate blocks.
+```
+
+Do not silently invent requirements. Record ambiguity; if unresolvable without the user, defer
+via `fleet-outcome.deferred_missions` — do not guess and ship.
+
+**2. Manage confusion actively.** On conflicting spec vs code, mission vs repo reality, or
+ambiguous acceptance criteria: STOP the affected task wave, name the conflict in DECISIONS.md,
+pick the mission-intent default OR defer — never proceed on a silent guess. Workers escalate via
+ASK; coordinator answers from DECISION DEFAULTS, not by relaying to the user.
+
+**3. Push back when warranted.** In task specs and FINAL report, flag approaches with concrete
+downside ("adds N files", "touches hot module X"). Propose the simpler path. If the mission's
+frozen artifact already decided, follow it — push back only on new risk discovered in code.
+
+**4. Enforce simplicity.** Task specs must prefer the smallest change that meets acceptance.
+Reviewers fail PRs that add abstraction without need. Coordinator rejects worker proposals that
+expand scope beyond the active task unit.
+
+**5. Scope discipline.** Touch only what the active task unit requires. No drive-by refactors,
+comment pruning, or adjacent-system "cleanup" unless the mission task explicitly includes it —
+defer to `cleanup` or record in Recommended next missions.
+
+**Worker preamble (inject on DISPATCH):**
+
+```
+OPERATING BEHAVIORS: State assumptions before non-trivial edits. Stop and ASK on spec/code
+conflict. Prefer the boring solution. Touch only this task's files. Push back on scope creep.
+```
 
 ═══════════════════════════════════════════════════════════
 AUTONOMY ENFORCEMENT — overrides your default turn-ending behaviour.

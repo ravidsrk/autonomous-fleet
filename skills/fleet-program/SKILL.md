@@ -6,9 +6,11 @@ description: >-
   doc to branch (e.g. audit then tests if no P0s, else dependency-update). One mission active
   at a time per repo; cross-repo parallel via separate sessions. Does not run parallel missions
   on the same repo. Use for "repo health program", "audit then test", "docs then bugs if
-  needed", mission chains, fleet campaign. Install from github.com/ravidsrk/autonomous-fleet.
+  needed", mission chains, fleet campaign, ship with proof, align then ship, quality gate.
+  Install from github.com/ravidsrk/autonomous-fleet.
   Trigger on: "fleet program", "fleet campaign", "mission chain", "if P0 then", "repo health",
-  "conditional fleet run".
+  "conditional fleet run", "ship safely", "ship with proof", "finish stalled product",
+  "align then ship", "production ready", "quality gate".
 license: MIT
 compatibility: Requires git and gh CLI; install mission skills via npx skills
 metadata:
@@ -87,7 +89,9 @@ Status per node: `PENDING` | `RUNNING` | `DONE` | `SKIPPED`.
 | **campaign** | `if` branches on outcomes | [campaigns.md](references/campaigns.md) DAG YAML |
 | **parallel_repos** | Same mission on different repos | campaigns.md `parallel_repos` — **separate sessions**, aggregate at end |
 
-Default vague intent → `repo-health` campaign (linear DAG).
+Default vague intent → `repo-health` campaign (linear DAG). Security / pre-merge →
+`ship-with-proof` or `secure-ship`. Stalled product (explicit Tier 3) → `align-then-ship`.
+Acceptance / readiness → `quality-gate`. Community hooks: [community-skills.md](../autonomous-fleet-core/references/community-skills.md).
 
 ## Planning
 

@@ -25,7 +25,7 @@ skills to load next.
 
 ## What this framework is
 
-A **skill package** of 19 installable skills (this one + core + adapters + missions + programs).
+A **skill package** of 20 installable skills (this one + core + adapters + missions + programs + setup).
 Each single-mission run composes three layers:
 
 | Layer | Skill(s) | Role |
@@ -36,8 +36,11 @@ Each single-mission run composes three layers:
 
 ## Install (if skills are not already loaded)
 
+**First time on a repo:** run `/setup-autonomous-fleet` after install (adapter, prefix, default bundle).
+
 ```bash
 npx skills add https://github.com/ravidsrk/autonomous-fleet \
+  --skill setup-autonomous-fleet \
   --skill autonomous-fleet-core \
   --skill autonomous-fleet-adapter-grok \
   --skill doc-sync \
@@ -76,8 +79,12 @@ Default adapter on Grok Build: `autonomous-fleet-adapter-grok`.
 | rebuild legacy app | `legacy-rebuild` |
 | finish stalled product | `take-product-to-completion` |
 | docs then tests, repo health, mission chain, if-outcome campaign | `fleet-program` |
+| ship safely, harden before PR | `fleet-program` preset `ship-with-proof` |
+| finish stalled product, shippable end-to-end | `fleet-program` preset `align-then-ship` |
+| production ready, quality gate | `fleet-program` preset `quality-gate` |
 
 Full tier notes and merge-rate guidance: [references/missions.md](references/missions.md).
+Community skill bundles: `autonomous-fleet-core` → `references/community-skills.md`.
 
 ## Execution checklist
 

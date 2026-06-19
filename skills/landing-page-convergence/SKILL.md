@@ -26,7 +26,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -36,13 +36,17 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
-| `gstack` / browser QA | Coordinator spot-checks production URL | Screenshot + @codex review only |
+| `gstack-qa-only` | Production/staging URL; report-only before final section PR | Screenshot + @codex review only |
+| `gstack-browse` | Coordinator spot-checks live page between sections | Screenshot + manual diff |
+
+Community catalog: `autonomous-fleet-core` → `references/community-skills.md`.
 
 ## Worker skills
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude / @grok (build sections) | `frontend-design` | Design extract values exactly |
+| @claude / @grok (build sections) | `frontend-design`, `frontend-ui-engineering` | Design extract values exactly |
+| @grok (section QA) | `gstack-qa` when URL available and fix-verify loop requested | Fidelity gate per section |
 | @codex (review) | — | Mission fidelity gate |
 
 ## Deferred missions

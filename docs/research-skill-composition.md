@@ -368,6 +368,12 @@ Record in readiness doc and DECISIONS.md; do not start another mission in the sa
 | CI (`validate-all.sh`) | Shipped (`.github/workflows/ci.yml`) |
 | `skills-lock.json` (19 fleet skills) | Refreshed |
 | Stale `doc-sync-audit.md` | Annotated superseded |
+| Community skills mix-and-match | Shipped (`docs/research-community-skills.md`, `references/community-skills.md`) |
+| Campaign presets `ship-with-proof`, `align-then-ship`, `quality-gate` | Shipped (`scripts/campaigns/`, `campaigns.md`) |
+| Community mission Optional/Worker tables | Shipped (design-integration, landing-page-convergence, adversarial-review-and-fix) |
+| Coordinator behaviors in engine.md | Shipped |
+| `setup-autonomous-fleet` | Shipped |
+| External dogfood ship-with-proof pack | Shipped (`docs/external-dogfood/ship-with-proof-gemoji.md`) |
 
 ---
 
@@ -379,6 +385,7 @@ Record in readiness doc and DECISIONS.md; do not start another mission in the sa
 - autonomous-fleet: `skills/autonomous-fleet-core/references/engine.md`
 - autonomous-fleet: `skills/autonomous-fleet/references/missions.md`
 - Dogfood evidence: `docs/doc-sync-readiness.md` (deferrals section)
+- Community skills: `docs/research-community-skills.md`, `skills/autonomous-fleet-core/references/community-skills.md`
 
 ---
 

@@ -26,7 +26,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -37,14 +37,19 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
 | `claude_design` MCP | DESIGN SOURCE uses MCP connector | User must `/design-login` — HARD EXTERNAL DEPENDENCY |
-| `gstack-design-review` | Coordinator wants extra visual QA sampling | Rely on @codex review gate only |
+| `gstack-design-review` | After a parity wave; coordinator wants visual QA sampling | Rely on @codex review gate only |
+| `gstack-qa-only` | Staging/preview URL exists; report-only fidelity check | Screenshot + @codex review only |
+
+Community catalog: `autonomous-fleet-core` → `references/community-skills.md`. At most 2 optional
+skills active (including MCP row).
 
 ## Worker skills
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @grok (build items) | `frontend-design`; iOS targets → `swiftui-liquid-glass` | Design extract + parity spec |
-| @claude (extract, map, ship) | — | claude_design MCP / export per DESIGN SOURCE |
+| @grok (build items) | `frontend-design`, `frontend-ui-engineering`; iOS → `swiftui-liquid-glass` | Design extract + parity spec |
+| @grok (QA fix loop) | `gstack-qa` when staging URL and user wants fix-verify loop | Mission fidelity gate only |
+| @claude (extract, map, ship) | `domain-modeling` when new product terms surface | claude_design MCP / export per DESIGN SOURCE |
 
 ## Deferred missions
 
