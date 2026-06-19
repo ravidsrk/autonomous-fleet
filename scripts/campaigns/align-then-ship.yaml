@@ -1,0 +1,15 @@
+campaign: align-then-ship
+repo: single
+base: fleet/align-then-ship-base
+start: complete
+pre_gates:
+  - skill: grill-with-docs
+    alt: gstack-office-hours
+    when: product boundary or intent ambiguous
+nodes:
+  complete: { mission: take-product-to-completion }
+post_gates:
+  - skill: gstack-qa
+    when: staging URL available
+edges:
+  complete: []

@@ -1,0 +1,17 @@
+campaign: ship-with-proof
+repo: single
+base: fleet/ship-with-proof-base
+start: audit
+nodes:
+  audit: { mission: adversarial-review-and-fix }
+  tests: { mission: test-coverage }
+  docs: { mission: doc-sync }
+post_gates:
+  - skill: gstack-ship
+    when: user asked to open PR
+  - skill: gstack-qa
+    when: staging URL available
+edges:
+  audit: [{ to: tests, if: always }]
+  tests: [{ to: docs, if: always }]
+  docs: []

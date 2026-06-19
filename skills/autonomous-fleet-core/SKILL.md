@@ -39,8 +39,9 @@ It contains self-orientation, autonomy enforcement, worker placement, the PR pip
 rails, and all other engine rules.
 
 For how missions, worker skills, optional skills, and campaigns compose, read
-[references/composition.md](references/composition.md), [references/fleet-outcome.md](references/fleet-outcome.md),
-and [references/runtime-goals.md](references/runtime-goals.md) for native `/goal` / `update_goal` binding.
+[references/composition.md](references/composition.md), [references/community-skills.md](references/community-skills.md),
+[references/fleet-outcome.md](references/fleet-outcome.md), and [references/runtime-goals.md](references/runtime-goals.md)
+for native `/goal` / `update_goal` binding. Per-repo defaults: `setup-autonomous-fleet` → `docs/agents/fleet-config.md`.
 Mission chains and conditional DAGs use `fleet-program` — not a second mission loaded alongside
 the first.
 
