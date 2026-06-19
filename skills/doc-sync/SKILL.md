@@ -41,6 +41,14 @@ Activate only when the trigger applies. Do not load unrelated catalog skills.
 |-------|---------------|----------------|
 | `skill-creator` | Editing or validating skills in the autonomous-fleet repo itself | Run `./scripts/validate-skills.sh` |
 
+## Worker skills
+
+Inject per role on DISPATCH (workers load these; coordinator does not):
+
+| Role | Skills | If unavailable |
+|------|--------|----------------|
+| @claude (audit, fix, integrator) | — | Repo README + manifests only |
+
 ## Deferred missions
 
 Record in `docs/doc-sync-readiness.md` under **Recommended next missions** and in DECISIONS.md.
@@ -87,8 +95,9 @@ CLOSED via PR#n`.
   doc files; serialize edits to the same file. Update the DRIFT INDEX as items close.
 - **T-FINAL [@claude]** — verify every DRIFT-INDEX item is CLOSED, all example commands run,
   all internal links resolve, no stale instruction remains. Output `docs/doc-sync-readiness.md`
-  (drift index all-closed + what was corrected + **Recommended next missions** table per
-  core composition.md). Ship as the final PR.
+  starting with **`fleet-outcome` YAML** (`drift_open`, `code_bug_findings` in metrics; see
+  `autonomous-fleet-core/references/fleet-outcome.md`), then drift summary + **Recommended next
+  missions**. Ship as the final PR.
 
 ## DONE
 Every DRIFT-INDEX item `CLOSED`, every task `WRITTEN=t PR_OPEN=t REVIEWED=t MERGED=t`,

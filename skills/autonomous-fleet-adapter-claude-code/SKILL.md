@@ -64,8 +64,10 @@ concurrently within one coordinator turn. There is no persistent external task d
   installed.
 
 ### DISPATCH(task, handle)
-Subagent: pass the task spec in the Task-tool prompt (dispatch == launch). Sub-session: write the
-task spec into the worktree and start the agent CLI on it via Bash.
+Build the dispatch payload: (1) if the mission's `## Worker skills` lists skills for this worker's
+role, prepend **Worker skills:** "Activate and follow: `<names>`" per core engine.md; (2) the task
+spec and completion contract. Subagent: pass the full payload in the Task-tool prompt (dispatch ==
+launch). Sub-session: write the payload into the worktree and start the agent CLI on it via Bash.
 
 ### WAIT(types, timeout)
 Subagents return to the coordinator when done — collect their structured results. For sub-sessions

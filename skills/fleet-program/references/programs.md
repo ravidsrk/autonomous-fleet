@@ -1,6 +1,8 @@
-# Preset fleet programs
+# Preset fleet programs (linear)
 
-Copy into the program ledger or use when the user describes intent but not an explicit chain.
+For **conditional DAGs** (`if` edges on `fleet-outcome`), use [campaigns.md](campaigns.md).
+Linear presets below map to campaigns with `always` edges — paste into program ledger **Campaign
+spec** or run as MODE linear.
 
 ## repo-health
 

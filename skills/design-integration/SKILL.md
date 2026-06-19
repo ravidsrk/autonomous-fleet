@@ -37,7 +37,14 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
 | `claude_design` MCP | DESIGN SOURCE uses MCP connector | User must `/design-login` — HARD EXTERNAL DEPENDENCY |
-| `gstack-design-review` | Post-build visual QA on key screens | Rely on @codex review gate only |
+| `gstack-design-review` | Coordinator wants extra visual QA sampling | Rely on @codex review gate only |
+
+## Worker skills
+
+| Role | Skills | If unavailable |
+|------|--------|----------------|
+| @grok (build items) | `frontend-design`; iOS targets → `swiftui-liquid-glass` | Design extract + parity spec |
+| @claude (extract, map, ship) | — | claude_design MCP / export per DESIGN SOURCE |
 
 ## Deferred missions
 
@@ -102,8 +109,8 @@ SHIPPED=<t/f>`. Plus a PARITY MATRIX: every item classified REDESIGN | GAP-FILL 
 - **T-FINAL [@claude]** — build green, lint clean, full suite green. Every matrix item DONE; the
   product matches the design everywhere; every product-probe capability still works (zero
   regressions); no half-migrated screens/placeholders/console errors. Output
-  docs/parity-readiness.md (matrix complete, test summary, residual risks, all PRs). Ship as the
-  final PR.
+  `docs/parity-readiness.md` with **`fleet-outcome` YAML** (`parity_items_open`, `regressions`),
+  matrix summary, **Recommended next missions**, all PRs. Ship as the final PR.
 
 ## DONE
 Every PARITY-MATRIX item `DONE`, every task `PLANNED=t BUILT=t REVIEWED=t SHIPPED=t`, product

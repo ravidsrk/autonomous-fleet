@@ -116,6 +116,18 @@ WORKER PLACEMENT — the DECISION LOGIC (tool-agnostic). The adapter maps it to 
   prior PR merges). This both enables parallelism and minimizes merge conflicts.
 
 ═══════════════════════════════════════════════════════════
+WORKER SKILLS — capability skills for workers only (not the coordinator).
+═══════════════════════════════════════════════════════════
+If the active mission declares `## Worker skills`, the coordinator MUST inject the listed skills
+into each DISPATCH / task spec for matching pipeline roles (@claude builder, @grok builder, etc.):
+- Prepend a **Worker skills** block: "Activate and follow these installed skills before doing this
+  task: `<skill-a>`, `<skill-b>`."
+- Workers are full agents — they load those skills in their own session; the coordinator does NOT
+  load domain skills into its orchestration loop.
+- If a listed skill is not installed, use that row's "If unavailable" fallback from the mission.
+- Optional skills (coordinator-only) and worker skills are disjoint — see composition.md.
+
+═══════════════════════════════════════════════════════════
 PR-PER-TASK PIPELINE — commits preserved, NEVER squash, conflict-aware, checkout cleaned.
 ═══════════════════════════════════════════════════════════
 The mission defines the role at each step (builder / reviewer / integrator) and any extra gates.

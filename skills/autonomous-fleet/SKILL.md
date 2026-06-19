@@ -51,8 +51,8 @@ Replace `autonomous-fleet-adapter-grok` with `autonomous-fleet-adapter-orca` or
 ## How to route a request
 
 1. Read the user's intent against the mission catalog in [references/missions.md](references/missions.md).
-2. If intent names **multiple missions** or "healthy repo" / sequential work → activate
-   **`fleet-program`** (not several mission skills at once).
+2. If intent names **multiple missions**, conditional flows ("if audit finds P0…"), or "healthy
+   repo" → activate **`fleet-program`** (campaign DAG — not several mission skills at once).
 3. If intent maps clearly to **one** mission → activate that mission skill and follow it.
 4. If intent is vague ("clean up this repo") → prefer `fleet-program` preset `repo-health`, or
    the closest single mission; Tier 1 for first unattended single-mission runs.
@@ -75,7 +75,7 @@ Default adapter on Grok Build: `autonomous-fleet-adapter-grok`.
 | landing page match mockup | `landing-page-convergence` |
 | rebuild legacy app | `legacy-rebuild` |
 | finish stalled product | `take-product-to-completion` |
-| docs then tests, repo health, mission chain | `fleet-program` |
+| docs then tests, repo health, mission chain, if-outcome campaign | `fleet-program` |
 
 Full tier notes and merge-rate guidance: [references/missions.md](references/missions.md).
 

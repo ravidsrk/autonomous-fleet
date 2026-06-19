@@ -37,6 +37,12 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 |-------|---------------|----------------|
 | — | — | — |
 
+## Worker skills
+
+| Role | Skills | If unavailable |
+|------|--------|----------------|
+| @claude (map, write tests, integrator) | — | Match repo test framework from T-MAP |
+
 ## Deferred missions
 
 Record in `docs/test-coverage-readiness.md` under **Recommended next missions** and in DECISIONS.md.
@@ -79,8 +85,9 @@ with before/after coverage where the tooling reports it.
   (real assertions, meaningful paths, no padding) → @claude merges. Parallelize across
   non-overlapping test files; serialize same-file. Update the GAP INDEX + coverage deltas.
 - **T-FINAL [@claude]** — full suite green; coverage rose on the mapped areas and did not
-  regress elsewhere. Output `docs/test-coverage-readiness.md` (gap index covered, coverage
-  before/after, **Recommended next missions**, all PRs). Ship as the final PR.
+  regress elsewhere. Output `docs/test-coverage-readiness.md` with **`fleet-outcome` YAML**
+  (`gaps_open`, `coverage_regressed`), gap/coverage summary, **Recommended next missions**, all
+  PRs. Ship as the final PR.
 
 ## DONE
 Every GAP-INDEX item `COVERED`, every task terminal, suite green, coverage not regressed,

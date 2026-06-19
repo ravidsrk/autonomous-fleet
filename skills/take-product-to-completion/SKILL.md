@@ -41,6 +41,13 @@ Do not load a second mission skill in the same run. ROADMAP items defer to futur
 |-------|---------------|----------------|
 | `gstack-office-hours` | Boundary (T3) is ambiguous and user wants product framing | Use T1+T2 research only |
 
+## Worker skills
+
+| Role | Skills | If unavailable |
+|------|--------|----------------|
+| @grok (build areas, landing) | `frontend-design` | Completion boundary + per-area specs |
+| @claude (review, plan, ship) | — | Mission gates T1–T3 |
+
 ## Deferred missions
 
 ROADMAP list in boundary doc + **Recommended next missions** in `docs/completion-readiness.md`.
@@ -116,8 +123,9 @@ and a ROADMAP list (deferred, never built this run).
 - **T_FINAL [@claude]** — build green, lint clean, full suite green. Walk the product as a new
   user end to end, zero dead ends; confirm every IN item fully implemented (zero stubs), every
   prior capability still works, ROADMAP is honest future scope. Output
-  `docs/completion-readiness.md` (scope index all-DONE, roadmap listed, residual risks, all PRs).
-  Ship as the final PR.
+  `docs/completion-readiness.md` with **`fleet-outcome` YAML** (`in_items_open`, `roadmap_count`,
+  `stubs_remaining`), scope/roadmap summary, **Recommended next missions**, all PRs. Ship as the
+  final PR.
 
 ## DONE
 Every SCOPE-INDEX item `DONE`, every task `PLANNED=t BUILT=t REVIEWED=t SHIPPED=t`,

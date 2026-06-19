@@ -48,6 +48,8 @@ max-effort flags. Map roles (builder/reviewer/integrator) to specific agent CLIs
 ### DISPATCH(task, handle)
 <how a task spec is handed to a worker so it will report completion. If your tool injects a
 preamble, say so; if not, how the worker learns the completion contract.>
+**Required:** prepend mission `## Worker skills` for the worker's role (see core engine.md WORKER
+SKILLS block) before the task spec in every dispatch/inject payload.
 
 ### WAIT(types, timeout)
 <blocking call if the tool has a daemon; otherwise the polling strategy: re-read the file ledger +
@@ -92,7 +94,9 @@ These come from the core and your adapter must NOT weaken them:
 Every mission `SKILL.md` must include:
 
 - `## Required skills` — core + one adapter; pointer to `references/composition.md`
-- `## Optional skills` — table with Activate when / If unavailable columns
-- `## Deferred missions` — table routing out-of-scope work; readiness doc **Recommended next missions**
+- `## Optional skills` — coordinator-only; Activate when / If unavailable
+- `## Worker skills` — per role (@grok builder, etc.); injected via DISPATCH
+- `## Deferred missions` — table routing out-of-scope work
+- T-FINAL readiness doc: **`fleet-outcome` YAML** first ([fleet-outcome.md](../autonomous-fleet-core/references/fleet-outcome.md)), then **Recommended next missions**
 
-Do not author a second mission loader — sequential chains belong in `fleet-program`.
+Do not author a second mission loader — chains and conditional DAGs belong in `fleet-program`.

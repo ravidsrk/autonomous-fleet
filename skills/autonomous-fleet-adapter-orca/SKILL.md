@@ -51,9 +51,11 @@ branch at current HEAD if absent).
 - "Ready" = `tui-idle`. NEVER DISPATCH before tui-idle (an inject on a non-idle terminal is lost).
 
 ### DISPATCH(task, handle)
-`orca orchestration dispatch --task <taskId> --to <handle> --inject --json`
-(`--inject` injects the task spec + preamble so the worker can report worker_done). Create the
-task first: `orca orchestration task-create --spec "<spec>" [--deps <json>] --json`.
+Build the inject payload: (1) if the mission's `## Worker skills` lists skills for this worker's
+role, prepend **Worker skills:** "Activate and follow: `<names>`" per core engine.md; (2) the task
+spec and completion contract. `orca orchestration dispatch --task <taskId> --to <handle> --inject
+--json` (`--inject` sends the full payload so the worker can report worker_done). Create the task
+first: `orca orchestration task-create --spec "<spec>" [--deps <json>] --json`.
 
 ### WAIT(types, timeout)
 `orca orchestration check --wait --types worker_done,escalation,decision_gate --timeout-ms <n>

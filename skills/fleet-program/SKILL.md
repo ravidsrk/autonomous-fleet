@@ -1,47 +1,44 @@
 ---
 name: fleet-program
 description: >-
-  Run an ordered chain of autonomous-fleet missions on one repo — one mission at a time, with
-  handoffs via readiness docs and DECISIONS.md. Use when the user wants multiple missions in
-  sequence ("make this repo healthy", "docs then tests then cleanup", "audit then fix then
-  sync docs"), not a single mission. Loads autonomous-fleet-core plus one adapter; executes
-  each mission skill to DONE before starting the next. Does not run missions in parallel on
-  the same repo. Install from github.com/ravidsrk/autonomous-fleet. Trigger on: "fleet
-  program", "run mission chain", "doc-sync then test-coverage", "repo health program",
-  "sequential fleet missions".
+  Orchestrate autonomous-fleet missions on one repo — sequential chains and conditional
+  campaign DAGs with if-outcome edges. Reads fleet-outcome YAML from each mission's readiness
+  doc to branch (e.g. audit then tests if no P0s, else dependency-update). One mission active
+  at a time per repo; cross-repo parallel via separate sessions. Does not run parallel missions
+  on the same repo. Use for "repo health program", "audit then test", "docs then bugs if
+  needed", mission chains, fleet campaign. Install from github.com/ravidsrk/autonomous-fleet.
+  Trigger on: "fleet program", "fleet campaign", "mission chain", "if P0 then", "repo health",
+  "conditional fleet run".
 license: MIT
 compatibility: Requires git and gh CLI; install mission skills via npx skills
 metadata:
   author: "ravidsrk"
-  version: "1.0.0"
+  version: "1.1.0"
   fleet-component: "program"
 ---
 
 # fleet-program
 
-Meta-skill for **sequential multi-mission runs** on a single repository. You are the PROGRAM
-COORDINATOR: pick or accept a mission chain, run each mission to completion, hand off state, then
-start the next. You do not merge mission instructions — each mission runs as its own full run.
+Meta-skill for **mission-level orchestration**: linear programs and **conditional campaign DAGs**.
+You are the PROGRAM COORDINATOR — the engine, one level up for missions. Same discipline: file
+ledger, frozen outcomes, no-stop autonomy, one active mission per repo.
 
 ## Required skills
 
-Before executing, activate:
-
-1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md`
+1. `autonomous-fleet-core` — `references/engine.md`, `references/composition.md`,
+   `references/fleet-outcome.md`
 2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`,
    or `autonomous-fleet-adapter-grok`
 
-Install each mission in the program via `npx skills add` before starting (or `--skill '*'`).
+Install missions via `npx skills add` before starting.
 
-Do **not** load multiple mission skills at once. Load **only** the active mission's skill while
-that mission runs.
+Load **only** the active mission's skill while that mission runs — never two mission skills at once.
 
 ## Optional skills
 
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
-| `autonomous-fleet` | User intent is vague; need mission catalog | Pick program from [references/programs.md](references/programs.md) |
-| Mission-specific optionals | Active mission's `## Optional skills` table | Follow that mission's fallback column |
+| `autonomous-fleet` | Vague intent; need catalog | Pick preset from [references/programs.md](references/programs.md) or [references/campaigns.md](references/campaigns.md) |
 
 ## Program ledger
 
@@ -50,69 +47,97 @@ that mission runs.
 ```markdown
 # Fleet program progress
 
-PROGRAM: <id>
-PHASE: <PLANNING | MISSION-n | DONE>
+MODE: <linear | campaign | parallel_repos>
+CAMPAIGN: <id>
+PHASE: <PLANNING | NODE-<id> | DONE | BLOCKED>
 ACTIVE_MISSION: <mission-id | none>
+CURRENT_NODE: <node-id | none>
+BASE: <branch>
 
-## Mission queue
+## Campaign spec
+(paste YAML from campaigns.md or user)
 
-| # | Mission | Status | BASE used | Readiness doc |
-|---|---------|--------|-----------|---------------|
-| 1 | doc-sync | PENDING | | |
-| 2 | test-coverage | PENDING | | |
+## Last fleet-outcome
+(paste parsed summary from last readiness doc)
+
+## Node status
+| Node | Mission | Status | Readiness doc |
+|------|---------|--------|---------------|
 
 ## Handoff notes
-
-(carry deferrals from prior readiness docs into next mission's T-AUDIT/T-MAP)
 ```
 
-Status values: `PENDING` | `RUNNING` | `DONE` | `SKIPPED` (with reasoning in DECISIONS.md).
+Status per node: `PENDING` | `RUNNING` | `DONE` | `SKIPPED`.
 
-## How to plan a program
+## Choose mode
 
-1. **SELF-ORIENT** per core engine (REPO_ROOT, MAINTAINER, BRANCH_PREFIX, default branch).
-2. Parse user intent or select a preset from [references/programs.md](references/programs.md).
-3. Write the mission queue to the program ledger; record program id and rationale in
-   `docs/DECISIONS.md`.
-4. For each mission in order — **only one active at a time**:
+| Mode | When | Spec |
+|------|------|------|
+| **linear** | Ordered list, no branches | [programs.md](references/programs.md) table → implicit `always` edges |
+| **campaign** | `if` branches on outcomes | [campaigns.md](references/campaigns.md) DAG YAML |
+| **parallel_repos** | Same mission on different repos | campaigns.md `parallel_repos` — **separate sessions**, aggregate at end |
 
-### Per-mission loop
+Default vague intent → `repo-health` campaign (linear DAG).
 
-1. Set `ACTIVE_MISSION` and `PHASE: MISSION-n` in the program ledger.
-2. Activate **only** that mission's skill (+ core + adapter already loaded).
-3. **BASE branch:** first mission → new branch off default branch at HEAD
-   (`<BRANCH_PREFIX><program-slug>-base` e.g. `fleet/repo-health-base`). Later missions → same
-   BASE if prior mission's work merged there; if prior mission promoted to default branch, new
-   BASE off updated default at HEAD (record in DECISIONS.md).
-4. Run the mission to its DONE condition (mission ledger + readiness doc exist).
-5. Read prior mission readiness **Recommended next missions** — if the queue already covers them,
-   note in handoff; if user added ad-hoc missions, append to queue with reasoning.
-6. Mark mission `DONE` in program ledger; copy readiness path and PR summary into handoff notes.
-7. Proceed to next mission or `PHASE: DONE`.
+## Planning
 
-## Conditional steps
+1. **SELF-ORIENT** (core engine).
+2. Parse user request → linear queue OR campaign YAML OR `parallel_repos`.
+3. Write spec + ledger; record in DECISIONS.md.
+4. **BASE:** `<BRANCH_PREFIX><campaign-id>-base` off default branch at HEAD (first node).
 
-| Condition | Action |
-|-----------|--------|
-| User named explicit chain | Use that order |
-| User said "healthy repo" / similar | Default `repo-health` preset (programs.md) |
-| Prior readiness recommends a mission not in queue | Append if user intent implies it; else record in FINAL report only |
-| Mission HARD EXTERNAL DEPENDENCY blocks | Pause program at that mission; single allowed user gate per mission rules |
-| Mission fails circuit-breaker 3× | Mark `SKIPPED`, record in DECISIONS.md; ask in FINAL report whether to continue chain |
+## Per-mission loop (single repo)
+
+1. Set `CURRENT_NODE`, `ACTIVE_MISSION`, `PHASE: NODE-<id>`.
+2. Activate **only** that mission skill.
+3. Run mission to DONE (mission ledger + readiness with **`fleet-outcome` YAML**).
+4. **Parse outcome:** read YAML frontmatter from readiness doc per
+   [fleet-outcome.md](../autonomous-fleet-core/references/fleet-outcome.md). Store in **Last
+   fleet-outcome**. If missing, extract metrics from readiness prose and log a warning in
+   DECISIONS.md.
+5. Mark node `DONE`; update handoff (deferrals → next mission discovery tasks).
+6. **Pick next node:**
+   - **Linear:** next row in queue.
+   - **Campaign:** from `edges[current_node]`, evaluate each `if` **in order**; first true edge
+     wins. Expressions use `fleet-outcome.metrics.*`, top-level fields, and `always`. See
+     [campaigns.md](references/campaigns.md).
+   - No matching edge → `PHASE: DONE`.
+7. If `fleet-outcome.status == blocked` → `PHASE: BLOCKED`; record; stop chain unless mission
+   rules allow retry.
+
+## Conditional expression evaluator
+
+| `if` value | True when |
+|------------|-----------|
+| `always` | Always |
+| `p0_open > 0` | `metrics.p0_open` compares (same for any metric key) |
+| `p0_open == 0` | Equality |
+| `code_bug_findings > 0` | From doc-sync metrics |
+| `status == blocked` | Top-level status |
+| `deferred_missions contains bug-batch` | Any deferral id matches |
+
+Unknown expression → log in DECISIONS.md, skip edge (do not guess).
 
 ## Parallelism
 
-**Never** run two missions concurrently on the same repo. Within each mission, use that mission's
-parallel task rules (independent placements, hot-file serialization).
+| Case | Rule |
+|------|------|
+| Same repo, two missions | **Forbidden** — no shared lock manager |
+| Tasks inside active mission | Mission hot-file + placement rules |
+| Different repos | `parallel_repos`: one coordinator loop per repo OR user runs separate sessions |
 
-## DONE (program)
+## Autonomy (program level)
 
-All queued missions `DONE` or explicitly `SKIPPED`, `PHASE: DONE`, program ledger complete. Send
-one FINAL report: per-mission summary, readiness doc links, combined **Recommended next missions**
-from the last mission, any SKIPPED items.
+Same as core: do not stop between missions; do not ask "continue to next mission?"; circuit-breaker
+on a node → `SKIPPED` + DECISIONS.md, then evaluate if campaign can proceed.
+
+## DONE
+
+All nodes `DONE` or `SKIPPED`, or `PHASE: DONE` / `BLOCKED` with reason. FINAL report: campaign
+spec, per-node outcomes (fleet-outcome summaries), readiness links, combined deferrals.
 
 ## Safe defaults
 
-- **First program on a repo:** `repo-health` (doc-sync → test-coverage → cleanup).
-- **After audit:** `secure-ship` (adversarial-review-and-fix → dependency-update → doc-sync).
-- Prefer Tier 1 missions early in a chain; Tier 3 only when user intent is explicit.
+- First-time repo: `repo-health` campaign.
+- Security intent: `secure-ship` or `audit-branch` (conditional).
+- Tier 3 missions only when user explicitly requests.

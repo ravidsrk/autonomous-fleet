@@ -14,15 +14,28 @@ missions.
 **Do not** activate two mission skills in the same coordinator session. Conflicting ledgers,
 BASE branches, and DONE conditions will corrupt the run.
 
-## Optional skills
+## Three skill attachment types
 
-Missions may list optional third-party or auxiliary skills in `## Optional skills`. Rules:
+| Section | Who loads it | Purpose |
+|---------|--------------|---------|
+| `## Required skills` | Coordinator | core + adapter (always) |
+| `## Optional skills` | Coordinator | Orchestration-time extras (MCP auth, validate tooling) |
+| `## Worker skills` | **Workers** via DISPATCH preamble | Domain capability (frontend-design, SEO, etc.) |
+
+### Optional skills (coordinator)
 
 - Activate **only** when the mission's trigger column applies.
 - Do **not** load unrelated catalog skills (token noise, conflicting instructions).
-- Prefer repo scripts over optional skills when both exist (e.g. `./scripts/validate-skills.sh`
-  over `skill-creator` for a one-off validate).
+- Prefer repo scripts over optional skills when both exist.
 - At most 1–2 optional skills active at once unless the mission explicitly allows more.
+
+### Worker skills (builders/reviewers)
+
+- Listed per pipeline role in the mission's `## Worker skills` table.
+- Coordinator copies the list into each worker task spec (engine WORKER SKILLS block).
+- Workers activate those skills in **their** session — not in the coordinator context.
+- Makes composition intentional: the mission guarantees `frontend-design`, not "hope the worker
+  finds it."
 
 ## Deferred missions (same run)
 
@@ -44,15 +57,16 @@ mission skill mid-session.
 | Missions on same repo | No | One BASE, one ledger, one coordinator |
 | Missions on different repos | Yes | Independent runs |
 
-## Multi-mission programs
+## Multi-mission programs and campaigns
 
-Use `fleet-program` when the user wants an ordered chain (e.g. doc-sync → test-coverage →
-cleanup). The program skill:
+Use `fleet-program` for sequential chains **and** conditional DAGs (campaigns). The program skill:
 
-- Runs **one mission at a time** to completion (DONE + readiness doc).
+- Runs **one mission at a time** per repo to completion (DONE + readiness doc).
 - Uses `docs/fleet-program-progress.md` as the program ledger.
-- Sets the next mission's BASE from the previous mission's final merged state (see fleet-program
-  skill).
+- Reads **`fleet-outcome`** YAML from each readiness doc to evaluate `if` edges ([fleet-outcome.md](fleet-outcome.md), [campaigns.md](../../fleet-program/references/campaigns.md)).
+- Sets the next mission's BASE from the previous mission's final merged state.
+- **Never** parallelizes two missions on the same repo (cross-mission file locking is out of scope).
+- **Cross-repo parallel:** separate sessions per repo ([campaigns.md](../../fleet-program/references/campaigns.md)).
 
 ## Progressive disclosure (agentskills.io)
 
@@ -64,11 +78,22 @@ cleanup). The program skill:
 
 Keep mission `SKILL.md` under ~500 lines; move bulky reference material to `references/`.
 
-## Readiness doc: Recommended next missions
+## Readiness doc: fleet-outcome + Recommended next missions
 
-Every mission's final readiness doc must include:
+Every mission's final readiness doc must:
+
+1. **Start with** a YAML `fleet-outcome` frontmatter block ([fleet-outcome.md](fleet-outcome.md)).
+2. Include markdown **Recommended next missions** (human-readable; mirror `deferred_missions` in
+   the YAML).
 
 ```markdown
+---
+fleet-outcome:
+  mission: doc-sync
+  status: done
+  ...
+---
+
 ## Recommended next missions
 
 | Mission | Reason | Blocker |
@@ -76,4 +101,4 @@ Every mission's final readiness doc must include:
 | `bug-batch` | Code bug found in T-AUDIT | none |
 ```
 
-Empty table is fine when nothing to defer.
+Empty deferral list is fine when nothing to route.

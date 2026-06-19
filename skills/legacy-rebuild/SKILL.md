@@ -38,6 +38,12 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 |-------|---------------|----------------|
 | — | — | Run `test-coverage` as prior program step if floor is undertested |
 
+## Worker skills
+
+| Role | Skills | If unavailable |
+|------|--------|----------------|
+| @grok (rebuild units) | `frontend-design` if UI; else stack skill from manifests | Legacy floor + target architecture docs |
+
 ## Deferred missions
 
 Record in final readiness doc under **Recommended next missions** and in DECISIONS.md.
@@ -105,7 +111,8 @@ via PR#n`).
 - **T-FINAL [@claude]** — build green (on the NEW build system), lint clean, full suite green. The
   app is fully on the target architecture (no flagged anti-patterns remain); EVERY behaviour in
   docs/legacy-floor.md still works (zero regressions); no dead code/placeholders/console errors;
-  all worktrees cleaned. Output docs/rebuild-readiness.md (architecture-conformance summary,
+  all worktrees cleaned. Output `docs/rebuild-readiness.md` with **`fleet-outcome` YAML**
+  (`units_open`, `floor_preserved`), architecture-conformance summary,
   legacy-floor parity matrix complete, stack adopted, residual risks, all PRs). Ship as the final
   PR.
 

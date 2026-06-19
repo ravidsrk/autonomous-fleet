@@ -38,9 +38,17 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 |-------|---------------|----------------|
 | `gstack-cso` | User asked for security-audit depth beyond mission defaults | Proceed with mission skeptic + review gate only |
 
+## Worker skills
+
+| Role | Skills | If unavailable |
+|------|--------|----------------|
+| @claude (Phase 0 audit, skeptic) | `gstack-cso` when security depth requested | Code-only audit per mission |
+| @grok (fix loop) | — | In-tree primitives per frozen review |
+| @codex (review) | — | Mission review gate only |
+
 ## Deferred missions
 
-Record in `docs/adversarial-review-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+Record in `docs/arch-build-readiness.md` under **Recommended next missions** and in DECISIONS.md.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -107,9 +115,10 @@ list + recorded decisions.
   in-flight task per hot file. Each fix runs the engine's PR-per-task pipeline (CODE→PR→REVIEW→
   FIX→SHIP conflict-aware). Reviewer independently re-demonstrates each finding's acceptance.
 - **T-FINAL [@grok]** — build green, lint clean, full suite green incl. added tests; every
-  confirmed finding CLOSED or CODE_CLOSED(+OPS recorded). Output docs/arch-build-readiness.md
-  (each finding's status + closing PR, the OPS/VERIFY-AT-SCALE queue tagged with what it unblocks,
-  recorded decisions, downstream human gates marked NOT done, all PRs). Ship as the final PR.
+  confirmed finding CLOSED or CODE_CLOSED(+OPS recorded). Output `docs/arch-build-readiness.md`
+  starting with **`fleet-outcome` YAML** (`p0_open`, `p1_open`, `findings_open`, `ops_queue_count`;
+  see fleet-outcome.md), then finding status, OPS queue, **Recommended next missions**, all PRs.
+  Ship as the final PR.
 
 ## DONE
 Review frozen; every confirmed finding CLOSED or CODE_CLOSED(+OPS recorded); every fix task
