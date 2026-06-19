@@ -17,7 +17,7 @@ Engineering on `fleet/composition-e2e-base`. DRIFT INDEX D1–D5 closed.
 
 ## Verified
 
-- `./scripts/validate-skills.sh` — 18/18 pass (with skill-creator installed)
+- `./scripts/validate-skills.sh` — 19/19 pass (with skill-creator installed)
 - `./scripts/validate-fleet-outcome.sh` — passes on this file
 - README layout matches `scripts/` and `tests/`
 

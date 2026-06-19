@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Orca orchestration CLI, git, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.0.0"
+  version: "1.1.0"
   fleet-component: "adapter"
 ---
 
@@ -106,6 +106,16 @@ of truth).
   kill a live worker.
 - NEVER `orca orchestration reset` during a run. Orca circuit-breaks a dispatch after 3 consecutive
   failures and marks the task failed — treat as a reassign signal, not a stop.
+
+## RUNTIME GOALS (Orca — ledger-only)
+
+Orca has no `/goal` API. Primitives 9–12 map to the file ledger only:
+
+- **SET_GOAL:** Write `## Runtime goal` + `CONDITION:` in the program/mission ledger (documentation
+  for humans and handoff). The coordinator `check --wait` loop IS the enforcement harness.
+- **UPDATE_GOAL:** Append progress to ledger `LAST_UPDATE`; optional `send` heartbeat to coordinator.
+- **GOAL_COMPLETE:** `PHASE: DONE` in ledger + FINAL report after TERMINATE checks.
+- **GOAL_BLOCKED:** `escalation` message + `fleet-outcome.status: blocked`.
 
 ## ORCA NOTES
 - Coordinator mode: manual loop (NOT `orchestration run`) to keep file-ledger boolean-gate control.

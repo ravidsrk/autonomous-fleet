@@ -26,7 +26,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -107,6 +107,18 @@ MERGED=<t/f>`. Plus the DIVERGENCE CHECKLIST D1..Dn, each `OPEN | CLOSED via PR#
   structure; fully responsive; no placeholders/dead links/console errors. Output
   `docs/landing-readiness.md` with **`fleet-outcome` YAML** (`divergences_open`), D-item summary,
   **Recommended next missions**, all PRs. Ship as the final PR.
+
+## Runtime goal
+
+After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
+`## Runtime goal` in `docs/landing-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+
+```
+Mission landing-page-convergence DONE: docs/landing-progress.md all task flags true,
+docs/landing-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
+```
+
 
 ## DONE
 Every D-item `CLOSED`, every task `BUILT=t PR_OPEN=t REVIEWED=t MERGED=t`, page matches the design

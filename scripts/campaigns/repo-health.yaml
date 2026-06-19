@@ -1,0 +1,12 @@
+campaign: repo-health
+repo: single
+base: fleet/repo-health-base
+start: docs
+nodes:
+  docs: { mission: doc-sync }
+  tests: { mission: test-coverage }
+  tidy: { mission: cleanup }
+edges:
+  docs: [{ to: tests, if: always }]
+  tests: [{ to: tidy, if: always }]
+  tidy: []

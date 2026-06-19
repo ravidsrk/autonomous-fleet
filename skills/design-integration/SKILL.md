@@ -26,7 +26,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -111,6 +111,18 @@ SHIPPED=<t/f>`. Plus a PARITY MATRIX: every item classified REDESIGN | GAP-FILL 
   regressions); no half-migrated screens/placeholders/console errors. Output
   `docs/parity-readiness.md` with **`fleet-outcome` YAML** (`parity_items_open`, `regressions`),
   matrix summary, **Recommended next missions**, all PRs. Ship as the final PR.
+
+## Runtime goal
+
+After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
+`## Runtime goal` in `docs/parity-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+
+```
+Mission design-integration DONE: docs/parity-progress.md all task flags true,
+docs/parity-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
+```
+
 
 ## DONE
 Every PARITY-MATRIX item `DONE`, every task `PLANNED=t BUILT=t REVIEWED=t SHIPPED=t`, product

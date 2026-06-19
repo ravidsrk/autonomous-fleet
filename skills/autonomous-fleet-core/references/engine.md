@@ -19,9 +19,16 @@ Three things compose every run:
    question, and the coordinator's answer.
 7. `OPEN_PR` / `MERGE_PR(conflict-aware)` / `CLEANUP(worktree)` → ship primitives.
 8. `SYNC_TASK_STATE(task, status)` → keep the tool's native task view aligned with the ledger.
-The adapter documents the exact command for each. If the adapter offers a primitive in multiple
-syntaxes across tool versions, it says "try X, fall back to Y." This core never hard-codes a
-tool command — it calls the primitive by name and lets the adapter resolve it.
+9. `SET_GOAL(condition)` → bind the host's native goal/loop API to mission or campaign DONE
+   (paraphrase ledger + readiness gates). Record under `## Runtime goal` in the ledger. See
+   `references/runtime-goals.md`.
+10. `UPDATE_GOAL(message)` → progress ping; does not complete the goal.
+11. `GOAL_COMPLETE(summary)` → end native goal mode ONLY after the same checks as TERMINATE below.
+12. `GOAL_BLOCKED(reason)` → pause goal; maps to `fleet-outcome.status: blocked`.
+Primitives 9–12 are optional when the host has no goal API (Orca: ledger + `check --wait` loop
+is sufficient). The adapter documents the exact command for each. If the adapter offers a
+primitive in multiple syntaxes across tool versions, it says "try X, fall back to Y." This core
+never hard-codes a tool command — it calls the primitive by name and lets the adapter resolve it.
 
 ═══════════════════════════════════════════════════════════
 SELF-ORIENTATION — run FIRST, before any task. No placeholders; discover the target.
@@ -79,6 +86,13 @@ instinct is a BUG. Suppress it mechanically:
   IN THE SAME TURN.
 - TERMINATE ONLY when the mission's DONE condition is met in the file AND the final readiness doc
   exists. Then send the single FINAL report.
+- RUNTIME GOAL (when adapter supports primitives 9–12): after SELF-ORIENTATION and ledger init,
+  SET_GOAL with a condition that paraphrases the mission DONE gates (must reference `docs/` ledger
+  and readiness paths). UPDATE_GOAL at major phase transitions. GOAL_COMPLETE only after TERMINATE
+  checks pass (re-read ledger, readiness exists, `./scripts/validate-fleet-outcome.sh` passes when
+  available). Never GOAL_COMPLETE on belief — files are authoritative; the native goal is the turn-
+  continuation harness. GOAL_BLOCKED when the mission names a hard external dependency or circuit-
+  breaker trips with no recovery path.
 - NEVER ask "shall I continue?", "proceed?", "keep waiting?", "merge this?". Always YES; act.
 - Worker blocking question → arrives via the adapter's ASK channel; answer with REPLY from the
   mission's DECISION DEFAULTS, keep waiting. Never relay a worker's question to the user.

@@ -17,6 +17,10 @@ runnable tooling).
 We did **not** run `bug-batch` because doc-sync reported `code_bug_findings: 0` — the first
 matching edge after the false `> 0` check is `always` → `tests`.
 
+Runtime goal binding (native `/goal` + file ledger) is documented in
+[composition-e2e-goals.md](composition-e2e-goals.md) and
+[runtime-goals.md](../skills/autonomous-fleet-core/references/runtime-goals.md).
+
 ## Architecture: three layers of “orchestration”
 
 ```
@@ -86,8 +90,14 @@ Not executed. Edge `code_bug_findings > 0` evaluated **false** via:
 ## Explicit non-goals (unchanged)
 
 - Parallel missions on one repo
-- Full autonomous campaign runner daemon (future: `run-campaign.sh` orchestrating git/gh)
+- Fully unattended multi-node execution without agent cooperation (partial: `run-campaign.sh`)
 
 ## Campaign complete
 
 `PHASE: DONE` when both readiness docs validate and pytest passes.
+
+## Follow-up (operational proof)
+
+- `scripts/run-campaign.sh` — mechanical node driver with `--dry-run`
+- [external-dogfood/README.md](external-dogfood/README.md) — repo-health on github/gemoji
+- Mission skills include `## Runtime goal` + `mission_registry.py` for artifact paths
