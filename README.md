@@ -28,6 +28,7 @@ npx skills add https://github.com/anthropics/skills --skill skill-creator -y -p
 
 ```bash
 npx skills add https://github.com/ravidsrk/autonomous-fleet \
+  --skill setup-autonomous-fleet \
   --skill autonomous-fleet \
   --skill fleet-program \
   --skill autonomous-fleet-core \
@@ -35,6 +36,8 @@ npx skills add https://github.com/ravidsrk/autonomous-fleet \
   --skill doc-sync \
   -y
 ```
+
+Then run **`/setup-autonomous-fleet`** once in your agent (adapter, branch prefix, default campaign bundle).
 
 **All skills:**
 
@@ -63,7 +66,10 @@ Requires step 1 (`skill-creator` installed to `.agents/skills/skill-creator/`):
 ./scripts/validate-all.sh             # skills + fleet-outcome + goals + pytest (recommended)
 ./scripts/validate-goal-condition.sh --scan-docs
 ./scripts/run-campaign.sh grok --preset repo-health --dry-run
+./scripts/run-campaign.sh grok --preset ship-with-proof --dry-run
+./scripts/run-campaign.sh grok --campaign docs/external-dogfood/ship-with-proof-campaign.yaml --repo /path/to/target --dry-run
 ./scripts/run-mission-headless.sh grok doc-sync --max-turns 50
+# Headless grok requires CLI auth; use interactive agent + /goal when unavailable
 # or individually:
 ./scripts/validate-skills.sh          # SKILL.md packages (agentskills.io)
 ./scripts/validate-fleet-outcome.sh   # readiness doc fleet-outcome YAML
@@ -107,12 +113,14 @@ skills via each mission's `## Worker skills` table (injected on dispatch).
 autonomous-fleet/
 ├── skills/                              # publishable skills (npx skills discovers these)
 │   ├── autonomous-fleet/                # umbrella entry-point (routes to mission + core + adapter)
-│   ├── fleet-program/                   # sequential multi-mission chains
+│   ├── fleet-program/                   # sequential + conditional campaign DAGs
+│   ├── setup-autonomous-fleet/          # per-repo config (adapter, prefix, bundle)
 │   ├── autonomous-fleet-core/
 │   │   ├── SKILL.md                     # entry point
 │   │   └── references/
 │   │       ├── engine.md                # full engine spec
 │   │       ├── composition.md           # skill loading rules
+│   │       ├── community-skills.md      # gstack / agent-skills / mattpocock hooks
 │   │       ├── fleet-outcome.md         # machine-readable readiness YAML
 │   │       └── runtime-goals.md         # /goal + ledger binding
 │   ├── autonomous-fleet-adapter-{orca,claude-code,grok,codex,template}/
@@ -127,6 +135,10 @@ autonomous-fleet/
 │   ├── landing-page-convergence/
 │   ├── legacy-rebuild/                  # Tier 3 missions
 │   └── take-product-to-completion/
+├── docs/
+│   ├── external-dogfood/                # gemoji repo-health + ship-with-proof evidence
+│   ├── research-community-skills.md
+│   └── doc-sync-audit.md                # latest drift index
 ├── .agents/skills/                      # installed skill copies (gitignored; from npx skills add)
 ├── scripts/
 │   ├── validate-all.sh
@@ -157,6 +169,7 @@ Worker / Deferred sections; readiness docs lead with `fleet-outcome` YAML.
 |-------|------|-------|
 | `autonomous-fleet` | Umbrella | Entry point — routes to mission or program + core + adapter |
 | `fleet-program` | Program | Mission chains + conditional campaign DAGs |
+| `setup-autonomous-fleet` | Setup | First run on a repo — adapter, prefix, default bundle |
 | `autonomous-fleet-core` | Engine | Required for every run |
 | `autonomous-fleet-adapter-orca` | Adapter | Orca orchestration |
 | `autonomous-fleet-adapter-claude-code` | Adapter | Claude Code |
@@ -175,7 +188,18 @@ Worker / Deferred sections; readiness docs lead with `fleet-outcome` YAML.
 | `legacy-rebuild` | Mission · Tier 3 | |
 | `take-product-to-completion` | Mission · Tier 3 | |
 
-List all: `npx skills add https://github.com/ravidsrk/autonomous-fleet --list`
+**20 skills** under `skills/`. List all: `npx skills add https://github.com/ravidsrk/autonomous-fleet --list`
+
+### Campaign presets (`scripts/campaigns/`)
+
+| Preset | Nodes |
+|--------|-------|
+| `repo-health` | doc-sync → test-coverage → cleanup |
+| `ship-with-proof` | adversarial-review-and-fix → test-coverage → doc-sync |
+| `align-then-ship` | take-product-to-completion (+ pre-gate) |
+| `quality-gate` | adversarial-review-and-fix → test-coverage |
+
+Community skill hooks: `skills/autonomous-fleet-core/references/community-skills.md`.
 
 ---
 
