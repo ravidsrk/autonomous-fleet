@@ -365,6 +365,9 @@ Record in readiness doc and DECISIONS.md; do not start another mission in the sa
 | `fleet-outcome` YAML on readiness docs | Shipped (`references/fleet-outcome.md`) |
 | Conditional campaign DAGs | Shipped (`fleet-program/references/campaigns.md`) |
 | Parallel same-repo missions | Explicitly not built |
+| CI (`validate-all.sh`) | Shipped (`.github/workflows/ci.yml`) |
+| `skills-lock.json` (18 fleet skills) | Refreshed |
+| Stale `doc-sync-audit.md` | Annotated superseded |
 
 ---
 
