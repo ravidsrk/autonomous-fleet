@@ -1,0 +1,14 @@
+# External dogfood: repo-health on a small OSS clone.
+# Target: https://github.com/github/gemoji (small Ruby gem, ~2k LOC)
+campaign: external-gemoji-repo-health
+repo: single
+base: fleet/gemoji-repo-health-base
+start: docs
+nodes:
+  docs: { mission: doc-sync }
+  tests: { mission: test-coverage }
+  tidy: { mission: cleanup }
+edges:
+  docs: [{ to: tests, if: always }]
+  tests: [{ to: tidy, if: always }]
+  tidy: []

@@ -26,7 +26,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -99,6 +99,18 @@ SKIPPED (reason)`.
   with **`fleet-outcome` YAML** (`bugs_open`, `bugs_skipped`), bug
   index resolution, the reproducing test per fix, skips/needs-info, all PRs). Ship as the final
   PR.
+
+## Runtime goal
+
+After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
+`## Runtime goal` in `docs/bug-batch-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+
+```
+Mission bug-batch DONE: docs/bug-batch-progress.md all task flags true,
+docs/bug-batch-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
+```
+
 
 ## DONE
 Every BUG-INDEX item `FIXED` (with its reproducing test) or explicitly `SKIPPED`/`NEEDS-INFO`,

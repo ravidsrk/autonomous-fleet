@@ -74,6 +74,10 @@ onto BASE, resolve, re-test green, re-review if logic changed, then merge with a
 <how the tool's native task view is kept aligned with the file ledger — or a note that the ledger +
 your tool's todo mechanism together are the task view.>
 
+### SET_GOAL / UPDATE_GOAL / GOAL_COMPLETE / GOAL_BLOCKED (if host supports goal mode)
+<how your runtime binds native goal APIs to ledger DONE. See core `references/runtime-goals.md`.
+If no goal API (daemon coordinator like Orca), document ledger-only mapping.>
+
 ## DIAGNOSTICS
 <how to diagnose a worker that finished without reporting; how the coordinator survives its own
 context limit via the CONTEXT HANDOFF block in the ledger.>

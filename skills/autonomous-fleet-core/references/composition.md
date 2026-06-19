@@ -8,7 +8,7 @@ missions.
 | Layer | Count | Skills |
 |-------|-------|--------|
 | Engine | 1 | `autonomous-fleet-core` (+ `references/engine.md` when coordinating) |
-| Adapter | 1 | `autonomous-fleet-adapter-{orca,claude-code,grok}` |
+| Adapter | 1 | `autonomous-fleet-adapter-{orca,claude-code,grok,codex}` |
 | Mission | 1 | Exactly one mission skill (`doc-sync`, `bug-batch`, …) |
 
 **Do not** activate two mission skills in the same coordinator session. Conflicting ledgers,
@@ -56,6 +56,17 @@ mission skill mid-session.
 | Tasks inside one mission | Yes | `PLACE(independent)` + hot-file rule (see engine.md) |
 | Missions on same repo | No | One BASE, one ledger, one coordinator |
 | Missions on different repos | Yes | Independent runs |
+
+## Runtime goals (native loop binding)
+
+Hosts with goal APIs (Grok `/goal` + `update_goal`, Claude `/goal`, Codex `/goal`) bind them to
+ledger DONE via primitives 9–12 in `engine.md`. See [runtime-goals.md](runtime-goals.md).
+
+- **File ledger** = authoritative completion (survives compaction).
+- **Native goal** = turn-continuation harness (prevents early stop).
+- `GOAL_COMPLETE` only after readiness + `validate-fleet-outcome.sh`.
+- Orca: ledger + `check --wait` loop only (no `/goal`).
+- Headless CI: `scripts/run-mission-headless.sh`.
 
 ## Multi-mission programs and campaigns
 

@@ -9,7 +9,8 @@ Published as [Agent Skills](https://agentskills.io/) packages — install with [
 
 **Repository:** https://github.com/ravidsrk/autonomous-fleet
 
-CI runs `./scripts/validate-all.sh` on every push/PR to `main` (skills, fleet-outcome, pytest).
+CI runs `./scripts/validate-all.sh` on every push/PR to `main` (skills, fleet-outcome, goal
+conditions, pytest).
 
 ---
 
@@ -59,7 +60,10 @@ The `.agents/` directory is gitignored — it is created when you run `npx skill
 Requires step 1 (`skill-creator` installed to `.agents/skills/skill-creator/`):
 
 ```bash
-./scripts/validate-all.sh             # skills + fleet-outcome + pytest (recommended)
+./scripts/validate-all.sh             # skills + fleet-outcome + goals + pytest (recommended)
+./scripts/validate-goal-condition.sh --scan-docs
+./scripts/run-campaign.sh grok --preset repo-health --dry-run
+./scripts/run-mission-headless.sh grok doc-sync --max-turns 50
 # or individually:
 ./scripts/validate-skills.sh          # SKILL.md packages (agentskills.io)
 ./scripts/validate-fleet-outcome.sh   # readiness doc fleet-outcome YAML
@@ -109,8 +113,9 @@ autonomous-fleet/
 │   │   └── references/
 │   │       ├── engine.md                # full engine spec
 │   │       ├── composition.md           # skill loading rules
-│   │       └── fleet-outcome.md         # machine-readable readiness YAML
-│   ├── autonomous-fleet-adapter-{orca,claude-code,grok,template}/
+│   │       ├── fleet-outcome.md         # machine-readable readiness YAML
+│   │       └── runtime-goals.md         # /goal + ledger binding
+│   ├── autonomous-fleet-adapter-{orca,claude-code,grok,codex,template}/
 │   ├── doc-sync/                        # Tier 1 missions
 │   ├── test-coverage/
 │   ├── dependency-update/
@@ -127,8 +132,12 @@ autonomous-fleet/
 │   ├── validate-all.sh
 │   ├── validate-skills.sh
 │   ├── validate-fleet-outcome.sh
+│   ├── validate-goal-condition.sh
 │   ├── eval-campaign-edge.sh
 │   ├── eval-campaign-edge.py
+│   ├── run-campaign.sh
+│   ├── run-mission-headless.sh
+│   ├── campaigns/repo-health.yaml
 │   ├── lib/fleet_outcome.py
 │   └── install-skills.sh
 ├── tests/
@@ -151,7 +160,8 @@ Worker / Deferred sections; readiness docs lead with `fleet-outcome` YAML.
 | `autonomous-fleet-core` | Engine | Required for every run |
 | `autonomous-fleet-adapter-orca` | Adapter | Orca orchestration |
 | `autonomous-fleet-adapter-claude-code` | Adapter | Claude Code |
-| `autonomous-fleet-adapter-grok` | Adapter | Grok Build |
+| `autonomous-fleet-adapter-grok` | Adapter | Grok Build (`/goal`, `update_goal`) |
+| `autonomous-fleet-adapter-codex` | Adapter | OpenAI Codex (`/goal`) |
 | `autonomous-fleet-adapter-template` | Guide | Copy to author a new adapter |
 | `doc-sync` | Mission · Tier 1 | Highest merge rate (~0.92) |
 | `test-coverage` | Mission · Tier 1 | |
@@ -194,3 +204,4 @@ Copy `skills/autonomous-fleet-adapter-template/` when adding a new runtime adapt
 - Conflict-aware merges; checkout cleanup on every merge
 - Safety rails: testnet/staging only; merge ≠ deploy
 - File ledger survives compaction and session restarts
+- Runtime goals bind native `/goal` loops to ledger DONE ([runtime-goals.md](skills/autonomous-fleet-core/references/runtime-goals.md))
