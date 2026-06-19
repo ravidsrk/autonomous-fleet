@@ -21,8 +21,31 @@ metadata:
 
 # Mission: landing-page-convergence
 
-Apply the **autonomous-fleet-core** engine on your active adapter (load the core; load your runtime adapter; follow all core machinery) with the
-parameters below.
+## Required skills
+
+Before executing, activate these skills and read their full instructions:
+
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+
+Follow the core and your adapter in full, then apply the mission parameters below.
+
+Do not load a second mission skill in the same run. For chained missions, use `fleet-program`.
+
+## Optional skills
+
+| Skill | Activate when | If unavailable |
+|-------|---------------|----------------|
+| `gstack` / browser QA | Visual before/after on production URL | Screenshot + @codex review only |
+
+## Deferred missions
+
+Record in final readiness doc under **Recommended next missions** and in DECISIONS.md.
+
+| Finding type | Route to |
+|--------------|----------|
+| Whole app must match design | `design-integration` |
+| Copy/positioning strategy undefined | `take-product-to-completion` (boundary pass) |
 
 **Empirical note:** front-end fidelity work (~0.80-0.81 merge) — full review gate. The thing that
 makes it converge rather than drift is a NAMED DIVERGENCE CHECKLIST that is part of the

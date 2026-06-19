@@ -21,8 +21,32 @@ metadata:
 
 # Mission: targeted-migration
 
-Apply the **autonomous-fleet-core** engine on your active adapter (load the core; load your runtime adapter; follow all core machinery) with the
-parameters below.
+## Required skills
+
+Before executing, activate these skills and read their full instructions:
+
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+
+Follow the core and your adapter in full, then apply the mission parameters below.
+
+Do not load a second mission skill in the same run. For chained missions, use `fleet-program` (see `migrate-safe` preset).
+
+## Optional skills
+
+| Skill | Activate when | If unavailable |
+|-------|---------------|----------------|
+| — | — | — |
+
+## Deferred missions
+
+Record in `docs/migration-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+
+| Finding type | Route to |
+|--------------|----------|
+| Full rebuild required (multi-axis) | `legacy-rebuild` |
+| Pre-migration test gap | `test-coverage` (often prior program step) |
+| Migration docs / setup instructions | `doc-sync` |
 
 **Empirical note:** migration work spans refactor/feature territory (~0.80-0.81 merge) — full
 review gate required. The discipline that makes it converge: change ONE axis, hold everything

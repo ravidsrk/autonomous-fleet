@@ -21,8 +21,32 @@ metadata:
 
 # Mission: bug-batch
 
-Apply the **autonomous-fleet-core** engine on your active adapter (load the core; load your runtime adapter; follow all core machinery) with the
-parameters below.
+## Required skills
+
+Before executing, activate these skills and read their full instructions:
+
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+
+Follow the core and your adapter in full, then apply the mission parameters below.
+
+Do not load a second mission skill in the same run. For chained missions, use `fleet-program`.
+
+## Optional skills
+
+| Skill | Activate when | If unavailable |
+|-------|---------------|----------------|
+| — | — | — |
+
+## Deferred missions
+
+Record in `docs/bug-batch-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+
+| Finding type | Route to |
+|--------------|----------|
+| Fix reveals missing feature (not a bug) | `take-product-to-completion` or user-scoped mission |
+| Root cause is architectural | `adversarial-review-and-fix` |
+| Area lacks regression tests | `test-coverage` |
 
 **Empirical note:** bug-fix tasks merge at ~0.82 and are among the two WEAKEST categories,
 because success depends on EXACT (not approximate) code changes and on correctly localizing the

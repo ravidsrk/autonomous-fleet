@@ -86,3 +86,13 @@ These come from the core and your adapter must NOT weaken them:
 - File ledger is the durable source of truth; the coordinator never ends its turn with work
   remaining and never asks the user to continue.
 - One in-flight unit per hot file; parallelize across non-overlapping files; chains ≤3–4 deep.
+
+## Mission authoring (if you add a mission skill)
+
+Every mission `SKILL.md` must include:
+
+- `## Required skills` — core + one adapter; pointer to `references/composition.md`
+- `## Optional skills` — table with Activate when / If unavailable columns
+- `## Deferred missions` — table routing out-of-scope work; readiness doc **Recommended next missions**
+
+Do not author a second mission loader — sequential chains belong in `fleet-program`.
