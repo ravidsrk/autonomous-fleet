@@ -26,7 +26,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -91,6 +91,18 @@ flag, `OPEN | DONE via PR#n`.
   (`advisories_open`, `majors_deferred`), update index done, versions
   before/after, advisories cleared, any deferred majors with reasoning, all PRs). Ship as the
   final PR.
+
+## Runtime goal
+
+After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
+`## Runtime goal` in `docs/dependency-update-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+
+```
+Mission dependency-update DONE: docs/dependency-update-progress.md all task flags true,
+docs/dependency-update-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
+```
+
 
 ## DONE
 Every UPDATE-INDEX item `DONE` (or explicitly deferred with reasoning), every task terminal,

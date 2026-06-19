@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Grok Build with Task tool, git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.0.0"
+  version: "1.1.0"
   fleet-component: "adapter"
 ---
 
@@ -99,6 +99,33 @@ BASE` via Shell. None of these consume anything.
 ### SYNC_TASK_STATE(task, status)
 Update the FILE LEDGER flag for the task. (No external task daemon to sync — the ledger is the
 task view.)
+
+### SET_GOAL(condition) / UPDATE_GOAL / GOAL_COMPLETE / GOAL_BLOCKED
+
+Grok Build exposes goal mode via `/goal` and the `update_goal` tool (requires goal feature enabled).
+
+**SET_GOAL:** At mission or campaign start (after ledger init), run `/goal <condition>` OR instruct
+the user to run it if the tool is unavailable in the session. Write the same condition under
+`## Runtime goal` in the ledger per `runtime-goals.md`. Condition must reference `docs/` ledger
+and readiness paths — not model self-assessment alone.
+
+**UPDATE_GOAL:** Call `update_goal(message: "<phase>: <summary>")` at major transitions (node
+done, wave merged, validation passed). Update `LAST_UPDATE` in the ledger.
+
+**GOAL_COMPLETE:** Only after core TERMINATE checks: re-read ledger, readiness exists,
+`./scripts/validate-fleet-outcome.sh` passes. Then
+`update_goal(completed: true, message: "<final summary>")`. Clear with `/goal clear` if needed.
+
+**GOAL_BLOCKED:** `update_goal(blocked_reason: "<reason>")` when mission hits hard external
+dependency or unrecoverable circuit-breaker. Set `fleet-outcome.status: blocked` in readiness.
+
+**LOOP_POLL (optional):** `/loop <interval> <prompt>` or `scheduler_create` for CI polling —
+not for mission sequencing (use `fleet-program`). `monitor` for streaming test/log events.
+Background shell: `background: true` on `run_terminal_command`; poll with
+`get_command_or_subagent_output`.
+
+**Headless:** `grok -p "<prompt with /goal condition>" --max-turns N --yolo` — see
+`scripts/run-mission-headless.sh`.
 
 ## DIAGNOSTICS
 - A subagent that returned without writing its ledger result: re-read its returned summary; if

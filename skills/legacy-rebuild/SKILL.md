@@ -26,7 +26,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -115,6 +115,18 @@ via PR#n`).
   (`units_open`, `floor_preserved`), architecture-conformance summary,
   legacy-floor parity matrix complete, stack adopted, residual risks, all PRs). Ship as the final
   PR.
+
+## Runtime goal
+
+After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
+`## Runtime goal` in `docs/rebuild-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+
+```
+Mission legacy-rebuild DONE: docs/rebuild-progress.md all task flags true,
+docs/rebuild-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
+```
+
 
 ## DONE
 Every UNIT-INDEX item `DONE`, app fully on the target architecture, every legacy-floor behaviour

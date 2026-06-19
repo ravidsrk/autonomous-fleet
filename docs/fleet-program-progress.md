@@ -47,6 +47,18 @@ Branch decision: `code_bug_findings == 0` → **skip `bugs` node**, proceed to `
 | bugs | bug-batch | SKIPPED | conditional edge false |
 | tests | test-coverage | DONE | docs/test-coverage-readiness.md |
 
+## Runtime goal
+
+SCOPE: campaign
+CONDITION: |
+  Campaign composition-e2e DONE: docs/fleet-program-progress.md PHASE is DONE,
+  every node in Node status is DONE or SKIPPED,
+  docs/doc-sync-readiness.md and docs/test-coverage-readiness.md have valid fleet-outcome YAML,
+  ./scripts/validate-fleet-outcome.sh passes on each readiness doc.
+HOST: grok
+SET_AT: 2026-06-20
+LAST_UPDATE: Campaign complete — docs and tests nodes DONE; bugs SKIPPED (code_bug_findings == 0).
+
 ## Handoff notes
 
 - Doc-sync closed D1–D5; added campaign tooling under `scripts/` and `tests/`.

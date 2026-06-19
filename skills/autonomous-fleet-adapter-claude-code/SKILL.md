@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Claude Code with Task tool, git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.0.0"
+  version: "1.1.0"
   fleet-component: "adapter"
 ---
 
@@ -101,6 +101,32 @@ BASE` via Bash. TodoWrite reflects current state for visibility. None of these c
 ### SYNC_TASK_STATE(task, status)
 Update the FILE LEDGER flag and the TodoWrite entry. (No external task daemon to sync — the ledger
 + TodoWrite together are the task view.)
+
+### SET_GOAL(condition) / UPDATE_GOAL / GOAL_COMPLETE / GOAL_BLOCKED
+
+Claude Code v2.1.139+ exposes `/goal` (Stop-hook evaluator after each turn). Requires trust dialog;
+unavailable if `disableAllHooks`.
+
+**SET_GOAL:** `/goal <condition>` immediately after ledger init. Condition must be verifiable from
+Claude's transcript outputs (tests run, `git status`, file counts) AND reference `docs/` paths per
+`runtime-goals.md`. Record under `## Runtime goal` in the ledger. Setting a goal starts a turn.
+
+**UPDATE_GOAL:** No native tool — log progress in ledger `LAST_UPDATE` and TodoWrite. Evaluator
+shows status on `/goal` with no args.
+
+**GOAL_COMPLETE:** When ledger + readiness validate, either let the evaluator match the condition
+or run `/goal clear` after file proof. Never clear before TERMINATE checks pass.
+
+**GOAL_BLOCKED:** `/goal clear` + FINAL report with `status: blocked`; write readiness with
+`fleet-outcome.status: blocked`.
+
+**Ralph loop (task units only):** `/ralph-loop "<unit spec>" --completion-promise "TEXT"
+--max-iterations N` for bounded single-unit work. Worker must output `<promise>TEXT</promise>`.
+Do not replace full mission coordinator — Ralph lacks PR pipeline gates.
+
+**Headless:** `claude -p "/goal <condition>"` — see `scripts/run-mission-headless.sh`.
+
+**LOOP_POLL:** `/loop <interval> <prompt>` for CI/health polling only.
 
 ## DIAGNOSTICS
 - A subagent that returned without writing its ledger result: re-read its returned summary; if

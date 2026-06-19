@@ -25,13 +25,13 @@ skills to load next.
 
 ## What this framework is
 
-A **skill package** of 18 installable skills (this one + core + adapters + missions + programs).
+A **skill package** of 19 installable skills (this one + core + adapters + missions + programs).
 Each single-mission run composes three layers:
 
 | Layer | Skill(s) | Role |
 |-------|----------|------|
 | **Engine** | `autonomous-fleet-core` | Tool-agnostic coordinator method |
-| **Adapter** | `autonomous-fleet-adapter-{orca,claude-code,grok}` | Maps primitives to your runtime |
+| **Adapter** | `autonomous-fleet-adapter-{orca,claude-code,grok,codex}` | Maps primitives to your runtime |
 | **Mission** | `doc-sync`, `bug-batch`, … | Defines the job |
 
 ## Install (if skills are not already loaded)
@@ -44,8 +44,8 @@ npx skills add https://github.com/ravidsrk/autonomous-fleet \
   -y
 ```
 
-Replace `autonomous-fleet-adapter-grok` with `autonomous-fleet-adapter-orca` or
-`autonomous-fleet-adapter-claude-code` for other runtimes. Install all:
+Replace `autonomous-fleet-adapter-grok` with `autonomous-fleet-adapter-orca`,
+`autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-codex` for other runtimes. Install all:
 `npx skills add https://github.com/ravidsrk/autonomous-fleet --skill '*' -y`
 
 ## How to route a request

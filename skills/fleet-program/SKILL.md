@@ -13,7 +13,7 @@ license: MIT
 compatibility: Requires git and gh CLI; install mission skills via npx skills
 metadata:
   author: "ravidsrk"
-  version: "1.1.0"
+  version: "1.2.0"
   fleet-component: "program"
 ---
 
@@ -26,9 +26,9 @@ ledger, frozen outcomes, no-stop autonomy, one active mission per repo.
 ## Required skills
 
 1. `autonomous-fleet-core` — `references/engine.md`, `references/composition.md`,
-   `references/fleet-outcome.md`
+   `references/fleet-outcome.md`, `references/runtime-goals.md`
 2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`,
-   or `autonomous-fleet-adapter-grok`
+   `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Install missions via `npx skills add` before starting.
 
@@ -64,6 +64,16 @@ BASE: <branch>
 | Node | Mission | Status | Readiness doc |
 |------|---------|--------|---------------|
 
+## Runtime goal
+
+SCOPE: campaign
+CONDITION: |
+  Campaign <id> DONE: docs/fleet-program-progress.md PHASE is DONE,
+  every node DONE or SKIPPED, each readiness doc has valid fleet-outcome YAML.
+HOST: <adapter runtime>
+SET_AT: <timestamp>
+LAST_UPDATE: <progress>
+
 ## Handoff notes
 ```
 
@@ -85,25 +95,51 @@ Default vague intent → `repo-health` campaign (linear DAG).
 2. Parse user request → linear queue OR campaign YAML OR `parallel_repos`.
 3. Write spec + ledger; record in DECISIONS.md.
 4. **BASE:** `<BRANCH_PREFIX><campaign-id>-base` off default branch at HEAD (first node).
+5. **SET_GOAL** (campaign scope) per [runtime-goals.md](../autonomous-fleet-core/references/runtime-goals.md) —
+   condition must reference `docs/fleet-program-progress.md` and readiness validation.
+
+## Runtime goal binding
+
+| Step | Action |
+|------|--------|
+| Campaign start | `SET_GOAL(campaign_done_condition)`; write `## Runtime goal` in program ledger |
+| Each node start | `SET_GOAL(mission_done_condition)` — replaces campaign goal for this session |
+| Node complete | `UPDATE_GOAL("node <id> done: <fleet-outcome summary>")`; run `validate-fleet-outcome.sh` |
+| Campaign complete | `GOAL_COMPLETE` only when `PHASE: DONE` in file + all validations pass |
+| Blocked node | `GOAL_BLOCKED` if `fleet-outcome.status == blocked` and no retry |
+
+Mission goal template (substitute mission id, ledger, readiness, metrics):
+
+```
+Mission <mission-id> DONE: docs/<mission>-progress.md all task flags true,
+docs/<mission>-readiness.md with fleet-outcome.status done,
+all PRs merged into BASE, validate-fleet-outcome.sh passes.
+```
+
+Unattended CI: `./scripts/run-campaign.sh <grok|claude|codex> --preset repo-health --max-turns N`
+(or `--campaign docs/<campaign>.yaml`; add `--dry-run` to plan only)
 
 ## Per-mission loop (single repo)
 
 1. Set `CURRENT_NODE`, `ACTIVE_MISSION`, `PHASE: NODE-<id>`.
-2. Activate **only** that mission skill.
-3. Run mission to DONE (mission ledger + readiness with **`fleet-outcome` YAML**).
-4. **Parse outcome:** read YAML frontmatter from readiness doc per
+2. **SET_GOAL** for active mission (see template above).
+3. Activate **only** that mission skill.
+4. Run mission to DONE (mission ledger + readiness with **`fleet-outcome` YAML**).
+5. **Parse outcome:** read YAML frontmatter from readiness doc per
    [fleet-outcome.md](../autonomous-fleet-core/references/fleet-outcome.md). Store in **Last
    fleet-outcome**. If missing, extract metrics from readiness prose and log a warning in
    DECISIONS.md.
-5. Mark node `DONE`; update handoff (deferrals → next mission discovery tasks).
-6. **Pick next node:**
+6. **UPDATE_GOAL** with node summary; mark node `DONE`; update handoff (deferrals → next mission
+   discovery tasks).
+7. **Pick next node:**
    - **Linear:** next row in queue.
    - **Campaign:** from `edges[current_node]`, evaluate each `if` **in order**; first true edge
      wins. Expressions use `fleet-outcome.metrics.*`, top-level fields, and `always`. See
      [campaigns.md](references/campaigns.md).
    - No matching edge → `PHASE: DONE`.
-7. If `fleet-outcome.status == blocked` → `PHASE: BLOCKED`; record; stop chain unless mission
-   rules allow retry.
+8. If `fleet-outcome.status == blocked` → `PHASE: BLOCKED`; `GOAL_BLOCKED`; stop chain unless
+   mission rules allow retry.
+9. When no next node → set `PHASE: DONE`; **GOAL_COMPLETE** after file validation.
 
 ## Conditional expression evaluator
 

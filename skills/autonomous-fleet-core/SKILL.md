@@ -17,7 +17,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.0.0"
+  version: "1.1.0"
   fleet-component: "core"
 ---
 # Autonomous Fleet — Core Engine (tool-agnostic)
@@ -39,7 +39,8 @@ It contains self-orientation, autonomy enforcement, worker placement, the PR pip
 rails, and all other engine rules.
 
 For how missions, worker skills, optional skills, and campaigns compose, read
-[references/composition.md](references/composition.md) and [references/fleet-outcome.md](references/fleet-outcome.md).
+[references/composition.md](references/composition.md), [references/fleet-outcome.md](references/fleet-outcome.md),
+and [references/runtime-goals.md](references/runtime-goals.md) for native `/goal` / `update_goal` binding.
 Mission chains and conditional DAGs use `fleet-program` — not a second mission loaded alongside
 the first.
 
@@ -47,3 +48,5 @@ the first.
 
 The active adapter must implement: `PLACE`, `SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`,
 `WORKER_DONE` / `ASK` / `REPLY`, `OPEN_PR` / `MERGE_PR` / `CLEANUP`, `SYNC_TASK_STATE`.
+When the host supports goal mode, also implement: `SET_GOAL`, `UPDATE_GOAL`, `GOAL_COMPLETE`,
+`GOAL_BLOCKED` (Orca exempt — see `runtime-goals.md`).
