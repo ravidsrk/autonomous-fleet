@@ -1,31 +1,28 @@
-# doc-sync readiness
+---
+fleet-outcome:
+  mission: doc-sync
+  status: done
+  repo: /Users/ravindra/projects/autonomous-fleet
+  base_branch: fleet/composition-e2e-base
+  prs_merged: 1
+  metrics:
+    drift_open: 0
+    code_bug_findings: 0
+  deferred_missions: []
+---
 
-Trial run on `autonomous-fleet` itself. Engineering landed on `fleet/doc-sync-base`.
+# doc-sync readiness — composition-e2e
 
-## DRIFT INDEX — all closed
-
-| ID | Resolution |
-|----|------------|
-| D1 | CLOSED via [PR #1](https://github.com/ravidsrk/autonomous-fleet/pull/1) |
-| D2 | CLOSED via PR #1 |
-| D3 | CLOSED via PR #1 |
-| D4 | CLOSED via PR #1 |
-
-## PRs
-
-| PR | Branch | Merged |
-|----|--------|--------|
-| #1 | `fleet/fix-readme-setup` → `fleet/doc-sync-base` | yes (merge commit) |
+Engineering on `fleet/composition-e2e-base`. DRIFT INDEX D1–D5 closed.
 
 ## Verified
 
-- `./scripts/validate-skills.sh` — 16/16 pass (with skill-creator installed)
-- README install/validate instructions match script behaviour
+- `./scripts/validate-skills.sh` — 18/18 pass (with skill-creator installed)
+- `./scripts/validate-fleet-outcome.sh` — passes on this file
+- README layout matches `scripts/` and `tests/`
 
-## Deferred to other missions
+## Recommended next missions
 
-None (no code bugs found).
-
-## Human gate
-
-Promotion `fleet/doc-sync-base` → `main` is out of scope for this run.
+| Mission | Reason | Blocker |
+|---------|--------|---------|
+| `test-coverage` | Campaign `composition-e2e` next node | none |

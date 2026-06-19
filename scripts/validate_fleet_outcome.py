@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""CLI: validate fleet-outcome frontmatter in readiness docs."""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from lib.fleet_outcome import parse_readiness, validate_outcome
+
+
+def main() -> int:
+    p = argparse.ArgumentParser()
+    p.add_argument("files", nargs="*", type=Path, help="Readiness docs (default: docs/*-readiness.md)")
+    args = p.parse_args()
+    root = Path(__file__).resolve().parents[1]
+
+    if args.files:
+        paths = args.files
+    else:
+        paths = sorted(root.glob("docs/*-readiness.md"))
+        arch = root / "docs/arch-build-readiness.md"
+        if arch.exists():
+            paths.append(arch)
+
+    if not paths:
+        print("No readiness docs found.")
+        return 0
+
+    errors = 0
+    for path in paths:
+        if not path.is_file():
+            print(f"SKIP {path} (not found)")
+            continue
+        try:
+            outcome = parse_readiness(path)
+            verrs = validate_outcome(outcome, path)
+            if verrs:
+                for e in verrs:
+                    print(f"FAIL {e}")
+                errors += 1
+            else:
+                print(f"OK   {path.name} mission={outcome.get('mission')}")
+        except ValueError as exc:
+            print(f"FAIL {exc}")
+            errors += 1
+
+    if errors:
+        print(f"{errors} readiness doc(s) failed.")
+        return 1
+    print("All readiness docs passed fleet-outcome validation.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

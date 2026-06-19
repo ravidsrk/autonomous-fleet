@@ -3,7 +3,7 @@
 #
 # Usage:
 #   ./scripts/install-skills.sh              # install core + grok adapter + doc-sync (starter set)
-#   ./scripts/install-skills.sh --all        # install all 16 fleet skills
+#   ./scripts/install-skills.sh --all        # install all 18 fleet skills
 #   ./scripts/install-skills.sh doc-sync bug-batch   # install named skills
 set -euo pipefail
 
