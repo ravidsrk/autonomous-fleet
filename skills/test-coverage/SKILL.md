@@ -20,8 +20,32 @@ metadata:
 
 # Mission: test-coverage
 
-Apply the **autonomous-fleet-core** engine on your active adapter (load the core; load your runtime adapter; follow all core machinery) with the
-parameters below.
+## Required skills
+
+Before executing, activate these skills and read their full instructions:
+
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+
+Follow the core and your adapter in full, then apply the mission parameters below.
+
+Do not load a second mission skill in the same run. For chained missions, use `fleet-program`.
+
+## Optional skills
+
+| Skill | Activate when | If unavailable |
+|-------|---------------|----------------|
+| — | — | — |
+
+## Deferred missions
+
+Record in `docs/test-coverage-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+
+| Finding type | Route to |
+|--------------|----------|
+| Logic change needed to make code testable | `bug-batch` or scoped fix mission |
+| Refactor required for testability | `cleanup` (light) or `targeted-migration` |
+| Hollow coverage tooling only | Use repo's existing test/coverage commands |
 
 **Empirical note:** test tasks merge at ~0.84 across 33k real agent PRs — high-trust, safe
 unattended. The ONE failure mode to guard is hollow tests written to move a number; the reviewer
@@ -56,7 +80,7 @@ with before/after coverage where the tooling reports it.
   non-overlapping test files; serialize same-file. Update the GAP INDEX + coverage deltas.
 - **T-FINAL [@claude]** — full suite green; coverage rose on the mapped areas and did not
   regress elsewhere. Output `docs/test-coverage-readiness.md` (gap index covered, coverage
-  before/after, any logic-change findings deferred, all PRs). Ship as the final PR.
+  before/after, **Recommended next missions**, all PRs). Ship as the final PR.
 
 ## DONE
 Every GAP-INDEX item `COVERED`, every task terminal, suite green, coverage not regressed,

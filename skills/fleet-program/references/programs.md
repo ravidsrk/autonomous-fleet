@@ -1,0 +1,62 @@
+# Preset fleet programs
+
+Copy into the program ledger or use when the user describes intent but not an explicit chain.
+
+## repo-health
+
+**When:** "clean up this repo", "make the codebase healthy", "docs and tests are stale", first
+pass on an unfamiliar repo.
+
+| # | Mission | Why |
+|---|---------|-----|
+| 1 | `doc-sync` | Highest merge rate; surfaces real state in docs |
+| 2 | `test-coverage` | Lock behaviour before churn; uses doc-sync deferrals as gap hints |
+| 3 | `cleanup` | Behaviour-preserving tidy after truth + tests exist |
+
+## docs-and-tests
+
+**When:** Documentation and coverage only — no code cleanup.
+
+| # | Mission |
+|---|---------|
+| 1 | `doc-sync` |
+| 2 | `test-coverage` |
+
+## secure-ship
+
+**When:** Pre-production hardening, security pass before release.
+
+| # | Mission | Why |
+|---|---------|-----|
+| 1 | `adversarial-review-and-fix` | Frozen findings before churn |
+| 2 | `dependency-update` | Advisories and stale deps after fixes |
+| 3 | `doc-sync` | Docs match post-fix code |
+
+## migrate-safe
+
+**When:** Major upgrade or one-axis migration with safety net.
+
+| # | Mission | Why |
+|---|---------|-----|
+| 1 | `test-coverage` | Characterization tests on migration surface |
+| 2 | `targeted-migration` | The migration itself |
+| 3 | `doc-sync` | Update setup/migration docs |
+
+## fix-then-prove
+
+**When:** Known bug backlog with weak tests.
+
+| # | Mission |
+|---|---------|
+| 1 | `bug-batch` |
+| 2 | `test-coverage` |
+
+## Custom chains
+
+User-specified order wins. Rules:
+
+- Max one active mission.
+- Carry **Recommended next missions** from each readiness doc into the next mission's discovery
+  task (T-AUDIT, T-MAP, T-SCAN, etc.).
+- Do not insert `legacy-rebuild` or `take-product-to-completion` unless the user explicitly asks
+  (Tier 3 blast radius).

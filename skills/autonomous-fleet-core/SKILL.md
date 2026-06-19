@@ -38,6 +38,10 @@ Read and follow [references/engine.md](references/engine.md) in full before coor
 It contains self-orientation, autonomy enforcement, worker placement, the PR pipeline, safety
 rails, and all other engine rules.
 
+For how missions, optional skills, and multi-mission chains compose, read
+[references/composition.md](references/composition.md). Sequential mission chains use the
+`fleet-program` skill — not a second mission loaded alongside the first.
+
 ## Primitives (summary)
 
 The active adapter must implement: `PLACE`, `SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`,

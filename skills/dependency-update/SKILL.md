@@ -21,8 +21,32 @@ metadata:
 
 # Mission: dependency-update
 
-Apply the **autonomous-fleet-core** engine on your active adapter (load the core; load your runtime adapter; follow all core machinery) with the
-parameters below.
+## Required skills
+
+Before executing, activate these skills and read their full instructions:
+
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+
+Follow the core and your adapter in full, then apply the mission parameters below.
+
+Do not load a second mission skill in the same run. For chained missions, use `fleet-program`.
+
+## Optional skills
+
+| Skill | Activate when | If unavailable |
+|-------|---------------|----------------|
+| — | — | — |
+
+## Deferred missions
+
+Record in `docs/dependency-update-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+
+| Finding type | Route to |
+|--------------|----------|
+| Major upgrade = migration in its own right | `targeted-migration` |
+| Advisory exposes architectural flaw | `adversarial-review-and-fix` |
+| Post-bump doc drift | `doc-sync` |
 
 **Empirical note:** chore/build tasks (which dependency updates are) merge at ~0.84-0.87 — among
 the highest-trust categories, safe unattended. Risk concentrates in MAJOR version bumps with

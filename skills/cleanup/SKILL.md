@@ -21,8 +21,32 @@ metadata:
 
 # Mission: cleanup
 
-Apply the **autonomous-fleet-core** engine on your active adapter (load the core; load your runtime adapter; follow all core machinery) with the
-parameters below.
+## Required skills
+
+Before executing, activate these skills and read their full instructions:
+
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+
+Follow the core and your adapter in full, then apply the mission parameters below.
+
+Do not load a second mission skill in the same run. For chained missions, use `fleet-program`.
+
+## Optional skills
+
+| Skill | Activate when | If unavailable |
+|-------|---------------|----------------|
+| Repo dead-code tooling | T-SCAN needs knip/ts-prune/etc. | Use grep, coverage, and linter output only |
+
+## Deferred missions
+
+Record in `docs/cleanup-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+
+| Finding type | Route to |
+|--------------|----------|
+| Re-architecture / framework swap needed | `legacy-rebuild` |
+| Bug exposed by deletion risk | `bug-batch` |
+| Untested risky area | `test-coverage` first |
 
 **Empirical note:** chore/refactor-light tasks merge at ~0.80-0.84 — high-trust when scoped and
 behaviour-preserving. The risk is scope creep into a rewrite; this mission explicitly does NOT
@@ -59,7 +83,7 @@ with location, `OPEN | DONE via PR#n`.
   INDEX.
 - **T-FINAL [@claude]** — build green, full suite green, no behaviour change, the targeted smells
   gone. Output `docs/cleanup-readiness.md` (cleanup index done, what was removed/refactored,
-  anything deferred to legacy-rebuild, all PRs). Ship as the final PR.
+  **Recommended next missions**, all PRs). Ship as the final PR.
 
 ## DONE
 Every CLEANUP-INDEX item `DONE`, every task terminal, suite green, behaviour preserved,

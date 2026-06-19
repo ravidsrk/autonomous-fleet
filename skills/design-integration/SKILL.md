@@ -21,8 +21,33 @@ metadata:
 
 # Mission: design-integration
 
-Apply the **autonomous-fleet-core** engine on your active adapter (load the core; load your runtime adapter; follow all core machinery) with the
-parameters below.
+## Required skills
+
+Before executing, activate these skills and read their full instructions:
+
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+
+Follow the core and your adapter in full, then apply the mission parameters below.
+
+Do not load a second mission skill in the same run. For chained missions, use `fleet-program`.
+
+## Optional skills
+
+| Skill | Activate when | If unavailable |
+|-------|---------------|----------------|
+| `claude_design` MCP | DESIGN SOURCE uses MCP connector | User must `/design-login` — HARD EXTERNAL DEPENDENCY |
+| `gstack-design-review` | Post-build visual QA on key screens | Rely on @codex review gate only |
+
+## Deferred missions
+
+Record in `docs/parity-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+
+| Finding type | Route to |
+|--------------|----------|
+| Scope is one landing page only | `landing-page-convergence` |
+| Backend rewrite needed (not UI rewire) | `legacy-rebuild` |
+| Bugs found during parity work | `bug-batch` |
 
 **Empirical note:** UI/feature work spans ~0.80-0.81 merge — full review gate required, reviewing
 both visual fidelity AND feature parity. The control artifact is the PARITY MAP: anything not

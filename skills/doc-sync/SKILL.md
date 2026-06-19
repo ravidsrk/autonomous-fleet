@@ -26,10 +26,31 @@ metadata:
 
 Before executing, activate these skills and read their full instructions:
 
-1. `autonomous-fleet-core` — tool-agnostic coordinator engine
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
 2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
+
+Do not load a second mission skill in the same run. For chained missions, use `fleet-program`.
+
+## Optional skills
+
+Activate only when the trigger applies. Do not load unrelated catalog skills.
+
+| Skill | Activate when | If unavailable |
+|-------|---------------|----------------|
+| `skill-creator` | Editing or validating skills in the autonomous-fleet repo itself | Run `./scripts/validate-skills.sh` |
+
+## Deferred missions
+
+Record in `docs/doc-sync-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+Do not start another mission in the same run.
+
+| Finding type | Route to |
+|--------------|----------|
+| Code bug (doc reveals wrong behaviour) | `bug-batch` |
+| Undertested area flagged during audit | `test-coverage` |
+| Broken setup/deps (not doc wording) | `dependency-update` |
 
 **Empirical note:** documentation is the single highest-success autonomous task category
 (~0.92 merge rate across 33k real agent PRs). This mission is safe to run unattended.
@@ -66,8 +87,8 @@ CLOSED via PR#n`.
   doc files; serialize edits to the same file. Update the DRIFT INDEX as items close.
 - **T-FINAL [@claude]** — verify every DRIFT-INDEX item is CLOSED, all example commands run,
   all internal links resolve, no stale instruction remains. Output `docs/doc-sync-readiness.md`
-  (drift index all-closed + what was corrected + any code-bug findings deferred to other
-  missions). Ship as the final PR.
+  (drift index all-closed + what was corrected + **Recommended next missions** table per
+  core composition.md). Ship as the final PR.
 
 ## DONE
 Every DRIFT-INDEX item `CLOSED`, every task `WRITTEN=t PR_OPEN=t REVIEWED=t MERGED=t`,

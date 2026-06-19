@@ -73,6 +73,9 @@ directly. Open the **target repo** and use plain language:
 
 Each mission activates `autonomous-fleet-core` + your runtime adapter automatically.
 
+For **sequential chains** (e.g. docs → tests → cleanup), use `fleet-program` — one mission at
+a time on the same repo.
+
 ---
 
 ## Layout
@@ -81,9 +84,12 @@ Each mission activates `autonomous-fleet-core` + your runtime adapter automatica
 autonomous-fleet/
 ├── skills/                              # publishable skills (npx skills discovers these)
 │   ├── autonomous-fleet/                # umbrella entry-point (routes to mission + core + adapter)
+│   ├── fleet-program/                   # sequential multi-mission chains
 │   ├── autonomous-fleet-core/
 │   │   ├── SKILL.md                     # entry point
-│   │   └── references/engine.md         # full engine spec
+│   │   └── references/
+│   │       ├── engine.md                # full engine spec
+│   │       └── composition.md           # skill loading rules
 │   ├── autonomous-fleet-adapter-{orca,claude-code,grok,template}/
 │   ├── doc-sync/                        # Tier 1 missions
 │   ├── test-coverage/
@@ -103,8 +109,8 @@ autonomous-fleet/
 └── skills-lock.json                     # lockfile for npx skills
 ```
 
-**Core + Mission + Adapter = a run.** Missions declare required skills; the core speaks in
-primitives; adapters map primitives to runtime commands.
+**Core + Mission + Adapter = a single-mission run.** **Core + fleet-program + Adapter** = ordered
+chain (one mission at a time). Missions declare Required / Optional / Deferred skills sections.
 
 ---
 
@@ -112,7 +118,8 @@ primitives; adapters map primitives to runtime commands.
 
 | Skill | Type | Notes |
 |-------|------|-------|
-| `autonomous-fleet` | Umbrella | Entry point — routes to mission + core + adapter |
+| `autonomous-fleet` | Umbrella | Entry point — routes to mission or program + core + adapter |
+| `fleet-program` | Program | Sequential mission chains on one repo |
 | `autonomous-fleet-core` | Engine | Required for every run |
 | `autonomous-fleet-adapter-orca` | Adapter | Orca orchestration |
 | `autonomous-fleet-adapter-claude-code` | Adapter | Claude Code |

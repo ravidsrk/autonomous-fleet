@@ -38,7 +38,17 @@ artifacts for Tier 2–3.
 | `autonomous-fleet-adapter-grok` | Grok Build (subagents + ledger) |
 | `autonomous-fleet-adapter-template` | Authoring guide for new runtimes |
 
+## Programs
+
+| Skill | Use when |
+|-------|----------|
+| `fleet-program` | Ordered mission chain on one repo (e.g. doc-sync → test-coverage → cleanup) |
+
+Presets: `skills/fleet-program/references/programs.md`. One mission runs at a time; never load
+two mission skills concurrently.
+
 ## Composition reminder
 
-Every run = `autonomous-fleet-core` + **one adapter** + **one mission**. Missions include a
-`## Required skills` section — follow it after routing from the umbrella skill.
+Single mission = `autonomous-fleet-core` + **one adapter** + **one mission**. Each mission has
+`## Required skills`, `## Optional skills`, and `## Deferred missions`. Multi-mission =
+`fleet-program` + core + adapter. See `skills/autonomous-fleet-core/references/composition.md`.

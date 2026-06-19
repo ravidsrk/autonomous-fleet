@@ -21,8 +21,32 @@ metadata:
 
 # Mission: adversarial-review-and-fix
 
-Apply the **autonomous-fleet-core** engine on your active adapter (load the core; load your runtime adapter; follow all core machinery) with the
-parameters below.
+## Required skills
+
+Before executing, activate these skills and read their full instructions:
+
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+
+Follow the core and your adapter in full, then apply the mission parameters below.
+
+Do not load a second mission skill in the same run. For chained missions, use `fleet-program`.
+
+## Optional skills
+
+| Skill | Activate when | If unavailable |
+|-------|---------------|----------------|
+| `gstack-cso` | User asked for security-audit depth beyond mission defaults | Proceed with mission skeptic + review gate only |
+
+## Deferred missions
+
+Record in `docs/adversarial-review-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+
+| Finding type | Route to |
+|--------------|----------|
+| Finding needs one-axis migration | `targeted-migration` |
+| Doc/runbook drift after fixes | `doc-sync` |
+| Dependency-related finding | `dependency-update` |
 
 **Empirical note:** this mission's fixes span fix/refactor/security work (~0.80-0.82 merge) — the
 full review gate is essential. The structural key is that Phase 0 produces a FROZEN, richly-shaped

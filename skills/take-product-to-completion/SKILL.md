@@ -24,8 +24,32 @@ metadata:
 
 # Mission: take-product-to-completion
 
-Apply the **autonomous-fleet-core** engine on your active adapter (load the core; load your runtime adapter; follow all core machinery) with the
-mission parameters below.
+## Required skills
+
+Before executing, activate these skills and read their full instructions:
+
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+
+Follow the core and your adapter in full, then apply the mission parameters below.
+
+Do not load a second mission skill in the same run. ROADMAP items defer to future runs or `fleet-program`.
+
+## Optional skills
+
+| Skill | Activate when | If unavailable |
+|-------|---------------|----------------|
+| `gstack-office-hours` | Boundary (T3) is ambiguous and user wants product framing | Use T1+T2 research only |
+
+## Deferred missions
+
+ROADMAP list in boundary doc + **Recommended next missions** in `docs/completion-readiness.md`.
+
+| Finding type | Route to |
+|--------------|----------|
+| ROADMAP feature (explicit future scope) | User picks mission on next run |
+| Deep security hardening beyond FIX list | `adversarial-review-and-fix` |
+| Legacy stack blocks completion | `legacy-rebuild` |
 
 **Empirical note:** this is the highest-blast-radius mission. Feature and cross-module work is
 the category agents are least reliable at among "normal" tasks (~0.80 merge, vs ~0.92 for docs),
