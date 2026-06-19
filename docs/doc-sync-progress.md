@@ -1,20 +1,22 @@
-# doc-sync progress ledger
+# doc-sync progress — composition-e2e
 
 PHASE: DONE
-
-## DRIFT INDEX
-
-- D1 → CLOSED via PR#1
-- D2 → CLOSED via PR#1
-- D3 → CLOSED via PR#1
-- D4 → CLOSED via PR#1
+BASE: fleet/composition-e2e-base
 
 ## Tasks
 
-| Task | WRITTEN | PR_OPEN | REVIEWED | MERGED | PR# |
-|------|---------|---------|----------|--------|-----|
-| T-AUDIT | t | — | — | — | — |
-| T-FIX-readme-setup | t | t | t | t | 1 |
-| T-FINAL | t | t | t | t | — |
+| Task | WRITTEN | PR_OPEN | REVIEWED | MERGED |
+|------|---------|---------|----------|--------|
+| T-AUDIT | t | t | t | t |
+| T-FIX-readme-install | t | t | t | t |
+| T-FINAL | t | t | t | t |
 
-DONE: all DRIFT items CLOSED, `docs/doc-sync-readiness.md` exists.
+## DRIFT INDEX
+
+| ID | Status |
+|----|--------|
+| D1 | CLOSED via PR |
+| D2 | CLOSED via PR |
+| D3 | CLOSED via PR |
+| D4 | CLOSED via PR |
+| D5 | CLOSED via PR |

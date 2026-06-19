@@ -1,4 +1,4 @@
-# DECISIONS — doc-sync run
+# DECISIONS — composition-e2e campaign
 
 ## Self-orientation
 
@@ -7,11 +7,16 @@
 | REPO_ROOT | `/Users/ravindra/projects/autonomous-fleet` |
 | MAINTAINER | Ravindra Kumar `<ravidsrk@gmail.com>` |
 | BRANCH_PREFIX | `fleet/` |
-| BASE | `fleet/doc-sync-base` |
+| BASE | `fleet/composition-e2e-base` |
 | Adapter | `autonomous-fleet-adapter-grok` |
-| Test scope | This repository (dogfood doc-sync on autonomous-fleet itself) |
+| Campaign | `composition-e2e` (docs-if-bugs variant, ends at test-coverage) |
 
-## Defaults
+## Campaign defaults
 
-- Single PR for README/setup drift (one doc area) — sufficient for trial run.
-- Remote `npx skills add` examples intentionally omit `-p` (user-global install); local clone uses `./scripts/install-skills.sh` which passes `-p`.
+- Skip `bug-batch` node when `code_bug_findings == 0` (mechanical + agent agreement).
+- Dogfood PR merges into `fleet/composition-e2e-base`; promotion to `main` is human meta-PR.
+- Added executable validators so fleet-outcome and campaign edges are testable, not skill-only.
+
+## Prior runs
+
+See git history for doc-sync trial on `fleet/doc-sync-base` (pre fleet-outcome).
