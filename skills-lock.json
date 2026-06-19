@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "skills": {
+    "adversarial-review-and-fix": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "4008668eead59becf1ef7d07824546f0eea6ac7daeec1562780e69ca49e72714"
+    },
+    "autonomous-fleet-adapter-claude-code": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "416e740c8eb1163e6d6516d311e87f203d3d3de46e56cf5b87e1541d72b09014"
+    },
+    "autonomous-fleet-adapter-grok": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "7fcbb0566aafb8e321c596f1eaf44fbccee0d3d0b8eea164aa244b6e133a28ce"
+    },
+    "autonomous-fleet-adapter-orca": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "3f821d58c0b26cf908d40c1edc0dc6b9f85b1a8ad589e8332164ef67cf8c312c"
+    },
+    "autonomous-fleet-adapter-template": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "c908a1ba7df31937afa89ddf276736cebaa1fdcec8dc145e127f840a83181493"
+    },
+    "autonomous-fleet-core": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "1047382c0cca4942ea51026f4b22b18058f2894c37ead9c6a3ee98ba9a92a759"
+    },
+    "bug-batch": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "dd6b1c93891e965fbc3a3a2d2386d5a3339ed0cbf76784657f841c526248b892"
+    },
+    "cleanup": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "89b8d9635b380ab18158324d9caa6d665b191feb7dcad1ff05db4790ad4a6ce3"
+    },
+    "dependency-update": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "562767f362689f891bc6d61069b25bb5001d089e451f7107621e2fe332da4c4e"
+    },
+    "design-integration": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "bf5a0f4d87ab6f12812f856b6fea846dbd367b8e36e65b34401d026a5f7681f6"
+    },
+    "doc-sync": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "cf378c9f1de2a980ae38258e0d7ac000d4e0c45b6b48176fa99968002331b15f"
+    },
+    "landing-page-convergence": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "34dee52bad784845eb2675b8cbd6839c8b9f580dbb3bcd1abf52d992a6ac2347"
+    },
+    "legacy-rebuild": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "ad47fe5b27fe8bbeff1b80eccc4253c45c366f87005322377c17062c5f6477f0"
+    },
+    "skill-creator": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/skill-creator/SKILL.md",
+      "computedHash": "5ea13a6d9f0d4bb694405d79acd00cadec0d21bb138c4dd10fcf3c500cb835c2"
+    },
+    "take-product-to-completion": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "8fa25a92413bb0fee0286db84c540de87cbf9be914456418ce61a472dd19ac23"
+    },
+    "targeted-migration": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "a8a395e7e05df35bf9027a92bbfc9aa80dd81191a779cb9ceb5f79077c2bf9c1"
+    },
+    "test-coverage": {
+      "source": "/Users/ravindra/projects/autonomous-fleet",
+      "sourceType": "local",
+      "computedHash": "841a5ba46e89c794f4d72ac5c927ac8b783f079309844f4e126f2ba4e6df35ee"
+    }
+  }
+}

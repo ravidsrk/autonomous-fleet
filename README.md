@@ -5,144 +5,149 @@ orchestration tools, not just one.** A tool-agnostic **core** holds all the meth
 **mission** skills describe specific jobs; per-tool **adapters** map the method to each runtime's
 real commands.
 
-This repository follows the [Agent Skills](https://agentskills.io/) format end to end: every
-component is a skill directory with a `SKILL.md` file, optional `references/`, and spec-compliant
-frontmatter (`name` matches directory name).
-
-Write the mission once. Run it on any supported tool. Fix the method once; every mission and every
-tool inherits the fix.
+Published as [Agent Skills](https://agentskills.io/) packages — install with [`npx skills`](https://skills.sh/).
 
 **Repository:** https://github.com/ravidsrk/autonomous-fleet
 
 ---
 
-## Layout (Agent Skills format)
+## Quick start
 
-```
-autonomous-fleet/
-├── skills/
-│   ├── autonomous-fleet-core/          # tool-agnostic engine
-│   │   ├── SKILL.md
-│   │   └── references/engine.md        # full engine spec (progressive disclosure)
-│   ├── autonomous-fleet-adapter-orca/
-│   ├── autonomous-fleet-adapter-claude-code/
-│   ├── autonomous-fleet-adapter-grok/
-│   ├── autonomous-fleet-adapter-template/
-│   ├── doc-sync/                       # Tier 1 missions
-│   ├── test-coverage/
-│   ├── dependency-update/
-│   ├── cleanup/
-│   ├── bug-batch/                      # Tier 2 missions
-│   ├── adversarial-review-and-fix/
-│   ├── targeted-migration/
-│   ├── design-integration/
-│   ├── landing-page-convergence/
-│   ├── legacy-rebuild/                 # Tier 3 missions
-│   └── take-product-to-completion/
-├── scripts/
-│   ├── validate-skills.sh              # agentskills.io convention checks
-│   └── install-skills.sh               # symlink skills into your agent
-└── README.md
+### 1. Install skill-creator (for authoring / validation)
+
+```bash
+npx skills add https://github.com/anthropics/skills --skill skill-creator -y -p
 ```
 
-**Core + Mission + Adapter = a run.** The core calls primitives (spawn worker, dispatch, wait,
-inspect, place work, open/merge PR, sync state); the active adapter resolves each primitive to its
-tool's real commands. Missions declare which skills to activate; they never hard-code a runtime.
+### 2. Install autonomous-fleet skills
 
----
+**Starter set** (core + Grok adapter + doc-sync):
 
-## Supported runtimes
+```bash
+npx skills add https://github.com/ravidsrk/autonomous-fleet \
+  --skill autonomous-fleet-core \
+  --skill autonomous-fleet-adapter-grok \
+  --skill doc-sync \
+  -y
+```
 
-| Skill | Runtime | Concurrency model |
-|-------|---------|-------------------|
-| `autonomous-fleet-adapter-orca` | [Orca](https://www.onorca.dev) | Daemon + worktrees + terminals; `check --wait` |
-| `autonomous-fleet-adapter-claude-code` | Claude Code | Coordinator session + Task subagents; file ledger |
-| `autonomous-fleet-adapter-grok` | Grok Build | Coordinator session + Task subagents; file ledger |
-| `autonomous-fleet-adapter-template` | any | Copy and implement primitives for a new tool |
+**All skills:**
 
----
+```bash
+npx skills add https://github.com/ravidsrk/autonomous-fleet --skill '*' -y
+```
 
-## Risk tiers
+**From a local clone:**
 
-| Tier | Meaning | Missions | Approx. merge rate |
-|------|---------|----------|--------------------|
-| **1** | Safe unattended | doc-sync, test-coverage, dependency-update, cleanup | 0.84–0.92 |
-| **2** | Full review gate | bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence | 0.80–0.82 |
-| **3** | High blast radius | legacy-rebuild, take-product-to-completion | ~0.80 |
+```bash
+git clone https://github.com/ravidsrk/autonomous-fleet
+cd autonomous-fleet
+./scripts/install-skills.sh          # starter set
+./scripts/install-skills.sh --all    # everything
+```
 
-Start with **doc-sync** or **test-coverage** (Tier 1).
+Skills install to `.agents/skills/` (universal path for Cursor, Codex, Claude Code, Grok, etc.).
 
----
-
-## Install
-
-### Validate (local)
+### 3. Validate
 
 ```bash
 ./scripts/validate-skills.sh
 ```
 
-### Grok Build (default)
+Uses [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator)'s
+`quick_validate.py` against the [agentskills.io specification](https://agentskills.io/specification).
 
-```bash
-./scripts/install-skills.sh
-# symlinks skills/* -> ~/.grok/skills/*
-```
+### 4. Run a mission
 
-### Manual / other agents
+Open the **target repo** and trigger in plain language:
 
-Copy or symlink each directory under `skills/` into your agent's skills path. Each installed skill
-must keep the structure `<skill-name>/SKILL.md` with `name:` in frontmatter matching the directory.
+- *"sync the docs"* → `doc-sync`
+- *"raise test coverage on payments"* → `test-coverage`
+- *"fix these bugs"* → `bug-batch`
+- *"take this product to the finish line"* → `take-product-to-completion`
 
-Minimum to run on Orca:
-
-```
-<skills-dir>/autonomous-fleet-core/SKILL.md
-<skills-dir>/autonomous-fleet-adapter-orca/SKILL.md
-<skills-dir>/doc-sync/SKILL.md
-```
-
-For Claude Code use `autonomous-fleet-adapter-claude-code`; for Grok use
-`autonomous-fleet-adapter-grok`.
-
-At run start the core derives `BRANCH_PREFIX` (default `fleet/`) and ensures `docs/` exists for
-mission ledgers — both recorded in `DECISIONS.md`.
-
-### Add a new runtime
-
-1. Copy `skills/autonomous-fleet-adapter-template/` to `skills/autonomous-fleet-adapter-<tool>/`
-2. Set frontmatter `name: autonomous-fleet-adapter-<tool>` (must match directory)
-3. Fill in primitive mappings
-4. Run `./scripts/validate-skills.sh`
+Each mission activates `autonomous-fleet-core` + your runtime adapter automatically.
 
 ---
 
-## Use
+## Layout
 
-1. Open the **target repo** you want the fleet to work on (missions discover `REPO_ROOT` from cwd).
-2. Install the **core**, one **adapter**, and the **mission** you want.
-3. Trigger in plain language — *"sync the docs," "raise test coverage," "fix these bugs,"*
-   *"take this product to the finish line."*
-4. The mission activates `autonomous-fleet-core` + your adapter and runs autonomously until the
-   readiness doc exists and a single final report is sent.
+```
+autonomous-fleet/
+├── skills/                              # publishable skills (npx skills discovers these)
+│   ├── autonomous-fleet-core/
+│   │   ├── SKILL.md                     # entry point
+│   │   └── references/engine.md         # full engine spec
+│   ├── autonomous-fleet-adapter-{orca,claude-code,grok,template}/
+│   ├── doc-sync/                        # Tier 1 missions
+│   ├── test-coverage/
+│   ├── dependency-update/
+│   ├── cleanup/
+│   ├── bug-batch/                       # Tier 2 missions
+│   ├── adversarial-review-and-fix/
+│   ├── targeted-migration/
+│   ├── design-integration/
+│   ├── landing-page-convergence/
+│   ├── legacy-rebuild/                  # Tier 3 missions
+│   └── take-product-to-completion/
+├── .agents/skills/                      # installed skills (symlinks from npx skills)
+├── scripts/
+│   ├── validate-skills.sh
+│   └── install-skills.sh
+└── skills-lock.json                     # lockfile for npx skills
+```
 
-Hard external dependencies (e.g. `design-integration` + `/design-login` for Claude Design MCP) are
-the only allowed mid-run user pauses.
+**Core + Mission + Adapter = a run.** Missions declare required skills; the core speaks in
+primitives; adapters map primitives to runtime commands.
+
+---
+
+## Available skills
+
+| Skill | Type | Notes |
+|-------|------|-------|
+| `autonomous-fleet-core` | Engine | Required for every run |
+| `autonomous-fleet-adapter-orca` | Adapter | Orca orchestration |
+| `autonomous-fleet-adapter-claude-code` | Adapter | Claude Code |
+| `autonomous-fleet-adapter-grok` | Adapter | Grok Build |
+| `autonomous-fleet-adapter-template` | Guide | Copy to author a new adapter |
+| `doc-sync` | Mission · Tier 1 | Highest merge rate (~0.92) |
+| `test-coverage` | Mission · Tier 1 | |
+| `dependency-update` | Mission · Tier 1 | |
+| `cleanup` | Mission · Tier 1 | |
+| `bug-batch` | Mission · Tier 2 | Reproduce-first gate |
+| `adversarial-review-and-fix` | Mission · Tier 2 | Two-phase workhorse |
+| `targeted-migration` | Mission · Tier 2 | |
+| `design-integration` | Mission · Tier 2 | |
+| `landing-page-convergence` | Mission · Tier 2 | |
+| `legacy-rebuild` | Mission · Tier 3 | |
+| `take-product-to-completion` | Mission · Tier 3 | |
+
+List all: `npx skills add https://github.com/ravidsrk/autonomous-fleet --list`
+
+---
+
+## Authoring new skills
+
+This repo includes `skill-creator` from Anthropic. To add a mission or adapter:
+
+```bash
+# scaffold a new skill
+npx skills init my-new-mission
+
+# follow skill-creator workflow in .agents/skills/skill-creator/SKILL.md
+# validate
+./scripts/validate-skills.sh
+```
+
+Copy `skills/autonomous-fleet-adapter-template/` when adding a new runtime adapter.
 
 ---
 
 ## What every run guarantees
 
 - Repo and maintainer discovered — no placeholders
-- One PR per unit; commits preserved (never squashed); real maintainer authorship
+- One PR per unit; commits preserved (never squashed)
 - Conflict-aware merges; checkout cleanup on every merge
 - Safety rails: testnet/staging only; merge ≠ deploy
 - File ledger survives compaction and session restarts
-
----
-
-## Spec compliance
-
-- Format: [agentskills.io/specification](https://agentskills.io/specification)
-- Progressive disclosure: core engine detail in `skills/autonomous-fleet-core/references/engine.md`
-- Optional upstream validator: [skills-ref](https://github.com/agentskills/agentskills/tree/main/skills-ref)

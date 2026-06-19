@@ -3,16 +3,16 @@ name: autonomous-fleet-adapter-template
 description: >-
   TEMPLATE for writing a new autonomous-fleet adapter (e.g. codex, gemini-cli, a custom CLI
   fleet, or a raw tmux+worktrees setup). Copy this, rename to
-  autonomous-fleet-adapter-<tool>, and fill in how YOUR runtime implements each PRIMITIVE
-  the core calls. The missions and the core never change — only this mapping does. Not a
-  runnable skill; a guide.
+  autonomous-fleet-adapter-YOUR-TOOL, and fill in how YOUR runtime implements each PRIMITIVE
+  the core calls. The missions and the core never change — only this mapping does. Use when
+  adding a new orchestration runtime to autonomous-fleet. Not a runnable mission skill.
 license: MIT
 compatibility: Reference template for adapter authors; not a runnable mission
 metadata:
   author: "ravidsrk"
   version: "1.0.0"
   fleet-component: "adapter-template"
-disable-model-invocation: true
+  runnable: "false"
 ---
 
 
@@ -20,9 +20,10 @@ disable-model-invocation: true
 
 `autonomous-fleet-core` is tool-agnostic: it calls a fixed set of PRIMITIVES and never hard-codes a
 runtime's commands. To run the whole mission library on a new tool, you implement those primitives
-once, here. Copy this file to `adapters/<tool>/autonomous-fleet-adapter-<tool>.SKILL.md`, set the
-frontmatter `name` to `autonomous-fleet-adapter-<tool>`, and fill each section below with your
-tool's real commands. Then any mission runs by loading the core + your adapter.
+once, here. Copy `skills/autonomous-fleet-adapter-template/` to
+`skills/autonomous-fleet-adapter-<tool>/`, set frontmatter `name` to match the directory, and fill
+each section below with your tool's real commands. Then any mission runs by loading the core +
+your adapter.
 
 Pick a `branch prefix` default for your tool. State your tool's CONCURRENCY MODEL (does it have a
 persistent orchestration daemon like Orca, or is the coordinator itself a session like Claude
