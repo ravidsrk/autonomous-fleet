@@ -1,11 +1,20 @@
 ---
-name: autonomous-fleet-adapter-TEMPLATE
+name: autonomous-fleet-adapter-template
 description: >-
-  TEMPLATE for writing a new autonomous-fleet adapter (e.g. codex, gemini-cli, a custom CLI fleet,
-  or a raw tmux+worktrees setup). Copy this, rename to autonomous-fleet-adapter-<tool>, and fill in
-  how YOUR runtime implements each PRIMITIVE the core calls. The missions and the core never
-  change — only this mapping does. Not a runnable skill; a guide.
+  TEMPLATE for writing a new autonomous-fleet adapter (e.g. codex, gemini-cli, a custom CLI
+  fleet, or a raw tmux+worktrees setup). Copy this, rename to
+  autonomous-fleet-adapter-<tool>, and fill in how YOUR runtime implements each PRIMITIVE
+  the core calls. The missions and the core never change — only this mapping does. Not a
+  runnable skill; a guide.
+license: MIT
+compatibility: Reference template for adapter authors; not a runnable mission
+metadata:
+  author: "ravidsrk"
+  version: "1.0.0"
+  fleet-component: "adapter-template"
+disable-model-invocation: true
 ---
+
 
 # Adapter TEMPLATE — how to support a new tool
 

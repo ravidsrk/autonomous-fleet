@@ -1,16 +1,23 @@
 ---
 name: legacy-rebuild
 description: >-
-  [Tier 3 · high blast radius · expect rework · run deliberately, review the floor + architecture]
-  Adversarially review a legacy app, research the best current architecture, and rebuild it end to
-  end on a modern foundation while PRESERVING everything it currently does. Use when an app uses
-  outdated everything (old deps, poor architecture, e.g. JS-inlined-in-HTML, no build/module
-  system) and needs a real modernization, not a patch. Incremental and shippable per PR — NOT a
-  big-bang rewrite — rebuilt against a captured behaviour floor so nothing is silently lost. Runs
-  via the autonomous-fleet-core engine. Trigger on: "rebuild this legacy app", "modernize
-  the whole codebase", "this uses all old versions, rebuild it properly", "re-architect end to
-  end".
+  [Tier 3 · high blast radius · expect rework · run deliberately, review the floor +
+  architecture] Adversarially review a legacy app, research the best current architecture,
+  and rebuild it end to end on a modern foundation while PRESERVING everything it currently
+  does. Use when an app uses outdated everything (old deps, poor architecture, e.g.
+  JS-inlined-in-HTML, no build/module system) and needs a real modernization, not a patch.
+  Incremental and shippable per PR — NOT a big-bang rewrite — rebuilt against a captured
+  behaviour floor so nothing is silently lost. Runs via the autonomous-fleet-core engine.
+  Trigger on: "rebuild this legacy app", "modernize the whole codebase", "this uses all old
+  versions, rebuild it properly", "re-architect end to end".
+license: MIT
+metadata:
+  author: "ravidsrk"
+  version: "1.0.0"
+  tier: "3"
+  fleet-component: "mission"
 ---
+
 
 # Mission: legacy-rebuild
 

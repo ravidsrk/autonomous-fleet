@@ -1,14 +1,21 @@
 ---
 name: autonomous-fleet-adapter-orca
 description: >-
-  The ORCA adapter for autonomous-fleet-core. Maps each engine PRIMITIVE (spawn worker, dispatch,
-  wait, inspect, place, worker_done/ask/reply, open/merge PR, sync task state) to the real Orca
-  orchestration CLI commands. Load this alongside autonomous-fleet-core when running a mission on
-  Orca. Handles Orca's worktree/terminal model, --inject dispatch, check --wait supervision,
-  version-tolerant worker_done, and task-update syncing. Default agent handles: @grok builds,
-  @codex reviews (codex --full-auto), @claude integrates — overridable by the mission's role
-  pipeline.
+  The ORCA adapter for autonomous-fleet-core. Maps each engine PRIMITIVE (spawn worker,
+  dispatch, wait, inspect, place, worker_done/ask/reply, open/merge PR, sync task state) to
+  the real Orca orchestration CLI commands. Load this alongside autonomous-fleet-core when
+  running a mission on Orca. Handles Orca's worktree/terminal model, --inject dispatch,
+  check --wait supervision, version-tolerant worker_done, and task-update syncing. Default
+  agent handles: @grok builds, @codex reviews (codex --full-auto), @claude integrates —
+  overridable by the mission's role pipeline.
+license: MIT
+compatibility: Requires Orca orchestration CLI, git, and gh CLI
+metadata:
+  author: "ravidsrk"
+  version: "1.0.0"
+  fleet-component: "adapter"
 ---
+
 
 # Adapter: Orca
 

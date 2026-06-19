@@ -2,19 +2,34 @@
 name: doc-sync
 description: >-
   [Tier 1 · highest autonomous success ~0.92 merge · safe to run unattended] Bring a repo's
-  documentation back into alignment with its actual code: README, docs/, AGENTS.md/CLAUDE.md,
-  API references, setup/usage instructions, code comments that have drifted, and inline examples
-  that no longer run. Use when docs are stale, after a refactor or dependency change, when
-  onboarding docs are wrong, or for a periodic documentation-truth pass. This is a documentation
-  mission ONLY — it does not change application behaviour or logic; it makes the docs match the
-  code as it actually is. Runs fully autonomously via the autonomous-fleet-core engine.
-  Trigger on: "sync the docs", "our README is out of date", "docs don't match the code", "update
-  documentation", "fix onboarding/setup instructions", "documentation audit".
+  documentation back into alignment with its actual code: README, docs/,
+  AGENTS.md/CLAUDE.md, API references, setup/usage instructions, code comments that have
+  drifted, and inline examples that no longer run. Use when docs are stale, after a refactor
+  or dependency change, when onboarding docs are wrong, or for a periodic
+  documentation-truth pass. This is a documentation mission ONLY — it does not change
+  application behaviour or logic; it makes the docs match the code as it actually is. Runs
+  fully autonomously via the autonomous-fleet-core engine. Trigger on: "sync the docs", "our
+  README is out of date", "docs don't match the code", "update documentation", "fix
+  onboarding/setup instructions", "documentation audit".
+license: MIT
+metadata:
+  author: "ravidsrk"
+  version: "1.0.0"
+  tier: "1"
+  fleet-component: "mission"
 ---
+
 
 # Mission: doc-sync
 
-Apply the **autonomous-fleet-core** engine on your active adapter (load the core; load your runtime adapter — orca or claude-code; follow all core machinery) with the mission parameters below.
+## Required skills
+
+Before executing, activate these skills and read their full instructions:
+
+1. `autonomous-fleet-core` — tool-agnostic coordinator engine
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-grok`
+
+Follow the core and your adapter in full, then apply the mission parameters below.
 
 **Empirical note:** documentation is the single highest-success autonomous task category
 (~0.92 merge rate across 33k real agent PRs). This mission is safe to run unattended.

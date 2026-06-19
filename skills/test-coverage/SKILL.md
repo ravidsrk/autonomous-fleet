@@ -3,13 +3,20 @@ name: test-coverage
 description: >-
   [Tier 1 · high autonomous success ~0.84 merge · safe to run unattended] Raise real test
   coverage on a repo or a target area with behaviour-exercising tests — not coverage-padding
-  stubs. Use when a module is undertested, before a refactor to lock current behaviour, after a
-  feature shipped without tests, or for a periodic coverage pass. Adds/strengthens unit,
-  integration, and where relevant UI tests that genuinely assert behaviour; does NOT change
-  application logic. Runs fully autonomously via the autonomous-fleet-core engine. Trigger
-  on: "add tests", "raise coverage", "this module has no tests", "write tests for X", "improve
-  test coverage", "lock current behaviour with tests".
+  stubs. Use when a module is undertested, before a refactor to lock current behaviour,
+  after a feature shipped without tests, or for a periodic coverage pass. Adds/strengthens
+  unit, integration, and where relevant UI tests that genuinely assert behaviour; does NOT
+  change application logic. Runs fully autonomously via the autonomous-fleet-core engine.
+  Trigger on: "add tests", "raise coverage", "this module has no tests", "write tests for
+  X", "improve test coverage", "lock current behaviour with tests".
+license: MIT
+metadata:
+  author: "ravidsrk"
+  version: "1.0.0"
+  tier: "1"
+  fleet-component: "mission"
 ---
+
 
 # Mission: test-coverage
 

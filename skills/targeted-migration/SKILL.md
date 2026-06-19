@@ -1,16 +1,23 @@
 ---
 name: targeted-migration
 description: >-
-  [Tier 2 · moderate autonomy · full review gate] Migrate ONE axis of a codebase — a framework
-  version, a library swap, a language/runtime bump, a database/ORM change, an API-version move —
-  while preserving everything else and keeping the suite green. Use for a single deliberate
-  migration that's too big for dependency-update but is NOT a full rebuild: React class→hooks, a
-  major framework major-version, swapping one library for another, a DB engine/ORM change, a
-  REST→GraphQL of one surface. Changes one axis; preserves architecture and behaviour on every
-  other axis. Runs via the autonomous-fleet-core engine. Trigger on: "migrate to X",
-  "swap library A for B", "upgrade framework to v-next", "move from REST to GraphQL", "migrate the
-  database/ORM".
+  [Tier 2 · moderate autonomy · full review gate] Migrate ONE axis of a codebase — a
+  framework version, a library swap, a language/runtime bump, a database/ORM change, an
+  API-version move — while preserving everything else and keeping the suite green. Use for a
+  single deliberate migration that's too big for dependency-update but is NOT a full
+  rebuild: React class→hooks, a major framework major-version, swapping one library for
+  another, a DB engine/ORM change, a REST→GraphQL of one surface. Changes one axis;
+  preserves architecture and behaviour on every other axis. Runs via the
+  autonomous-fleet-core engine. Trigger on: "migrate to X", "swap library A for B", "upgrade
+  framework to v-next", "move from REST to GraphQL", "migrate the database/ORM".
+license: MIT
+metadata:
+  author: "ravidsrk"
+  version: "1.0.0"
+  tier: "2"
+  fleet-component: "mission"
 ---
+
 
 # Mission: targeted-migration
 

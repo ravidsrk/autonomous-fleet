@@ -1,13 +1,21 @@
 ---
 name: autonomous-fleet-adapter-grok
 description: >-
-  The GROK adapter for autonomous-fleet-core. Maps each engine PRIMITIVE to Grok Build mechanics
-  — subagents via the Task tool, git worktrees for isolation, the Shell tool for git/gh, and the
-  file ledger as the durable source of truth. Load this alongside autonomous-fleet-core when
-  running a mission in Grok instead of Orca. Because Grok has no separate orchestration daemon,
-  the coordinator IS the main Grok session and workers are subagents (Task tool) or worktree-scoped
-  shell-driven sessions; the file ledger is the authority.
+  The GROK adapter for autonomous-fleet-core. Maps each engine PRIMITIVE to Grok Build
+  mechanics — subagents via the Task tool, git worktrees for isolation, the Shell tool for
+  git/gh, and the file ledger as the durable source of truth. Load this alongside
+  autonomous-fleet-core when running a mission in Grok instead of Orca. Because Grok has no
+  separate orchestration daemon, the coordinator IS the main Grok session and workers are
+  subagents (Task tool) or worktree-scoped shell-driven sessions; the file ledger is the
+  authority.
+license: MIT
+compatibility: Requires Grok Build with Task tool, git worktrees, and gh CLI
+metadata:
+  author: "ravidsrk"
+  version: "1.0.0"
+  fleet-component: "adapter"
 ---
+
 
 # Adapter: Grok
 

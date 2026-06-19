@@ -1,28 +1,4 @@
----
-name: autonomous-fleet-core
-description: >-
-  The portable, tool-agnostic ENGINE for running fully-autonomous multi-agent engineering jobs.
-  Mission skills (doc-sync, test-coverage, dependency-update, cleanup, bug-batch,
-  adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence,
-  legacy-rebuild, take-product-to-completion) invoke THIS engine plus exactly one ADAPTER
-  (orca, claude-code, grok, or another runtime). This core holds everything that does NOT depend on
-  orchestration tool: self-orientation, fully-autonomous coordinator behaviour with file-ledger
-  boolean gates, context-handoff to survive compaction, the worker-placement DECISION LOGIC
-  (dependent vs independent), the PR-per-task pipeline with commits-preserved + conflict-aware
-  merge + worktree cleanup, the empirical risk tiers, safety rails, secret hygiene, and
-  commit/authorship policy. It speaks in PRIMITIVES (spawn worker, dispatch task, wait for
-  completion, inspect state, place work, open/merge PR); the ACTIVE ADAPTER maps each primitive to
-  its tool's real commands. Do NOT run this alone — a mission defines the work, an adapter defines
-  the mechanics. When a mission says "apply the autonomous-fleet-core engine on the <tool>
-  adapter," load this core, load that adapter, and follow both.
----
-
-# Autonomous Fleet — Core Engine (tool-agnostic)
-
-You are the COORDINATOR for an autonomous multi-agent run. You are a THIN LOOP-HOLDER: create
-tasks, spawn workers, dispatch, wait, answer worker questions from defaults, sequence the
-pipeline, decide what runs next and how parallel. You do NOT review, code, or merge yourself — all
-dispatched. Context stays light; the source of truth is the ledger FILE, not your memory.
+# Engine specification
 
 Three things compose every run:
 - **This CORE** — the method (below). Tool-agnostic.

@@ -1,16 +1,23 @@
 ---
 name: adversarial-review-and-fix
 description: >-
-  [Tier 2 · moderate autonomy · full review gate · the proven two-phase workhorse] Run a rigorous
-  CODE-GROUNDED adversarial architecture review of a repo, FREEZE it as the source of truth, then
-  close every confirmed finding one at a time until done. Use for a security/architecture/
-  reliability hardening pass, a pre-production audit-and-remediate, or "review the whole app and
-  fix everything." Phase 0 reviews the actual source (not existing docs) and a skeptic narrows
-  out false findings; Phase 1 fixes the confirmed set with full safety rails. Runs via the
-  autonomous-fleet-core engine. Trigger on: "adversarial review and fix", "audit and
-  remediate", "review the whole app and fix the issues", "harden this before production", "find
-  and fix the architecture problems".
+  [Tier 2 · moderate autonomy · full review gate · the proven two-phase workhorse] Run a
+  rigorous CODE-GROUNDED adversarial architecture review of a repo, FREEZE it as the source
+  of truth, then close every confirmed finding one at a time until done. Use for a
+  security/architecture/ reliability hardening pass, a pre-production audit-and-remediate,
+  or "review the whole app and fix everything." Phase 0 reviews the actual source (not
+  existing docs) and a skeptic narrows out false findings; Phase 1 fixes the confirmed set
+  with full safety rails. Runs via the autonomous-fleet-core engine. Trigger on:
+  "adversarial review and fix", "audit and remediate", "review the whole app and fix the
+  issues", "harden this before production", "find and fix the architecture problems".
+license: MIT
+metadata:
+  author: "ravidsrk"
+  version: "1.0.0"
+  tier: "2"
+  fleet-component: "mission"
 ---
+
 
 # Mission: adversarial-review-and-fix
 

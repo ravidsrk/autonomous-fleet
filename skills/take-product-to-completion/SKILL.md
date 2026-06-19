@@ -2,18 +2,25 @@
 name: take-product-to-completion
 description: >-
   [Tier 3 · high blast radius · expect rework · run deliberately, review the scope artifact]
-  Take a STALLED product to a full-fledged, complete, shippable state — adversarial review of
-  what exists, research the market, freeze a COHERENT PRODUCT BOUNDARY, then build everything
-  inside it to full depth (no stubs, no half-built screens) and rebuild the landing page. Use
-  when a product has been started but never finished, when "done" keeps expanding so nothing
-  ships, or when you need a side project driven to a credible v1. NOT for a thin MVP — the user
-  wants real depth — but the boundary is frozen once so the run converges instead of expanding
-  forever. Highest-risk mission: feature/cross-module work merges cleanly ~80% of the time, so
-  expect some rework; the scope artifact (the IN/ROADMAP/FIX boundary) is the thing to eyeball.
-  Runs via the autonomous-fleet-core engine. Trigger on: "take this product to the finish
-  line", "finish this stalled project", "make this shippable end to end", "complete the whole
-  product".
+  Take a STALLED product to a full-fledged, complete, shippable state — adversarial review
+  of what exists, research the market, freeze a COHERENT PRODUCT BOUNDARY, then build
+  everything inside it to full depth (no stubs, no half-built screens) and rebuild the
+  landing page. Use when a product has been started but never finished, when "done" keeps
+  expanding so nothing ships, or when you need a side project driven to a credible v1. NOT
+  for a thin MVP — the user wants real depth — but the boundary is frozen once so the run
+  converges instead of expanding forever. Highest-risk mission: feature/cross-module work
+  merges cleanly ~80% of the time, so expect some rework; the scope artifact (the
+  IN/ROADMAP/FIX boundary) is the thing to eyeball. Runs via the autonomous-fleet-core
+  engine. Trigger on: "take this product to the finish line", "finish this stalled project",
+  "make this shippable end to end", "complete the whole product".
+license: MIT
+metadata:
+  author: "ravidsrk"
+  version: "1.0.0"
+  tier: "3"
+  fleet-component: "mission"
 ---
+
 
 # Mission: take-product-to-completion
 

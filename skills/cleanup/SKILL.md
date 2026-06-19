@@ -2,15 +2,22 @@
 name: cleanup
 description: >-
   [Tier 1 · high autonomous success ~0.80-0.84 merge · safe to run unattended] Targeted
-  code-health pass — remove dead code, kill duplication, fix a named anti-pattern, tidy structure
-  — WITHOUT re-architecting. The light counterpart to legacy-rebuild: improves the code as it is,
-  preserves all behaviour, no big structural change. Use for "clean up this mess", tech-debt
-  paydown, removing cruft after a feature, or eliminating a specific smell. Behaviour-preserving
-  by definition; every change covered by existing or added tests proving nothing broke. Runs
-  fully autonomously via the autonomous-fleet-core engine. Trigger on: "clean up the code",
-  "remove dead code", "reduce duplication", "tidy this up", "pay down tech debt", "fix this
-  anti-pattern" (when a full rebuild is NOT wanted).
+  code-health pass — remove dead code, kill duplication, fix a named anti-pattern, tidy
+  structure — WITHOUT re-architecting. The light counterpart to legacy-rebuild: improves the
+  code as it is, preserves all behaviour, no big structural change. Use for "clean up this
+  mess", tech-debt paydown, removing cruft after a feature, or eliminating a specific smell.
+  Behaviour-preserving by definition; every change covered by existing or added tests
+  proving nothing broke. Runs fully autonomously via the autonomous-fleet-core engine.
+  Trigger on: "clean up the code", "remove dead code", "reduce duplication", "tidy this up",
+  "pay down tech debt", "fix this anti-pattern" (when a full rebuild is NOT wanted).
+license: MIT
+metadata:
+  author: "ravidsrk"
+  version: "1.0.0"
+  tier: "1"
+  fleet-component: "mission"
 ---
+
 
 # Mission: cleanup
 

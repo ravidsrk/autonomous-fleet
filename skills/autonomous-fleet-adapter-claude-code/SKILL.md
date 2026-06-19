@@ -1,14 +1,21 @@
 ---
 name: autonomous-fleet-adapter-claude-code
 description: >-
-  The CLAUDE CODE adapter for autonomous-fleet-core. Maps each engine PRIMITIVE to Claude Code's
-  native mechanics — subagents via the Task tool, git worktrees for isolation, the Bash tool for
-  git/gh, and TodoWrite as the live task mirror. Load this alongside autonomous-fleet-core when
-  running a mission in Claude Code instead of Orca. Because Claude Code has no separate
-  orchestration runtime, the coordinator IS the main Claude Code session and workers are subagents
-  or worktree-scoped sub-sessions; the file ledger is the durable source of truth and TodoWrite
-  mirrors it.
+  The CLAUDE CODE adapter for autonomous-fleet-core. Maps each engine PRIMITIVE to Claude
+  Code's native mechanics — subagents via the Task tool, git worktrees for isolation, the
+  Bash tool for git/gh, and TodoWrite as the live task mirror. Load this alongside
+  autonomous-fleet-core when running a mission in Claude Code instead of Orca. Because
+  Claude Code has no separate orchestration runtime, the coordinator IS the main Claude Code
+  session and workers are subagents or worktree-scoped sub-sessions; the file ledger is the
+  durable source of truth and TodoWrite mirrors it.
+license: MIT
+compatibility: Requires Claude Code with Task tool, git worktrees, and gh CLI
+metadata:
+  author: "ravidsrk"
+  version: "1.0.0"
+  fleet-component: "adapter"
 ---
+
 
 # Adapter: Claude Code
 

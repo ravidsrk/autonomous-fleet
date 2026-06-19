@@ -1,15 +1,23 @@
 ---
 name: dependency-update
 description: >-
-  [Tier 1 · high autonomous success ~0.84-0.87 merge · safe to run unattended] Update a repo's
-  dependencies to current versions, fix the breakages each bump causes, and keep the suite green
-  — one PR per logical group. Use when deps are stale, for routine maintenance, to clear security
-  advisories, or before building on an old base. Handles version bumps, lockfile updates, and the
-  code/config changes a bump requires (deprecations, renamed APIs, breaking changes); does NOT
-  add features. Runs fully autonomously via the autonomous-fleet-core engine. Trigger on:
-  "update dependencies", "bump packages", "our deps are out of date", "upgrade to latest", "fix
-  security advisories", "dependency maintenance".
+  [Tier 1 · high autonomous success ~0.84-0.87 merge · safe to run unattended] Update a
+  repo's dependencies to current versions, fix the breakages each bump causes, and keep the
+  suite green — one PR per logical group. Use when deps are stale, for routine maintenance,
+  to clear security advisories, or before building on an old base. Handles version bumps,
+  lockfile updates, and the code/config changes a bump requires (deprecations, renamed APIs,
+  breaking changes); does NOT add features. Runs fully autonomously via the
+  autonomous-fleet-core engine. Trigger on: "update dependencies", "bump packages", "our
+  deps are out of date", "upgrade to latest", "fix security advisories", "dependency
+  maintenance".
+license: MIT
+metadata:
+  author: "ravidsrk"
+  version: "1.0.0"
+  tier: "1"
+  fleet-component: "mission"
 ---
+
 
 # Mission: dependency-update
 

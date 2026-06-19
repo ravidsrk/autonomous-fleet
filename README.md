@@ -5,153 +5,144 @@ orchestration tools, not just one.** A tool-agnostic **core** holds all the meth
 **mission** skills describe specific jobs; per-tool **adapters** map the method to each runtime's
 real commands.
 
+This repository follows the [Agent Skills](https://agentskills.io/) format end to end: every
+component is a skill directory with a `SKILL.md` file, optional `references/`, and spec-compliant
+frontmatter (`name` matches directory name).
+
 Write the mission once. Run it on any supported tool. Fix the method once; every mission and every
 tool inherits the fix.
 
+**Repository:** https://github.com/ravidsrk/autonomous-fleet
+
 ---
 
-## The idea
-
-Most "autonomous coding" setups bolt the *method* (how you decompose, gate, review, merge) directly
-onto one tool's *mechanics* (its dispatch commands, its worktree model). Change tools and you
-rewrite everything. `autonomous-fleet` separates them:
+## Layout (Agent Skills format)
 
 ```
 autonomous-fleet/
-├── core/
-│   ├── autonomous-fleet-core.SKILL.md        ← THE METHOD (tool-agnostic). Speaks in PRIMITIVES.
-│   └── missions/                             ← 11 jobs. Each loads the core + an adapter.
-│       ├── doc-sync.SKILL.md                       Tier 1
-│       ├── test-coverage.SKILL.md                  Tier 1
-│       ├── dependency-update.SKILL.md              Tier 1
-│       ├── cleanup.SKILL.md                        Tier 1
-│       ├── bug-batch.SKILL.md                      Tier 2  (reproduce-first gate)
-│       ├── adversarial-review-and-fix.SKILL.md     Tier 2  (two-phase workhorse)
-│       ├── targeted-migration.SKILL.md             Tier 2
-│       ├── design-integration.SKILL.md             Tier 2
-│       ├── landing-page-convergence.SKILL.md       Tier 2
-│       ├── legacy-rebuild.SKILL.md                 Tier 3
-│       └── take-product-to-completion.SKILL.md     Tier 3
-└── adapters/
-    ├── orca/autonomous-fleet-adapter-orca.SKILL.md            ← Orca binding (full)
-    ├── claude-code/autonomous-fleet-adapter-claude-code.SKILL.md ← Claude Code binding
-    ├── grok/autonomous-fleet-adapter-grok.SKILL.md            ← Grok Build binding
-    └── autonomous-fleet-adapter-TEMPLATE.SKILL.md             ← write a new tool's binding
+├── skills/
+│   ├── autonomous-fleet-core/          # tool-agnostic engine
+│   │   ├── SKILL.md
+│   │   └── references/engine.md        # full engine spec (progressive disclosure)
+│   ├── autonomous-fleet-adapter-orca/
+│   ├── autonomous-fleet-adapter-claude-code/
+│   ├── autonomous-fleet-adapter-grok/
+│   ├── autonomous-fleet-adapter-template/
+│   ├── doc-sync/                       # Tier 1 missions
+│   ├── test-coverage/
+│   ├── dependency-update/
+│   ├── cleanup/
+│   ├── bug-batch/                      # Tier 2 missions
+│   ├── adversarial-review-and-fix/
+│   ├── targeted-migration/
+│   ├── design-integration/
+│   ├── landing-page-convergence/
+│   ├── legacy-rebuild/                 # Tier 3 missions
+│   └── take-product-to-completion/
+├── scripts/
+│   ├── validate-skills.sh              # agentskills.io convention checks
+│   └── install-skills.sh               # symlink skills into your agent
+└── README.md
 ```
 
 **Core + Mission + Adapter = a run.** The core calls primitives (spawn worker, dispatch, wait,
 inspect, place work, open/merge PR, sync state); the active adapter resolves each primitive to its
-tool's real commands. The missions never mention a tool.
+tool's real commands. Missions declare which skills to activate; they never hard-code a runtime.
 
 ---
 
 ## Supported runtimes
 
-| Adapter | Runtime | Concurrency model |
-|---------|---------|-------------------|
-| **orca** | [Orca](https://www.onorca.dev) orchestration | Persistent orchestration daemon; worktrees + terminals; `check --wait` supervision |
-| **claude-code** | Claude Code | Coordinator is the main session; workers are subagents (Task tool) + worktree sub-sessions; file ledger is the authority, TodoWrite mirrors it |
-| **grok** | Grok Build | Coordinator is the main session; workers are subagents (Task tool) + worktree sub-sessions; file ledger is the authority |
-| **TEMPLATE** | any (codex, gemini-cli, raw CLIs, …) | copy the template, implement the primitives |
-
-To add a tool: copy `adapters/autonomous-fleet-adapter-TEMPLATE.SKILL.md`, fill in how that runtime
-implements each primitive. The core and all 11 missions stay untouched.
+| Skill | Runtime | Concurrency model |
+|-------|---------|-------------------|
+| `autonomous-fleet-adapter-orca` | [Orca](https://www.onorca.dev) | Daemon + worktrees + terminals; `check --wait` |
+| `autonomous-fleet-adapter-claude-code` | Claude Code | Coordinator session + Task subagents; file ledger |
+| `autonomous-fleet-adapter-grok` | Grok Build | Coordinator session + Task subagents; file ledger |
+| `autonomous-fleet-adapter-template` | any | Copy and implement primitives for a new tool |
 
 ---
 
-## Risk tiers (why they're labelled)
-
-From the MSR 2026 study of ~33,000 real agent-authored pull requests — merge rate by task type. The
-library encodes that so you know where to trust autonomy. Every serious source agrees: **start on
-low-risk, high-volume work and expand as confidence grows.**
+## Risk tiers
 
 | Tier | Meaning | Missions | Approx. merge rate |
 |------|---------|----------|--------------------|
-| **1** | High autonomous success — run unattended | doc-sync, test-coverage, dependency-update, cleanup | 0.84–0.92 |
-| **2** | Moderate — full review gate, glance at the control artifact | bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence | 0.80–0.82 |
-| **3** | High blast radius — review the frozen scope/architecture artifact, expect rework | legacy-rebuild, take-product-to-completion | ~0.80 |
+| **1** | Safe unattended | doc-sync, test-coverage, dependency-update, cleanup | 0.84–0.92 |
+| **2** | Full review gate | bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence | 0.80–0.82 |
+| **3** | High blast radius | legacy-rebuild, take-product-to-completion | ~0.80 |
 
-Baked-in consequences of the data:
-- **doc-sync** and **test-coverage** are the highest-success categories — the safest starting points.
-- **bug-batch** is Tier 2, not Tier 1, because bug-fixes need *exact* (not approximate) changes —
-  so it **requires a failing test that reproduces the bug before any fix.**
-- **No standalone performance mission** — performance is the worst category (~0.68); keep it
-  human-gated.
+Start with **doc-sync** or **test-coverage** (Tier 1).
 
 ---
 
 ## Install
 
-These are skills in the format `<name>/SKILL.md` (or as shipped, `<name>.SKILL.md` so they can
-share one folder). Install the **core**, the **missions**, and the **adapter(s) for the tools you
-use**, each as its own `SKILL.md` under wherever your tool reads skills from.
+### Validate (local)
+
+```bash
+./scripts/validate-skills.sh
+```
+
+### Grok Build (default)
+
+```bash
+./scripts/install-skills.sh
+# symlinks skills/* -> ~/.grok/skills/*
+```
+
+### Manual / other agents
+
+Copy or symlink each directory under `skills/` into your agent's skills path. Each installed skill
+must keep the structure `<skill-name>/SKILL.md` with `name:` in frontmatter matching the directory.
 
 Minimum to run on Orca:
+
 ```
 <skills-dir>/autonomous-fleet-core/SKILL.md
 <skills-dir>/autonomous-fleet-adapter-orca/SKILL.md
-<skills-dir>/doc-sync/SKILL.md        (and any other missions you want)
+<skills-dir>/doc-sync/SKILL.md
 ```
-For Claude Code, install `autonomous-fleet-adapter-claude-code` instead of (or alongside) the Orca
-adapter. For Grok Build, install `autonomous-fleet-adapter-grok`.
 
-At run start the core derives `BRANCH_PREFIX` (default `fleet/`, or slugified from the maintainer's
-git user.name) and ensures `docs/` exists for mission ledgers — both recorded in `DECISIONS.md`.
+For Claude Code use `autonomous-fleet-adapter-claude-code`; for Grok use
+`autonomous-fleet-adapter-grok`.
 
-If you downloaded the bundle with prefixed filenames, rename each to `SKILL.md` inside its own
-directory (e.g. `mv doc-sync.SKILL.md doc-sync/SKILL.md`), or recreate the directory layout shown in
-"The idea" above.
+At run start the core derives `BRANCH_PREFIX` (default `fleet/`) and ensures `docs/` exists for
+mission ledgers — both recorded in `DECISIONS.md`.
+
+### Add a new runtime
+
+1. Copy `skills/autonomous-fleet-adapter-template/` to `skills/autonomous-fleet-adapter-<tool>/`
+2. Set frontmatter `name: autonomous-fleet-adapter-<tool>` (must match directory)
+3. Fill in primitive mappings
+4. Run `./scripts/validate-skills.sh`
 
 ---
 
 ## Use
 
-1. Open the repo you want to work on (skills resolve the target from your current directory — no
-   paths to fill in).
-2. Make sure the **core** and the **adapter for your current tool** are installed, plus the mission
-   you want.
-3. Trigger the mission in plain language — *"sync the docs," "raise test coverage on payments,"
-   "adversarial review and fix this app," "take this product to the finish line."* The mission's
-   `description` triggers on those phrasings.
-4. The mission loads `autonomous-fleet-core` + your tool's adapter and runs fully autonomously:
-   resolves the repo and maintainer, plans, spawns workers, runs the PR-per-task pipeline (build →
-   review → conflict-aware merge → checkout cleanup), and reports once at the end.
+1. Open the **target repo** you want the fleet to work on (missions discover `REPO_ROOT` from cwd).
+2. Install the **core**, one **adapter**, and the **mission** you want.
+3. Trigger in plain language — *"sync the docs," "raise test coverage," "fix these bugs,"*
+   *"take this product to the finish line."*
+4. The mission activates `autonomous-fleet-core` + your adapter and runs autonomously until the
+   readiness doc exists and a single final report is sent.
 
-You are asked to step in only for the single final report — or, for the few missions with a **hard
-external dependency** (e.g. `design-integration` using the `claude_design` MCP connector, which may
-need `/design-login`), that one authorization an agent cannot self-grant.
+Hard external dependencies (e.g. `design-integration` + `/design-login` for Claude Design MCP) are
+the only allowed mid-run user pauses.
 
 ---
 
-## What every run guarantees (tool-independent)
+## What every run guarantees
 
-- **No placeholders** — repo and maintainer discovered, not filled in.
-- **One PR per unit**, commits preserved (never squashed), authored by the real maintainer, no
-  agent/tool trailers.
-- **Conflict-aware merges** — rebase onto BASE, resolve, re-test green, re-review if logic changed,
-  then merge. Never a forced merge over conflicts or a red suite.
-- **Checkout cleanup** on every merge.
-- **Safety rails** — nothing touches real funds/keys/prod; merging is not deploying; infra is merged
-  as code, applied by humans as ops.
-- **A readiness doc** at the end, plus a single completion report.
-- **Survives compaction** — the file ledger is the durable source of truth; a fresh coordinator
-  resumes from it.
+- Repo and maintainer discovered — no placeholders
+- One PR per unit; commits preserved (never squashed); real maintainer authorship
+- Conflict-aware merges; checkout cleanup on every merge
+- Safety rails: testnet/staging only; merge ≠ deploy
+- File ledger survives compaction and session restarts
 
 ---
 
-## Notes
+## Spec compliance
 
-- **Adapter parity:** the Orca adapter is the most battle-tested (it encodes a long sequence of
-  hard-won fixes — worker placement, conflict resolution, version-tolerant completion, the
-  file-ledger gates). The Claude Code adapter follows the same contract but its concurrency model
-  differs (subagents + ledger-polling instead of a daemon); validate it on a Tier-1 mission before
-  trusting it on Tier-3 work.
-- **Referencing vs self-contained:** missions are written to *reference* the core and an adapter.
-  Confirm your runtime actually loads referenced skills when a mission fires. If it does not chain
-  skills, inline the core + adapter bodies into each mission (identical content; only packaging
-  changes). Test on one Tier-1 mission first.
-- **Origin:** this is the distillation of a long session hardening one orchestration prompt across
-  many real jobs. The method (self-orientation, file-ledger boolean gates, frozen-artifact-then-
-  execute, conflict-aware PR-per-task, the worker-placement logic) was each learned the hard way;
-  the tiers and the bug-batch reproduce-first gate are grounded in the MSR 2026 study rather than
-  intuition. Separating method from mechanics is what makes it portable across tools.
+- Format: [agentskills.io/specification](https://agentskills.io/specification)
+- Progressive disclosure: core engine detail in `skills/autonomous-fleet-core/references/engine.md`
+- Optional upstream validator: [skills-ref](https://github.com/agentskills/agentskills/tree/main/skills-ref)
