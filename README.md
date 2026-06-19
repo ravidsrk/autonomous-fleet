@@ -55,11 +55,23 @@ The `.agents/` directory is gitignored — it is created when you run `npx skill
 Requires step 1 (`skill-creator` installed to `.agents/skills/skill-creator/`):
 
 ```bash
-./scripts/validate-skills.sh
+./scripts/validate-skills.sh          # SKILL.md packages (agentskills.io)
+./scripts/validate-fleet-outcome.sh   # readiness doc fleet-outcome YAML
+pytest tests/test_fleet_campaign.py  # campaign edge evaluator
 ```
 
-Uses [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator)'s
-`quick_validate.py` against the [agentskills.io specification](https://agentskills.io/specification).
+Skill validation uses [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator)'s
+`quick_validate.py`. After a mission run, readiness docs must lead with `fleet-outcome` YAML — see
+`skills/autonomous-fleet-core/references/fleet-outcome.md`.
+
+Evaluate a campaign branch manually:
+
+```bash
+./scripts/eval-campaign-edge.sh \
+  --readiness docs/doc-sync-readiness.md \
+  --campaign docs/composition-e2e-campaign.yaml \
+  --current-node docs
+```
 
 ### 4. Run a mission
 
@@ -107,7 +119,13 @@ autonomous-fleet/
 ├── .agents/skills/                      # installed skill copies (gitignored; from npx skills add)
 ├── scripts/
 │   ├── validate-skills.sh
+│   ├── validate-fleet-outcome.sh
+│   ├── eval-campaign-edge.sh
+│   ├── eval-campaign-edge.py
+│   ├── lib/fleet_outcome.py
 │   └── install-skills.sh
+├── tests/
+│   └── test_fleet_campaign.py
 └── skills-lock.json                     # lockfile for npx skills
 ```
 
