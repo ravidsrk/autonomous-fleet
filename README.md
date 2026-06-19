@@ -9,6 +9,8 @@ Published as [Agent Skills](https://agentskills.io/) packages — install with [
 
 **Repository:** https://github.com/ravidsrk/autonomous-fleet
 
+CI runs `./scripts/validate-all.sh` on every push/PR to `main` (skills, fleet-outcome, pytest).
+
 ---
 
 ## Quick start
@@ -21,10 +23,12 @@ npx skills add https://github.com/anthropics/skills --skill skill-creator -y -p
 
 ### 2. Install autonomous-fleet skills
 
-**Starter set** (core + Grok adapter + doc-sync):
+**Starter set** (umbrella + program + core + Grok adapter + doc-sync):
 
 ```bash
 npx skills add https://github.com/ravidsrk/autonomous-fleet \
+  --skill autonomous-fleet \
+  --skill fleet-program \
   --skill autonomous-fleet-core \
   --skill autonomous-fleet-adapter-grok \
   --skill doc-sync \
@@ -55,9 +59,11 @@ The `.agents/` directory is gitignored — it is created when you run `npx skill
 Requires step 1 (`skill-creator` installed to `.agents/skills/skill-creator/`):
 
 ```bash
+./scripts/validate-all.sh             # skills + fleet-outcome + pytest (recommended)
+# or individually:
 ./scripts/validate-skills.sh          # SKILL.md packages (agentskills.io)
 ./scripts/validate-fleet-outcome.sh   # readiness doc fleet-outcome YAML
-pytest tests/test_fleet_campaign.py  # campaign edge evaluator
+pytest tests/test_fleet_campaign.py   # campaign edge evaluator
 ```
 
 Skill validation uses [skill-creator](https://github.com/anthropics/skills/tree/main/skills/skill-creator)'s
@@ -118,6 +124,7 @@ autonomous-fleet/
 │   └── take-product-to-completion/
 ├── .agents/skills/                      # installed skill copies (gitignored; from npx skills add)
 ├── scripts/
+│   ├── validate-all.sh
 │   ├── validate-skills.sh
 │   ├── validate-fleet-outcome.sh
 │   ├── eval-campaign-edge.sh

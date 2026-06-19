@@ -2,7 +2,7 @@
 # Install autonomous-fleet skills using the npx skills CLI (agentskills.io standard).
 #
 # Usage:
-#   ./scripts/install-skills.sh              # install core + grok adapter + doc-sync (starter set)
+#   ./scripts/install-skills.sh              # starter set (umbrella + program + core + grok + doc-sync)
 #   ./scripts/install-skills.sh --all        # install all 18 fleet skills
 #   ./scripts/install-skills.sh doc-sync bug-batch   # install named skills
 set -euo pipefail
@@ -20,6 +20,8 @@ fi
 
 # Default starter set for Grok-based runs
 exec npx skills add "$SOURCE" \
+  --skill autonomous-fleet \
+  --skill fleet-program \
   --skill autonomous-fleet-core \
   --skill autonomous-fleet-adapter-grok \
   --skill doc-sync \
