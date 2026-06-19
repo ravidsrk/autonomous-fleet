@@ -47,8 +47,12 @@ cd autonomous-fleet
 ```
 
 Skills install to `.agents/skills/` (universal path for Cursor, Codex, Claude Code, Grok, etc.).
+The `.agents/` directory is gitignored — it is created when you run `npx skills add` or
+`./scripts/install-skills.sh`.
 
 ### 3. Validate
+
+Requires step 1 (`skill-creator` installed to `.agents/skills/skill-creator/`):
 
 ```bash
 ./scripts/validate-skills.sh
@@ -90,7 +94,7 @@ autonomous-fleet/
 │   ├── landing-page-convergence/
 │   ├── legacy-rebuild/                  # Tier 3 missions
 │   └── take-product-to-completion/
-├── .agents/skills/                      # installed skills (symlinks from npx skills)
+├── .agents/skills/                      # installed skill copies (gitignored; from npx skills add)
 ├── scripts/
 │   ├── validate-skills.sh
 │   └── install-skills.sh
@@ -129,7 +133,8 @@ List all: `npx skills add https://github.com/ravidsrk/autonomous-fleet --list`
 
 ## Authoring new skills
 
-This repo includes `skill-creator` from Anthropic. To add a mission or adapter:
+Install `skill-creator` from Anthropic first (step 1 above — not bundled in this repo). To add a
+mission or adapter:
 
 ```bash
 # scaffold a new skill
