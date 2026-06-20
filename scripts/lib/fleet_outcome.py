@@ -116,6 +116,16 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
     if deferred is not None and not isinstance(deferred, list):
         errors.append(f"{prefix}: deferred_missions must be a list")
 
+    # Research discipline gate (optional, cross-cutting): every external fact the
+    # build relied on must have a logged source. See engine.md RESEARCH DISCIPLINE.
+    for rkey in ("unverified_assumptions", "sources_logged"):
+        if rkey in outcome:
+            rval = outcome[rkey]
+            if type(rval) is not int or rval < 0:
+                errors.append(
+                    f"{prefix}: {rkey} must be a non-negative int, got {rval!r}"
+                )
+
     return errors
 
 

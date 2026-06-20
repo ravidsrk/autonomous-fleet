@@ -188,6 +188,46 @@ into each DISPATCH / task spec for matching pipeline roles (@claude builder, @gr
 - Optional skills (coordinator-only) and worker skills are disjoint — see composition.md.
 
 ═══════════════════════════════════════════════════════════
+RESEARCH DISCIPLINE — verify external facts on demand; never code from stale memory.
+═══════════════════════════════════════════════════════════
+Research is NOT a phase you do once and ignore for the rest of the mission — it is a TRIGGER that
+fires as-and-when required, throughout. Training data is stale for current library/API behavior,
+versions, advisories, and anything external, so a worker that codes from memory ships wrong
+assumptions. Both coordinator (at gates) and workers (mid-task) apply this; the worker preamble
+below ships on EVERY DISPATCH, not only when a mission lists worker skills.
+
+- TRIGGER (when research is REQUIRED): before committing to any external fact you cannot verify
+  from THIS repo — a library/framework's current API or version behavior, a config/flag's present
+  semantics, a CVE/advisory, a payment/auth/provider surface, a design or competitive pattern,
+  anything dated after your training cutoff. When unsure whether a fact is stale-prone, treat it
+  as yes. Do not guess and ship: verify, then act.
+- THE LOOP (monid-first): `monid discover -q "<the unknown>"` → `monid inspect` the endpoint →
+  `monid run` it. monid is the front door for ANY external unknown (web → exa; dependency version →
+  npm-package-info; vulnerability → cve-lookup; repo/stack → github-repo-analyze / tech-stack-detect;
+  API contract → api-docs-generate; competitive → competitor-compare). ONE carve-out: a pure
+  current-library-docs lookup may go straight to Context7, which is built for exactly that. For
+  anything broader, or to corroborate a high-stakes finding, use the `deep-research` skill (fan-out
+  + adversarial verification). Never skip verification entirely.
+- THE LEDGER (append, never freeze): each trigger writes one line to `docs/research-notes.md` —
+  `<unknown> | <source: url or provider/endpoint> | <finding> | verified|unverified`. It grows
+  through the WHOLE mission, so a later task reuses an earlier finding instead of re-searching and
+  the reviewer sees every external fact the build leaned on.
+- THE GATE (verify at the END, do not pre-gate): T-FINAL records in the readiness `fleet-outcome`
+  `unverified_assumptions: 0` (every external decision the build made has a logged source) and
+  `sources_logged: <n>`. A reviewer FAILS a PR that codes against an unverified external fact. The
+  campaign never blocks waiting on upfront research; it blocks only if the mission shipped an
+  unsourced external assumption (a campaign edge may branch on `unverified_assumptions == 0`).
+
+Worker preamble (append to every DISPATCH, alongside OPERATING BEHAVIORS):
+```
+RESEARCH: before coding against any external fact you can't confirm from this repo (library/API
+behavior, versions, CVEs, provider surfaces, competitive/design patterns), run `monid discover`
+and verify it first (Context7 for a pure library-docs lookup; `deep-research` to corroborate).
+Log each check to docs/research-notes.md (unknown | source | finding | verified). Ship no
+unverified external assumption; the reviewer fails PRs that do.
+```
+
+═══════════════════════════════════════════════════════════
 PR-PER-TASK PIPELINE — commits preserved, NEVER squash, conflict-aware, checkout cleaned.
 ═══════════════════════════════════════════════════════════
 The mission defines the role at each step (builder / reviewer / integrator) and any extra gates.
