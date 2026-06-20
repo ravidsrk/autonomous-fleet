@@ -1,7 +1,7 @@
 ---
 name: test-coverage
 description: >-
-  [Tier 1 · cross-agent merge ~61.5% (test) · guard hollow-test risk] Raise real test
+  [Tier 1 · lower-than-doc/build cross-agent merge-success (test) · guard hollow-test risk] Raise real test
   coverage on a repo or a target area with behaviour-exercising tests — not coverage-padding
   stubs. Use when a module is undertested, before a refactor to lock current behaviour,
   after a feature shipped without tests, or for a periodic coverage pass. Adds/strengthens
@@ -10,6 +10,7 @@ description: >-
   Trigger on: "add tests", "raise coverage", "this module has no tests", "write tests for
   X", "improve test coverage", "lock current behaviour with tests".
 license: MIT
+compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
   version: "1.0.0"
@@ -25,7 +26,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -53,9 +54,10 @@ Record in `docs/test-coverage-readiness.md` under **Recommended next missions** 
 | Refactor required for testability | `cleanup` (light) or `targeted-migration` |
 | Hollow coverage tooling only | Use repo's existing test/coverage commands |
 
-**Empirical note:** test tasks merge at ~61.5% cross-agent per arXiv 2601.15195 (MSR 2026 AIDev
-dataset, 33,596 PRs) — lower than documentation/chore; the reviewer gate matters. The ONE failure
-mode to guard is hollow tests written to move a number; the reviewer rejects those.
+**Empirical note:** Documentation, CI, and build-update tasks show the highest merge-success
+rate among AI-agent PRs (arXiv 2601.15195 — Ehsani et al., MSR 2026, AIDev dataset of ~33k PRs);
+test tasks merge at a lower rate than those categories, so the reviewer gate matters. The ONE
+failure mode to guard is hollow tests written to move a number; the reviewer rejects those.
 
 ## GOAL
 Increase MEANINGFUL test coverage on the target (whole repo, or an area the user named). Every
