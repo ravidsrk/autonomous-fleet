@@ -1,0 +1,64 @@
+# handoff-to-product: build a product from a design + spec handoff.
+#
+# T-0 PREREQUISITE (run once, before this campaign): register the three new
+# missions in scripts/lib/fleet_outcome.py MISSION_METRICS and in
+# skills/autonomous-fleet-core/references/fleet-outcome.md, then lint every
+# edge below with scripts/eval-campaign-edge.py. The frozensets are:
+#   scaffold-align:       { align_items_open, check_green, seam_frozen, scaffold_ok }
+#   contract-first-build: { in_items_open, roadmap_count, stubs_remaining, ops_queue_count }
+#   agents-layer:         { migration_items_open, seam_unwired_open, old_axis_removed, evals_passing, deploy_pending_ops }
+# Edges branch on the PRIOR node's registered metrics; first true wins; no-match
+# => PHASE DONE unless that node set fleet-outcome.status: blocked.
+#
+# pre_gate autoplan and post_gates qa, cso are OPERATOR-INVOKED around the
+# campaign, not campaign nodes. They never appear under nodes/edges.
+campaign: handoff-to-product
+repo: single
+base: fleet/handoff-to-product-base
+start: align
+pre_gates:
+  - autoplan
+nodes:
+  align: { mission: scaffold-align }
+  design: { mission: design-integration }
+  contract: { mission: contract-first-build }
+  agents: { mission: agents-layer }
+  audit: { mission: adversarial-review-and-fix }
+  deps: { mission: dependency-update }
+  tests: { mission: test-coverage }
+  docs: { mission: doc-sync }
+  bugs: { mission: bug-batch }
+post_gates:
+  - qa
+  - cso
+edges:
+  # Only advance once the build plan is frozen (seam_frozen implies check_green;
+  # scaffold-align sets status: blocked if the scaffold is not green).
+  align:
+    - { to: design, if: seam_frozen == true }
+  # Design parity closed against the frozen tokens, then build typed depth.
+  design:
+    - { to: contract, if: parity_items_open == 0 }
+  # Typed depth done (stub fully exercised), then wire the live agents impl.
+  contract:
+    - { to: agents, if: stubs_remaining == 0 }
+  # Live impl satisfies every seam member, then adversarial review.
+  agents:
+    - { to: audit, if: seam_unwired_open == 0 }
+  # Review queued operator work => patch deps first, else go straight to tests.
+  audit:
+    - { to: deps, if: ops_queue_count > 0 }
+    - { to: tests, if: always }
+  # Security-patch-only deps run; deferred majors loop back through review.
+  deps:
+    - { to: audit, if: majors_deferred > 0 }
+    - { to: tests, if: always }
+  # Coverage closes, then sync the docs.
+  tests:
+    - { to: docs, if: always }
+  # Doc-sync surfaced code bugs => batch-fix them, else PHASE DONE.
+  docs:
+    - { to: bugs, if: code_bug_findings > 0 }
+  # Bug batch re-syncs docs so the readiness doc reflects the fixes.
+  bugs:
+    - { to: docs, if: always }
