@@ -1,0 +1,12 @@
+campaign: secure-ship
+repo: single
+base: fleet/secure-ship-base
+start: audit
+nodes:
+  audit: { mission: adversarial-review-and-fix }
+  deps: { mission: dependency-update }
+  docs: { mission: doc-sync }
+edges:
+  audit: [{ to: deps, if: always }]
+  deps: [{ to: docs, if: always }]
+  docs: []
