@@ -118,3 +118,10 @@ create lazily on first worker_done.
 - 5 codex exec reviews running; verdict files /tmp/revN-out.txt end with `VERDICT: PASS|FAIL`.
 - branches pushed: fix-drivers 731146d, fix-gstack-gates c0a14bb, fix-claims-honesty (10 commits), fix-validators, fix-fleet-outcome 53af07f.
 - NEXT: collect verdicts; merge PR#9 (drivers) FIRST (unblocks GIT-02 test), then the rest; rebase each onto BASE before merge (ledger commits moved BASE; coder files disjoint so no conflict).
+
+## PROGRESS LOG (merges)
+
+- MERGED PR#10 (gstack-gates) -> F1 CLOSED. PR#11 (claims) -> PROV-01/02/04/06/08/09, GEM-001/002/003, RD-2/3 CLOSED. Both codex-PASS, merged into BASE (378031a, da894ba).
+- PR#12 (validators) review FAIL = GIT-02 cross-cutting only (test_run_campaign.py fails in worktree until drivers fixes .git guard); PR12 own tests pass. Action: merge drivers first, rebase PR12, re-test, merge. No code change needed.
+- PR#13 (fleet-outcome) review FAIL = (a) same GIT-02 cross-cutting failure; (b) REAL minor gap: FM-15 needs a CRLF regression test. Action: @grok adds CRLF test, then rebase onto BASE (post-drivers), re-review, merge.
+- PR#9 (drivers) verdict pending; merge FIRST when PASS.
