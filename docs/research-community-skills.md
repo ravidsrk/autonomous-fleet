@@ -180,7 +180,7 @@ Rule: humans pick **bundle + repo**; fleet picks **mission**; workers pick **dom
 | **2** | Optional/Worker on `design-integration`, `landing-page-convergence`, `adversarial-review-and-fix` | Done |
 | **3** | Coordinator behaviors in `engine.md` | Done |
 | **4** | `setup-autonomous-fleet` + `docs/agents/fleet-config.md` | Done |
-| **5** | External dogfood pack `ship-with-proof-gemoji.md` | Done — evidence in `docs/external-dogfood/ship-with-proof-evidence.md` |
+| **5** | External dogfood pack `ship-with-proof-gemoji.md` | Partial — one interactive (non-headless) dogfood on a fork clone (`ravidsrk/gemoji` @ `1541ce9`); not upstreamed; headless run pending grok auth. Evidence: `docs/external-dogfood/ship-with-proof-evidence.md` |
 
 ---
 
