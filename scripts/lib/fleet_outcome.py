@@ -27,6 +27,21 @@ MISSION_METRICS: dict[str, frozenset[str]] = {
     "take-product-to-completion": frozenset(
         {"in_items_open", "roadmap_count", "stubs_remaining"}
     ),
+    "scaffold-align": frozenset(
+        {"align_items_open", "check_green", "seam_frozen", "scaffold_ok"}
+    ),
+    "contract-first-build": frozenset(
+        {"in_items_open", "roadmap_count", "stubs_remaining", "ops_queue_count"}
+    ),
+    "agents-layer": frozenset(
+        {
+            "migration_items_open",
+            "seam_unwired_open",
+            "old_axis_removed",
+            "evals_passing",
+            "deploy_pending_ops",
+        }
+    ),
 }
 
 

@@ -11,6 +11,7 @@ cross-agent merge rates). Start Tier 1 unattended; review frozen artifacts for T
 | `test-coverage` | Undertested modules; lock behaviour before refactor |
 | `dependency-update` | Stale deps; security advisories; routine bumps |
 | `cleanup` | Dead code, duplication, smells — not a full rebuild |
+| `scaffold-align` | Design+spec handoff: certify scaffold green, certify+harden the agent/service seam, freeze `docs/build-plan.md` |
 
 ## Tier 2 — full review gate (~64–79% cross-agent merge; no direct category for UI/migration)
 
@@ -28,6 +29,8 @@ cross-agent merge rates). Start Tier 1 unattended; review frozen artifacts for T
 |-------|----------|
 | `legacy-rebuild` | Modernize legacy app; preserve behaviour floor |
 | `take-product-to-completion` | Stalled product → shippable; frozen IN/ROADMAP/FIX boundary |
+| `contract-first-build` | Build typed product depth (api/server/data/auth/payments/ui) against the pre-frozen `docs/build-plan.md` boundary |
+| `agents-layer` | Wire the live impl of the agent/service seam (one-axis stub→live cutover) against the frozen stub fixtures, then remove the stub |
 
 ## Adapters
 
@@ -53,8 +56,13 @@ cross-agent merge rates). Start Tier 1 unattended; review frozen artifacts for T
 
 Presets: `skills/fleet-program/references/programs.md` (linear),
 `skills/fleet-program/references/campaigns.md` (if-outcome). Headless presets also under
-`scripts/campaigns/` (`repo-health`, `ship-with-proof`, `align-then-ship`, `quality-gate`).
-One mission at a time per repo; `fleet-outcome` YAML on every readiness doc.
+`scripts/campaigns/` (`repo-health`, `ship-with-proof`, `align-then-ship`, `quality-gate`,
+`handoff-to-product`). One mission at a time per repo; `fleet-outcome` YAML on every readiness doc.
+
+Build a product from a design+spec handoff: run the `handoff-to-product` campaign
+(`scaffold-align → design-integration → contract-first-build → agents-layer →` quality tail). Per-product
+facts pass between missions through the frozen `docs/build-plan.md` artifact, not mission text. See
+`docs/handoff-to-product.md`.
 
 Third-party skills (gstack, agent-skills, mattpocock): attach via Optional/Worker slots only —
 see `skills/autonomous-fleet-core/references/community-skills.md` and

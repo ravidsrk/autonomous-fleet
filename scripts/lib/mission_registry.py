@@ -38,6 +38,18 @@ MISSION_DOCS: dict[str, dict[str, str]] = {
         "progress": "completion-progress.md",
         "readiness": "completion-readiness.md",
     },
+    "scaffold-align": {
+        "progress": "scaffold-align-progress.md",
+        "readiness": "scaffold-align-readiness.md",
+    },
+    "contract-first-build": {
+        "progress": "contract-build-progress.md",
+        "readiness": "contract-build-readiness.md",
+    },
+    "agents-layer": {
+        "progress": "agents-layer-progress.md",
+        "readiness": "agents-layer-readiness.md",
+    },
 }
 
 
