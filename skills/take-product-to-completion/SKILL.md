@@ -14,6 +14,7 @@ description: >-
   engine. Trigger on: "take this product to the finish line", "finish this stalled project",
   "make this shippable end to end", "complete the whole product".
 license: MIT
+compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
   version: "1.0.0"
@@ -29,7 +30,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -59,9 +60,10 @@ ROADMAP list in boundary doc + **Recommended next missions** in `docs/completion
 | Legacy stack blocks completion | `legacy-rebuild` |
 
 **Empirical note:** this is the highest-blast-radius mission. Feature and cross-module work has
-no direct category in arXiv 2601.15195 (documentation merges at ~84% cross-agent — the highest
-observed rate), and broad autonomous runs thrash when they fail. The single control that matters
-is the FROZEN BOUNDARY in T3 — review that artifact. Everything downstream inherits it.
+no direct category in arXiv 2601.15195 — Ehsani et al., MSR 2026, AIDev dataset of ~33k PRs (where
+documentation, CI, and build-update tasks show the highest merge-success rate among AI-agent PRs),
+and broad autonomous runs thrash when they fail. The single control that matters is the FROZEN
+BOUNDARY in T3 — review that artifact. Everything downstream inherits it.
 
 ## CORE TENSION (read first)
 "Finish the whole product" is unbounded and is exactly why it never ships. The fix is NOT a thin

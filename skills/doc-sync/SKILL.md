@@ -1,7 +1,7 @@
 ---
 name: doc-sync
 description: >-
-  [Tier 1 · highest cross-agent merge ~84% (documentation) · safe to run unattended] Bring a repo's
+  [Tier 1 · highest cross-agent merge-success category (documentation) · safe to run unattended] Bring a repo's
   documentation back into alignment with its actual code: README, docs/,
   AGENTS.md/CLAUDE.md, API references, setup/usage instructions, code comments that have
   drifted, and inline examples that no longer run. Use when docs are stale, after a refactor
@@ -12,6 +12,7 @@ description: >-
   README is out of date", "docs don't match the code", "update documentation", "fix
   onboarding/setup instructions", "documentation audit".
 license: MIT
+compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
   version: "1.0.0"
@@ -60,9 +61,9 @@ Do not start another mission in the same run.
 | Undertested area flagged during audit | `test-coverage` |
 | Broken setup/deps (not doc wording) | `dependency-update` |
 
-**Empirical note:** documentation is the single highest-success autonomous task category
-(~84% cross-agent merge rate per arXiv 2601.15195, MSR 2026 AIDev dataset, 33,596 PRs). This
-mission is safe to run unattended.
+**Empirical note:** Documentation, CI, and build-update tasks show the highest merge-success
+rate among AI-agent PRs (arXiv 2601.15195 — Ehsani et al., MSR 2026, AIDev dataset of ~33k PRs).
+This mission is safe to run unattended.
 
 ## GOAL
 Make the repository's documentation TRUE to its current code. Find every place docs and code

@@ -4,7 +4,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SKILLS_DIR="$ROOT/skills"
-VALIDATOR="$ROOT/.agents/skills/skill-creator/scripts/quick_validate.py"
+# SKILL_CREATOR_DIR overrides the skill-creator location (default: installed under .agents).
+# Lets tests force the validator-absent path deterministically regardless of what is installed.
+VALIDATOR="${SKILL_CREATOR_DIR:-$ROOT/.agents/skills/skill-creator}/scripts/quick_validate.py"
 
 # shellcheck source=lib/venv-bootstrap.sh
 source "$ROOT/scripts/lib/venv-bootstrap.sh"
@@ -16,9 +18,15 @@ if [[ ! -d "$SKILLS_DIR" ]]; then
 fi
 
 if [[ ! -f "$VALIDATOR" ]]; then
-  echo "WARN skill-creator not installed; skipping skill validation." >&2
-  echo "  To enable: npx skills add https://github.com/anthropics/skills --skill skill-creator -y -p" >&2
-  exit 0
+  if [[ "${VALIDATE_SKILLS_OPTIONAL:-0}" == "1" ]]; then
+    echo "WARN skill-creator not installed; skipping skill validation (VALIDATE_SKILLS_OPTIONAL=1)." >&2
+    echo "  To enable: npx skills add https://github.com/anthropics/skills --skill skill-creator -y -p" >&2
+    exit 0
+  fi
+  echo "error: skill-creator validator not found at $VALIDATOR" >&2
+  echo "  Install: npx skills add https://github.com/anthropics/skills --skill skill-creator -y -p" >&2
+  echo "  Or set VALIDATE_SKILLS_OPTIONAL=1 to skip skill validation." >&2
+  exit 1
 fi
 
 ERRORS=0

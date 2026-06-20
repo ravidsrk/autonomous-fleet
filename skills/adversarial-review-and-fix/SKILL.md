@@ -11,6 +11,7 @@ description: >-
   "adversarial review and fix", "audit and remediate", "review the whole app and fix the
   issues", "harden this before production", "find and fix the architecture problems".
 license: MIT
+compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
   version: "1.0.0"
