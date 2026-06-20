@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| REPO_ROOT | `/Users/ravindra/projects/autonomous-fleet` |
+| REPO_ROOT | `/Users/ravindra/projects/autonomous-fleet` (canonical local clone of `ravidsrk/autonomous-fleet`) |
 | MAINTAINER | Ravindra Kumar `<ravidsrk@gmail.com>` |
 | BRANCH_PREFIX | `fleet/` |
 | BASE | `fleet/composition-e2e-base` |
@@ -20,7 +20,7 @@
 ## doc-sync (2026-06-20)
 
 - Pass: community-skills + PR #7 scope — D6–D14 in `docs/doc-sync-audit.md`
-- Verified: `validate-all.sh` 20/20 skills, pytest 11 pass
+- Verified: `validate-all.sh` 20/20 skills, pytest 25 pass
 - BASE for doc edits: `fleet/community-skills-and-dogfood`
 
 ## Prior runs
