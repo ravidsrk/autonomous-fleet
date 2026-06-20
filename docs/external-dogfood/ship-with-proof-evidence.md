@@ -1,10 +1,14 @@
-# ship-with-proof dogfood evidence — gemoji (2026-06-20)
+# ship-with-proof interactive dogfood — gemoji (2026-06-20)
+
+**Status:** interactive dogfood (headless path not yet validated). Headless `grok -p` failed with
+`Auth(AuthorizationRequired)`; the run completed interactively in Cursor Grok.
 
 ## Target
 
-- Repo: `/tmp/gemoji` (clone of [github/gemoji](https://github.com/github/gemoji))
-- Branch: `fleet/gemoji-ship-with-proof-base`
-- Commit: `1541ce9` (local dogfood; not pushed upstream)
+- Upstream reference: [github/gemoji](https://github.com/github/gemoji)
+- Fork (verifiable): [github.com/ravidsrk/gemoji](https://github.com/ravidsrk/gemoji), branch
+  `fleet/gemoji-ship-with-proof-base`, SHA `1541ce9` — not proposed to upstream github/gemoji
+- Local clone used during dogfood: `/tmp/gemoji`
 
 ## Campaign
 
@@ -28,7 +32,7 @@ Edge eval after audit: `audit → tests` (confirmed via `eval-campaign-edge.sh`)
 | REL-002 | `edit_emoji` clears stale index keys in `lib/emoji.rb` + new test |
 | REL-003 | `Minitest::Test` in `test/test_helper.rb` |
 
-Tests: 22 + 4 runs, 0 failures (`ruby -Ilib:test test/*_test.rb`)
+Tests: 26 runs, 57 assertions, 0 failures (`ruby -Ilib:test -e 'Dir.glob("test/*_test.rb").sort.each { |f| load f }'`)
 
 ## Infrastructure learned
 
