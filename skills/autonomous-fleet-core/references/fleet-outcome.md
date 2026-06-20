@@ -21,11 +21,19 @@ fleet-outcome:
     duration_min: <n>
     coordinator_turns: <n>
     worker_retries: <n>
+  unverified_assumptions: 0       # optional — research-discipline gate (non-negative int)
+  sources_logged: <n>             # optional — research-notes.md line count
 ---
 ```
 
 `run` is optional. Record when the host exposes timing/retries; use for dogfood comparisons and
 tier validation. Do not branch campaign edges on `run` fields.
+
+`unverified_assumptions` / `sources_logged` are the research-discipline gate (see engine.md
+RESEARCH DISCIPLINE). Optional and cross-cutting: when present each must be a non-negative int.
+T-FINAL records `unverified_assumptions: 0` once every external fact the build relied on has a
+logged source in `docs/research-notes.md`; a campaign edge MAY branch on `unverified_assumptions
+== 0`. Unlike `run` fields, these are branchable.
 
 Then markdown body: human summary, indexes, **Recommended next missions** table (duplicate of
 `deferred_missions` for readers).
