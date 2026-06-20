@@ -1,6 +1,7 @@
 # autonomous-fleet
 
-A portable framework for running fully-autonomous multi-agent engineering jobs — **across
+A portable framework for running multi-agent engineering jobs designed for autonomous runs
+(headless path not yet end-to-end validated) — **across
 orchestration tools, not just one.** A tool-agnostic **core** holds all the method; thin
 **mission** skills describe specific jobs; per-tool **adapters** map the method to each runtime's
 real commands.
@@ -176,7 +177,7 @@ Worker / Deferred sections; readiness docs lead with `fleet-outcome` YAML.
 | `autonomous-fleet-adapter-grok` | Adapter | Grok Build (`/goal`, `update_goal`) |
 | `autonomous-fleet-adapter-codex` | Adapter | OpenAI Codex (`/goal`) |
 | `autonomous-fleet-adapter-template` | Guide | Copy to author a new adapter |
-| `doc-sync` | Mission · Tier 1 | Highest merge rate (~0.92) |
+| `doc-sync` | Mission · Tier 1 | Highest cross-agent merge rate (~84% documentation; arXiv 2601.15195) |
 | `test-coverage` | Mission · Tier 1 | |
 | `dependency-update` | Mission · Tier 1 | |
 | `cleanup` | Mission · Tier 1 | |

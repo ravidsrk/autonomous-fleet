@@ -58,7 +58,7 @@ Record in final readiness doc under **Recommended next missions** and in DECISIO
 | Whole app must match design | `design-integration` |
 | Copy/positioning strategy undefined | `take-product-to-completion` (boundary pass) |
 
-**Empirical note:** front-end fidelity work (~0.80-0.81 merge) — full review gate. The thing that
+**Empirical note:** No matching task category in arXiv 2601.15195 — full review gate. The thing that
 makes it converge rather than drift is a NAMED DIVERGENCE CHECKLIST that is part of the
 termination condition: the run isn't done until every listed divergence is closed, and each PR
 declares which divergence it closes.

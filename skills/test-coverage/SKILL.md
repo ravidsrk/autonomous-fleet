@@ -1,7 +1,7 @@
 ---
 name: test-coverage
 description: >-
-  [Tier 1 · high autonomous success ~0.84 merge · safe to run unattended] Raise real test
+  [Tier 1 · cross-agent merge ~61.5% (test) · guard hollow-test risk] Raise real test
   coverage on a repo or a target area with behaviour-exercising tests — not coverage-padding
   stubs. Use when a module is undertested, before a refactor to lock current behaviour,
   after a feature shipped without tests, or for a periodic coverage pass. Adds/strengthens
@@ -53,9 +53,9 @@ Record in `docs/test-coverage-readiness.md` under **Recommended next missions** 
 | Refactor required for testability | `cleanup` (light) or `targeted-migration` |
 | Hollow coverage tooling only | Use repo's existing test/coverage commands |
 
-**Empirical note:** test tasks merge at ~0.84 across 33k real agent PRs — high-trust, safe
-unattended. The ONE failure mode to guard is hollow tests written to move a number; the reviewer
-rejects those.
+**Empirical note:** test tasks merge at ~61.5% cross-agent per arXiv 2601.15195 (MSR 2026 AIDev
+dataset, 33,596 PRs) — lower than documentation/chore; the reviewer gate matters. The ONE failure
+mode to guard is hollow tests written to move a number; the reviewer rejects those.
 
 ## GOAL
 Increase MEANINGFUL test coverage on the target (whole repo, or an area the user named). Every
