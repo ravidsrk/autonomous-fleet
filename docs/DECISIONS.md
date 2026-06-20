@@ -77,5 +77,12 @@ Decisions:
 - **Sandbox floor (the H3 discipline applied to this run):** workspace-write on REPO_ROOT only;
   no `--yolo`; no publish/deploy/host-env action; the H3 rail ships as code/docs, never activated
   against a live target. No gitleaks in repo → manual secret self-check on every diff before commit.
-- **Merge policy:** `gh pr merge <n> --merge --delete-branch` into BASE (commits preserved, never
-  squash). `BASE → main` and any `npx skills` re-publish are human-owned, out of scope.
+- **Merge policy:** planned `gh pr merge --merge --delete-branch`; DEVIATED to local
+  `git merge --no-ff` into BASE because the harness classifier denied the outward `git push` / `gh
+  pr create` / `gh pr merge` actions. Local merge commits preserve history, never squash, and fully
+  close the findings; the directive sanctions this as the no-outward-actions fallback. `BASE → main`,
+  pushing `ravidsrk/review-fix` to GitHub as real PRs, and any `npx skills` re-publish are
+  human-owned and out of scope.
+- **Independent review:** each of the 6 fix branches was reviewed by a FRESH read-only reviewer
+  subagent (distinct instance from its coder) that re-ran the finding's proving commands and checked
+  test quality (non-tautology) before integration. All 6: VERDICT PASS.
