@@ -110,3 +110,11 @@ create lazily on first worker_done.
 
 - Codex launch on this host = `codex --dangerously-bypass-approvals-and-sandbox` (the `--full-auto` equivalent; codex-cli 0.141.0 has no top-level --full-auto; needs network for gh).
 - Integrator gh actions (gh pr create / gh pr merge) performed by the COORDINATOR directly, not a separate @claude terminal. Rationale: they are deterministic and spinning a claude terminal per gh command is fragile/wasteful. The essential independence — @codex build-blind review of @grok's code, a different agent — is preserved. Own-org PR: codex posts verdict via PR comment + worker_done PASS/FAIL (cannot --approve own-org PR), coordinator merges on PASS.
+
+## PROGRESS LOG (cont.)
+
+- ALL 5 coders DONE. PRs open: #9 drivers, #10 gstack, #11 claims, #12 validators, #13 fleet-outcome (all base ravidsrk/adversarial-fresh).
+- REVIEW MECHANISM CHANGED: interactive codex dispatch --inject mis-executed the preamble's worker_done EXAMPLE (sent placeholder verdicts) — discarded. Reviews now run via `codex exec --dangerously-bypass-approvals-and-sandbox -C <coder-worktree> -o <file>` directly from the coordinator (genuine independent codex review, captured verdict). Recorded as a deviation.
+- 5 codex exec reviews running; verdict files /tmp/revN-out.txt end with `VERDICT: PASS|FAIL`.
+- branches pushed: fix-drivers 731146d, fix-gstack-gates c0a14bb, fix-claims-honesty (10 commits), fix-validators, fix-fleet-outcome 53af07f.
+- NEXT: collect verdicts; merge PR#9 (drivers) FIRST (unblocks GIT-02 test), then the rest; rebase each onto BASE before merge (ledger commits moved BASE; coder files disjoint so no conflict).
