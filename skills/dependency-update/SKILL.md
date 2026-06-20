@@ -1,7 +1,7 @@
 ---
 name: dependency-update
 description: >-
-  [Tier 1 · cross-agent merge ~74% (build) / ~84% (chore) · safe to run unattended] Update a
+  [Tier 1 · among the highest cross-agent merge-success categories (build/chore) · safe to run unattended] Update a
   repo's dependencies to current versions, fix the breakages each bump causes, and keep the
   suite green — one PR per logical group. Use when deps are stale, for routine maintenance,
   to clear security advisories, or before building on an old base. Handles version bumps,
@@ -11,6 +11,7 @@ description: >-
   deps are out of date", "upgrade to latest", "fix security advisories", "dependency
   maintenance".
 license: MIT
+compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
   version: "1.0.0"
@@ -26,7 +27,7 @@ metadata:
 Before executing, activate these skills and read their full instructions:
 
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
-2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code``, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
+2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
 
@@ -54,10 +55,10 @@ Record in `docs/dependency-update-readiness.md` under **Recommended next mission
 | Advisory exposes architectural flaw | `adversarial-review-and-fix` |
 | Post-bump doc drift | `doc-sync` |
 
-**Empirical note:** chore/build tasks (which dependency updates are) merge at ~84% (chore) and
-~74% (build) cross-agent per arXiv 2601.15195 (MSR 2026 AIDev dataset, 33,596 PRs) — among the
-highest-trust categories, safe unattended. Risk concentrates in MAJOR version bumps with breaking
-changes; group and test those carefully.
+**Empirical note:** Documentation, CI, and build-update tasks show the highest merge-success
+rate among AI-agent PRs (arXiv 2601.15195 — Ehsani et al., MSR 2026, AIDev dataset of ~33k PRs).
+Dependency updates fall in the build/chore category — among the highest-trust, safe unattended.
+Risk concentrates in MAJOR version bumps with breaking changes; group and test those carefully.
 
 ## GOAL
 Bring dependencies to current, compatible versions with the suite green. For each update: bump
