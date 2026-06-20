@@ -125,3 +125,13 @@ create lazily on first worker_done.
 - PR#12 (validators) review FAIL = GIT-02 cross-cutting only (test_run_campaign.py fails in worktree until drivers fixes .git guard); PR12 own tests pass. Action: merge drivers first, rebase PR12, re-test, merge. No code change needed.
 - PR#13 (fleet-outcome) review FAIL = (a) same GIT-02 cross-cutting failure; (b) REAL minor gap: FM-15 needs a CRLF regression test. Action: @grok adds CRLF test, then rebase onto BASE (post-drivers), re-review, merge.
 - PR#9 (drivers) verdict pending; merge FIRST when PASS.
+
+## CLOSE-OUT (PHASE=DONE)
+
+PHASE: DONE. All 29 findings CLOSED on BASE. Verification green (pytest 25, validate-all EXIT 0).
+- PR#9 drivers  -> RCE-01,GIT-02,CLAUDE-03,CODEX-04,YOLO-11,CYCLE-12,DRYRUN-13,KEYERR-14,PIN-17a CLOSED
+- PR#10 gstack  -> F1 CLOSED
+- PR#11 claims  -> PROV-01,PROV-02,PROV-04,PROV-06,PROV-08,PROV-09,GEM-001,GEM-002,GEM-003,RD-2,RD-3 CLOSED
+- PR#12 validators -> VENV-08,LEDGER-09,DUP-10,PIN-17b CLOSED
+- PR#13 fleet-outcome -> EVAL-05,VALIDATE-06,EVAL-07,FM-15,DEFER-16 CLOSED
+Readiness: docs/arch-build-readiness.md. Downstream: BASE->main is a human meta-PR (not done).
