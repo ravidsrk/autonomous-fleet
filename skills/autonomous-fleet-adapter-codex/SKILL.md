@@ -10,7 +10,7 @@ license: MIT
 compatibility: Requires Codex with goals enabled (features.goals), git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.0.0"
+  version: "1.1.0"
   fleet-component: "adapter"
 ---
 

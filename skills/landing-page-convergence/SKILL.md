@@ -11,6 +11,7 @@ description: >-
   design", "the production page diverged from the design", "bring the landing page into
   parity", "fix the landing page to match the mockup".
 license: MIT
+compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
   version: "1.0.0"
