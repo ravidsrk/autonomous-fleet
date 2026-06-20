@@ -17,7 +17,7 @@ coordinator. Read with [composition.md](composition.md).
 4. **Post-gates** (ship, QA report) run after the last mission node; they do not replace
    `fleet-outcome` validation.
 5. **Never** activate two mission skills or multiple meta-routers (`using-agent-skills`,
-   `gstack-autoplan`, `fleet-program`) in the same coordinator session.
+   `autoplan`, `fleet-program`) in the same coordinator session.
 
 ---
 
@@ -66,8 +66,8 @@ Headless:
 | Skill | Source | When |
 |-------|--------|------|
 | `grill-with-docs` / `grill-me` | mattpocock | Tier 3 mission; boundary or intent unclear |
-| `gstack-office-hours` | gstack | Product framing before `take-product-to-completion` |
-| `gstack-autoplan` | gstack | Plan review gauntlet only — save plan, defer implement to fleet mission |
+| `office-hours` | gstack | Product framing before `take-product-to-completion` |
+| `autoplan` | gstack | Plan review gauntlet only — save plan, defer implement to fleet mission |
 
 Invoke explicitly; record output path in `docs/fleet-program-progress.md` **Handoff notes**.
 
@@ -75,9 +75,9 @@ Invoke explicitly; record output path in `docs/fleet-program-progress.md` **Hand
 
 | Skill | Source | Mission(s) | Trigger |
 |-------|--------|------------|---------|
-| `gstack-office-hours` | gstack | `take-product-to-completion` | T3 boundary ambiguous |
-| `gstack-cso` | gstack | `adversarial-review-and-fix` | Security-heavy audit |
-| `gstack-health` | gstack | `doc-sync`, `quality-gate` tail | User wants composite score |
+| `office-hours` | gstack | `take-product-to-completion` | T3 boundary ambiguous |
+| `cso` | gstack | `adversarial-review-and-fix` | Security-heavy audit |
+| `health` | gstack | `doc-sync`, `quality-gate` tail | User wants composite score |
 
 ### Worker (DISPATCH preamble)
 
@@ -88,8 +88,8 @@ Invoke explicitly; record output path in `docs/fleet-program-progress.md` **Hand
 | `security-and-hardening` | agent-skills | `adversarial-review-and-fix` | @reviewer |
 | `frontend-ui-engineering` | agent-skills | `design-integration`, `landing-page-convergence` | @builder |
 | `domain-modeling` | mattpocock | `doc-sync`, `take-product-to-completion` | @planner |
-| `gstack-qa` | gstack | UI missions | @builder (fix loop) |
-| `gstack-qa-only` | gstack | UI missions | @reviewer (report only) |
+| `qa` | gstack | UI missions | @builder (fix loop) |
+| `qa-only` | gstack | UI missions | @reviewer (report only) |
 
 Copy the chosen rows into the mission `## Worker skills` table when authoring; coordinator
 pastes into engine WORKER SKILLS block on DISPATCH.
@@ -98,10 +98,10 @@ pastes into engine WORKER SKILLS block on DISPATCH.
 
 | Skill | Source | Campaign preset | When |
 |-------|--------|-----------------|------|
-| `gstack-ship` | gstack | `ship-with-proof` | User asked to open PR |
-| `gstack-qa` | gstack | `ship-with-proof` | Staging URL available |
-| `gstack-qa-only` | gstack | `quality-gate` | Report-only acceptance |
-| `gstack-health` | gstack | `quality-gate` | Optional scorecard |
+| `ship` | gstack | `ship-with-proof` | User asked to open PR |
+| `qa` | gstack | `ship-with-proof` | Staging URL available |
+| `qa-only` | gstack | `quality-gate` | Report-only acceptance |
+| `health` | gstack | `quality-gate` | Optional scorecard |
 
 Post-gates are optional human steps — fleet campaign is DONE when all **mission nodes** complete
 and `validate-fleet-outcome.sh` passes.
@@ -112,9 +112,9 @@ and `validate-fleet-outcome.sh` passes.
 
 | Preset | Mission nodes | Pre-gate | Post-gate |
 |--------|---------------|----------|-----------|
-| `ship-with-proof` | audit → tests → docs | — | `gstack-ship`, `gstack-qa` |
-| `align-then-ship` | `take-product-to-completion` | `grill-with-docs` or `office-hours` | `gstack-qa` if URL |
-| `quality-gate` | audit → tests | — | `gstack-qa-only`, `gstack-health` |
+| `ship-with-proof` | audit → tests → docs | — | `ship`, `qa` |
+| `align-then-ship` | `take-product-to-completion` | `grill-with-docs` or `office-hours` | `qa` if URL |
+| `quality-gate` | audit → tests | — | `qa-only`, `health` |
 
 YAML: `scripts/campaigns/<preset>.yaml` and
 `skills/fleet-program/references/campaigns.md`.
@@ -127,9 +127,13 @@ Installed skill ids vary by host and installer prefix:
 
 | Upstream | Typical installed id |
 |----------|---------------------|
-| gstack | `gstack-qa`, `gstack-ship`, `gstack-office-hours` (via `./setup --host`) |
+| gstack | `qa`, `ship`, `office-hours` (default `./setup`; unprefixed) |
 | agent-skills | `planning-and-task-breakdown`, `test-driven-development`, … |
 | mattpocock | `domain-modeling`, `grill-with-docs`, `grill-me` |
+
+gstack's default `./setup` installs **unprefixed** ids (`ship`, `qa`, etc.). The `gstack-` prefix
+is opt-in only: `./setup --prefix` or `SKILL_PREFIX=1 ./setup`. `./setup --host` selects the target
+host but does **not** add a prefix.
 
 Use the id your `npx skills list` or plugin manifest shows in mission Optional/Worker tables.
 
@@ -143,4 +147,4 @@ Use the id your `npx skills list` or plugin manifest shows in mission Optional/W
 | Chain 6 slash commands manually | One `fleet-program` campaign |
 | Auto-invoke grill/office-hours every run | Pre-gate only when Tier 3 or ambiguous |
 | Skip `fleet-outcome` because QA passed | File ledger remains authoritative |
-| `gstack-ship` mid-mission | Post-gate after docs node in `ship-with-proof` |
+| `ship` mid-mission | Post-gate after docs node in `ship-with-proof` |
