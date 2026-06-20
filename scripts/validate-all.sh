@@ -5,6 +5,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# shellcheck source=lib/venv-bootstrap.sh
+source "$ROOT/scripts/lib/venv-bootstrap.sh"
+bootstrap_validation_venv "$ROOT"
+
 echo "== validate-skills =="
 ./scripts/validate-skills.sh
 
@@ -18,11 +22,6 @@ echo "== validate-goal-condition =="
 
 echo ""
 echo "== pytest =="
-VENV_PYTHON="$ROOT/.venv/bin/python"
-if [[ ! -x "$VENV_PYTHON" ]]; then
-  python3 -m venv "$ROOT/.venv"
-  "$VENV_PYTHON" -m pip install -q pyyaml pytest
-fi
 "$VENV_PYTHON" -m pytest tests/ -q
 
 echo ""
