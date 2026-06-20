@@ -14,6 +14,7 @@ from lib.fleet_outcome import (  # noqa: E402
     eval_edge,
     parse_readiness,
     pick_next_node,
+    split_frontmatter,
     validate_outcome,
 )
 
@@ -80,6 +81,99 @@ def test_pick_next_docs_if_bugs_includes_bug_batch():
 def test_validate_outcome_requires_metrics():
     errors = validate_outcome({"mission": "doc-sync", "status": "done"})
     assert any("metrics" in e for e in errors)
+
+
+def test_eval_ordering_coerces_string_and_float_metrics():
+    """EVAL-05: ordering ops coerce defensively instead of raising TypeError."""
+    outcome = {"metrics": {"coverage": 79.5}}
+    assert eval_edge("coverage > 79.5", outcome) is False
+    assert eval_edge("coverage > 79", outcome) is True
+    assert eval_edge("coverage > 79.4", outcome) is True
+
+    str_metric = {"metrics": {"coverage": "80"}}
+    assert eval_edge("coverage > 79", str_metric) is True
+
+    float_vs_str = {"metrics": {"coverage": 80}}
+    assert eval_edge("coverage > 79.5", float_vs_str) is True
+
+
+def test_eval_ordering_invalid_types_raise_value_error():
+    """EVAL-05: non-numeric operands surface a named ValueError."""
+    with pytest.raises(ValueError, match="cannot compare metric values numerically"):
+        eval_edge("coverage > banana", {"metrics": {"coverage": 79.5}})
+    with pytest.raises(ValueError, match="cannot compare metric values numerically"):
+        eval_edge("coverage > 0", {"metrics": {"coverage": "not-a-number"}})
+
+
+def test_eval_status_quoted_operand():
+    """EVAL-07: status comparisons strip quotes via generic dispatch."""
+    outcome = {**DOC_SYNC_OUTCOME, "status": "done"}
+    assert eval_edge('status == "done"', outcome) is True
+    assert eval_edge("status == done", outcome) is True
+    assert eval_edge('status != "blocked"', outcome) is True
+
+
+def test_eval_missing_metric_raises():
+    """EVAL-07: absent metrics raise instead of returning False for == and !=."""
+    outcome = {"status": "done", "metrics": {}}
+    with pytest.raises(ValueError, match="metric 'missing_key' not found"):
+        eval_edge("missing_key == 0", outcome)
+    with pytest.raises(ValueError, match="metric 'missing_key' not found"):
+        eval_edge("missing_key != 0", outcome)
+
+
+def test_validate_outcome_rejects_invalid_types_and_enums():
+    """VALIDATE-06: type/enum checks and unknown mission warnings."""
+    base = {
+        "mission": "doc-sync",
+        "repo": "/tmp",
+        "base_branch": "main",
+        "metrics": {"drift_open": 0, "code_bug_findings": 0},
+        "deferred_missions": [],
+    }
+    errors = validate_outcome({**base, "status": "banana", "prs_merged": 1})
+    assert any("invalid status" in e for e in errors)
+
+    errors = validate_outcome({**base, "status": "done", "prs_merged": "not-a-number"})
+    assert any("prs_merged must be int" in e for e in errors)
+
+    errors = validate_outcome(
+        {
+            **base,
+            "status": "done",
+            "prs_merged": 1,
+            "metrics": {"drift_open": "zero", "code_bug_findings": 0},
+        }
+    )
+    assert any("metric 'drift_open' must be numeric or bool" in e for e in errors)
+
+    errors = validate_outcome({**base, "status": "done", "prs_merged": 1, "mission": "doc-snyc"})
+    assert any("unknown mission" in e for e in errors)
+
+
+def test_split_frontmatter_leading_blank_line():
+    """FM-15: leading blank lines and BOM do not block frontmatter parsing."""
+    text = "\n\n---\nmission: doc-sync\n---\n# body\n"
+    fm, body = split_frontmatter(text)
+    assert fm is not None
+    assert "mission: doc-sync" in fm
+    assert body.startswith("# body")
+
+    bom_text = "\ufeff---\nkey: val\n---\ncontent"
+    fm_bom, _ = split_frontmatter(bom_text)
+    assert fm_bom is not None
+    assert "key: val" in fm_bom
+
+
+def test_eval_deferred_contains_bare_string_and_dotted_id():
+    """DEFER-16: bare-string items and dotted mission ids match to end-of-string."""
+    outcome = {
+        **DOC_SYNC_OUTCOME,
+        "deferred_missions": ["test.coverage", {"id": "bug.batch", "reason": "x"}],
+    }
+    assert eval_edge("deferred_missions contains test.coverage", outcome) is True
+    assert eval_edge("deferred_missions contains bug.batch", outcome) is True
+    assert eval_edge("deferred_missions contains test", outcome) is False
 
 
 def test_parse_fixture_readiness(tmp_path: Path):
