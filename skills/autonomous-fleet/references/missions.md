@@ -1,9 +1,9 @@
 # Mission catalog
 
-Empirical tiers from MSR 2026 (~33k agent-authored PRs). Start Tier 1 unattended; review frozen
-artifacts for Tier 2–3.
+Empirical tiers from arXiv 2601.15195 (MSR 2026 AIDev dataset, 33,596 agent-authored PRs;
+cross-agent merge rates). Start Tier 1 unattended; review frozen artifacts for Tier 2–3.
 
-## Tier 1 — safe unattended (0.84–0.92 merge)
+## Tier 1 — safe unattended (~62–84% cross-agent merge)
 
 | Skill | Use when |
 |-------|----------|
@@ -12,7 +12,7 @@ artifacts for Tier 2–3.
 | `dependency-update` | Stale deps; security advisories; routine bumps |
 | `cleanup` | Dead code, duplication, smells — not a full rebuild |
 
-## Tier 2 — full review gate (0.80–0.82 merge)
+## Tier 2 — full review gate (~64–79% cross-agent merge; no direct category for UI/migration)
 
 | Skill | Use when |
 |-------|----------|
@@ -22,7 +22,7 @@ artifacts for Tier 2–3.
 | `design-integration` | Whole-app design adoption (may need `/design-login` for MCP) |
 | `landing-page-convergence` | Single page fidelity vs design export |
 
-## Tier 3 — high blast radius (~0.80 merge, expect rework)
+## Tier 3 — high blast radius (no direct category in the study; expect rework)
 
 | Skill | Use when |
 |-------|----------|
@@ -33,7 +33,7 @@ artifacts for Tier 2–3.
 
 | Skill | Runtime |
 |-------|---------|
-| `autonomous-fleet-adapter-orca` | Orca orchestration (most battle-tested) |
+| `autonomous-fleet-adapter-orca` | Orca orchestration (reference adapter) |
 | `autonomous-fleet-adapter-claude-code` | Claude Code (subagents + ledger) |
 | `autonomous-fleet-adapter-grok` | Grok Build (subagents + ledger + `update_goal`) |
 | `autonomous-fleet-adapter-codex` | OpenAI Codex (`/goal` + subagents) |

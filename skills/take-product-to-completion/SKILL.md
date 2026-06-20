@@ -9,7 +9,7 @@ description: >-
   expanding so nothing ships, or when you need a side project driven to a credible v1. NOT
   for a thin MVP — the user wants real depth — but the boundary is frozen once so the run
   converges instead of expanding forever. Highest-risk mission: feature/cross-module work
-  merges cleanly ~80% of the time, so expect some rework; the scope artifact (the
+  has no category in arXiv 2601.15195, so expect rework; the scope artifact (the
   IN/ROADMAP/FIX boundary) is the thing to eyeball. Runs via the autonomous-fleet-core
   engine. Trigger on: "take this product to the finish line", "finish this stalled project",
   "make this shippable end to end", "complete the whole product".
@@ -58,10 +58,10 @@ ROADMAP list in boundary doc + **Recommended next missions** in `docs/completion
 | Deep security hardening beyond FIX list | `adversarial-review-and-fix` |
 | Legacy stack blocks completion | `legacy-rebuild` |
 
-**Empirical note:** this is the highest-blast-radius mission. Feature and cross-module work is
-the category agents are least reliable at among "normal" tasks (~0.80 merge, vs ~0.92 for docs),
-and broad autonomous runs thrash when they fail. The single control that matters is the FROZEN
-BOUNDARY in T3 — review that artifact. Everything downstream inherits it.
+**Empirical note:** this is the highest-blast-radius mission. Feature and cross-module work has
+no direct category in arXiv 2601.15195 (documentation merges at ~84% cross-agent — the highest
+observed rate), and broad autonomous runs thrash when they fail. The single control that matters
+is the FROZEN BOUNDARY in T3 — review that artifact. Everything downstream inherits it.
 
 ## CORE TENSION (read first)
 "Finish the whole product" is unbounded and is exactly why it never ships. The fix is NOT a thin

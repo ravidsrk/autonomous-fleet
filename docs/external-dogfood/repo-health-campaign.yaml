@@ -1,5 +1,5 @@
 # External dogfood: repo-health on a small OSS clone.
-# Target: https://github.com/github/gemoji (small Ruby gem, ~2k LOC)
+# Target: https://github.com/github/gemoji (small Ruby gem; lib/ ~273 lines Ruby)
 campaign: external-gemoji-repo-health
 repo: single
 base: fleet/gemoji-repo-health-base
