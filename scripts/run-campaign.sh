@@ -46,6 +46,11 @@ fi
 RUNTIME="$1"
 shift
 
+case "$RUNTIME" in
+  grok|claude|codex) ;;
+  *) echo "error: unsupported runtime '$RUNTIME' (expected grok|claude|codex)" >&2; exit 1 ;;
+esac
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --preset)
@@ -160,14 +165,21 @@ import sys, yaml
 from pathlib import Path
 
 sys.path.insert(0, sys.argv[3] + "/scripts")
-from lib.fleet_outcome import pick_next_node
+from lib.fleet_outcome import MISSION_METRICS, pick_next_node
 
 campaign = yaml.safe_load(Path(sys.argv[1]).read_text(encoding="utf-8"))
 current = sys.argv[2]
 # Static dry-run: assume each node succeeds with benign metrics.
+# Pre-populate every known mission metric to 0 so edges that reference
+# metrics outside the current node's mission don't blow up with
+# "metric not found" ValueError during dry-run planning.
+benign_metrics: dict[str, int] = {}
+for metric_set in MISSION_METRICS.values():
+    for name in metric_set:
+        benign_metrics.setdefault(name, 0)
 outcome = {
     "status": "done",
-    "metrics": {"code_bug_findings": 0, "drift_open": 0},
+    "metrics": benign_metrics,
     "deferred_missions": [],
 }
 nxt = pick_next_node(campaign, current, outcome)
