@@ -9,7 +9,7 @@ description: >-
   expanding so nothing ships, or when you need a side project driven to a credible v1. NOT
   for a thin MVP — the user wants real depth — but the boundary is frozen once so the run
   converges instead of expanding forever. Highest-risk mission: feature/cross-module work
-  has no direct category in arXiv 2601.15195, so expect rework; the scope artifact (the
+  has no category in arXiv 2601.15195, so expect rework; the scope artifact (the
   IN/ROADMAP/FIX boundary) is the thing to eyeball. Runs via the autonomous-fleet-core
   engine. Trigger on: "take this product to the finish line", "finish this stalled project",
   "make this shippable end to end", "complete the whole product".
