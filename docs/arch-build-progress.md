@@ -77,5 +77,22 @@ pytest + shell harness on fixtures.)
 
 orca runtime ready; agent CLIs claude/codex/grok present; gh authed (ravidsrk). Interactive grok VERIFIED
 working with tool use; `grok -p` headless is auth-broken (XAI_API_KEY set but rejected) — dispatch grok via
-Orca interactive terminal only. Wave 1 = all 5 tasks, parallel, disjoint files. Next: create Orca tasks,
-spawn one grok coder worktree per task off BASE, dispatch --inject, then run the check --wait pipeline.
+Orca interactive terminal only. Wave 1 = all 5 tasks, parallel, disjoint files.
+
+COORDINATOR handle: term_2cc70f95-e63b-4975-8a7a-53c4169d1669
+
+LIVE WORKERS (wave 1, all DISPATCHED 2026-06-20, CODE phase):
+
+| task         | slug              | taskId           | grok terminal                                 | dispatchId        | branch                       |
+|--------------|-------------------|------------------|-----------------------------------------------|-------------------|------------------------------|
+| drivers      | fix-drivers       | task_5b79c0beb870 | term_9f39fec7-556d-496d-bb54-fd4438b2f8c1     | ctx_f5968558b9d3  | ravidsrk/fix-drivers         |
+| fleet-outcome| fix-fleet-outcome | task_a363a154045a | term_e072eb30-bbed-462e-95e2-4bd4d6db4d6a     | ctx_f1c2717f1b16  | ravidsrk/fix-fleet-outcome   |
+| validators   | fix-validators    | task_90cc5411ce67 | term_4f663da6-05c3-4d4a-9552-0507cd2bdda5     | ctx_9aaa3299f48b  | ravidsrk/fix-validators      |
+| claims-honesty| fix-claims-honesty| task_cfe62a3c3171| term_ba6cb4d6-a21e-4c31-814d-6c2ebacb1b70     | ctx_793d904e04ef  | ravidsrk/fix-claims-honesty  |
+| gstack-gates | fix-gstack-gates  | task_65f420ea67b3 | term_c5a7ce72-6ab1-48cd-94a5-35eb8a21e744     | ctx_16e1576a8819  | ravidsrk/fix-gstack-gates    |
+
+NEXT: `check --wait --types worker_done,escalation,decision_gate`. On each worker_done -> @claude integrator
+opens PR (gh pr create --base ravidsrk/adversarial-fresh), then @codex (`codex --full-auto`) reviews the
+diff, then @claude merges (`gh pr merge --merge --delete-branch`) and retires the worktree. Update the row's
+flags + the close-index + task-update as each advances. PR review/integrator terminals not yet created;
+create lazily on first worker_done.
