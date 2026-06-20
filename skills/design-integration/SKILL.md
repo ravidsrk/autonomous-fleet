@@ -11,6 +11,7 @@ description: >-
   "adopt this design across the product", "integrate the new design end to end", "make the
   app match this design fully", "redesign the whole app to this".
 license: MIT
+compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
   version: "1.0.0"
