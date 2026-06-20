@@ -2,7 +2,7 @@
 fleet-outcome:
   mission: doc-sync
   status: done
-  repo: /Users/ravindra/projects/autonomous-fleet
+  repo: ravidsrk/autonomous-fleet
   base_branch: fleet/community-skills-and-dogfood
   prs_merged: 0
   metrics:
@@ -20,7 +20,7 @@ Documentation aligned with 20-skill catalog, campaign presets, `--repo` flag, an
 
 ## Verified
 
-- `./scripts/validate-all.sh` — **20/20** skills, fleet-outcome, goal-condition, **11** pytest pass
+- `./scripts/validate-all.sh` — **20/20** skills, fleet-outcome, goal-condition, **25** pytest pass
 - `./scripts/validate-fleet-outcome.sh` — passes on this file
 - README: skills table, layout, install starter set, validate examples match `scripts/`
 - `skills-lock.json` includes `setup-autonomous-fleet`
