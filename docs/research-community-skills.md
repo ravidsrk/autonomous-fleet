@@ -97,9 +97,9 @@ New presets (YAML in `scripts/campaigns/`, docs in `fleet-program/references/cam
 
 | Preset | User says | Mission chain | Community hooks |
 |--------|-----------|---------------|-----------------|
-| **ship-with-proof** | "Ship this branch safely" | audit → tests → docs | Post: `gstack-ship` (PR), `gstack-qa` (if URL) |
+| **ship-with-proof** | "Ship this branch safely" | audit → tests → docs | Post: `ship` (PR), `qa` (if URL) |
 | **align-then-ship** | "Finish this stalled product" | `take-product-to-completion` | Pre: `grill-with-docs` or `gstack-office-hours` |
-| **quality-gate** | "Is this production-ready?" | audit → tests | Post: `gstack-qa-only`, `gstack-health` (report-only) |
+| **quality-gate** | "Is this production-ready?" | audit → tests | Post: `qa-only`, `health` (report-only) |
 
 **Pre-gates** and **post-gates** are coordinator steps documented on the campaign YAML — they do not add fleet mission nodes. They prevent loading alignment skills mid-mission token soup.
 

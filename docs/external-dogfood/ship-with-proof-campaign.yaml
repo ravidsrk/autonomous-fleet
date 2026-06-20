@@ -9,11 +9,11 @@ nodes:
   tests: { mission: test-coverage }
   docs: { mission: doc-sync }
 post_gates:
-  - skill: gstack-ship
+  - skill: ship
     when: user asked to open PR
-  - skill: gstack-qa-only
+  - skill: qa-only
     when: no staging URL — skip; gemoji is a library gem
-  - skill: gstack-health
+  - skill: health
     when: optional scorecard after tests node
 edges:
   audit: [{ to: tests, if: always }]

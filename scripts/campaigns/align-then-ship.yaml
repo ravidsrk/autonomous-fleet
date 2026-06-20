@@ -9,7 +9,7 @@ pre_gates:
 nodes:
   complete: { mission: take-product-to-completion }
 post_gates:
-  - skill: gstack-qa
+  - skill: qa
     when: staging URL available
 edges:
   complete: []
