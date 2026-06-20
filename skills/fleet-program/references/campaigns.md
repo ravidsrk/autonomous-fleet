@@ -109,7 +109,7 @@ edges:
 **When:** "ship this branch safely", "harden then open PR", "prove it before merge".
 
 Audit → tests → docs. Optional community **post-gates** after the last node (not fleet mission
-nodes): `gstack-ship` if the user wants a PR; `gstack-qa` if a staging URL exists. See
+nodes): `ship` if the user wants a PR; `qa` if a staging URL exists. See
 [community-skills.md](../../autonomous-fleet-core/references/community-skills.md).
 
 ```yaml
@@ -120,9 +120,9 @@ nodes:
   tests: { mission: test-coverage }
   docs: { mission: doc-sync }
 post_gates:
-  - skill: gstack-ship
+  - skill: ship
     when: user asked to open PR
-  - skill: gstack-qa
+  - skill: qa
     when: staging URL available
 edges:
   audit: [{ to: tests, if: always }]
@@ -137,20 +137,20 @@ Headless: `./scripts/run-campaign.sh <runtime> --preset ship-with-proof`
 **When:** "finish this stalled product", "take it to shippable", "complete the whole product".
 
 Single Tier 3 node. **Pre-gate** (before `NODE-complete`): user or coordinator runs
-`grill-with-docs` (mattpocock) or `gstack-office-hours` when intent or boundary is fuzzy; save
-artifact path in program ledger **Handoff notes**. Optional post-gate: `gstack-qa` with staging URL.
+`grill-with-docs` (mattpocock) or `office-hours` (gstack) when intent or boundary is fuzzy; save
+artifact path in program ledger **Handoff notes**. Optional post-gate: `qa` with staging URL.
 
 ```yaml
 campaign: align-then-ship
 start: complete
 pre_gates:
   - skill: grill-with-docs
-    alt: gstack-office-hours
+    alt: office-hours
     when: product boundary or intent ambiguous
 nodes:
   complete: { mission: take-product-to-completion }
 post_gates:
-  - skill: gstack-qa
+  - skill: qa
     when: staging URL available
 edges:
   complete: []
@@ -165,7 +165,7 @@ Headless: `./scripts/run-campaign.sh <runtime> --preset align-then-ship`
 **When:** "is this production-ready?", "quality gate before release", "acceptance check".
 
 Lighter than `ship-with-proof` (no doc-sync node). Post-gates are report-only:
-`gstack-qa-only`, optional `gstack-health` scorecard.
+`qa-only`, optional `health` scorecard.
 
 ```yaml
 campaign: quality-gate
@@ -174,9 +174,9 @@ nodes:
   audit: { mission: adversarial-review-and-fix }
   tests: { mission: test-coverage }
 post_gates:
-  - skill: gstack-qa-only
+  - skill: qa-only
     when: staging URL available
-  - skill: gstack-health
+  - skill: health
     when: user wants composite score
 edges:
   audit: [{ to: tests, if: always }]
