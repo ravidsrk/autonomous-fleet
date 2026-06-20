@@ -165,6 +165,28 @@ def test_split_frontmatter_leading_blank_line():
     assert "key: val" in fm_bom
 
 
+def test_split_frontmatter_crlf_line_endings(tmp_path: Path):
+    """FM-15: CRLF line endings are normalized; frontmatter is not treated as missing."""
+    crlf_text = (
+        "---\r\n"
+        "fleet-outcome:\r\n"
+        "  mission: doc-sync\r\n"
+        "  status: done\r\n"
+        "---\r\n"
+        "# body\r\n"
+    )
+    fm, body = split_frontmatter(crlf_text)
+    assert fm is not None
+    assert "mission: doc-sync" in fm
+    assert body.startswith("# body")
+
+    doc = tmp_path / "crlf-readiness.md"
+    doc.write_bytes(crlf_text.encode("utf-8"))
+    outcome = parse_readiness(doc)
+    assert outcome["mission"] == "doc-sync"
+    assert outcome["status"] == "done"
+
+
 def test_eval_deferred_contains_bare_string_and_dotted_id():
     """DEFER-16: bare-string items and dotted mission ids match to end-of-string."""
     outcome = {
