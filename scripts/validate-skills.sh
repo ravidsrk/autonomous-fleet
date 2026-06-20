@@ -4,7 +4,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SKILLS_DIR="$ROOT/skills"
-VALIDATOR="$ROOT/.agents/skills/skill-creator/scripts/quick_validate.py"
+# SKILL_CREATOR_DIR overrides the skill-creator location (default: installed under .agents).
+# Lets tests force the validator-absent path deterministically regardless of what is installed.
+VALIDATOR="${SKILL_CREATOR_DIR:-$ROOT/.agents/skills/skill-creator}/scripts/quick_validate.py"
 
 # shellcheck source=lib/venv-bootstrap.sh
 source "$ROOT/scripts/lib/venv-bootstrap.sh"

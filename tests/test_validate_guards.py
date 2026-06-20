@@ -24,9 +24,14 @@ def test_validate_fleet_outcome_named_missing_path_fails():
 
 
 def test_validate_skills_missing_creator_fails():
-    """H2b: validator absent + no env override → exit non-zero."""
+    """H2b: validator absent + no opt-out → exit non-zero.
+
+    Forces the absent path via SKILL_CREATOR_DIR so the test is deterministic
+    whether or not skill-creator is installed (CI installs it; local does not).
+    """
     env = os.environ.copy()
     env.pop("VALIDATE_SKILLS_OPTIONAL", None)
+    env["SKILL_CREATOR_DIR"] = "/nonexistent/skill-creator"
     r = subprocess.run(
         [str(VALIDATE_SKILLS)],
         cwd=str(ROOT),
@@ -39,9 +44,10 @@ def test_validate_skills_missing_creator_fails():
 
 
 def test_validate_skills_optional_flag_skips():
-    """H2b: VALIDATE_SKILLS_OPTIONAL=1 preserves WARN + exit 0 path."""
+    """H2b: VALIDATE_SKILLS_OPTIONAL=1 preserves WARN + exit 0 even when the validator is absent."""
     env = os.environ.copy()
     env["VALIDATE_SKILLS_OPTIONAL"] = "1"
+    env["SKILL_CREATOR_DIR"] = "/nonexistent/skill-creator"
     r = subprocess.run(
         [str(VALIDATE_SKILLS)],
         cwd=str(ROOT),
