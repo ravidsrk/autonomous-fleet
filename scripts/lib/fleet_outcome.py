@@ -167,6 +167,8 @@ def eval_edge(expr: str, outcome: dict[str, Any]) -> bool:
     m = re.match(r"deferred_missions\s+contains\s+(.+)$", expr)
     if m:
         target = m.group(1).strip()
+        if len(target) >= 2 and target[0] == target[-1] and target[0] in ("'", '"'):
+            target = target[1:-1]
         for item in outcome.get("deferred_missions") or []:
             if isinstance(item, dict) and item.get("id") == target:
                 return True

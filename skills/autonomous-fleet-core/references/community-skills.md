@@ -141,11 +141,23 @@ Canonical ids used in campaign YAML and mission Optional/Worker tables:
 | Upstream | Ids |
 |----------|-----|
 | gstack | `ship`, `qa`, `qa-only`, `health`, `office-hours`, `cso`, `design-review`, `browse`, … |
-| agent-skills | `planning-and-task-breakdown`, `test-driven-development`, … |
+| agent-skills | `planning-and-task-breakdown`, `test-driven-development`, `code-simplification`, … |
 | mattpocock | `grill-with-docs`, `grill-me`, `domain-modeling`, … |
+| anthropics/skills | `skill-creator` |
+| community/optional | `swiftui-liquid-glass` |
 
 Install gstack with `./setup --host <cursor|claude|…>` from a gstack clone. Campaign presets and
 mission tables use these ids as-is.
+
+### Mission-referenced ids
+
+Additional ids referenced by mission Optional/Worker tables:
+
+| Id | Source | Description |
+|----|--------|-------------|
+| `skill-creator` | github.com/anthropics/skills | Anthropic's official skill authoring scaffold; used when missions need to draft or extend a skill. |
+| `code-simplification` | agent-skills (community/optional) | Reuse / simplify / efficiency cleanup pass on a diff; pairs with `bug-batch` and `cleanup` missions. |
+| `swiftui-liquid-glass` | community/optional | SwiftUI "Liquid Glass" design language helper; optional worker for `design-integration` on Apple-platform UI work. |
 
 ---
 

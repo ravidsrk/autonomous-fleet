@@ -2,7 +2,7 @@
 fleet-outcome:
   mission: test-coverage
   status: done
-  repo: /Users/ravindra/projects/autonomous-fleet
+  repo: ravidsrk/autonomous-fleet
   base_branch: fleet/composition-e2e-base
   prs_merged: 1
   metrics:
