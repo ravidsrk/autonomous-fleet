@@ -38,3 +38,21 @@ def test_ledger_with_runtime_goal():
     assert ledger.exists()
     r = run_script("--ledger", str(ledger))
     assert r.returncode == 0, f"stdout={r.stdout} stderr={r.stderr}"
+
+
+def test_ledger_stops_at_unknown_key_after_condition(tmp_path):
+    """LEDGER-09: extra unindented KEY: fields must not corrupt extracted condition."""
+    ledger = tmp_path / "evil-progress.md"
+    ledger.write_text(
+        """# Evil ledger
+
+## Runtime goal
+
+CONDITION: Mission done when tests pass
+
+OWNER: docs/evil-progress.md
+"""
+    )
+    r = run_script("--ledger", str(ledger))
+    assert r.returncode != 0
+    assert "docs/" in r.stderr

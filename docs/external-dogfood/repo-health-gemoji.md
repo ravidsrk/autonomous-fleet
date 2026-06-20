@@ -1,6 +1,9 @@
 # External dogfood — repo-health on gemoji
 
 Prove autonomous-fleet beyond self-dogfood by running **repo-health** on a small external repo.
+Headless execution is not yet end-to-end validated; see
+[ship-with-proof-evidence.md](ship-with-proof-evidence.md) for the interactive dogfood run on a fork
+clone (headless `grok` auth pending).
 
 ## Target
 

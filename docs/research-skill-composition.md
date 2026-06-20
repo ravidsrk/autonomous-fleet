@@ -347,7 +347,7 @@ Record in readiness doc and DECISIONS.md; do not start another mission in the sa
 
 | ID | Decision | Rationale |
 |----|----------|-----------|
-| C-01 | Keep 3-layer required stack | Matches agentskills coherent-unit guidance; proven in doc-sync dogfood |
+| C-01 | Keep 3-layer required stack | Matches agentskills coherent-unit guidance; exercised in doc-sync dogfood (loads + validators pass) |
 | C-02 | No concurrent missions per repo | Single BASE/ledger/coordinator; avoids merge thrash |
 | C-03 | Cross-mission via `fleet-program`, not umbrella | Umbrella stays lightweight router; program owns sequential state |
 | C-04 | Optional skills are opt-in with triggers | Controls token budget and instruction conflicts |
@@ -373,7 +373,7 @@ Record in readiness doc and DECISIONS.md; do not start another mission in the sa
 | Community mission Optional/Worker tables | Shipped (design-integration, landing-page-convergence, adversarial-review-and-fix) |
 | Coordinator behaviors in engine.md | Shipped |
 | `setup-autonomous-fleet` | Shipped |
-| External dogfood ship-with-proof pack | Shipped (`docs/external-dogfood/ship-with-proof-gemoji.md`) |
+| External dogfood ship-with-proof pack | Partial — one interactive (non-headless) dogfood on a fork clone; not upstreamed; headless run pending grok auth (`docs/external-dogfood/ship-with-proof-evidence.md`) |
 
 ---
 
