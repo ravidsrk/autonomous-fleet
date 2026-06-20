@@ -113,7 +113,7 @@ and `validate-fleet-outcome.sh` passes.
 | Preset | Mission nodes | Pre-gate | Post-gate |
 |--------|---------------|----------|-----------|
 | `ship-with-proof` | audit → tests → docs | — | `ship`, `qa` |
-| `align-then-ship` | `take-product-to-completion` | `grill-with-docs` or `office-hours` | `qa` if URL |
+| `align-then-ship` | `take-product-to-completion` | `grill-with-docs`, `office-hours` | `qa` |
 | `quality-gate` | audit → tests | — | `qa-only`, `health` |
 
 YAML: `scripts/campaigns/<preset>.yaml` and
@@ -121,21 +121,18 @@ YAML: `scripts/campaigns/<preset>.yaml` and
 
 ---
 
-## Skill id naming
+## Community skill ids
 
-Installed skill ids vary by host and installer prefix:
+Canonical ids used in campaign YAML and mission Optional/Worker tables:
 
-| Upstream | Typical installed id |
-|----------|---------------------|
-| gstack | `qa`, `ship`, `office-hours` (default `./setup`; unprefixed) |
+| Upstream | Ids |
+|----------|-----|
+| gstack | `ship`, `qa`, `qa-only`, `health`, `office-hours`, `cso`, `design-review`, `browse`, … |
 | agent-skills | `planning-and-task-breakdown`, `test-driven-development`, … |
-| mattpocock | `domain-modeling`, `grill-with-docs`, `grill-me` |
+| mattpocock | `grill-with-docs`, `grill-me`, `domain-modeling`, … |
 
-gstack's default `./setup` installs **unprefixed** ids (`ship`, `qa`, etc.). The `gstack-` prefix
-is opt-in only: `./setup --prefix` or `SKILL_PREFIX=1 ./setup`. `./setup --host` selects the target
-host but does **not** add a prefix.
-
-Use the id your `npx skills list` or plugin manifest shows in mission Optional/Worker tables.
+Install gstack with `./setup --host <cursor|claude|…>` from a gstack clone. Campaign presets and
+mission tables use these ids as-is.
 
 ---
 

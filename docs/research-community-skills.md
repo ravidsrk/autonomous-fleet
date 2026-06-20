@@ -63,22 +63,22 @@ flowchart LR
 |---------|-----------|------------------|
 | `## Required skills` | Coordinator | Never — fleet core + adapter + mission only |
 | `## Optional skills` | Coordinator | Alignment, review gauntlets, MCP setup — **0–2 max** |
-| `## Worker skills` | Workers via DISPATCH | TDD, frontend-design, gstack-qa, security simplify |
+| `## Worker skills` | Workers via DISPATCH | TDD, frontend-design, `qa`, security simplify |
 
-**Never** load two mission skills or three routers (`fleet-program` + `gstack-autoplan` + `using-agent-skills`) in one coordinator session.
+**Never** load two mission skills or three routers (`fleet-program` + `autoplan` + `using-agent-skills`) in one coordinator session.
 
 ### Mix-and-match matrix
 
 | Community skill | Fleet slot | Use with mission(s) |
 |-----------------|------------|---------------------|
-| `gstack-office-hours` | Optional | `take-product-to-completion` (T3 boundary) |
+| `office-hours` | Optional | `take-product-to-completion` (T3 boundary) |
 | `grill-with-docs` / `grill-me` | Pre-gate (user-invoked) | Before Tier 3 missions |
-| `gstack-autoplan` | Optional pre-build | Greenfield; save plan, do not implement in same pass as fleet mission |
+| `autoplan` | Optional pre-build | Greenfield; save plan, do not implement in same pass as fleet mission |
 | `planning-and-task-breakdown` | Worker / pre-phase | Custom build missions; agent-skills `/plan` |
 | `incremental-implementation` + `test-driven-development` | Worker | `bug-batch`, `test-coverage`, build phases |
-| `gstack-qa` / `gstack-qa-only` | Worker / post-gate | `design-integration`, `landing-page-convergence`, post-campaign |
-| `gstack-review` / `gstack-ship` | Post-gate | After `secure-ship` / `ship-with-proof` docs node |
-| `gstack-cso` / `gstack-health` | Optional | `adversarial-review-and-fix`, `quality-gate` |
+| `qa` / `qa-only` | Worker / post-gate | `design-integration`, `landing-page-convergence`, post-campaign |
+| `review` / `ship` | Post-gate | After `secure-ship` / `ship-with-proof` docs node |
+| `cso` / `health` | Optional | `adversarial-review-and-fix`, `quality-gate` |
 | `domain-modeling` | Worker | `doc-sync`, `take-product-to-completion` (CONTEXT/ADR) |
 | `security-and-hardening` | Worker | `adversarial-review-and-fix` |
 | `frontend-ui-engineering` | Worker | `design-integration`, `landing-page-convergence` |
@@ -86,7 +86,7 @@ flowchart LR
 Existing integration example (`take-product-to-completion`):
 
 ```markdown
-| `gstack-office-hours` | Boundary (T3) is ambiguous and user wants product framing | Use T1+T2 research only |
+| `office-hours` | Boundary (T3) is ambiguous and user wants product framing | Use T1+T2 research only |
 ```
 
 ---
@@ -97,8 +97,8 @@ New presets (YAML in `scripts/campaigns/`, docs in `fleet-program/references/cam
 
 | Preset | User says | Mission chain | Community hooks |
 |--------|-----------|---------------|-----------------|
-| **ship-with-proof** | "Ship this branch safely" | audit → tests → docs | Post: `ship` (PR), `qa` (if URL) |
-| **align-then-ship** | "Finish this stalled product" | `take-product-to-completion` | Pre: `grill-with-docs` or `gstack-office-hours` |
+| **ship-with-proof** | "Ship this branch safely" | audit → tests → docs | Post: `ship`, `qa` |
+| **align-then-ship** | "Finish this stalled product" | `take-product-to-completion` | Pre: `grill-with-docs`, `office-hours` |
 | **quality-gate** | "Is this production-ready?" | audit → tests | Post: `qa-only`, `health` (report-only) |
 
 **Pre-gates** and **post-gates** are coordinator steps documented on the campaign YAML — they do not add fleet mission nodes. They prevent loading alignment skills mid-mission token soup.
