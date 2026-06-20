@@ -30,6 +30,24 @@ DOC_SYNC_OUTCOME = {
 }
 
 
+def test_research_gate_optional_and_typed():
+    # absent -> fine (cross-cutting + optional)
+    assert validate_outcome(DOC_SYNC_OUTCOME) == []
+    # valid non-negative ints -> pass, and branchable via eval_edge top-level fallback
+    ok = {**DOC_SYNC_OUTCOME, "unverified_assumptions": 0, "sources_logged": 7}
+    assert validate_outcome(ok) == []
+    assert eval_edge("unverified_assumptions == 0", ok) is True
+    # negative / non-int -> rejected
+    assert any(
+        "unverified_assumptions" in e
+        for e in validate_outcome({**DOC_SYNC_OUTCOME, "unverified_assumptions": -1})
+    )
+    assert any(
+        "sources_logged" in e
+        for e in validate_outcome({**DOC_SYNC_OUTCOME, "sources_logged": "lots"})
+    )
+
+
 def test_eval_always():
     assert eval_edge("always", DOC_SYNC_OUTCOME) is True
 
