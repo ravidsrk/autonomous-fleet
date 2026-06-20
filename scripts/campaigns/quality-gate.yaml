@@ -6,10 +6,8 @@ nodes:
   audit: { mission: adversarial-review-and-fix }
   tests: { mission: test-coverage }
 post_gates:
-  - skill: qa-only
-    when: staging URL available
-  - skill: health
-    when: user wants composite score
+  - qa-only
+  - health
 edges:
   audit: [{ to: tests, if: always }]
   tests: []

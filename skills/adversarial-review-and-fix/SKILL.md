@@ -36,8 +36,8 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
-| `gstack-cso` | User asked for security-audit depth beyond mission defaults | Proceed with mission skeptic + review gate only |
-| `gstack-health` | User wants composite quality scorecard (`quality-gate` / `ship-with-proof` tail) | Mission metrics in readiness doc only |
+| `cso` | User asked for security-audit depth beyond mission defaults | Proceed with mission skeptic + review gate only |
+| `health` | User wants composite quality scorecard (`quality-gate` / `ship-with-proof` tail) | Mission metrics in readiness doc only |
 
 Community catalog: `autonomous-fleet-core` → `references/community-skills.md`.
 
@@ -45,7 +45,7 @@ Community catalog: `autonomous-fleet-core` → `references/community-skills.md`.
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude (Phase 0 audit, skeptic) | `security-and-hardening`; `gstack-cso` when Optional `gstack-cso` active | Code-only audit per mission |
+| @claude (Phase 0 audit, skeptic) | `security-and-hardening`; `cso` when Optional `cso` active | Code-only audit per mission |
 | @grok (fix loop) | `code-simplification` when fix touches >50 lines or adds new abstraction | In-tree primitives per frozen review |
 | @codex (review) | — | Mission review gate only |
 
