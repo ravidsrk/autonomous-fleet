@@ -54,9 +54,9 @@ Record in `docs/migration-readiness.md` under **Recommended next missions** and 
 | Pre-migration test gap | `test-coverage` (often prior program step) |
 | Migration docs / setup instructions | `doc-sync` |
 
-**Empirical note:** migration work spans refactor/feature territory (~0.80-0.81 merge) — full
-review gate required. The discipline that makes it converge: change ONE axis, hold everything
-else constant, and migrate incrementally behind a green suite rather than big-bang.
+**Empirical note:** No matching task category in arXiv 2601.15195 — full review gate required. The
+discipline that makes it converge: change ONE axis, hold everything else constant, and migrate
+incrementally behind a green suite rather than big-bang.
 
 ## GOAL
 Migrate the single named axis end to end — every usage moved to the new framework/library/runtime/

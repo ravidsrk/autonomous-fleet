@@ -61,9 +61,9 @@ Record in `docs/parity-readiness.md` under **Recommended next missions** and in 
 | Backend rewrite needed (not UI rewire) | `legacy-rebuild` |
 | Bugs found during parity work | `bug-batch` |
 
-**Empirical note:** UI/feature work spans ~0.80-0.81 merge — full review gate required, reviewing
-both visual fidelity AND feature parity. The control artifact is the PARITY MAP: anything not
-mapped there is a feature that silently disappears.
+**Empirical note:** No matching task category in arXiv 2601.15195 — full review gate required,
+reviewing both visual fidelity AND feature parity. The control artifact is the PARITY MAP: anything
+not mapped there is a feature that silently disappears.
 
 ## DESIGN SOURCE (the user supplies one)
 A Claude Design export/URL, OR the claude_design MCP connector
