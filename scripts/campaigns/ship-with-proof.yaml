@@ -7,9 +7,9 @@ nodes:
   tests: { mission: test-coverage }
   docs: { mission: doc-sync }
 post_gates:
-  - skill: gstack-ship
+  - skill: ship
     when: user asked to open PR
-  - skill: gstack-qa
+  - skill: qa
     when: staging URL available
 edges:
   audit: [{ to: tests, if: always }]
