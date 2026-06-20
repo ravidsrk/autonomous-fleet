@@ -198,6 +198,91 @@ def test_eval_deferred_contains_bare_string_and_dotted_id():
     assert eval_edge("deferred_missions contains test", outcome) is False
 
 
+def test_eval_deferred_contains_strips_quotes_and_keeps_bare(tmp_path: Path):
+    """M3a: deferred_missions contains strips matching surrounding quotes from the
+    operand and still accepts bare unquoted operands, so YAML edge expressions can
+    be written either way consistently with the == path (which already strips)."""
+    outcome = {
+        **DOC_SYNC_OUTCOME,
+        "deferred_missions": ["bug-batch"],
+    }
+    # Double-quoted operand should match.
+    assert eval_edge('deferred_missions contains "bug-batch"', outcome) is True
+    # Single-quoted operand should match.
+    assert eval_edge("deferred_missions contains 'bug-batch'", outcome) is True
+    # Quoted operand that is NOT in the list returns False (not an error).
+    assert eval_edge('deferred_missions contains "nope"', outcome) is False
+    assert eval_edge("deferred_missions contains 'nope'", outcome) is False
+    # Bare unquoted operand still works (regression guard).
+    assert eval_edge("deferred_missions contains bug-batch", outcome) is True
+    assert eval_edge("deferred_missions contains nope", outcome) is False
+    # Dict-shaped deferred_missions entries with id also match a quoted operand.
+    dict_outcome = {
+        **DOC_SYNC_OUTCOME,
+        "deferred_missions": [{"id": "bug-batch", "reason": "x"}],
+    }
+    assert eval_edge('deferred_missions contains "bug-batch"', dict_outcome) is True
+    assert eval_edge("deferred_missions contains 'bug-batch'", dict_outcome) is True
+
+
+def test_pick_next_node_terminal_all_false_returns_none():
+    """M3b: a node whose edges all evaluate False yields None (terminal)."""
+    campaign = {
+        "edges": {
+            "docs": [
+                {"to": "bugs", "if": "code_bug_findings > 0"},
+                {"to": "rare", "if": "drift_open > 999"},
+            ],
+        }
+    }
+    # DOC_SYNC_OUTCOME has code_bug_findings == 0 and drift_open == 0; both edges
+    # evaluate False, so pick_next_node returns None instead of falling through
+    # to a default.
+    assert pick_next_node(campaign, "docs", DOC_SYNC_OUTCOME) is None
+
+
+def test_pick_next_node_missing_edges_key_returns_none():
+    """M3b: when the campaign has no edges entry for the node, return None."""
+    # Campaign has no 'edges' key at all.
+    assert pick_next_node({}, "docs", DOC_SYNC_OUTCOME) is None
+    # Campaign has 'edges' but no entry for this node.
+    campaign = {"edges": {"other": [{"to": "x", "if": "always"}]}}
+    assert pick_next_node(campaign, "docs", DOC_SYNC_OUTCOME) is None
+    # Campaign edge list explicitly null for this node.
+    campaign_null = {"edges": {"docs": None}}
+    assert pick_next_node(campaign_null, "docs", DOC_SYNC_OUTCOME) is None
+
+
+def test_pick_next_node_skips_malformed_non_dict_edges():
+    """M3b: non-dict edge entries are skipped without raising."""
+    campaign = {
+        "edges": {
+            "docs": [
+                "not-a-dict",
+                123,
+                None,
+                {"to": "tests", "if": "always"},
+            ],
+        }
+    }
+    # The first three entries are skipped; the dict entry wins.
+    assert pick_next_node(campaign, "docs", DOC_SYNC_OUTCOME) == "tests"
+
+
+def test_pick_next_node_edge_missing_to_returns_none_value():
+    """M3b: an edge dict without 'to' is selected when its condition is true,
+    and its 'to' value is None — pinning current behavior (no crash, no fallback)."""
+    campaign = {
+        "edges": {
+            "docs": [
+                {"if": "always"},  # missing 'to'
+                {"to": "tests", "if": "always"},  # never reached
+            ],
+        }
+    }
+    assert pick_next_node(campaign, "docs", DOC_SYNC_OUTCOME) is None
+
+
 def test_parse_fixture_readiness(tmp_path: Path):
     doc = tmp_path / "doc-sync-readiness.md"
     doc.write_text(
