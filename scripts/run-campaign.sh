@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Mechanical campaign driver: validate outcomes between nodes, invoke headless missions.
 #
+# Threat model: --repo and --campaign are operator-supplied paths. Campaign YAML can name
+# arbitrary missions and repos. With --yolo, agents auto-approve all tool calls against that
+# repo — treat untrusted inputs as a full RCE surface; keep yolo off unless you trust both.
+#
 # Usage:
 #   ./scripts/run-campaign.sh grok --preset repo-health [--dry-run]
 #   ./scripts/run-campaign.sh grok --campaign docs/composition-e2e-campaign.yaml
@@ -17,7 +21,7 @@ PRESET=""
 REPO_ROOT=""
 DRY_RUN=0
 MAX_TURNS=50
-YOLO=1
+YOLO=0
 
 usage() {
   cat <<'EOF'
@@ -28,8 +32,9 @@ Options:
   --campaign PATH     Campaign YAML file
   --repo PATH         Target git repo for missions (default: autonomous-fleet clone)
   --dry-run           Print plan only; do not invoke agents
-  --max-turns N       Per-node turn budget (default: 50)
-  --no-yolo           Pass --no-yolo to run-mission-headless (Grok)
+  --max-turns N       Per-node turn budget (default: 50; Grok/Codex only)
+  --yolo              Auto-approve agent tools (Grok only; default: off)
+  --no-yolo           Deprecated alias for default (no auto-approve)
 EOF
 }
 
@@ -63,6 +68,10 @@ while [[ $# -gt 0 ]]; do
       MAX_TURNS="${2:?}"
       shift 2
       ;;
+    --yolo)
+      YOLO=1
+      shift
+      ;;
     --no-yolo)
       YOLO=0
       shift
@@ -94,7 +103,7 @@ else
   REPO_ROOT="$ROOT"
 fi
 
-if [[ ! -d "$REPO_ROOT/.git" ]]; then
+if ! git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "error: --repo '$REPO_ROOT' is not a git repository" >&2
   exit 1
 fi
@@ -102,13 +111,24 @@ fi
 VENV_PYTHON="$ROOT/.venv/bin/python"
 if [[ ! -x "$VENV_PYTHON" ]]; then
   python3 -m venv "$ROOT/.venv"
-  "$VENV_PYTHON" -m pip install -q pyyaml pytest
+  "$VENV_PYTHON" -m pip install -q pyyaml==6.0.2 pytest==8.3.4
 fi
 
 CAMPAIGN_INFO="$("$VENV_PYTHON" - <<'PY' "$CAMPAIGN_FILE"
 import sys, yaml
 from pathlib import Path
-data = yaml.safe_load(Path(sys.argv[1]).read_text())
+
+data = yaml.safe_load(Path(sys.argv[1]).read_text(encoding="utf-8"))
+if not isinstance(data, dict):
+    print("error: campaign YAML must be a mapping", file=sys.stderr)
+    raise SystemExit(1)
+if "start" not in data:
+    print("error: campaign missing 'start'", file=sys.stderr)
+    raise SystemExit(1)
+for node, spec in (data.get("nodes") or {}).items():
+    if not isinstance(spec, dict) or "mission" not in spec:
+        print(f"error: node '{node}' missing 'mission'", file=sys.stderr)
+        raise SystemExit(1)
 print(data["start"])
 for node, spec in data.get("nodes", {}).items():
     print(f"{node}\t{spec['mission']}")
@@ -121,6 +141,43 @@ mission_for_node() {
   local nid="$1"
   echo "$CAMPAIGN_INFO" | awk -F'\t' -v n="$nid" 'NF>=2 && $1==n {print $2; exit}'
 }
+
+validate_mission() {
+  local mission="$1"
+  "$VENV_PYTHON" -c 'import sys; sys.path.insert(0, sys.argv[1]+"/scripts"); from lib.mission_registry import MISSION_DOCS; mission=sys.argv[2]; sys.exit(0 if mission in MISSION_DOCS else 1)' "$ROOT" "$mission" \
+    || { echo "error: unknown mission '$mission' (not in mission registry)" >&2; return 1; }
+}
+
+readiness_for_mission() {
+  local mission="$1"
+  "$VENV_PYTHON" -c 'import sys; sys.path.insert(0, sys.argv[1]+"/scripts"); from lib.mission_registry import readiness_path; print(readiness_path(sys.argv[2]))' "$ROOT" "$mission"
+}
+
+dry_run_next_node() {
+  local current="$1"
+  "$VENV_PYTHON" - <<'PY' "$CAMPAIGN_FILE" "$current" "$ROOT"
+import sys, yaml
+from pathlib import Path
+
+sys.path.insert(0, sys.argv[3] + "/scripts")
+from lib.fleet_outcome import pick_next_node
+
+campaign = yaml.safe_load(Path(sys.argv[1]).read_text(encoding="utf-8"))
+current = sys.argv[2]
+# Static dry-run: assume each node succeeds with benign metrics.
+outcome = {
+    "status": "done",
+    "metrics": {"code_bug_findings": 0, "drift_open": 0},
+    "deferred_missions": [],
+}
+nxt = pick_next_node(campaign, current, outcome)
+print(nxt or "")
+PY
+}
+
+if [[ "$YOLO" -eq 1 ]]; then
+  echo "warning: --yolo auto-approves all agent tool calls; untrusted --repo/--campaign + yolo = full RCE surface" >&2
+fi
 
 echo "== run-campaign =="
 echo "runtime:  $RUNTIME"
@@ -135,6 +192,11 @@ STEP=0
 VISITED=""
 
 while [[ -n "$CURRENT" ]]; do
+  if [[ -n "$VISITED" && " $VISITED " == *" $CURRENT "* ]]; then
+    echo "error: cycle detected at node $CURRENT" >&2
+    exit 1
+  fi
+
   STEP=$((STEP + 1))
   MISSION="$(mission_for_node "$CURRENT")"
   if [[ -z "$MISSION" ]]; then
@@ -142,7 +204,9 @@ while [[ -n "$CURRENT" ]]; do
     exit 1
   fi
 
-  READINESS="$("$VENV_PYTHON" -c "import sys; sys.path.insert(0,'$ROOT/scripts'); from lib.mission_registry import readiness_path; print(readiness_path('$MISSION'))")"
+  validate_mission "$MISSION"
+
+  READINESS="$(readiness_for_mission "$MISSION")"
 
   echo "--- step $STEP: node=$CURRENT mission=$MISSION ---"
 
@@ -153,7 +217,7 @@ while [[ -n "$CURRENT" ]]; do
     echo "  expect:    $READINESS_ABS with fleet-outcome.status done"
   else
     EXTRA=(--repo "$REPO_ROOT")
-    [[ "$YOLO" -eq 0 ]] && EXTRA+=(--no-yolo)
+    [[ "$YOLO" -eq 1 ]] && EXTRA+=(--yolo)
     "$ROOT/scripts/run-mission-headless.sh" "$RUNTIME" "$MISSION" --max-turns "$MAX_TURNS" "${EXTRA[@]}"
     if [[ -f "$READINESS_ABS" ]]; then
       ./scripts/validate-fleet-outcome.sh "$READINESS_ABS"
@@ -164,23 +228,18 @@ while [[ -n "$CURRENT" ]]; do
 
   VISITED="${VISITED:+$VISITED }$CURRENT"
 
-  if [[ "$DRY_RUN" -eq 1 && ! -f "$READINESS_ABS" ]]; then
-    echo "  next:     (dry-run stops — no readiness at $READINESS_ABS)"
-    break
-  fi
-
-  if [[ "$DRY_RUN" -eq 0 && ! -f "$READINESS_ABS" ]]; then
+  if [[ "$DRY_RUN" -eq 1 ]]; then
+    NEXT="$(dry_run_next_node "$CURRENT")"
+    echo "  next:     ${NEXT:-<campaign done>}"
+    CURRENT="$NEXT"
+  elif [[ ! -f "$READINESS_ABS" ]]; then
     echo "error: cannot pick next node without $READINESS_ABS" >&2
     exit 1
-  fi
-
-  if [[ -f "$READINESS_ABS" ]]; then
+  else
     NEXT_JSON="$(./scripts/eval-campaign-edge.sh --readiness "$READINESS_ABS" --campaign "$CAMPAIGN_FILE" --current-node "$CURRENT")"
     NEXT="$(echo "$NEXT_JSON" | "$VENV_PYTHON" -c "import sys,json; print(json.load(sys.stdin).get('next') or '')")"
     echo "  next:     ${NEXT:-<campaign done>}"
     CURRENT="$NEXT"
-  else
-    break
   fi
 
   if [[ "$STEP" -gt 20 ]]; then
