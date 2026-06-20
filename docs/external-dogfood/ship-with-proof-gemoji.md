@@ -9,7 +9,7 @@ Prove community-skill integration and the **ship-with-proof** campaign on a smal
 | Repo | [github/gemoji](https://github.com/github/gemoji) |
 | Why | Real OSS Ruby gem; audit + tests + docs surface; not autonomous-fleet |
 | Campaign | `ship-with-proof-campaign.yaml` |
-| Community (optional) | `gstack-health` post-gate; `gstack-ship` only if opening a meta-PR |
+| Community (optional) | `health` post-gate; `ship` only if opening a meta-PR (gstack default unprefixed ids) |
 
 ## Setup
 
@@ -43,7 +43,8 @@ git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.cl
 cd ~/.claude/skills/gstack && ./setup --host cursor  # or your host
 ```
 
-Install only `gstack-health` and `gstack-ship` if you plan post-gates — not the full catalog.
+Install only `health` and `ship` if you plan post-gates — not the full catalog. (Prefixed
+`gstack-*` ids require `SKILL_PREFIX=1 ./setup`; campaign YAML uses unprefixed ids.)
 
 ## Dry-run (from autonomous-fleet clone)
 
@@ -83,9 +84,9 @@ Each readiness doc: valid `fleet-outcome` YAML; `./scripts/validate-fleet-outcom
 
 | Gate | When for gemoji |
 |------|-----------------|
-| `gstack-health` | Optional scorecard on repo |
-| `gstack-ship` | Only if promoting BASE → default branch via PR |
-| `gstack-qa` | Skip — no web staging URL |
+| `health` | Optional scorecard on repo |
+| `ship` | Only if promoting BASE → default branch via PR |
+| `qa` | Skip — no web staging URL |
 
 Record `run.duration_min` and `prs_merged` in each `fleet-outcome` (fleet-outcome.md § Run telemetry).
 
