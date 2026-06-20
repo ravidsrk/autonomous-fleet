@@ -257,15 +257,18 @@ COMMIT & AUTHORSHIP — more commits are better; clean authorship; never squash.
 - `git config user.name`/`user.email` = MAINTAINER before commit #1. No agent/tool trailers.
 
 ═══════════════════════════════════════════════════════════
-EMPIRICAL RISK TIERS — which missions to trust unattended (from the MSR 2026 study of ~33k agent
-PRs; merge rate by task type).
+EMPIRICAL RISK TIERS — which missions to trust unattended (cross-agent merge rates from arXiv
+2601.15195, MSR 2026 AIDev dataset, 33,596 agent-authored PRs).
 ═══════════════════════════════════════════════════════════
-- Tier 1 (0.84–0.92, run unattended): doc-sync, test-coverage, dependency-update, cleanup.
-- Tier 2 (0.80–0.82, full review gate, glance at the control artifact): bug-batch (reproduce-first),
-  adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence.
+- Tier 1 (~62–84% cross-agent, run unattended): doc-sync (~84% documentation), test-coverage
+  (~61.5% test), dependency-update (~74% build / ~84% chore), cleanup (~84% chore).
+- Tier 2 (~64–79% cross-agent, full review gate, glance at the control artifact): bug-batch
+  (~64% fix, reproduce-first), adversarial-review-and-fix, targeted-migration,
+  design-integration, landing-page-convergence (no direct category in the study — treat as Tier 2).
 - Tier 3 (high blast radius, review the frozen scope/architecture artifact, expect rework):
-  legacy-rebuild, take-product-to-completion.
-- No standalone performance mission — performance is the worst category (~0.68); keep human-gated.
+  legacy-rebuild, take-product-to-completion (no direct category in the study).
+- No standalone performance mission — performance is the worst category (~55% cross-agent); keep
+  human-gated.
 
 ═══════════════════════════════════════════════════════════
 PRECONDITIONS — confirm at start (the adapter specifies the exact checks for its tool).
