@@ -39,7 +39,7 @@ Do not load a second mission skill in the same run. ROADMAP items defer to futur
 
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
-| `gstack-office-hours` | Boundary (T3) is ambiguous and user wants product framing | Use T1+T2 research only |
+| `office-hours` | Boundary (T3) is ambiguous and user wants product framing | Use T1+T2 research only |
 
 ## Worker skills
 

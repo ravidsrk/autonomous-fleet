@@ -3,13 +3,11 @@ repo: single
 base: fleet/align-then-ship-base
 start: complete
 pre_gates:
-  - skill: grill-with-docs
-    alt: gstack-office-hours
-    when: product boundary or intent ambiguous
+  - grill-with-docs
+  - office-hours
 nodes:
   complete: { mission: take-product-to-completion }
 post_gates:
-  - skill: qa
-    when: staging URL available
+  - qa
 edges:
   complete: []

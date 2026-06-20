@@ -68,7 +68,7 @@ gstack post-gates (`ship`, `qa`) after the chain. Campaign YAML:
 ## align-then-ship
 
 **When:** Stalled product → shippable (Tier 3 — explicit user request). Pre-gate: `grill-with-docs`
-or `gstack-office-hours`. Campaign: `scripts/campaigns/align-then-ship.yaml`.
+or `office-hours`. Campaign: `scripts/campaigns/align-then-ship.yaml`.
 
 | # | Mission |
 |---|---------|

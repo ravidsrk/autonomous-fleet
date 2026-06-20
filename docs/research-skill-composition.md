@@ -129,7 +129,7 @@ Other missions say “Apply autonomous-fleet-core …” in prose. The umbrella 
 | `doc-sync` | — | Defers code fixes to other missions |
 | `test-coverage` | — | Defers logic changes |
 | `cleanup` | knip, ts-prune, etc. | “use repo tooling where available” (not skills) |
-| All | `skill-creator`, `gstack-*`, etc. | Not mentioned — agent may auto-load from user catalog |
+| All | `skill-creator`, `qa`, `ship`, etc. | Not mentioned — agent may auto-load from user catalog |
 
 **Risk:** An agent with 50+ user skills may activate unrelated skills (token noise, conflicting instructions). agentskills best practices: *“Would the agent get this wrong without this instruction?”* — fleet should say when **not** to load extras.
 
@@ -246,7 +246,7 @@ Approximate tier-2 load for a typical Grok run:
 | Mission (e.g. doc-sync) | ~80 lines |
 | Umbrella | Only if user started vague — can skip if mission explicit |
 
-Adding optional skills (e.g. `skill-creator`, `gstack-qa`) can add 2–5k+ tokens each. Recommendations:
+Adding optional skills (e.g. `skill-creator`, `qa`) can add 2–5k+ tokens each. Recommendations:
 
 1. **Required block** — always these three layers.
 2. **Optional block** — max 1–2 skills, with “activate only if …” triggers.
