@@ -5,7 +5,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SKILLS_DIR="$ROOT/skills"
 VALIDATOR="$ROOT/.agents/skills/skill-creator/scripts/quick_validate.py"
-VENV_PYTHON="$ROOT/.venv/bin/python"
+
+# shellcheck source=lib/venv-bootstrap.sh
+source "$ROOT/scripts/lib/venv-bootstrap.sh"
+bootstrap_validation_venv "$ROOT"
 
 if [[ ! -d "$SKILLS_DIR" ]]; then
   echo "error: skills directory not found at $SKILLS_DIR" >&2
@@ -13,15 +16,9 @@ if [[ ! -d "$SKILLS_DIR" ]]; then
 fi
 
 if [[ ! -f "$VALIDATOR" ]]; then
-  echo "error: skill-creator not installed. Run:" >&2
-  echo "  npx skills add https://github.com/anthropics/skills --skill skill-creator -y -p" >&2
-  exit 1
-fi
-
-if [[ ! -x "$VENV_PYTHON" ]]; then
-  echo "Setting up validation venv..."
-  python3 -m venv "$ROOT/.venv"
-  "$ROOT/.venv/bin/pip" install -q pyyaml
+  echo "WARN skill-creator not installed; skipping skill validation." >&2
+  echo "  To enable: npx skills add https://github.com/anthropics/skills --skill skill-creator -y -p" >&2
+  exit 0
 fi
 
 ERRORS=0

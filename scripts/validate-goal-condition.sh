@@ -82,9 +82,9 @@ for line in lines:
             out.append(rest)
         continue
     if capture:
-        if line and not line.startswith((" ", "\t")) and line.endswith(":") is False:
-            key = line.split(":", 1)[0] if ":" in line else ""
-            if key in ("SCOPE", "HOST", "SET_AT", "LAST_UPDATE", "CONDITION"):
+        if line and not line.startswith((" ", "\t")):
+            import re
+            if re.match(r"^[A-Z_]+:", line):
                 break
         if line.strip():
             out.append(line.strip())
