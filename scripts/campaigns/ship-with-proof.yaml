@@ -7,10 +7,8 @@ nodes:
   tests: { mission: test-coverage }
   docs: { mission: doc-sync }
 post_gates:
-  - skill: ship
-    when: user asked to open PR
-  - skill: qa
-    when: staging URL available
+  - ship
+  - qa
 edges:
   audit: [{ to: tests, if: always }]
   tests: [{ to: docs, if: always }]
