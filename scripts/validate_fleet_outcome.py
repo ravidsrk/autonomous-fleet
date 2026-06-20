@@ -23,7 +23,8 @@ def main() -> int:
     args = p.parse_args()
     root = Path(__file__).resolve().parents[1]
 
-    if args.files:
+    explicit = bool(args.files)
+    if explicit:
         paths = args.files
     else:
         paths = collect_readiness_paths(root)
@@ -35,7 +36,11 @@ def main() -> int:
     errors = 0
     for path in paths:
         if not path.is_file():
-            print(f"SKIP {path} (not found)")
+            if explicit:
+                print(f"FAIL {path} (not found)")
+                errors += 1
+            else:
+                print(f"SKIP {path} (not found)")
             continue
         try:
             outcome = parse_readiness(path)
