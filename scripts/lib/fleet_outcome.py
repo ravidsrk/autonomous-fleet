@@ -9,6 +9,7 @@ from typing import Any
 import yaml
 
 REQUIRED_TOP = frozenset({"mission", "status", "repo", "base_branch", "prs_merged"})
+VALID_STATUSES = frozenset({"done", "partial", "blocked"})
 
 MISSION_METRICS: dict[str, frozenset[str]] = {
     "doc-sync": frozenset({"drift_open", "code_bug_findings"}),
@@ -30,6 +31,8 @@ MISSION_METRICS: dict[str, frozenset[str]] = {
 
 
 def split_frontmatter(text: str) -> tuple[str | None, str]:
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    text = text.lstrip("\ufeff \t\n\r")
     if not text.startswith("---"):
         return None, text
     end = text.find("\n---", 3)
@@ -62,7 +65,23 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
         if key not in outcome:
             errors.append(f"{prefix}: missing required field '{key}'")
 
+    if "status" in outcome and outcome["status"] not in VALID_STATUSES:
+        errors.append(
+            f"{prefix}: invalid status {outcome['status']!r}, "
+            "must be one of done, partial, blocked"
+        )
+
+    if "prs_merged" in outcome:
+        prs_merged = outcome["prs_merged"]
+        if type(prs_merged) is not int:
+            errors.append(
+                f"{prefix}: prs_merged must be int, got {type(prs_merged).__name__}"
+            )
+
     mission = outcome.get("mission")
+    if isinstance(mission, str) and mission and mission not in MISSION_METRICS:
+        errors.append(f"{prefix}: unknown mission {mission!r}, not in MISSION_METRICS")
+
     if isinstance(mission, str) and mission in MISSION_METRICS:
         metrics = outcome.get("metrics")
         if not isinstance(metrics, dict):
@@ -71,6 +90,12 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
             for mkey in MISSION_METRICS[mission]:
                 if mkey not in metrics:
                     errors.append(f"{prefix}: metrics missing '{mkey}' for {mission}")
+            for mkey, mval in metrics.items():
+                if not isinstance(mval, (int, float, bool)):
+                    errors.append(
+                        f"{prefix}: metric '{mkey}' must be numeric or bool, "
+                        f"got {type(mval).__name__}"
+                    )
 
     deferred = outcome.get("deferred_missions")
     if deferred is not None and not isinstance(deferred, list):
@@ -88,20 +113,39 @@ def _metric_value(outcome: dict[str, Any], name: str) -> Any:
     return None
 
 
+def _parse_right_operand(raw: str) -> Any:
+    if raw in ("true", "false"):
+        return raw == "true"
+    stripped = raw.strip("\"'")
+    if stripped.isdigit() or (stripped.startswith("-") and stripped[1:].isdigit()):
+        return int(stripped)
+    try:
+        return float(stripped)
+    except ValueError:
+        return stripped
+
+
+def _coerce_for_ordering(left: Any, right: Any) -> tuple[float, float]:
+    def to_float(value: Any) -> float:
+        if isinstance(value, bool):
+            return float(int(value))
+        return float(value)
+
+    return to_float(left), to_float(right)
+
+
 def eval_edge(expr: str, outcome: dict[str, Any]) -> bool:
     expr = expr.strip()
     if expr == "always":
         return True
 
-    if expr.startswith("status =="):
-        want = expr.split("==", 1)[1].strip()
-        return str(outcome.get("status")) == want
-
-    m = re.match(r"deferred_missions\s+contains\s+([\w-]+)", expr)
+    m = re.match(r"deferred_missions\s+contains\s+(.+)$", expr)
     if m:
-        target = m.group(1)
+        target = m.group(1).strip()
         for item in outcome.get("deferred_missions") or []:
             if isinstance(item, dict) and item.get("id") == target:
+                return True
+            if isinstance(item, str) and item == target:
                 return True
         return False
 
@@ -109,23 +153,31 @@ def eval_edge(expr: str, outcome: dict[str, Any]) -> bool:
     if m:
         key, op, raw = m.group(1), m.group(2), m.group(3).strip()
         left = _metric_value(outcome, key)
-        if raw in ("true", "false"):
-            right: Any = raw == "true"
-        elif raw.isdigit() or (raw.startswith("-") and raw[1:].isdigit()):
-            right = int(raw)
-        else:
-            right = raw.strip("\"'")
-        ops = {
+        if left is None:
+            raise ValueError(
+                f"metric {key!r} not found in outcome for edge {expr!r}"
+            )
+        right = _parse_right_operand(raw)
+        if op in (">", "<", ">=", "<="):
+            try:
+                left_num, right_num = _coerce_for_ordering(left, right)
+            except (ValueError, TypeError) as exc:
+                raise ValueError(
+                    f"cannot compare metric values numerically in edge {expr!r}: "
+                    f"{left!r} {op} {right!r}"
+                ) from exc
+            ordering_ops = {
+                ">": lambda a, b: a > b,
+                "<": lambda a, b: a < b,
+                ">=": lambda a, b: a >= b,
+                "<=": lambda a, b: a <= b,
+            }
+            return bool(ordering_ops[op](left_num, right_num))
+        equality_ops = {
             "==": lambda a, b: a == b,
             "!=": lambda a, b: a != b,
-            ">": lambda a, b: a > b,
-            "<": lambda a, b: a < b,
-            ">=": lambda a, b: a >= b,
-            "<=": lambda a, b: a <= b,
         }
-        if left is None:
-            return False
-        return bool(ops[op](left, right))
+        return bool(equality_ops[op](left, right))
 
     raise ValueError(f"unsupported expression: {expr!r}")
 

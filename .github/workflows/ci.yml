@@ -26,7 +26,7 @@ jobs:
       - name: Install Python test deps
         run: |
           python3 -m venv .venv
-          .venv/bin/pip install pyyaml pytest
+          .venv/bin/pip install -r requirements.txt
 
       - name: Run all validators and tests
         run: ./scripts/validate-all.sh

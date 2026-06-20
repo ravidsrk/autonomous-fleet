@@ -12,6 +12,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from lib.fleet_outcome import parse_readiness, validate_outcome
 
 
+def collect_readiness_paths(root: Path) -> list[Path]:
+    """Return default readiness docs under docs/, each path at most once."""
+    return sorted(set(root.glob("docs/*-readiness.md")))
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("files", nargs="*", type=Path, help="Readiness docs (default: docs/*-readiness.md)")
@@ -21,10 +26,7 @@ def main() -> int:
     if args.files:
         paths = args.files
     else:
-        paths = sorted(root.glob("docs/*-readiness.md"))
-        arch = root / "docs/arch-build-readiness.md"
-        if arch.exists():
-            paths.append(arch)
+        paths = collect_readiness_paths(root)
 
     if not paths:
         print("No readiness docs found.")
