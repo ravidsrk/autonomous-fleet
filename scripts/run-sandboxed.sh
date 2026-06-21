@@ -105,6 +105,10 @@ _RM_SYSTEM_PARENTS=" /etc /usr /bin /sbin /lib /lib64 /var /boot /dev /proc /sys
 _SUDO_VALUE_OPTS=" -C -D -g -h -p -R -r -T -t -U -u --chdir --chroot --close-from --command-timeout --group --host --other-user --prompt --role --type --user "
 # git global options that consume the NEXT argv token as their value (e.g. git -C <dir> push ...).
 _GIT_GLOBAL_VALUE_OPTS=" -C -c --git-dir --work-tree --namespace --exec-path "
+# Transparent command wrappers that run their argument as a command without changing its blast
+# radius (`command rm -rf /`, `env git push --force`, `xargs rm`...). Stripped so the classifier
+# resolves to the real binary instead of the wrapper word — failing CLOSED.
+_CMD_WRAPPERS=" command builtin exec eval nohup nice ionice time stdbuf setsid env xargs "
 
 # _membership $needle $haystack-with-leading-and-trailing-spaces -> 0 if present.
 _in_set() {
@@ -220,6 +224,29 @@ _classify_statement_tokens() {
     done
   fi
 
+  # 2b) Strip transparent command wrappers (command/exec/env/xargs/nice/nohup/...) so a prefix
+  #     cannot hide the real binary. Re-skips env-assignments and a nested sudo between wrappers.
+  while [[ $i -lt $n ]]; do
+    local w="${argv[$i]}"
+    if _is_env_assignment "$w"; then i=$((i + 1)); continue; fi
+    if [[ "$w" == "sudo" ]]; then i=$((i + 1)); continue; fi
+    if _in_set "$w" "$_CMD_WRAPPERS"; then
+      i=$((i + 1))
+      # env/xargs may carry their own options + NAME=val before the wrapped command; skip them.
+      if [[ "$w" == "env" || "$w" == "xargs" ]]; then
+        while [[ $i -lt $n ]]; do
+          local x="${argv[$i]}"
+          if _is_env_assignment "$x"; then i=$((i + 1)); continue; fi
+          if [[ "$x" == "--" ]]; then i=$((i + 1)); break; fi
+          if [[ "$x" == -* ]]; then i=$((i + 1)); continue; fi
+          break
+        done
+      fi
+      continue
+    fi
+    break
+  done
+
   [[ $i -ge $n ]] && return 0
   local cmd="${argv[$i]}"
 
@@ -291,7 +318,66 @@ _classify_statement_tokens() {
       echo ASK
       return 0
     fi
+    # 3b') git reset --hard <ref>: DENY when ref is remote-tracking / upstream (discards local AND
+    #      matches a remote), ASK otherwise. Structural so bare `origin` and `@{upstream}` are caught
+    #      (the regex tier only matched refs containing a literal '/').
+    if [[ $j -lt $n && "${argv[$j]}" == "reset" ]]; then
+      local has_hard=0 ref="" k=$((j + 1)) t
+      while [[ $k -lt $n ]]; do
+        t="${argv[$k]}"
+        if [[ "$t" == "--hard" ]]; then has_hard=1
+        elif [[ "$t" != -* && -z "$ref" ]]; then ref="$t"; fi
+        k=$((k + 1))
+      done
+      if [[ $has_hard -eq 1 && -n "$ref" ]]; then
+        case "$ref" in
+          origin|upstream|*/*|*@\{u\}*|*@\{upstream\}*|*@\{push\}*) echo DENY; return 0 ;;
+          *) echo ASK; return 0 ;;
+        esac
+      fi
+    fi
   fi
+
+  # 3c) Infra tools: ASK only when the infra tool is the RESOLVED command (not a substring), so
+  #     `echo "terraform apply"` no longer false-positives.
+  case "$cmd" in
+    kubectl|helm|terraform|tofu|databricks)
+      local jj=$((i + 1)) tt
+      while [[ $jj -lt $n ]]; do
+        tt="${argv[$jj]}"
+        case "$tt" in apply|deploy|destroy|delete) echo ASK; return 0 ;; esac
+        jj=$((jj + 1))
+      done
+      ;;
+  esac
+
+  # 3c') gh: pr merge / repo delete -> DENY; release -> ASK. Structural per resolved command so a
+  #      string mentioning them (echo gh pr merge) no longer false-positives.
+  if [[ "$cmd" == "gh" ]]; then
+    local jg=$((i + 1))
+    while [[ $jg -lt $n && "${argv[$jg]}" == -* ]]; do jg=$((jg + 1)); done
+    local g="${argv[$jg]:-}" v="${argv[$((jg + 1))]:-}"
+    case "$g $v" in
+      "pr merge"|"repo delete") echo DENY; return 0 ;;
+    esac
+    [[ "$g" == "release" ]] && { echo ASK; return 0; }
+  fi
+
+  # 3d) Shell -c "<string>": re-classify the embedded command string recursively.
+  case "$cmd" in
+    sh|bash|zsh|dash|ash)
+      local jc=$((i + 1))
+      while [[ $jc -lt $n ]]; do
+        if [[ "${argv[$jc]}" == "-c" && $((jc + 1)) -lt $n ]]; then
+          local sev2
+          sev2="$(classify "${argv[$((jc + 1))]}")"
+          [[ "$sev2" == "DENY" || "$sev2" == "ASK" ]] && { echo "$sev2"; return 0; }
+          break
+        fi
+        jc=$((jc + 1))
+      done
+      ;;
+  esac
 
   return 0
 }
@@ -302,15 +388,13 @@ _classify_statement_tokens() {
 _regex_deny() {
   local line="$1"
   printf '%s' "$line" | grep -Eq 'git[[:space:]].*reset[[:space:]]+--hard[[:space:]]+[A-Za-z0-9_./-]+/' && return 0
-  printf '%s' "$line" | grep -Eq 'gh[[:space:]]+(pr[[:space:]]+merge|repo[[:space:]]+delete)([[:space:]]|$)' && return 0
   return 1
 }
 _regex_ask() {
   local line="$1"
-  printf '%s' "$line" | grep -Eq 'gh[[:space:]]+release([[:space:]]|$)' && return 0
-  printf '%s' "$line" | grep -Eq '(kubectl|helm|terraform|tofu|databricks)[[:space:]].*(apply|deploy|destroy|delete)([[:space:]]|$)' && return 0
-  # bare `terraform apply` / `tofu destroy` with no trailing arg.
-  printf '%s' "$line" | grep -Eq '(kubectl|helm|terraform|tofu|databricks)[[:space:]]+(apply|deploy|destroy|delete)([[:space:]]|$)' && return 0
+  # gh (pr merge / repo delete / release) and infra tools (terraform/tofu/kubectl/helm/databricks
+  # apply|destroy|...) are classified STRUCTURALLY per resolved command in _classify_statement_tokens
+  # (3c/3c'), not by substring, so a string merely mentioning them no longer false-positives.
   return 1
 }
 
