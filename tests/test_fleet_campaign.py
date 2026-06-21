@@ -48,6 +48,21 @@ def test_research_gate_optional_and_typed():
     )
 
 
+def test_cost_estimate_optional_and_numeric():
+    # absent -> fine; non-negative int or float -> pass and branchable
+    assert validate_outcome(DOC_SYNC_OUTCOME) == []
+    assert validate_outcome({**DOC_SYNC_OUTCOME, "cost_estimate": 0}) == []
+    ok = {**DOC_SYNC_OUTCOME, "cost_estimate": 4.25}
+    assert validate_outcome(ok) == []
+    assert eval_edge("cost_estimate > 4", ok) is True
+    # negative / bool / string -> rejected
+    for bad in (-1, True, "cheap"):
+        assert any(
+            "cost_estimate" in e
+            for e in validate_outcome({**DOC_SYNC_OUTCOME, "cost_estimate": bad})
+        )
+
+
 def test_eval_always():
     assert eval_edge("always", DOC_SYNC_OUTCOME) is True
 
