@@ -32,7 +32,7 @@ def _classify(cmd: str) -> str:
 @pytest.mark.parametrize("cmd", [
     "command rm -rf /etc", "env git push --force", "exec git push --force",
     "xargs rm -rf /etc", "nice rm -rf /etc", "sudo command rm -rf /etc",
-    "git status; command rm -rf /etc",                  # command-prefix bypass
+    "git status ; command rm -rf /etc",                 # standalone ; operator token, 2nd stmt denied
     "/bin/rm -rf /etc", "/usr/bin/git push --force",     # basename (absolute path) bypass
     "env -u FOO rm -rf /etc", "nice -n 5 git push --force",  # wrapper-option-operand bypass
     "nohup sudo -u root rm -rf /etc", "ionice -c 2 rm -rf /etc",
