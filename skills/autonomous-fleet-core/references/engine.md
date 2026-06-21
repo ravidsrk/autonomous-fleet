@@ -72,8 +72,9 @@ agent cannot self-grant). For every other choice — placement, subagents, paral
 libraries, merge policy — silently pick the RECOMMENDED default from your judgment + the mission's
 DECISION DEFAULTS, record it in DECISIONS.md, proceed. A reasonable default now beats stopping.
 - WORKER MODE: every worker fully AUTONOMOUS / auto — no per-action permission prompts (the
-  adapter applies the tool's auto/skip-permissions flag). WORKER EFFORT: MAX / highest reasoning
-  tier. Log launch flags in DECISIONS.md.
+  adapter applies the tool's auto/skip-permissions flag). WORKER EFFORT: per-role, NOT flat-max —
+  see MODEL & COST ROUTING (reviewers/coordinator at the strong tier, bulk builders cheaper,
+  build-failure triage cheapest). Log launch flags + the tier per role in DECISIONS.md.
 - MERGE POLICY: PRs an approving reviewer passes auto-merge into BASE via the integrator, WITH
   conflict resolution. Merging is NOT deploying (see SAFETY RAILS). The BASE→main promotion is a
   human meta-PR, out of scope, unless the mission says otherwise.
@@ -231,6 +232,34 @@ and verify it first (Context7 for a pure library-docs lookup; `deep-research` to
 Log each check to docs/research-notes.md (unknown | source | finding | verified). Ship no
 unverified external assumption; the reviewer fails PRs that do.
 ```
+
+═══════════════════════════════════════════════════════════
+MODEL & COST ROUTING — match the model tier to the role; track spend; gate on a budget.
+═══════════════════════════════════════════════════════════
+Running every worker at flat max effort is the difference between an affordable unattended fleet and
+an unaffordable one. DISPATCH carries an optional per-task `model` / `effort`; the coordinator routes
+by role, not uniformly, and records a running cost estimate so a mission can stop before it overruns.
+
+- DISPATCH(task, handle) MAY carry `model`/`effort`. When the adapter's host supports per-call model
+  or effort selection, the coordinator sets it per the ROLE TIER below; when it does not, it records
+  the intended tier in the ledger and uses the host's single available setting. This is a hint, not
+  a hard primitive — an adapter without model selection ignores it.
+- ROLE TIER (default; a mission may override in DECISION DEFAULTS):
+  - STRONG (highest reasoning): the coordinator itself, the REVIEWER, and any planning/decomposition
+    or freeze step (T-AUDIT). Judgment-heavy, low-volume, high-leverage — never cheap out here.
+  - MID: bulk BUILDERS on Tier 1/2 missions and well-scoped task units.
+  - CHEAP (fastest/cheapest): mechanical or high-volume steps — build-failure triage, lint/format
+    fixes, log scans, status summarization, the dashboard render.
+  Record the tier chosen per role in DECISIONS.md (alongside the launch flags).
+- BUDGET: a mission MAY set a `BUDGET` decision-default (a soft spend ceiling for the run). The
+  coordinator keeps a running `cost_estimate` in the ledger (sum of per-task estimates the adapter
+  exposes, or a coarse token-based estimate when it does not). As `cost_estimate` approaches BUDGET:
+  downgrade non-critical workers a tier, then defer remaining optional work via
+  `fleet-outcome.deferred_missions`, then GOAL_BLOCKED with a clear note. NEVER silently exceed a
+  stated BUDGET; surface it like any hard gate.
+- T-FINAL records `cost_estimate: <n>` in the readiness `fleet-outcome` (a non-negative number,
+  parallel to `unverified_assumptions`). It is reportable telemetry and a campaign edge MAY branch on
+  it; a coordinator with no cost signal omits it (it is optional).
 
 ═══════════════════════════════════════════════════════════
 PR-PER-TASK PIPELINE — commits preserved, NEVER squash, conflict-aware, checkout cleaned.
