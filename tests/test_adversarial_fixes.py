@@ -89,7 +89,29 @@ def test_real_exec_path_refuses_and_does_not_run(tmp_path, argv):
 
 # --- fleet_outcome.py: NaN/inf in cost_estimate, metrics, and eval_edge ordering ---
 
-from lib.fleet_outcome import eval_edge, validate_outcome  # noqa: E402
+from lib.fleet_outcome import eval_edge, pick_next_node, validate_outcome  # noqa: E402
+
+
+def test_pick_next_node_missing_metric_edge_skipped_not_crash():
+    # F2: an edge gating on an absent metric must be skipped (not crash), so a valid `always`
+    # fallback after it is still reachable.
+    camp = {"edges": {"audit": [{"to": "hotfix", "if": "p2_open > 0"}, {"to": "ship", "if": "always"}]}}
+    assert pick_next_node(camp, "audit", {"metrics": {}}) == "ship"
+
+
+def test_validate_cli_malformed_yaml_fails_one_doc_not_batch(tmp_path):
+    # F3: a malformed-YAML doc fails independently; the batch completes (exit 1, both seen).
+    good = tmp_path / "a-readiness.md"
+    good.write_text(
+        "---\nfleet-outcome:\n  mission: doc-sync\n  status: done\n  repo: /r\n"
+        "  base_branch: b\n  prs_merged: 1\n  metrics: {drift_open: 0, code_bug_findings: 0}\n---\n"
+    )
+    bad = tmp_path / "b-readiness.md"
+    bad.write_text("---\nfleet-outcome:\n  bad: : indent\n---\n")
+    cli = ROOT / "scripts" / "validate_fleet_outcome.py"
+    r = subprocess.run([sys.executable, str(cli), str(good), str(bad)], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 1
+    assert "OK" in r.stdout and "FAIL" in r.stdout
 
 BASE = {
     "mission": "doc-sync", "status": "done", "repo": "/r", "base_branch": "b",
