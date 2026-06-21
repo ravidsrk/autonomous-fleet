@@ -85,6 +85,19 @@ the repo. "CLOSED" = the Fix is implemented, a test exists where the Fix calls f
 acceptance is demonstrated on staging/testnet/fixtures. Converge to the confirmed Fixes; never
 reinterpret beyond them; never fix a refuted non-issue.
 
+## THREE-LANE REMEDIATION
+After P0-SKEPTIC freezes CONFIRMED findings, classify every confirmed finding before BOOTSTRAP:
+
+- **Lane A IMPLEMENT+MERGE**: the finding is safely fixable inside the repo. Create a normal fix
+  task, run the PR-per-task pipeline, prove acceptance, and merge.
+- **Lane B DRAFT BOTH + HUMAN GATE**: the finding needs editorial, brand, legal, disclosure, or
+  truth-claim judgement the fleet must NOT fabricate. Draft both concrete variants, record both in
+  `docs/DECISIONS.md`, HALT at a human decision gate, and never auto-merge either variant.
+- **Lane 0 REFUSE + HUMAN ACTION**: the finding requires a human-only action such as credential
+  rotation, console/IAM change, legal approval, or production access the fleet cannot perform.
+  Refuse execution, surface a named `HUMAN_ACTION_REQUIRED:<finding-id>` in
+  `docs/arch-ops-actions.md`, and record the action without executing it.
+
 ## ROLE PIPELINE
 - PHASE 0: @claude REVIEWER produces findings FROM THE CODE → @codex SKEPTIC narrows/refutes
   AGAINST THE CODE → freeze.
@@ -95,8 +108,9 @@ reinterpret beyond them; never fix a refuted non-issue.
 ## LEDGER
 `docs/arch-build-progress.md`. PHASE marker (REVIEW | REVIEW_FROZEN | FIXING | VERIFY); a FINDING
 CLOSE-INDEX (every confirmed ID by wave: `OPEN | CLOSED via PR#n | CODE_CLOSED via PR#n (OPS:
-…)`); per-fix-task rows with flags `CODED PR_OPEN REVIEWED MERGED ACCEPT`; an OPS/VERIFY-AT-SCALE
-list + recorded decisions.
+…)`); per-fix-task rows with flags `CODED EVID PR_OPEN REVIEWED MERGED ACCEPT`; `EVID` = the
+finding's own Evidence reproduction re-run and no longer reproduces; an OPS/VERIFY-AT-SCALE list +
+recorded decisions.
 
 ## TASK STRUCTURE
 - **P0-REVIEW [@claude, Opus-class]** — CODE-GROUNDED adversarial review (read the actual source;
@@ -104,20 +118,27 @@ list + recorded decisions.
   cost/abuse, coupling, ops blind spots, version hygiene. Per finding: area-prefixed ID, severity
   P0-P3, problem with PUBLIC file:line evidence from the code, concrete FIX + which in-tree
   primitive to reuse, acceptance criteria, CODE vs CODE+OPS tag. Plus: dependency-ordered ranking
-  (mark FOUNDATION), hot-file collision map, validated-strengths do-not-touch list. Output
-  docs/adversarial-review-fresh.md.
+  (mark FOUNDATION), root-cause CLUSTERS drafted from shared causes, hot-file collision map,
+  validated-strengths do-not-touch list. Each cluster must be tagged `FOUNDATION|INDEPENDENT` with
+  a `touches:` file-list and `CLOSES=[ids]`. Output docs/adversarial-review-fresh.md.
 - **P0-SKEPTIC [@codex, fresh, gated on P0-REVIEW]** — stress every finding AGAINST THE CODE
   (open each cited file:line; verify it's real, severity right, Fix sound, named primitive
   exists, won't break a strength). Produce CONFIRMED (with narrowed scope) and REFUTED/DO-NOT-FIX
-  sets. Update the doc inline. Set PHASE=REVIEW_FROZEN. Confirmed = Phase 1 spec; refuted = never
-  fixed.
+  sets. Finalize root-cause CLUSTERS over the CONFIRMED set, preserving `FOUNDATION|INDEPENDENT`,
+  `touches:`, and `CLOSES=[ids]`. Update the doc inline. Set PHASE=REVIEW_FROZEN. Confirmed =
+  Phase 1 spec; refuted = never fixed.
 - **BOOTSTRAP** — transcribe confirmed finding IDs into the ledger CLOSE-INDEX (waves from the
-  ranking: P0s first, then FOUNDATION, then rest); register each as a fix task in the ledger and
-  SYNC_TASK_STATE(ready) via the active adapter (create native tasks if the adapter supports
-  them). Set PHASE=FIXING.
+  ranking: P0s first, then FOUNDATION, then rest); apply the THREE-LANE REMEDIATION classification;
+  register Lane A fix tasks in the ledger and SYNC_TASK_STATE(ready) via the active adapter (create
+  native tasks if the adapter supports them). Lane B and Lane 0 findings become named decision or
+  human-action records, not auto-merged fix tasks. Set PHASE=FIXING.
 - **FIX LOOP [Phase 1]** — P0s first, FOUNDATION early, parallel across non-colliding files, one
   in-flight task per hot file. Each fix runs the engine's PR-per-task pipeline (CODE→PR→REVIEW→
-  FIX→SHIP conflict-aware). Reviewer independently re-demonstrates each finding's acceptance.
+  FIX→SHIP conflict-aware). Before OPEN_PR, the builder re-runs the EXACT reproduction from the
+  finding's Evidence block and sets `EVID` only when it no longer reproduces. Reviewer independently
+  re-runs the same Evidence reproduction and re-demonstrates each finding's acceptance. Fix a
+  FOUNDATION cluster's root cause once; dependent findings in that cluster's `CLOSES=[ids]` inherit
+  closure through the same PR when their Evidence and acceptance gates pass.
 - **T-FINAL [@grok]** — build green, lint clean, full suite green incl. added tests; every
   confirmed finding CLOSED or CODE_CLOSED(+OPS recorded). Output `docs/arch-build-readiness.md`
   starting with **`fleet-outcome` YAML** (`p0_open`, `p1_open`, `findings_open`, `ops_queue_count`;
@@ -150,5 +171,11 @@ queue surfaced — NOT deployed, NOT promoted to main. Then send the FINAL repor
   VERIFY_AT_SCALE; never block the loop.
 - One in-flight task per hot file; the BASE→main promotion and any OPS apply are human-owned and
   out of scope.
+- Fixes must be exercised the way production runs them, not just CI-green. Use
+  `docs/secure-ship-e2e.md` as the caution rail: validation is not terminal evidence unless it
+  traverses the same invocation, wiring, and result path production uses.
+- Fixing a FOUNDATION cluster's root cause once closes its dependent findings only when the shared
+  PR satisfies every dependent finding's Evidence and acceptance gates; mark inherited dependents
+  `CLOSED via PR#n`.
 - Any ambiguity → close the finding most faithfully to its Fix while keeping the loop
   terminating, the prod path safe, the strengths intact, history clean.
