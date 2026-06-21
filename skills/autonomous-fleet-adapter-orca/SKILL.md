@@ -6,7 +6,7 @@ description: >-
   the real Orca orchestration CLI commands. Load this alongside autonomous-fleet-core when
   running a mission on Orca. Handles Orca's worktree/terminal model, --inject dispatch,
   check --wait supervision, version-tolerant worker_done, and task-update syncing. Default
-  agent handles: @grok builds, @codex reviews (codex --full-auto), @claude integrates —
+  agent handles: @grok builds, @codex reviews (codex exec), @claude integrates —
   overridable by the mission's role pipeline.
 license: MIT
 compatibility: Requires Orca orchestration CLI, git, and gh CLI
@@ -45,9 +45,11 @@ branch at current HEAD if absent).
 - DEPENDENT:
   `orca terminal create --worktree active --title <slug> --command "<cli>" --json`
   → `orca terminal wait --terminal <handle> --for tui-idle --timeout-ms 60000 --json`
-- Agent CLI per role: builder `grok`, reviewer `codex --full-auto`, integrator `claude` (apply
-  each CLI's auto/skip-permissions + max-effort flag; log in DECISIONS.md). If an older CLI rejects
-  `--agent`, create the worktree then `orca terminal create --command "<cli>"`.
+- Agent CLI per role: builder `grok`, reviewer `codex exec` (the headless subcommand; bare `codex
+  --full-auto` is rejected by current codex — `--full-auto` is not a valid top-level flag), integrator
+  `claude` (apply each CLI's auto/skip-permissions + max-effort flag, e.g. codex
+  `--dangerously-bypass-approvals-and-sandbox` or `--sandbox workspace-write`; log in DECISIONS.md).
+  If an older CLI rejects `--agent`, create the worktree then `orca terminal create --command "<cli>"`.
 - "Ready" = `tui-idle`. NEVER DISPATCH before tui-idle (an inject on a non-idle terminal is lost).
 
 ### DISPATCH(task, handle)
