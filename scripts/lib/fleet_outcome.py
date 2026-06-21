@@ -126,6 +126,15 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
                     f"{prefix}: {rkey} must be a non-negative int, got {rval!r}"
                 )
 
+    # Cost routing telemetry (optional, cross-cutting): running spend estimate for
+    # the run. May be fractional. See engine.md MODEL & COST ROUTING.
+    if "cost_estimate" in outcome:
+        cval = outcome["cost_estimate"]
+        if isinstance(cval, bool) or not isinstance(cval, (int, float)) or cval < 0:
+            errors.append(
+                f"{prefix}: cost_estimate must be a non-negative number, got {cval!r}"
+            )
+
     return errors
 
 
