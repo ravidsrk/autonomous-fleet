@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
+import sys
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -106,6 +109,140 @@ def _build_e2e_harness(tmp_path: Path, stub_body: str, campaign: str) -> Path:
     subprocess.run(["git", "commit", "-qm", "init"], cwd=e, check=True)
     os.environ.pop("VIRTUAL_ENV", None)
     return e
+
+
+def _write_minimal_wheel(
+    wheelhouse: Path,
+    dist: str,
+    version: str,
+    files: dict[str, str],
+) -> Path:
+    normalized = dist.lower().replace("-", "_")
+    wheel = wheelhouse / f"{normalized}-{version}-py3-none-any.whl"
+    dist_info = f"{normalized}-{version}.dist-info"
+    written = []
+
+    with zipfile.ZipFile(wheel, "w") as zf:
+        for name, content in files.items():
+            zf.writestr(name, content)
+            written.append(name)
+
+        metadata = f"{dist_info}/METADATA"
+        zf.writestr(metadata, f"Metadata-Version: 2.1\nName: {dist}\nVersion: {version}\n")
+        written.append(metadata)
+
+        wheel_meta = f"{dist_info}/WHEEL"
+        zf.writestr(
+            wheel_meta,
+            "Wheel-Version: 1.0\n"
+            "Generator: tests\n"
+            "Root-Is-Purelib: true\n"
+            "Tag: py3-none-any\n",
+        )
+        written.append(wheel_meta)
+
+        record = f"{dist_info}/RECORD"
+        zf.writestr(record, "".join(f"{name},,\n" for name in [*written, record]))
+
+    return wheel
+
+
+def test_run_campaign_dry_run_self_heals_broken_real_venv(tmp_path: Path):
+    """run-campaign.sh must re-check imports and reinstall requirements for a stale .venv."""
+    import shutil
+
+    repo = tmp_path / "self-heal"
+    (repo / "scripts" / "lib").mkdir(parents=True)
+    (repo / "scripts" / "campaigns").mkdir()
+
+    shutil.copy(ROOT / "scripts" / "run-campaign.sh", repo / "scripts" / "run-campaign.sh")
+    for path in (ROOT / "scripts" / "lib").glob("*"):
+        if path.is_file():
+            shutil.copy(path, repo / "scripts" / "lib" / path.name)
+
+    wheelhouse = repo / "wheelhouse"
+    wheelhouse.mkdir()
+    pyyaml_wheel = _write_minimal_wheel(
+        wheelhouse,
+        "PyYAML",
+        "6.0.2",
+        {
+            "yaml.py": (
+                "import json\n\n"
+                "class YAMLError(Exception):\n"
+                "    pass\n\n"
+                "def safe_load(text):\n"
+                "    try:\n"
+                "        return json.loads(text)\n"
+                "    except Exception as exc:\n"
+                "        raise YAMLError(str(exc)) from exc\n"
+            ),
+        },
+    )
+    pytest_wheel = _write_minimal_wheel(
+        wheelhouse,
+        "pytest",
+        "8.3.4",
+        {"pytest.py": "__version__ = '8.3.4'\n"},
+    )
+    (repo / "requirements.txt").write_text(
+        f"--no-index\n{pyyaml_wheel}\n{pytest_wheel}\n",
+        encoding="utf-8",
+    )
+    (repo / "scripts" / "campaigns" / "t.yaml").write_text(
+        json.dumps(
+            {
+                "campaign": "self-heal",
+                "start": "docs",
+                "nodes": {"docs": {"mission": "doc-sync"}},
+                "edges": {"docs": []},
+            }
+        ),
+        encoding="utf-8",
+    )
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run([sys.executable, "-m", "venv", str(repo / ".venv")], check=True)
+    assert not (repo / ".venv").is_symlink()
+
+    venv_python = repo / ".venv" / "bin" / "python"
+    missing_imports = subprocess.run(
+        [str(venv_python), "-c", "import yaml, pytest"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert missing_imports.returncode != 0
+
+    r = subprocess.run(
+        [
+            str(repo / "scripts" / "run-campaign.sh"),
+            "grok",
+            "--campaign",
+            "scripts/campaigns/t.yaml",
+            "--repo",
+            str(repo),
+            "--dry-run",
+        ],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    combined = r.stdout + r.stderr
+    assert r.returncode == 0, combined
+    assert "Campaign dry-run complete" in r.stdout
+    assert "ModuleNotFoundError" not in combined
+    assert "Traceback" not in combined
+
+    healed_imports = subprocess.run(
+        [str(venv_python), "-c", "import yaml, pytest"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert healed_imports.returncode == 0, healed_imports.stderr
 
 
 def test_blocked_node_halts_campaign(tmp_path: Path):

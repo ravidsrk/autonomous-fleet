@@ -24,9 +24,24 @@ def squash(text: str) -> str:
     return " ".join(text.split())
 
 
+CONTRADICTION_MARKERS = (
+    "IGNORE the preceding",
+    "IGNORE THE PRECEDING",
+    "OVERRIDE",
+    "DISREGARD",
+    "ignore the above",
+)
+
+
+def assert_no_contradiction_markers(text: str) -> None:
+    for marker in CONTRADICTION_MARKERS:
+        assert marker not in text
+
+
 def test_three_lane_remediation_section_has_all_lanes() -> None:
     text = read_skill()
     lanes = section(text, "THREE-LANE REMEDIATION", "ROLE PIPELINE")
+    lanes_flat = squash(lanes)
 
     assert "Lane A IMPLEMENT+MERGE" in lanes
     assert "Lane B DRAFT BOTH + HUMAN GATE" in lanes
@@ -39,6 +54,18 @@ def test_three_lane_remediation_section_has_all_lanes() -> None:
     assert "`HUMAN_ACTION_REQUIRED:<finding-id>`" in lanes
     assert "`docs/arch-ops-actions.md`" in lanes
     assert "without executing it" in lanes
+    assert (
+        "Draft both concrete variants, record both in `docs/DECISIONS.md`, HALT at a human "
+        "decision gate, and never auto-merge either variant."
+    ) in lanes_flat
+    assert (
+        "Refuse execution, surface a named `HUMAN_ACTION_REQUIRED:<finding-id>` in "
+        "`docs/arch-ops-actions.md`, and record the action without executing it."
+    ) in lanes_flat
+    assert "auto-merge it without a human gate" not in lanes
+    assert "SHOULD execute the human-only action itself" not in lanes
+    assert "without waiting" not in lanes
+    assert_no_contradiction_markers(lanes)
 
 
 def test_evid_flag_is_ledger_and_fix_loop_gate() -> None:
@@ -55,6 +82,11 @@ def test_evid_flag_is_ledger_and_fix_loop_gate() -> None:
     assert "sets `EVID`" in tasks
     assert "Reviewer independently" in tasks
     assert "re-runs the same Evidence reproduction" in tasks
+    assert "sets `EVID` only when it no longer reproduces" in squash(tasks)
+    assert "set `EVID` immediately without re-running" not in tasks
+    assert "even when the finding still reproduces" not in tasks
+    assert_no_contradiction_markers(ledger)
+    assert_no_contradiction_markers(tasks)
 
 
 def test_root_cause_clusters_have_foundation_independent_schema() -> None:
@@ -72,6 +104,14 @@ def test_root_cause_clusters_have_foundation_independent_schema() -> None:
     assert "inherit" in tasks
     assert "Fixing a FOUNDATION cluster's root cause once closes its dependent findings" in defaults
     assert "`CLOSED via PR#n`" in defaults
+    assert (
+        "Fixing a FOUNDATION cluster's root cause once closes its dependent findings only when "
+        "the shared PR satisfies every dependent finding's Evidence and acceptance gates"
+    ) in squash(defaults)
+    assert "auto-closes ALL dependents unconditionally" not in defaults
+    assert "skip each dependent" not in defaults
+    assert_no_contradiction_markers(tasks)
+    assert_no_contradiction_markers(defaults)
 
 
 def test_decision_defaults_exercise_fixes_like_production() -> None:
@@ -81,3 +121,10 @@ def test_decision_defaults_exercise_fixes_like_production() -> None:
     assert "Fixes must be exercised the way production runs them, not just CI-green" in defaults
     assert "`docs/secure-ship-e2e.md`" in defaults
     assert "same invocation, wiring, and result path production uses" in defaults
+    assert (
+        "validation is not terminal evidence unless it traverses the same invocation, wiring, "
+        "and result path production uses."
+    ) in squash(defaults)
+    assert "CI-green IS sufficient terminal evidence" not in defaults
+    assert "skip the production invocation" not in defaults
+    assert_no_contradiction_markers(defaults)

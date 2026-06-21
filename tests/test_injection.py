@@ -249,3 +249,39 @@ def test_campaign_cycle_detected(tmp_path: Path):
     # but an unconditional a<->b cycle exhausts it / hits the step cap).
     assert r.returncode != 0
     assert ("revisited too many times" in r.stderr) or ("step limit exceeded" in r.stderr)
+
+
+def test_campaign_tight_cycle_trips_revisit_budget_before_step_limit(tmp_path: Path):
+    campaign = tmp_path / "tight-cycle.yaml"
+    campaign.write_text(
+        textwrap.dedent(
+            """\
+            start: a
+            nodes:
+              a: { mission: doc-sync }
+              b: { mission: test-coverage }
+            edges:
+              a: [{ to: b, if: always }]
+              b: [{ to: a, if: always }]
+            """
+        ),
+        encoding="utf-8",
+    )
+    r = subprocess.run(
+        [
+            str(CAMPAIGN_SCRIPT),
+            "grok",
+            "--campaign",
+            str(campaign),
+            "--repo",
+            str(ROOT),
+            "--dry-run",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode != 0
+    assert "revisited too many times (budget 3)" in r.stderr
+    assert "step limit exceeded" not in r.stderr
