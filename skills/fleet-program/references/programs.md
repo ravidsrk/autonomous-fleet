@@ -34,6 +34,10 @@ pass on an unfamiliar repo.
 | 2 | `dependency-update` | Advisories and stale deps after fixes |
 | 3 | `doc-sync` | Docs match post-fix code |
 
+The audit GATES the campaign (not `if: always`): it advances to deps only when clean
+(`findings_open == 0`); a non-clean audit `status: blocked` halts the run. A deferred major bump
+re-audits the changed surface before docs. See `campaigns.md` for the edge wiring.
+
 ## migrate-safe
 
 **When:** Major upgrade or one-axis migration with safety net.

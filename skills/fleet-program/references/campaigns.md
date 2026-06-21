@@ -87,9 +87,12 @@ edges:
   tests: []
 ```
 
-## Preset: secure-ship (linear)
+## Preset: secure-ship (audit-gated)
 
-Same as programs.md `secure-ship` — use linear edges or:
+The security audit GATES the campaign: it does not flow through on `if: always`. Proceed to dependency
+bumps only when the audit is clean (`findings_open == 0`); an audit that cannot close its P0/P1
+findings sets `status: blocked`, which the runner HALTS on. After bumps, re-audit the changed surface
+when a major was deferred (bounded by the per-node revisit budget), then doc-sync.
 
 ```yaml
 campaign: secure-ship
@@ -99,8 +102,11 @@ nodes:
   deps: { mission: dependency-update }
   docs: { mission: doc-sync }
 edges:
-  audit: [{ to: deps, if: always }]
-  deps: [{ to: docs, if: always }]
+  audit:
+    - { to: deps, if: findings_open == 0 }      # clean audit -> bump; non-clean -> status:blocked halts
+  deps:
+    - { to: audit, if: majors_deferred > 0 }     # deferred major -> re-audit the residual risk
+    - { to: docs, if: always }
   docs: []
 ```
 
