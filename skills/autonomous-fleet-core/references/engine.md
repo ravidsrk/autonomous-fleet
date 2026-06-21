@@ -155,6 +155,15 @@ instinct is a BUG. Suppress it mechanically:
   Re-issue across 15–60 min. Heartbeats/worker activity = alive, not done — never kill a live
   worker. A task fails only if its worker exits/disappears or the 3-failure circuit-breaker
   trips — then reassign, never stop.
+- 3-FAILURE CIRCUIT-BREAKER (definition). Keep a failure counter PER TASK. It increments on a
+  CONFIRMED hard failure of that task: a worker exit/crash, a build/test that comes back red after
+  the worker reported done, or a DETECTING-timeout reassignment (see SIGNAL RECONCILIATION). It does
+  NOT increment on a WAIT timeout, a heartbeat gap, or a transient tool error (those are
+  checkpoints), and it is SEPARATE from REVIEW's "max fix rounds" counter (a reviewer returning
+  CHANGES is normal iteration, not a task failure). The counter RESETS to 0 on a clean WORKER_DONE
+  for that task. At 3, the breaker TRIPS: run the COMPENSATION rollback (close the orphan PR, delete
+  the dead branch, revert any partial commit on BASE) THEN reassign once more; if a reassigned task
+  trips again, defer it via `fleet-outcome.deferred_missions` rather than looping forever.
 If about to message the user anything but the FINAL report (or a named hard-dependency gate):
 stop, re-read this block, read the ledger, take the orchestration action instead.
 
