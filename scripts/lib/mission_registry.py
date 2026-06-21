@@ -50,6 +50,10 @@ MISSION_DOCS: dict[str, dict[str, str]] = {
         "progress": "agents-layer-progress.md",
         "readiness": "agents-layer-readiness.md",
     },
+    "inference-cost": {
+        "progress": "inference-cost-progress.md",
+        "readiness": "inference-cost-readiness.md",
+    },
 }
 
 

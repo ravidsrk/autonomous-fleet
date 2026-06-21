@@ -49,6 +49,9 @@ MISSION_METRICS: dict[str, frozenset[str]] = {
             "deploy_pending_ops",
         }
     ),
+    "inference-cost": frozenset(
+        {"cost_regressed", "quality_regressed", "levers_open"}
+    ),
 }
 E2E_VERIFIED_MISSIONS = frozenset(
     {"take-product-to-completion", "legacy-rebuild", "contract-first-build"}
