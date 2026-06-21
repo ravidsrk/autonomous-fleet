@@ -33,6 +33,9 @@ says so.
 A git repo (REPO_ROOT resolvable) · `gh auth status` via Bash (else local merge-commits into BASE)
 · git worktree support · gitleaks availability checked · BASE exists (create off the default
 branch at current HEAD if absent). The coordinator confirms these with the Bash tool at start.
+OPTIONAL: if the container-use MCP is configured (`claude mcp add container-use -- container-use
+stdio`, needs Docker), PLACE(independent) can use an isolated container + branch instead of a host
+worktree — see PLACE(independent) via container-use below.
 
 ## CONCURRENCY MODEL (important difference from Orca)
 Claude Code parallelism is via SUBAGENTS launched with the Task tool — multiple can run
@@ -64,6 +67,28 @@ per-session and its status can lag).
   checkout on its own branch for a parallel PR).
 - `dependent` → operate in the current checkout/branch (a fresh subagent or sub-session; no new
   worktree).
+
+### PLACE(independent) via container-use (optional: isolated container + branch + sandbox)
+When the container-use MCP is configured, PLACE(independent) MAY use a container-use ENVIRONMENT
+instead of a host `git worktree`, closing the OS-sandbox gap (the worker runs in an isolated Linux
+container, not the host) and the isolation gap (each environment is its own git branch) in one move.
+Verified end to end on a live host (container-use v0.4.2 + Docker): `environment_create` yields an
+`ubuntu:24.04` container + branch `container-use/<env>`, file writes commit to that branch, and
+commands run INSIDE the container (`uname` reports Linux, not the macOS host).
+- SPAWN_WORKER(independent): give the subagent the container-use MCP tools (allow
+  `mcp__container-use__environment_*`) and instruct it to do ALL file/shell work through the
+  environment (container-use's own server rule: "use ONLY Environments; never touch `.git`
+  yourself"). The worker calls `environment_create` (returns an env id + branch `container-use/<env>`),
+  then `environment_file_write` / `environment_run_cmd` inside it. One environment per task unit.
+- INSPECT(): `container-use list` (all envs), `container-use log <env>` (what the worker did),
+  `container-use diff <env>` (changes without checkout). Non-destructive, exactly INSPECT.
+- OPEN_PR / SHIP: bring the env branch into the repo, then the normal gh flow:
+  `container-use checkout <env>` (creates a local branch from `container-use/<env>`), push,
+  `gh pr create --base BASE`; OR `container-use merge <env>` to merge straight into BASE. The
+  SHA-pinned-review + conflict-aware rules from engine.md still apply to the resulting branch.
+- CLEANUP: `container-use delete <env>` (or `--all` at run end) instead of `git worktree remove`.
+- FALLBACK: no container-use MCP -> the plain `git worktree` PLACE(independent) above (host-level
+  isolation, no sandbox). Adoption details: docs/adopt-container-use.md.
 
 ### SPAWN_WORKER(role, placement)
 - Subagent path (preferred for self-contained build/review units): launch via the Task tool with a
