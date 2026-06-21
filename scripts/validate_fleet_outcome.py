@@ -7,6 +7,8 @@ import argparse
 import sys
 from pathlib import Path
 
+import yaml
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib.fleet_outcome import parse_readiness, validate_outcome
@@ -51,8 +53,10 @@ def main() -> int:
                 errors += 1
             else:
                 print(f"OK   {path.name} mission={outcome.get('mission')}")
-        except ValueError as exc:
-            print(f"FAIL {exc}")
+        except (ValueError, yaml.YAMLError) as exc:
+            # Malformed YAML in one doc must fail that doc independently, not abort the whole batch
+            # with an uncaught yaml.YAMLError.
+            print(f"FAIL {path} (invalid: {exc})")
             errors += 1
 
     if errors:
