@@ -58,14 +58,14 @@ Record in `docs/dependency-update-readiness.md` under **Recommended next mission
 **Empirical note:** Documentation, CI, and build-update tasks show the highest merge-success
 rate among AI-agent PRs (arXiv 2601.15195 — Ehsani et al., MSR 2026, AIDev dataset of ~33k PRs).
 Dependency updates fall in the build/chore category — among the highest-trust, safe unattended.
-Risk concentrates in MAJOR version bumps with breaking changes; group and test those carefully.
+Risk concentrates in MAJOR version bumps with breaking changes; isolate and test those carefully.
 
 ## GOAL
 Bring dependencies to current, compatible versions with the suite green. For each update: bump
 the version, update the lockfile, and make whatever code/config changes the bump requires
 (handle deprecations, renamed/moved APIs, breaking changes per the changelog). Prioritize
-security advisories. Group related deps so each PR is coherent and reviewable. Never leave the
-build red or tests failing.
+security advisories. Group related non-major deps so each PR is coherent and reviewable; isolate
+MAJOR bumps under the maximal posture below. Never leave the build red or tests failing.
 
 ## ROLE PIPELINE
 - @claude plans the update groups, performs the bumps, and fixes resulting breakages.
@@ -81,13 +81,14 @@ flag, `OPEN | DONE via PR#n`.
 ## TASK STRUCTURE
 - **T-AUDIT [@claude]** — inventory current vs latest for every dependency; flag security
   advisories; identify which are safe minors/patches vs major/breaking; propose logical UPDATE
-  GROUPS (e.g. a framework + its plugins together). Output `docs/dependency-update-audit.md`.
+  GROUPS for non-majors (e.g. a framework + its plugins together), and order majors by dependency
+  floor (runtime/toolchain first, then dependents). Output `docs/dependency-update-audit.md`.
   Freeze, then update.
-- **T-UPDATE… [per group, loop]** — each group is one PR. @claude bumps + updates lockfile +
-  fixes breakages (read changelogs/migration notes for majors), runs build + full suite green →
-  @codex reviews (right versions, breakages truly fixed, suite green) → @claude merges. Sequence
-  groups that touch shared config; parallelize independent ones. Security fixes first. Update the
-  UPDATE INDEX.
+- **T-UPDATE… [per group, loop]** — each non-major group is one PR; each MAJOR bump is one PR.
+  @claude bumps + updates lockfile + fixes breakages, runs build + full suite green → @codex
+  reviews (right versions, breakages truly fixed, suite green) → @claude merges. Treat
+  manifest+lockfile pairs as the universal hot file: serialize manifest-mutating tasks, and
+  parallelize only independent ecosystems. Security fixes first. Update the UPDATE INDEX.
 - **T-FINAL [@claude]** — build green, full suite green, no remaining known-vulnerable versions
   in scope. Output `docs/dependency-update-readiness.md` with **`fleet-outcome` YAML**
   (`advisories_open`, `majors_deferred`), update index done, versions
@@ -112,10 +113,22 @@ build + suite green, `docs/dependency-update-readiness.md` exists. Then send the
 
 ## DECISION DEFAULTS (mission-specific)
 - Security advisories first. A bump that fixes a CVE outranks a routine version bump.
-- For a MAJOR/breaking bump, read the changelog/migration guide and fix the code properly — never
-  pin-around or suppress to make it "pass" without actually migrating.
-- Group related packages into one coherent PR; don't bump a framework without its ecosystem.
-- If a major upgrade is genuinely large (a migration in its own right), DEFER it with reasoning
-  in DECISIONS.md and note it for the targeted-migration mission — don't half-do it here.
+- For a MAJOR/breaking bump, use maximal posture by default:
+  one MAJOR per PR, never batched. A green build after several majors tells you nothing about
+  which major broke what. Include only the ecosystem packages that must move with that major.
+- For a MAJOR/breaking bump, research before code: read the changelog/migration guide for the
+  crossed range, apply the official codemod before touching code, and fix the code properly. "Bump
+  and pray" is reviewer FAIL; never pin-around or suppress to make it "pass" without migrating.
+- For a MAJOR/breaking bump, dependency-order the work: runtime/toolchain floor first, then the
+  packages, plugins, and apps that depend on that floor.
+- Treat manifest+lockfile as the universal hot file. Any task mutating a manifest serializes with
+  any task mutating its lockfile; independent ecosystems may still run in parallel.
+- If a MAJOR/breaking bump will not go green after 3 fix rounds, mark it BLOCKED with the concrete
+  reason, park it as a DRAFT PR, record it in DECISIONS.md/readiness, and keep the rest of the
+  update campaign moving.
+- Group related non-major packages into one coherent PR; don't bump a framework without its
+  ecosystem.
+- If audit proves a major upgrade is a migration in its own right before an update PR starts,
+  DEFER it with reasoning in DECISIONS.md and note it for the targeted-migration mission.
 - Suite must be green after every group; never merge a red bump.
 - Any ambiguity → the safest upgrade path that keeps the suite green and clears the most risk.
