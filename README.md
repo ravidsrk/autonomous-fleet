@@ -129,13 +129,17 @@ autonomous-fleet/
 │   ├── test-coverage/
 │   ├── dependency-update/
 │   ├── cleanup/
+│   ├── scaffold-align/
 │   ├── bug-batch/                       # Tier 2 missions
 │   ├── adversarial-review-and-fix/
 │   ├── targeted-migration/
 │   ├── design-integration/
 │   ├── landing-page-convergence/
+│   ├── inference-cost/
 │   ├── legacy-rebuild/                  # Tier 3 missions
-│   └── take-product-to-completion/
+│   ├── take-product-to-completion/
+│   ├── contract-first-build/
+│   └── agents-layer/
 ├── docs/
 │   ├── external-dogfood/                # gemoji repo-health + ship-with-proof evidence
 │   ├── research-community-skills.md
@@ -184,13 +188,17 @@ Worker / Deferred sections; readiness docs lead with `fleet-outcome` YAML.
 | `test-coverage`                        | Mission · Tier 1 |                                                                                                                                                                           |
 | `dependency-update`                    | Mission · Tier 1 |                                                                                                                                                                           |
 | `cleanup`                              | Mission · Tier 1 |                                                                                                                                                                           |
+| `scaffold-align`                       | Mission · Tier 1 | Verify scaffold + freeze the build plan                                                                                                                                   |
 | `bug-batch`                            | Mission · Tier 2 | Reproduce-first gate                                                                                                                                                      |
 | `adversarial-review-and-fix`           | Mission · Tier 2 | Two-phase workhorse                                                                                                                                                       |
 | `targeted-migration`                   | Mission · Tier 2 |                                                                                                                                                                           |
 | `design-integration`                   | Mission · Tier 2 |                                                                                                                                                                           |
 | `landing-page-convergence`             | Mission · Tier 2 |                                                                                                                                                                           |
+| `inference-cost`                       | Mission · Tier 2 | Measurement-first cost reduction; sanctioned levers only                                                                                                                  |
 | `legacy-rebuild`                       | Mission · Tier 3 |                                                                                                                                                                           |
 | `take-product-to-completion`           | Mission · Tier 3 |                                                                                                                                                                           |
+| `contract-first-build`                 | Mission · Tier 3 | Greenfield authed build on a frozen plan                                                                                                                                  |
+| `agents-layer`                         | Mission · Tier 3 | One-axis stub->live agent-seam cutover                                                                                                                                    |
 
 **24 skills** under `skills/`. List all: `npx skills add https://github.com/ravidsrk/autonomous-fleet --list`
 
@@ -233,4 +241,5 @@ Copy `skills/autonomous-fleet-adapter-template/` when adding a new runtime adapt
 - Safety rails: testnet/staging only; merge ≠ deploy
 - File ledger survives compaction and session restarts
 - Runtime goals bind native `/goal` loops to ledger DONE ([runtime-goals.md](skills/autonomous-fleet-core/references/runtime-goals.md))
+- Anti-inflation + scope: a green suite is not "done" — completion/rebuild missions gate on `e2e_verified` (verify the real end-to-end result state, not exit codes); a FROZEN SCOPE BOUNDARY caps each run; worktree cleanup is a tracked `WT_CLEAN` gate; editorial/credential decisions route through the surfacing lanes (fix / draft-and-gate / refuse) rather than being fabricated
 - Engine disciplines: external facts are monid-verified and logged to `docs/research-notes.md` with an `unverified_assumptions: 0` gate; per-task model/cost routing emits `cost_estimate` in `fleet-outcome`; commands pass through `scripts/run-sandboxed.sh`; optional container-use placement gives each worker an isolated container + git branch
