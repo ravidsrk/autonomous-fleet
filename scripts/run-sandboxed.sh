@@ -21,6 +21,9 @@
 # boundary. It deliberately does NOT model subshells, command substitution, eval, base64-decoded
 # payloads, or a binary that re-shells internally. A determined caller CAN evade it; it is a net
 # against accidental / obvious damage. Pair it with real OS-level sandboxing for untrusted targets.
+# It FAILS SAFE: on an ambiguous wrapper construction (e.g. an unknown wrapper's positional operand
+# preceding the real command) it errs toward DENY/ASK rather than ALLOW. Refusing a rare safe
+# command is acceptable; silently running an irreversible one is not.
 #
 # This wrapper is code-only. It does NOT run anything against a live target on its own.
 #
@@ -108,7 +111,7 @@ _GIT_GLOBAL_VALUE_OPTS=" -C -c --git-dir --work-tree --namespace --exec-path "
 # Transparent command wrappers that run their argument as a command without changing its blast
 # radius (`command rm -rf /`, `env git push --force`, `xargs rm`...). Stripped so the classifier
 # resolves to the real binary instead of the wrapper word — failing CLOSED.
-_CMD_WRAPPERS=" command builtin exec eval nohup nice ionice time stdbuf setsid env xargs "
+_CMD_WRAPPERS=" command builtin exec eval nohup nice ionice time timeout stdbuf setsid setarch env xargs flock doas chrt taskset unbuffer "
 
 # _membership $needle $haystack-with-leading-and-trailing-spaces -> 0 if present.
 _in_set() {
@@ -228,12 +231,17 @@ _classify_statement_tokens() {
   #     cannot hide the real binary. Basename-matched, so `/usr/bin/env` counts too. We do NOT try
   #     to parse each wrapper's own options here (operand-taking opts like `env -u X`, `nice -n 5`
   #     differ per tool); instead `wrapper_seen` triggers the defense-in-depth scan below.
-  local wrapper_seen=0
   while [[ $i -lt $n ]]; do
     local w="${argv[$i]}" wb="${argv[$i]##*/}"
     if _is_env_assignment "$w"; then i=$((i + 1)); continue; fi
-    if [[ "$wb" == "sudo" ]]; then i=$((i + 1)); wrapper_seen=1; continue; fi
-    if _in_set "$wb" "$_CMD_WRAPPERS"; then i=$((i + 1)); wrapper_seen=1; continue; fi
+    if [[ "$wb" == "sudo" ]] || _in_set "$wb" "$_CMD_WRAPPERS"; then
+      i=$((i + 1))
+      # Skip the wrapper's own options so `time -p echo` resolves to echo (a data-consumer), not
+      # `-p`. Operand-taking opts leave their operand as the head, but the scan / data-consumer
+      # guard below handle whatever resolves.
+      while [[ $i -lt $n && "${argv[$i]}" == -?* ]]; do i=$((i + 1)); done
+      continue
+    fi
     break
   done
 
@@ -369,23 +377,29 @@ _classify_statement_tokens() {
       ;;
   esac
 
-  # 3e) Defense in depth: a wrapper was present but we did not resolve to a known command (its own
-  #     option parsing may have hidden the real binary, e.g. `env -u X rm`, `nice -n 5 git push`,
-  #     `nohup sudo -u root rm`). Re-classify the tail at each command-like head; take worst severity.
-  if [[ $wrapper_seen -eq 1 ]]; then
-    local p worst="" s b
-    for (( p = i; p < n; p++ )); do
-      b="${argv[$p]##*/}"
-      case "$b" in
-        rm|git|gh|kubectl|helm|terraform|tofu|databricks|sh|bash|zsh|dash|ash)
-          s="$(_classify_statement_tokens "${argv[@]:p}")"
-          [[ "$s" == "DENY" ]] && { echo DENY; return 0; }
-          [[ "$s" == "ASK" ]] && worst="ASK"
-          ;;
-      esac
-    done
-    [[ -n "$worst" ]] && { echo "$worst"; return 0; }
-  fi
+  # 3e) Defense in depth. If the resolved head is NEITHER a command classified above NOR a pure
+  #     data-consumer (echo/printf/test/... which take their args as DATA, not as a command), it may
+  #     be an unrecognized wrapper (timeout/flock/doas/...), a leading redirection, or a stray option
+  #     hiding the real binary. Scan the tail for a dangerous command head and re-classify there.
+  #     The data-consumer skip is what keeps `env echo rm -rf /` (safe) from false-positiving.
+  case "$cmd" in
+    rm|git|gh|kubectl|helm|terraform|tofu|databricks|sh|bash|zsh|dash|ash) ;;
+    echo|printf|:|true|false|test|'['|export|unset|read|cd|pwd|alias|set|source|.) ;;
+    *)
+      local p worst="" s b
+      for (( p = i + 1; p < n; p++ )); do
+        b="${argv[$p]##*/}"
+        case "$b" in
+          rm|git|gh|kubectl|helm|terraform|tofu|databricks|sh|bash|zsh|dash|ash)
+            s="$(_classify_statement_tokens "${argv[@]:p}")"
+            [[ "$s" == "DENY" ]] && { echo DENY; return 0; }
+            [[ "$s" == "ASK" ]] && worst="ASK"
+            ;;
+        esac
+      done
+      [[ -n "$worst" ]] && { echo "$worst"; return 0; }
+      ;;
+  esac
 
   return 0
 }
