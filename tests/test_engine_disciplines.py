@@ -53,6 +53,22 @@ def test_frozen_scope_boundary_caps_run_scope() -> None:
     assert "Reviewers FAIL any PR adding out-of-boundary work" in gate
 
 
+def test_draft_both_and_gate_is_a_human_gated_decision_outcome() -> None:
+    text = read_engine()
+    gate = section(
+        text,
+        "COORDINATOR BEHAVIORS",
+        "AUTONOMY ENFORCEMENT",
+    )
+
+    assert "draft-both-and-gate" in gate
+    assert "draft both variants" in gate
+    assert "DECISIONS.md" in gate
+    assert "HALT for the human" in gate
+    assert "third decision outcome beside proceed and defer" in gate
+    assert "must not fabricate" in gate
+
+
 def test_wt_clean_is_tracked_across_pipeline_handoff_and_terminate() -> None:
     text = read_engine()
     autonomy = section(
@@ -89,3 +105,59 @@ def test_wt_clean_is_tracked_across_pipeline_handoff_and_terminate() -> None:
     assert "try X, fall back to Y" in pipeline
     assert "T_FINAL WORKTREE-ORPHAN SWEEP" in pipeline
     assert "orphan worktree" in pipeline
+
+
+def test_feature_fix_done_requires_regression_catching_test() -> None:
+    text = read_engine()
+    pipeline = section(
+        text,
+        "PR-PER-TASK PIPELINE",
+        "TRUST BOUNDARIES",
+    )
+    pipeline_flat = squash(pipeline)
+
+    assert "DONE CONDITION: regression-catching test" in pipeline
+    assert "feature/fix task cannot set REVIEWED" in pipeline_flat
+    assert "cannot be done" in pipeline_flat
+    assert "regression-catching test" in pipeline
+    assert "would FAIL if the repaired behavior broke again" in pipeline_flat
+    assert "build-blind reviewer explicitly asserts" in pipeline_flat
+    assert "not coverage padding" in pipeline_flat
+
+
+def test_first_merge_spot_check_blocks_later_waves_on_fail() -> None:
+    text = read_engine()
+    pipeline = section(
+        text,
+        "PR-PER-TASK PIPELINE",
+        "TRUST BOUNDARIES",
+    )
+
+    assert "FIRST-MERGE SPOT-CHECK" in pipeline
+    assert "After the first task merges into BASE" in pipeline
+    assert "preserved the branch commit count" in pipeline
+    assert "authored by MAINTAINER" in pipeline
+    assert "no commit message contains agent/tool trailers" in pipeline
+    assert "PR branch is deleted" in pipeline
+    assert "secret-scan ran" in pipeline
+    assert "FIRST_MERGE_SPOT_CHECK=PASS or FAIL" in pipeline
+    assert "block later waves" in pipeline
+
+
+def test_secret_scrub_is_gated_on_human_confirmed_rotation() -> None:
+    text = read_engine()
+    hygiene = section(
+        text,
+        "ROTATE-BEFORE-SCRUB PRECONDITION",
+        "COMMIT & AUTHORSHIP",
+    )
+    hygiene_flat = squash(hygiene)
+
+    assert "ROTATE-BEFORE-SCRUB PRECONDITION" in hygiene
+    assert "git-history purge" in hygiene
+    assert "repository secret-scrub" in hygiene
+    assert "file-tracked `ROTATION_CONFIRMED=yes`" in hygiene
+    assert "set by a human" in hygiene
+    assert "does not scrub history yet" in hygiene
+    assert "false safety" in hygiene
+    assert "already-committed secret is already compromised" in hygiene_flat

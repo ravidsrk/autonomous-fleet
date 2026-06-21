@@ -101,8 +101,20 @@ via `fleet-outcome.deferred_missions` — do not guess and ship.
 
 **2. Manage confusion actively.** On conflicting spec vs code, mission vs repo reality, or
 ambiguous acceptance criteria: STOP the affected task wave, name the conflict in DECISIONS.md,
-pick the mission-intent default OR defer — never proceed on a silent guess. Workers escalate via
-ASK; coordinator answers from DECISION DEFAULTS, not by relaying to the user.
+choose exactly one decision outcome from DECISION DEFAULTS: proceed with the mission-intent default,
+defer via `fleet-outcome.deferred_missions`, or draft-both-and-gate as defined below. Never proceed
+on a silent guess. Workers escalate via ASK; coordinator answers from DECISION DEFAULTS, not by
+relaying to the user, unless a named human-gated outcome below applies.
+
+═══════════════════════════════════════════════════════════
+DECISION OUTCOME: draft-both-and-gate.
+═══════════════════════════════════════════════════════════
+When a decision is editorial, disclosure-sensitive, brand-truth-sensitive, or otherwise something the
+fleet must not fabricate, the coordinator must not pick a default and must not ship one variant. It
+REPLYs to the worker with `draft-both-and-gate`: draft both variants, record both variants and the
+unresolved decision in DECISIONS.md, stop the affected task wave, and HALT for the human. This is the
+third decision outcome beside proceed and defer, and it is a hard human gate rather than a normal
+worker ASK relay.
 
 **3. Push back when warranted.** In task specs and FINAL report, flag approaches with concrete
 downside ("adds N files", "touches hot module X"). Propose the simpler path. If the mission's
@@ -427,6 +439,14 @@ Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
   If a newer SHA lands on the branch before SHIP (a fix-round push, a rebase, any commit), the prior
   PASS is OUTDATED: clear REVIEWED and force a re-review of the new SHA. Never ship a PASS that was
   graded against a SHA the branch has since moved past.
+
+═══════════════════════════════════════════════════════════
+DONE CONDITION: regression-catching test.
+═══════════════════════════════════════════════════════════
+A feature/fix task cannot set REVIEWED and cannot be done unless it includes a regression-catching
+test that would FAIL if the repaired behavior broke again. The build-blind reviewer explicitly
+asserts that test is present, behavior-exercising, and not coverage padding before returning PASS.
+
 - SHIP (integrator, CONFLICT-AWARE): on REVIEWED, BEFORE merging confirm the branch HEAD still
   equals the SHA-pinned REVIEWED SHA; if it moved, the PASS is outdated — force re-review, do not
   ship stale. Then check conflicts vs BASE. IF
@@ -442,6 +462,15 @@ Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
   SYNC_TASK_STATE(completed). WORKER_DONE.
 - You only SEQUENCE and wait. Each task = one branch = one PR = one merge-commit = branch deleted =
   checkout cleaned = task completed.
+
+═══════════════════════════════════════════════════════════
+FIRST-MERGE SPOT-CHECK: block later waves on fail.
+═══════════════════════════════════════════════════════════
+After the first task merges into BASE, run a one-time spot-check before launching or merging later
+waves. Assert the produced merge preserved the branch commit count, every preserved commit is authored
+by MAINTAINER, no commit message contains agent/tool trailers, the PR branch is deleted, and the
+secret-scan ran for the merge path. Record FIRST_MERGE_SPOT_CHECK=PASS or FAIL in DECISIONS.md. On
+FAIL, block later waves and repair the merge pipeline before any further SHIP step.
 
 ═══════════════════════════════════════════════════════════
 T_FINAL WORKTREE-ORPHAN SWEEP: no merged task leaves a checkout.
@@ -529,6 +558,15 @@ SECRET HYGIENE — unconditional.
   keys, auth secrets, private/wallet keys, `.env*` contents, OAuth tokens, customer data, real
   wallet addresses, or live infra endpoints. Config reads secrets from env, never inline.
   Ledger/readiness docs reference work by ID + PUBLIC file:line only.
+
+═══════════════════════════════════════════════════════════
+ROTATE-BEFORE-SCRUB PRECONDITION: human confirmation first.
+═══════════════════════════════════════════════════════════
+Any git-history purge, history rewrite, repository secret-scrub, or leaked-secret removal task is
+hard-gated on a file-tracked `ROTATION_CONFIRMED=yes` boolean that was set by a human. If that flag
+is absent, the fleet records the required rotation as a human action and does not scrub history yet.
+Scrubbing before rotation gives false safety because an already-committed secret is already
+compromised.
 
 ═══════════════════════════════════════════════════════════
 COMMIT & AUTHORSHIP — more commits are better; clean authorship; never squash.
