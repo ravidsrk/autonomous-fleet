@@ -29,7 +29,9 @@ Enable goals if `/goal` is missing: `codex features enable goals` or `features.g
 
 A git repo (REPO_ROOT resolvable) · `gh auth status` via shell (else local merge-commits into
 BASE) · git worktree support · gitleaks availability checked · BASE exists (create off the default
-branch at current HEAD if absent) · goals feature enabled for SET_GOAL.
+branch at current HEAD if absent) · goals feature enabled for SET_GOAL · OPTIONAL: container-use
+MCP (`codex mcp add container-use -- container-use stdio`, needs Docker) for sandboxed container
+placement, see PLACE(independent) via container-use below.
 
 ## CONCURRENCY MODEL
 
@@ -45,6 +47,23 @@ There is no persistent external task daemon, so:
 ### PLACE(kind)
 - `independent` → `git worktree add ../<repo>-<slug> -b <BRANCH_PREFIX><slug> BASE`.
 - `dependent` → current checkout/branch (fresh subagent or sub-session; no new worktree).
+
+### PLACE(independent) via container-use (optional: isolated container + branch + sandbox)
+When the container-use MCP is configured (`codex mcp add container-use -- container-use stdio`),
+PLACE(independent) MAY use a container-use ENVIRONMENT instead of a host `git worktree`, closing the
+OS-sandbox gap (the worker runs in an isolated Linux container, not the host) and the isolation gap
+(each environment is its own git branch) together. VERIFIED WORKING on a live host: a `codex exec`
+worker with this MCP called `environment_create` and produced an isolated `ubuntu` container on its
+own branch `container-use/<env>`.
+- SPAWN_WORKER(independent): launch the codex worker with the container-use MCP available; it does
+  ALL file/shell work through the environment (`environment_create` -> env id + branch
+  `container-use/<env>`, then `environment_file_write` / `environment_run_cmd`). One env per unit.
+- INSPECT(): `container-use list` / `log <env>` / `diff <env>` (non-destructive).
+- OPEN_PR / SHIP: `container-use checkout <env>` (local branch from `container-use/<env>`), push,
+  `gh pr create --base BASE`; OR `container-use merge <env>` into BASE. The SHA-pin + conflict-aware
+  rules from engine.md still apply.
+- CLEANUP: `container-use delete <env>` (or `--all`) instead of `git worktree remove`.
+- FALLBACK: no container-use MCP -> the plain `git worktree` path above. See docs/adopt-container-use.md.
 
 ### SPAWN_WORKER(role, placement)
 - Subagent path: launch via Codex subagent spawn with role-scoped prompt (builder / reviewer /

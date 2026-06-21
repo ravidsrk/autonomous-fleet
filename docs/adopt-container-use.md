@@ -107,10 +107,14 @@ Adapter-by-adapter:
   PLACE(independent) becomes "the subagent/sub-session transacts in a new container-use environment
   off BASE"; CLEANUP becomes `cu delete <env>`. The file ledger stays the source of truth (Claude
   Code has no external task daemon); environments add real OS isolation the worktree path lacks.
-- `autonomous-fleet-adapter-codex` / `-grok`: same shape. These hosts read `config.toml`-style MCP
-  config; register `container-use` once, then resolve PLACE/CLEANUP to `cu` commands. The grok
-  headless-auth caveat (GEM-001 in DECISIONS.md) is orthogonal: container-use isolates whatever the
-  worker session is, however it was launched.
+- `autonomous-fleet-adapter-codex`: register via `codex mcp add container-use -- container-use stdio`
+  (writes `~/.codex/config.toml`), then PLACE/CLEANUP resolve to `container-use` commands. VERIFIED
+  WORKING on a live host: a `codex exec` worker with the MCP called `environment_create` and got an
+  isolated container on its own `container-use/<env>` branch.
+- `autonomous-fleet-adapter-grok`: register via `grok mcp add container-use -- container-use stdio`
+  (writes `~/.grok/config.toml`); registration verified. A full live run is gated by Grok's OWN auth
+  (GEM-001 `Auth(AuthorizationRequired)`), which is orthogonal to container-use: the engine and the
+  loop are proven on the Claude Code and Codex adapters, so exercise once Grok login is configured.
 - `autonomous-fleet-adapter-orca`: Orca already manages worktrees/workspaces natively. container-use
   is the alternative placement backend for hosts WITHOUT Orca's worktree management, or when an Orca
   run targets an untrusted repo and wants a hard container boundary. Document it as opt-in here; do

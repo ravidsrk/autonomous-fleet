@@ -31,7 +31,9 @@ ledger + polling, and says so.
 ## PRECONDITIONS (the core calls for these; here's the Grok form)
 A git repo (REPO_ROOT resolvable) · `gh auth status` via Shell (else local merge-commits into BASE)
 · git worktree support · gitleaks availability checked · BASE exists (create off the default
-branch at current HEAD if absent). The coordinator confirms these with Shell at start.
+branch at current HEAD if absent). The coordinator confirms these with Shell at start. OPTIONAL:
+container-use MCP (`grok mcp add container-use -- container-use stdio`, needs Docker) for sandboxed
+container placement, see PLACE(independent) via container-use below.
 
 ## CONCURRENCY MODEL (important difference from Orca)
 Grok parallelism is via SUBAGENTS launched with the Task tool — multiple can run concurrently.
@@ -49,6 +51,24 @@ There is no persistent external task daemon, so:
   checkout on its own branch for a parallel PR).
 - `dependent` → operate in the current checkout/branch (a fresh subagent or sub-session; no new
   worktree).
+
+### PLACE(independent) via container-use (optional: isolated container + branch + sandbox)
+When the container-use MCP is configured (`grok mcp add container-use -- container-use stdio`),
+PLACE(independent) MAY use a container-use ENVIRONMENT instead of a host `git worktree`, closing the
+OS-sandbox gap (the worker runs in an isolated Linux container, not the host) and the isolation gap
+(each environment is its own git branch) together. The `grok mcp add` registration is verified on
+this host; a full live run is gated by Grok's OWN auth (headless Grok hits
+`Auth(AuthorizationRequired)`), so exercise it once Grok login is configured. The container-use
+engine and the identical loop are proven on the Claude Code and Codex adapters.
+- SPAWN_WORKER(independent): launch the Grok worker with the container-use MCP available; it does ALL
+  file/Shell work through the environment (`environment_create` -> env id + branch
+  `container-use/<env>`, then `environment_file_write` / `environment_run_cmd`). One env per unit.
+- INSPECT(): `container-use list` / `log <env>` / `diff <env>` (non-destructive).
+- OPEN_PR / SHIP: `container-use checkout <env>` (local branch from `container-use/<env>`), push,
+  `gh pr create --base BASE`; OR `container-use merge <env>` into BASE. The SHA-pin + conflict-aware
+  rules from engine.md still apply.
+- CLEANUP: `container-use delete <env>` (or `--all`) instead of `git worktree remove`.
+- FALLBACK: no container-use MCP -> the plain `git worktree` path above. See docs/adopt-container-use.md.
 
 ### SPAWN_WORKER(role, placement)
 - Subagent path (preferred for self-contained build/review units): launch via the Task tool with a
