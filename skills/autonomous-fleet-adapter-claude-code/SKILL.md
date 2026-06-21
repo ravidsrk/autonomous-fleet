@@ -82,10 +82,11 @@ commands run INSIDE the container (`uname` reports Linux, not the macOS host).
   then `environment_file_write` / `environment_run_cmd` inside it. One environment per task unit.
 - INSPECT(): `container-use list` (all envs), `container-use log <env>` (what the worker did),
   `container-use diff <env>` (changes without checkout). Non-destructive, exactly INSPECT.
-- OPEN_PR / SHIP: bring the env branch into the repo, then the normal gh flow:
-  `container-use checkout <env>` (creates a local branch from `container-use/<env>`), push,
-  `gh pr create --base BASE`; OR `container-use merge <env>` to merge straight into BASE. The
-  SHA-pinned-review + conflict-aware rules from engine.md still apply to the resulting branch.
+- OPEN_PR / SHIP (preferred): `container-use checkout <env>` (creates a local branch from
+  `container-use/<env>`), push, `gh pr create --base BASE` — this keeps the SHA-pinned-review +
+  conflict-aware merge gate from engine.md. NOTE: `container-use merge <env>` merges into your
+  CURRENT git branch (not a `--base` you name) and BYPASSES the PR/review gate, so use it only after
+  an explicit `git checkout BASE`, never as the default ship path.
 - CLEANUP: `container-use delete <env>` (or `--all` at run end) instead of `git worktree remove`.
 - FALLBACK: no container-use MCP -> the plain `git worktree` PLACE(independent) above (host-level
   isolation, no sandbox). Adoption details: docs/adopt-container-use.md.

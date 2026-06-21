@@ -98,6 +98,11 @@ Sub-goal: Task <task-id> done when ledger row <task-id> has MERGED=true and PR n
 `LOOP_POLL` is listed in `engine.md` "THE PRIMITIVES" (primitive 13); adapters resolve it through
 the row above.
 
+HEADLESS CODEX CAVEAT: the `/goal` cells above are for INTERACTIVE codex (the composer). `codex exec`
+(the unattended path) is single-shot and ignores slash commands, so a `/goal ...` string in an exec
+prompt is inert. For headless codex, goal continuation MUST come from `LOOP_POLL` — an external loop
+that re-invokes `codex exec` until the ledger's DONE condition holds — not from a native goal harness.
+
 ## Plan mode pairing
 
 | Fleet phase | Native |
