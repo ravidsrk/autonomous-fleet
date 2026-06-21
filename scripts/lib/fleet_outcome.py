@@ -245,6 +245,20 @@ def pick_next_node(
         if not isinstance(edge, dict):
             continue
         expr = edge.get("if", "always")
-        if eval_edge(str(expr), outcome):
-            return edge.get("to")
+        # An edge whose expression references a missing metric (or is malformed) must NOT crash the
+        # whole pick and strand a valid `if: always` fallback edge after it. Per the documented
+        # "unknown expression -> skip edge, do not guess" rule, treat a raising edge as not-taken.
+        try:
+            matched = eval_edge(str(expr), outcome)
+        except ValueError:
+            continue
+        if matched:
+            to = edge.get("to")
+            # A matched edge with no usable destination is a misconfigured campaign, not a terminal
+            # node: fail loudly rather than returning None (which reads as "no edge matched / DONE").
+            if not isinstance(to, str) or not to:
+                raise ValueError(
+                    f"matched edge on node {current_node!r} has no valid 'to': {edge!r}"
+                )
+            return to
     return None
