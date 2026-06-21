@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import re
 from pathlib import Path
 from typing import Any
@@ -106,10 +107,16 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
                 if mkey not in metrics:
                     errors.append(f"{prefix}: metrics missing '{mkey}' for {mission}")
             for mkey, mval in metrics.items():
-                if not isinstance(mval, (int, float, bool)):
+                if isinstance(mval, bool):
+                    continue
+                if not isinstance(mval, (int, float)):
                     errors.append(
                         f"{prefix}: metric '{mkey}' must be numeric or bool, "
                         f"got {type(mval).__name__}"
+                    )
+                elif isinstance(mval, float) and not math.isfinite(mval):
+                    errors.append(
+                        f"{prefix}: metric '{mkey}' must be finite, got {mval!r}"
                     )
 
     deferred = outcome.get("deferred_missions")
@@ -130,9 +137,14 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
     # the run. May be fractional. See engine.md MODEL & COST ROUTING.
     if "cost_estimate" in outcome:
         cval = outcome["cost_estimate"]
-        if isinstance(cval, bool) or not isinstance(cval, (int, float)) or cval < 0:
+        if (
+            isinstance(cval, bool)
+            or not isinstance(cval, (int, float))
+            or (isinstance(cval, float) and not math.isfinite(cval))
+            or cval < 0
+        ):
             errors.append(
-                f"{prefix}: cost_estimate must be a non-negative number, got {cval!r}"
+                f"{prefix}: cost_estimate must be a non-negative finite number, got {cval!r}"
             )
 
     return errors
@@ -163,7 +175,10 @@ def _coerce_for_ordering(left: Any, right: Any) -> tuple[float, float]:
     def to_float(value: Any) -> float:
         if isinstance(value, bool):
             return float(int(value))
-        return float(value)
+        result = float(value)
+        if not math.isfinite(result):
+            raise ValueError(f"non-finite operand: {value!r}")
+        return result
 
     return to_float(left), to_float(right)
 
