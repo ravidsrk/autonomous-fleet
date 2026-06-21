@@ -1,6 +1,6 @@
 # test-coverage progress (dogfood of the new disciplines, 2026-06-21)
 
-PHASE: FIXING
+PHASE: DONE
 MISSION: test-coverage   REPO: autonomous-fleet   BASE: ravidsrk/dogfood-test-coverage (off main@b84de27)
 COORDINATOR: this Claude Code session
 
@@ -28,8 +28,17 @@ is not edited, so no serialization needed.
 ## TASK ROW
 TASK test-coverage-clis | FILES=[test_eval_campaign_cli,test_mission_registry,test_validate_fleet_outcome_cli]
 | PLACE=container-use(independent) | WORKER=codex(cross-vendor to claude reviewer) | width-3 parallel-eligible
-| CODED=f REVIEWED=f MERGED=f | reviewed_sha=- | NOTE=tests written in a container-use env; reviewer RUNS
-them + checks they assert behavior (not coverage-padding).
+| CODED=t REVIEWED=t MERGED=f | reviewed_sha=0dbd18b | NOTE=codex container-use worker (awake-pika)
+TIMED OUT mid-read before any environment_file_write -> reassigned to the claude coordinator (3-fail/
+timeout rule); codex did the CROSS-VENDOR review instead (VERDICT: PASS, ran the tests).
+
+## SIGNAL RECONCILIATION (a real catch)
+First pass used subprocess to drive the CLIs; re-measuring coverage EXTERNALLY showed
+mission_registry 0->100% but eval-campaign-edge still 0% and validate_fleet_outcome still 22% --
+subprocess execution is a separate process coverage.py does not track. Reassessed and rewrote the
+two CLI tests to invoke main() IN-PROCESS (monkeypatch argv + capsys). Re-measured: eval-campaign-edge
+0->93%, validate_fleet_outcome 22->74%, total 74->86%. The discipline (re-measure, do not trust the
+claim) caught real tests that were not moving the number.
 
 ## DISCIPLINES (evidence appended as the run proceeds)
 - COVERAGE MAP -> real gaps (not invented). PLAN/DAG width 3. COUPLING -> hub identified.
