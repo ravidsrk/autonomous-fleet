@@ -240,7 +240,10 @@ while [[ -n "$CURRENT" ]]; do
       ./scripts/validate-fleet-outcome.sh "$READINESS_ABS"
       # A node that finished BLOCKED must halt the campaign (GOAL_BLOCKED -> status:blocked), not
       # fall through to "Campaign complete". status:blocked is a VALID outcome that passes validation.
-      NODE_STATUS="$("$VENV_PYTHON" -c "import sys; sys.path.insert(0, '$ROOT/scripts'); from lib.fleet_outcome import parse_readiness; print(parse_readiness('$READINESS_ABS').get('status', ''))" 2>/dev/null || true)"
+      # parse_readiness takes a Path, not a str (it calls .read_text). Passing a str raised an
+      # AttributeError that the old `2>/dev/null || true` SILENTLY swallowed, so this halt never
+      # fired. Pass Path(...) and let errors surface (validate already parsed the doc above).
+      NODE_STATUS="$("$VENV_PYTHON" -c "import sys; from pathlib import Path; sys.path.insert(0, '$ROOT/scripts'); from lib.fleet_outcome import parse_readiness; print(parse_readiness(Path('$READINESS_ABS')).get('status', ''))" || true)"
       if [[ "$NODE_STATUS" == "blocked" ]]; then
         echo "" >&2
         echo "Campaign BLOCKED at node $CURRENT (fleet-outcome.status: blocked). Halting; this is a human gate, not a completed campaign." >&2
@@ -274,4 +277,6 @@ while [[ -n "$CURRENT" ]]; do
 done
 
 echo ""
-echo "Campaign ${DRY_RUN:+dry-run }complete. Nodes visited: ${VISITED:-none}"
+# `${DRY_RUN:+...}` is truthy for the string "0", so it wrongly printed "dry-run" on real runs.
+DRYTAG=""; [[ "$DRY_RUN" -eq 1 ]] && DRYTAG="dry-run "
+echo "Campaign ${DRYTAG}complete. Nodes visited: ${VISITED:-none}"
