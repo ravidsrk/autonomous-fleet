@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -19,8 +20,10 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 
 def _classify(cmd: str) -> str:
+    # Invoke with SEPARATE argv (shlex.split), exactly how the real exec path receives the command.
+    # Passing a single joined string would mask the argv-boundary bug round-3 review found.
     return subprocess.run(
-        [str(SANDBOX), "--classify", cmd], cwd=ROOT, capture_output=True, text=True
+        [str(SANDBOX), "--classify", *shlex.split(cmd)], cwd=ROOT, capture_output=True, text=True
     ).stdout.strip()
 
 
