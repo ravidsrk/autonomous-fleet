@@ -225,30 +225,20 @@ _classify_statement_tokens() {
   fi
 
   # 2b) Strip transparent command wrappers (command/exec/env/xargs/nice/nohup/...) so a prefix
-  #     cannot hide the real binary. Re-skips env-assignments and a nested sudo between wrappers.
+  #     cannot hide the real binary. Basename-matched, so `/usr/bin/env` counts too. We do NOT try
+  #     to parse each wrapper's own options here (operand-taking opts like `env -u X`, `nice -n 5`
+  #     differ per tool); instead `wrapper_seen` triggers the defense-in-depth scan below.
+  local wrapper_seen=0
   while [[ $i -lt $n ]]; do
-    local w="${argv[$i]}"
+    local w="${argv[$i]}" wb="${argv[$i]##*/}"
     if _is_env_assignment "$w"; then i=$((i + 1)); continue; fi
-    if [[ "$w" == "sudo" ]]; then i=$((i + 1)); continue; fi
-    if _in_set "$w" "$_CMD_WRAPPERS"; then
-      i=$((i + 1))
-      # env/xargs may carry their own options + NAME=val before the wrapped command; skip them.
-      if [[ "$w" == "env" || "$w" == "xargs" ]]; then
-        while [[ $i -lt $n ]]; do
-          local x="${argv[$i]}"
-          if _is_env_assignment "$x"; then i=$((i + 1)); continue; fi
-          if [[ "$x" == "--" ]]; then i=$((i + 1)); break; fi
-          if [[ "$x" == -* ]]; then i=$((i + 1)); continue; fi
-          break
-        done
-      fi
-      continue
-    fi
+    if [[ "$wb" == "sudo" ]]; then i=$((i + 1)); wrapper_seen=1; continue; fi
+    if _in_set "$wb" "$_CMD_WRAPPERS"; then i=$((i + 1)); wrapper_seen=1; continue; fi
     break
   done
 
   [[ $i -ge $n ]] && return 0
-  local cmd="${argv[$i]}"
+  local cmd="${argv[$i]##*/}"
 
   # 3a) rm severity.
   if [[ "$cmd" == "rm" ]]; then
@@ -378,6 +368,24 @@ _classify_statement_tokens() {
       done
       ;;
   esac
+
+  # 3e) Defense in depth: a wrapper was present but we did not resolve to a known command (its own
+  #     option parsing may have hidden the real binary, e.g. `env -u X rm`, `nice -n 5 git push`,
+  #     `nohup sudo -u root rm`). Re-classify the tail at each command-like head; take worst severity.
+  if [[ $wrapper_seen -eq 1 ]]; then
+    local p worst="" s b
+    for (( p = i; p < n; p++ )); do
+      b="${argv[$p]##*/}"
+      case "$b" in
+        rm|git|gh|kubectl|helm|terraform|tofu|databricks|sh|bash|zsh|dash|ash)
+          s="$(_classify_statement_tokens "${argv[@]:p}")"
+          [[ "$s" == "DENY" ]] && { echo DENY; return 0; }
+          [[ "$s" == "ASK" ]] && worst="ASK"
+          ;;
+      esac
+    done
+    [[ -n "$worst" ]] && { echo "$worst"; return 0; }
+  fi
 
   return 0
 }

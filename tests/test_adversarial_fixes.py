@@ -30,6 +30,10 @@ def _classify(cmd: str) -> str:
     "command rm -rf /etc", "env git push --force", "exec git push --force",
     "xargs rm -rf /etc", "nice rm -rf /etc", "sudo command rm -rf /etc",
     "git status; command rm -rf /etc",                  # command-prefix bypass
+    "/bin/rm -rf /etc", "/usr/bin/git push --force",     # basename (absolute path) bypass
+    "env -u FOO rm -rf /etc", "nice -n 5 git push --force",  # wrapper-option-operand bypass
+    "nohup sudo -u root rm -rf /etc", "ionice -c 2 rm -rf /etc",
+    "command command rm -rf /etc",                       # stacked wrappers
     "bash -c 'rm -rf /etc'", "sh -c 'git push --force'",  # bash -c embedded
     "git reset --hard origin", "git reset --hard @{upstream}", "git reset --hard origin/main",  # reset
     "gh pr merge 5", "gh repo delete acme/x",            # gh structural
@@ -40,6 +44,8 @@ def test_dangerous_commands_denied(cmd):
 
 @pytest.mark.parametrize("cmd", [
     'echo "terraform apply"', "echo gh pr merge done",  # substring false positives, now ALLOW
+    "echo rm -rf foo",                                  # echo of a dangerous string is not a wrapper
+    "command rm file.txt", "nice -n 5 ls", "env FOO=bar git status",  # wrappers over SAFE commands
     "ls -la", "git pull", "git commit -am wip",
 ])
 def test_safe_commands_allowed(cmd):
