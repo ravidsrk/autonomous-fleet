@@ -302,6 +302,23 @@ def test_pick_next_node_skips_malformed_non_dict_edges():
     assert pick_next_node(campaign, "docs", DOC_SYNC_OUTCOME) == "tests"
 
 
+def test_secure_ship_audit_gates_on_findings_not_always():
+    """secure-ship wires adversarial-review-and-fix as a real GATE: proceed to deps only on a clean
+    audit (findings_open == 0), re-audit when a major dep is deferred, then doc-sync."""
+    import yaml
+
+    camp = yaml.safe_load((ROOT / "scripts" / "campaigns" / "secure-ship.yaml").read_text())
+    # The audit edge must gate on findings_open, not be an unconditional `always`.
+    audit_edges = camp["edges"]["audit"]
+    assert all(e.get("if") != "always" for e in audit_edges), "audit must not be `if: always`"
+    assert any("findings_open" in str(e.get("if", "")) for e in audit_edges)
+    # Clean audit -> deps.
+    assert pick_next_node(camp, "audit", {"findings_open": 0, "p0_open": 0, "p1_open": 0, "ops_queue_count": 0}) == "deps"
+    # Deferred major -> re-audit (the back-edge); clean deps -> docs.
+    assert pick_next_node(camp, "deps", {"advisories_open": 0, "majors_deferred": 1}) == "audit"
+    assert pick_next_node(camp, "deps", {"advisories_open": 0, "majors_deferred": 0}) == "docs"
+
+
 def test_pick_next_node_matched_edge_missing_to_raises():
     """F4: a matched edge with no 'to' is a misconfigured campaign, not a terminal node.
     It now FAILS LOUDLY (raises) instead of returning None (which read as 'campaign done')."""
