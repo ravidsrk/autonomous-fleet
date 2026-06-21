@@ -121,6 +121,9 @@ defer to `cleanup` or record in Recommended next missions.
 ```
 OPERATING BEHAVIORS: State assumptions before non-trivial edits. Stop and ASK on spec/code
 conflict. Prefer the boring solution. Touch only this task's files. Push back on scope creep.
+CONTEXT HYGIENE: keep the tool surface minimal (only the tools this task needs); summarize long
+tool/command outputs into the ledger, don't carry raw dumps in context; prefer a fresh worker
+session per dependent placement over one long-lived worker accreting state.
 ```
 
 ═══════════════════════════════════════════════════════════
@@ -156,6 +159,57 @@ If about to message the user anything but the FINAL report (or a named hard-depe
 stop, re-read this block, read the ledger, take the orchestration action instead.
 
 ═══════════════════════════════════════════════════════════
+SIGNAL RECONCILIATION — three signals, never transition on one read (from ComposioHQ AO).
+═══════════════════════════════════════════════════════════
+Three signals report task health and they DISAGREE in normal operation: worker-liveness (INSPECT),
+the ledger flag you wrote, and the external SCM/CI fact (`gh pr view` state, CI conclusion). A
+worker process can be dead while the runtime is alive, the ledger can say PR_OPEN while CI already
+went red, the SCM can show merged while your flag still reads REVIEWED. Do NOT advance, escalate, or
+declare a task stuck on the FIRST read that disagrees.
+- ANTI-FLAP (require N consistent polls or a timeout): hold a contested task in a DETECTING state;
+  only transition after N consecutive consistent polls (default 3) OR a hard timeout (default 5 min)
+  elapses, whichever first. Key the counter to an evidence HASH of the contested signals (strip
+  volatile fields like timestamps/activity counters before hashing): unchanged WEAK evidence
+  re-presenting must NOT reset the counter, and genuinely NEW evidence resets it to 1. This stops a
+  flapping signal from oscillating a task between states or resetting the stuck clock forever.
+- EXTERNAL FACT OVERRIDES THE LEDGER (re-verify before any terminal flag): before writing ANY
+  terminal flag (MERGED / DONE), re-verify the external fact directly (`gh pr view <n>
+  --json state,mergedAt`, CI conclusion) and let it OVERRIDE the ledger when they disagree. If the
+  SCM says merged but your flag does not, the SCM wins: record MERGED. If your flag says merged but
+  the SCM says open/closed-unmerged, the SCM wins: do NOT mark DONE, record the discrepancy in
+  DECISIONS.md, and re-drive the task. The ledger is your loop memory; the SCM/CI is ground truth at
+  a terminal edge.
+- A signal disagreement is a DETECTING checkpoint, not a failure. Reassign only after the 3-failure
+  circuit-breaker, a confirmed worker exit, or the DETECTING timeout — never on a single poll.
+
+═══════════════════════════════════════════════════════════
+DURABLE-EXECUTION PATCHES — exactly-once, bounded waits, compensation. On the LEDGER, not a runtime.
+═══════════════════════════════════════════════════════════
+A coordinator restart (compaction drop, host crash, fresh resume from CONTEXT HANDOFF) must not
+double-ship or hang. These three patches buy the durable-execution properties WITHOUT a runtime —
+they live on the ledger, the same external brain you already re-read every turn.
+- IDEMPOTENCY KEY per task: stamp each task row with a stable key (e.g. `<slug>@<branch>`). Before a
+  side-effecting primitive (OPEN_PR, MERGE_PR) check the ledger + external fact for that key first: a
+  re-issued OPEN_PR when a PR# already exists for the key is a NO-OP (reuse the recorded PR#), a
+  re-issued MERGE_PR when `gh pr view` already reads merged is a NO-OP (record MERGED, move on). So a
+  restart that re-drives a half-finished task converges instead of opening a duplicate PR or
+  double-merging. Pairs with SIGNAL RECONCILIATION's re-verify-before-terminal rule.
+- MANDATORY DEADLINE + ESCALATION on every WAIT()/ASK(): no unbounded wait. Every WAIT() carries a
+  timeout and every open ASK carries a deadline; on expiry, take the checkpoint action (re-issue
+  WAIT per AUTONOMY ENFORCEMENT) up to a bounded number of cycles, then GOAL_BLOCKED with a clear
+  note rather than waiting forever. A worker that never reports and never exits is a blocked task,
+  not an immortal one.
+- COMPENSATION NOTE for circuit-breaker trips in a dependent chain: when a task trips the 3-failure
+  breaker and downstream tasks already consumed its partial side-effects (a pushed branch, an open
+  PR, a half-applied migration), record a defined ROLLBACK in DECISIONS.md (close the orphan PR,
+  delete the dead branch, revert the partial commit on BASE) and run it before reassigning, so the
+  chain restarts from a clean state. A trip is a saga rollback point, not just a stop.
+- This is deliberately the LIGHT option: idempotency-key + deadline + compensation on a flat-file
+  ledger. If a mission ever needs heavier durability (replay, exactly-once across processes, typed
+  sagas), run the DAG on Temporal / Inngest (or DBOS / Restate, or a LangGraph checkpointer +
+  interrupt()) instead of growing this by hand — see orchestration-landscape.md.
+
+═══════════════════════════════════════════════════════════
 CONTEXT HANDOFF — survive your own context limit.
 ═══════════════════════════════════════════════════════════
 Compaction alone is NOT sufficient and will eventually drop your loop state. The ledger file is
@@ -164,6 +218,33 @@ placements + next ready wave + DECISIONS.md rationale — enough for a FRESH coo
 prior context to resume. On context pressure (degrading responses, lost handles, uncertainty about
 what's done): do NOT push through, do NOT ask the user; write a complete CONTEXT HANDOFF block into
 the ledger and state a fresh coordinator resumes from it.
+PROACTIVE (don't wait for the cliff): the coordinator's own context grows with every wave. As each
+wave of tasks completes, roll its detail UP into a one-line-per-task summary in the ledger (task,
+PR#, MERGED, key decision) and drop the raw per-task chatter from working context. Carry forward the
+rolling summary + the next ready wave, not the full history. This bounds coordinator context so the
+loop survives a long campaign without ever hitting the handoff cliff.
+PROACTIVE (don't wait for the cliff): the coordinator's own context grows with every wave. As each
+wave of tasks completes, roll its detail UP into a one-line-per-task summary in the ledger (task,
+PR#, MERGED, key decision) and drop the raw per-task chatter from working context. Carry forward the
+rolling summary + the next ready wave, not the full history. This bounds coordinator context so the
+loop survives a long campaign without ever hitting the handoff cliff.
+
+═══════════════════════════════════════════════════════════
+PLAN/DAG VALIDATION GATE — validate the frozen task DAG before the FIRST SPAWN_WORKER (SPOQ).
+═══════════════════════════════════════════════════════════
+The decomposition is already frozen by the time you spawn; a cheap structural check on it before the
+first worker launches catches a malformed plan before it costs a wave of workers. Run ONCE, right
+before the first SPAWN_WORKER, over the frozen task DAG in the ledger:
+- NO CYCLES: the dependency edges form a DAG. A cycle means the freeze is wrong — STOP, name it in
+  DECISIONS.md, re-decompose; never spawn into a deadlock.
+- DEPENDENCIES RESOLVABLE: every declared dependency names a task that exists in the frozen set (no
+  dangling/typo'd edge). An unresolvable edge means a task can never become ready — fix the freeze.
+- PARALLELISM WIDTH COMPUTED: the max set of tasks with all dependencies satisfied at once. Record
+  it in the ledger; it bounds the initial spawn wave (with the concurrency cap) and feeds WORKER
+  PLACEMENT. A width of 1 on a multi-task mission is a smell the decomposition over-serialized.
+This is a structural check on an ALREADY-frozen artifact, not re-planning: O(tasks+edges), no
+workers, no model spend. Cite SPOQ (arXiv 2606.03115: a pre-spawn plan-validity gate moved pass
+from 91% to 99.75%). A mission that declares no inter-task dependencies passes trivially.
 
 ═══════════════════════════════════════════════════════════
 WORKER PLACEMENT — the DECISION LOGIC (tool-agnostic). The adapter maps it to real commands.
@@ -177,6 +258,17 @@ WORKER PLACEMENT — the DECISION LOGIC (tool-agnostic). The adapter maps it to 
 - Always wait for the worker to be ready before DISPATCH (the adapter defines "ready"). Keep
   dependency chains ≤3–4 deep. Retire each isolated checkout the moment its PR merges; no
   speculative/duplicate workers. Log placement + concurrency per task.
+- COUPLING-AWARE PARTITIONING (run at decomposition, UPSTREAM of the hot-file rule below; Co-Coder):
+  before splitting work, build a static import/symbol graph of the touched files. Then: (a) CLUSTER
+  tightly-coupled files (a file and the symbols it imports/defines that the change spans) into ONE
+  task rather than slicing a coupled unit across parallel PRs that then fight at merge; (b) mark
+  high-in-degree HUB / utility files (imported by many — base classes, shared types, core config) as
+  SERIALIZE-ALWAYS singletons: at most one in-flight task may touch a hub, upstream of and stricter
+  than the per-file hot rule. This is the same conflict-minimizing intuition the hot-file rule
+  encodes, applied at the GRAPH level before tasks exist. Cite Co-Coder (arXiv 2606.00953: +14%
+  pass, -35% cost on dependency-dense repos). Optional tooling: `scripts/coupling-graph.py` emits the
+  import/symbol graph + hub list; absent it, derive coupling by inspection. A mission over loosely
+  coupled files (the common case) clusters trivially and proceeds.
 - PARALLELISM: parallelize ACROSS non-overlapping files/modules; SERIALIZE work that touches the
   same file (one in-flight task per hot file — the next change to that file starts only after the
   prior PR merges). This both enables parallelism and minimizes merge conflicts.
@@ -246,7 +338,8 @@ by role, not uniformly, and records a running cost estimate so a mission can sto
   a hard primitive — an adapter without model selection ignores it.
 - ROLE TIER (default; a mission may override in DECISION DEFAULTS):
   - STRONG (highest reasoning): the coordinator itself, the REVIEWER, and any planning/decomposition
-    or freeze step (T-AUDIT). Judgment-heavy, low-volume, high-leverage — never cheap out here.
+    or freeze step (T-AUDIT). Judgment-heavy, low-volume, high-leverage — never cheap out here. The
+    freeze emits the task DAG the PLAN/DAG VALIDATION GATE checks before the first SPAWN_WORKER.
   - MID: bulk BUILDERS on Tier 1/2 missions and well-scoped task units.
   - CHEAP (fastest/cheapest): mechanical or high-volume steps — build-failure triage, lint/format
     fixes, log scans, status summarization, the dashboard render.
@@ -276,12 +369,29 @@ Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
   checklist · any follow-up). PUBLIC info only — IDs + file:line, never secrets. Record PR#. Set
   PR_OPEN.
 - REVIEW (reviewer — FRESH, BUILD-BLIND, never saw the build conversation): read the PR diff,
-  grade ONLY against the unit's acceptance criteria. Read + verdict only, no edits. Actively try
+  grade ONLY against the unit's acceptance criteria. Read + verdict only, no edits. CROSS-VENDOR:
+  when more than one worker vendor is available, the reviewer SHOULD be a DIFFERENT vendor than the
+  builder (a Codex build reviewed by Claude, etc.) so a vendor's blind spot is not its own grader;
+  hand the reviewer the diff + the acceptance contract as TEXT ONLY, never the build worktree or the
+  builder's session (build-blindness is structural, not just instructed). Single-vendor host: say so
+  in DECISIONS.md and use a fresh same-vendor reviewer. Actively try
   to FAIL it: real (not coverage-padding) tests, no lost behaviour, no secret leak, adheres to
   repo conventions, scoped/localized. Approve or request-changes with findings. WORKER_DONE
   PASS/FAIL. Set REVIEWED on pass. On FAIL → builder fixes on the SAME branch (dependent placement;
   more commits; re-push), re-review. Max 3 rounds, then BLOCKED.
-- SHIP (integrator, CONFLICT-AWARE): on REVIEWED, BEFORE merging check conflicts vs BASE. IF
+  SHA-PIN (from AO code-review-manager.ts): record the exact reviewed SHA (`git rev-parse HEAD` on
+  the branch) in the task row alongside REVIEWED. A PASS is bound to THAT SHA, not the branch name.
+  If a newer SHA lands on the branch before SHIP (a fix-round push, a rebase, any commit), the prior
+  PASS is OUTDATED: clear REVIEWED and force a re-review of the new SHA. Never ship a PASS that was
+  graded against a SHA the branch has since moved past.
+  SHA-PIN (from AO code-review-manager.ts): record the exact reviewed SHA (`git rev-parse HEAD` on
+  the branch) in the task row alongside REVIEWED. A PASS is bound to THAT SHA, not the branch name.
+  If a newer SHA lands on the branch before SHIP (a fix-round push, a rebase, any commit), the prior
+  PASS is OUTDATED: clear REVIEWED and force a re-review of the new SHA. Never ship a PASS that was
+  graded against a SHA the branch has since moved past.
+- SHIP (integrator, CONFLICT-AWARE): on REVIEWED, BEFORE merging confirm the branch HEAD still
+  equals the SHA-pinned REVIEWED SHA; if it moved, the PASS is outdated — force re-review, do not
+  ship stale. Then check conflicts vs BASE. IF
   CONFLICTS: rebase the branch onto updated BASE, resolve preserving BOTH the change intent and
   what landed on BASE since fork, keep commits authored by MAINTAINER with no trailers; re-run
   lint + affected tests green; if the resolution materially changed logic, dispatch a quick
