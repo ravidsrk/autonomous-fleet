@@ -22,6 +22,24 @@ def squash(text: str) -> str:
     return " ".join(text.split())
 
 
+def test_self_orientation_defines_reference_input_as_read_only() -> None:
+    text = read_engine()
+    orientation = section(
+        text,
+        "SELF-ORIENTATION",
+        "ORCHESTRATOR DIRECTIVE",
+    )
+
+    assert "REFERENCE-INPUT" in orientation
+    assert "TARGET vs REFERENCE dual-path" in orientation
+    assert "reference repo/path" in orientation
+    assert "read-only" in orientation
+    assert "adapts FROM" in orientation
+    assert "NEVER write" in orientation
+    assert "TARGET" in orientation
+    assert "open a PR against it" in orientation
+
+
 def test_result_state_gate_rejects_green_checkmark_inflation() -> None:
     text = read_engine()
     gate = section(
@@ -67,6 +85,35 @@ def test_draft_both_and_gate_is_a_human_gated_decision_outcome() -> None:
     assert "HALT for the human" in gate
     assert "third decision outcome beside proceed and defer" in gate
     assert "must not fabricate" in gate
+
+
+def test_research_discipline_allows_throwaway_spike() -> None:
+    text = read_engine()
+    research = section(
+        text,
+        "RESEARCH DISCIPLINE",
+        "MODEL & COST ROUTING",
+    )
+
+    assert "SPIKE" in research
+    assert "load-bearing unknown" in research
+    assert "ONE throwaway proof" in research
+    assert "before the freeze" in research
+    assert "record findings" in research
+    assert "discard" in research
+    assert "not documentation lookup" in research
+
+
+def test_context_handoff_proactive_rollup_is_not_duplicated() -> None:
+    text = read_engine()
+    handoff = section(
+        text,
+        "CONTEXT HANDOFF",
+        "PLAN/DAG VALIDATION GATE",
+    )
+
+    assert text.count("Carry forward the") == 1
+    assert handoff.count("PROACTIVE (don't wait for the cliff)") == 1
 
 
 def test_wt_clean_is_tracked_across_pipeline_handoff_and_terminate() -> None:
