@@ -17,10 +17,14 @@
 # INSIDE a container / VM / restricted user account when the target is genuinely untrusted, and
 # never let production credentials reach this script's ambient environment in the first place.
 #
-# RESIDUAL RISK: the classifier is a heuristic over the joined command line, not a security
-# boundary. It deliberately does NOT model subshells, command substitution, eval, base64-decoded
-# payloads, or a binary that re-shells internally. A determined caller CAN evade it; it is a net
-# against accidental / obvious damage. Pair it with real OS-level sandboxing for untrusted targets.
+# RESIDUAL RISK: the classifier is a STATIC heuristic over tokens, not a security boundary. A
+# command CONSTRUCTED AT SHELL RUNTIME cannot be resolved from its text, so it deliberately does NOT
+# model: command substitution `$(...)`/backticks, `eval` of a built string, base64/encoded payloads,
+# positional/parameter expansion that injects args (`bash -c 'rm "$@"' _ -rf x`), or a binary that
+# re-shells internally. Where such a construct is DETECTABLE (e.g. a `-c` string referencing `$@`/
+# `$1`) it FAILS SAFE to ASK; where it is not, a determined caller CAN evade it. It is a net against
+# accidental / obvious damage. Pair it with real OS-level sandboxing (container-use) for untrusted
+# targets — that, not this script, is the boundary.
 # It FAILS SAFE: on an ambiguous wrapper construction (e.g. an unknown wrapper's positional operand
 # preceding the real command) it errs toward DENY/ASK rather than ALLOW. Refusing a rare safe
 # command is acceptable; silently running an irreversible one is not.
@@ -382,8 +386,15 @@ _classify_statement_tokens() {
         case "${argv[$jc]}" in
           -c|-[A-Za-z]*c*)
             if [[ $((jc + 1)) -lt $n ]]; then
-              local sev2
-              sev2="$(classify "${argv[$((jc + 1))]}")"
+              local cstr="${argv[$((jc + 1))]}" sev2
+              # A -c script whose behavior depends on caller-supplied POSITIONAL args ($@ $* $# $1..$9)
+              # cannot be resolved from the string alone, e.g. `bash -c 'rm "$@"' _ -rf /path` runs
+              # `rm -rf /path`. Static analysis can't see the runtime args, so FAIL SAFE: refuse (ASK)
+              # rather than judge only the literal string. (Same reason $()/eval are out of scope.)
+              if printf '%s' "$cstr" | grep -Eq '\$[@*#0-9]|\$\{[@*#0-9]'; then
+                echo ASK; return 0
+              fi
+              sev2="$(classify "$cstr")"
               [[ "$sev2" == "DENY" || "$sev2" == "ASK" ]] && { echo "$sev2"; return 0; }
             fi
             break
