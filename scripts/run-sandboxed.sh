@@ -422,49 +422,59 @@ _regex_ask() {
 
 # classify <argv...> -> echoes DENY|ASK|ALLOW (highest severity across all statements).
 classify() {
-  local joined="$*"
-  local verdict="ALLOW"
+  local verdict="ALLOW" joined sev
+  local -a stmt=()
 
-  # Split the joined line into statements on ; && || | and newline, then classify each.
-  # A literal newline separator is emitted by sed; read consumes it line by line.
-  local statements
-  statements=$(printf '%s' "$joined" | sed -E 's/(&&|\|\||;|\|)/\
+  if [[ $# -eq 1 ]]; then
+    # ONE arg = a command STRING (tests, or a caller passing a whole line). Split on operators,
+    # then tokenize each statement (respecting quotes), then classify.
+    joined="$1"
+    local statements
+    statements=$(printf '%s' "$1" | sed -E 's/(&&|\|\||;|\|)/\
 /g')
-
-  local stmt sev
-  while IFS= read -r stmt; do
-    # Trim leading/trailing whitespace.
-    stmt="${stmt#"${stmt%%[![:space:]]*}"}"
-    stmt="${stmt%"${stmt##*[![:space:]]}"}"
-    [[ -z "$stmt" ]] && continue
-    # Tokenize into an array (bash 3.2: read -a from the newline-delimited token stream).
-    local -a toks=()
-    local tok
-    while IFS= read -r tok; do
-      [[ -z "$tok" ]] && continue
-      toks+=("$tok")
-    done < <(_tokenize_statement "$stmt")
-    [[ ${#toks[@]} -eq 0 ]] && continue
-    sev=$(_classify_statement_tokens "${toks[@]}")
-    if [[ "$sev" == "DENY" ]]; then
-      echo DENY
-      return 0
-    elif [[ "$sev" == "ASK" ]]; then
-      verdict="ASK"
-    fi
-  done <<EOF
+    local s
+    while IFS= read -r s; do
+      s="${s#"${s%%[![:space:]]*}"}"; s="${s%"${s##*[![:space:]]}"}"
+      [[ -z "$s" ]] && continue
+      local -a toks=(); local tok
+      while IFS= read -r tok; do [[ -n "$tok" ]] && toks+=("$tok"); done < <(_tokenize_statement "$s")
+      [[ ${#toks[@]} -eq 0 ]] && continue
+      sev=$(_classify_statement_tokens "${toks[@]}")
+      [[ "$sev" == "DENY" ]] && { echo DENY; return 0; }
+      [[ "$sev" == "ASK" ]] && verdict="ASK"
+    done <<EOF
 $statements
 EOF
-
-  # Regex tiers over the whole joined line.
-  if _regex_deny "$joined"; then
-    echo DENY
-    return 0
+  else
+    # REAL argv: $@ are already shell-split tokens. Use them VERBATIM — a quoted argument like
+    # `bash -c '<cmd string>'` stays ONE token (the bash -c handler re-classifies it). Do NOT
+    # re-join + re-tokenize: that loses the quoting and splits the -c command string (the bug
+    # that let `bash -c 'rm -rf /etc'` reach exec). Split statements only at standalone operators.
+    joined="$*"
+    local t
+    for t in "$@"; do
+      case "$t" in
+        ";"|"&&"|"||"|"|"|"&")
+          if [[ ${#stmt[@]} -gt 0 ]]; then
+            sev=$(_classify_statement_tokens "${stmt[@]}")
+            [[ "$sev" == "DENY" ]] && { echo DENY; return 0; }
+            [[ "$sev" == "ASK" ]] && verdict="ASK"
+            stmt=()
+          fi
+          ;;
+        *) stmt+=("$t") ;;
+      esac
+    done
+    if [[ ${#stmt[@]} -gt 0 ]]; then
+      sev=$(_classify_statement_tokens "${stmt[@]}")
+      [[ "$sev" == "DENY" ]] && { echo DENY; return 0; }
+      [[ "$sev" == "ASK" ]] && verdict="ASK"
+    fi
   fi
-  if [[ "$verdict" == "ALLOW" ]] && _regex_ask "$joined"; then
-    verdict="ASK"
-  fi
 
+  # Regex backstop over the joined line (reset --hard to a remote ref); structural checks cover rest.
+  if _regex_deny "$joined"; then echo DENY; return 0; fi
+  if [[ "$verdict" == "ALLOW" ]] && _regex_ask "$joined"; then verdict="ASK"; fi
   echo "$verdict"
 }
 
