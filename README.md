@@ -148,8 +148,11 @@ autonomous-fleet/
 │   ├── validate-goal-condition.sh
 │   ├── eval-campaign-edge.sh
 │   ├── eval-campaign-edge.py
+│   ├── coupling-graph.py                # import/symbol graph for coupling-aware decomposition
+│   ├── render-dashboard.py              # ledger -> attention-zone HTML dashboard
 │   ├── run-campaign.sh
 │   ├── run-mission-headless.sh
+│   ├── run-sandboxed.sh                 # command-safety classifier + env scrub
 │   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate
 │   ├── lib/fleet_outcome.py
 │   └── install-skills.sh
@@ -230,3 +233,4 @@ Copy `skills/autonomous-fleet-adapter-template/` when adding a new runtime adapt
 - Safety rails: testnet/staging only; merge ≠ deploy
 - File ledger survives compaction and session restarts
 - Runtime goals bind native `/goal` loops to ledger DONE ([runtime-goals.md](skills/autonomous-fleet-core/references/runtime-goals.md))
+- Engine disciplines: external facts are monid-verified and logged to `docs/research-notes.md` with an `unverified_assumptions: 0` gate; per-task model/cost routing emits `cost_estimate` in `fleet-outcome`; commands pass through `scripts/run-sandboxed.sh`; optional container-use placement gives each worker an isolated container + git branch
