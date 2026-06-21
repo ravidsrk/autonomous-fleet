@@ -75,6 +75,7 @@ def test_recoverable_commands_ask(cmd):
     ["command", "rm", "-rf", "{v}"],
     ["bash", "-c", 'rm "$@"', "_", "-rf", "{v}"],   # positional-param construction -> fail safe
     ["bash", "-c", "cd /tmp & rm -rf {v}"],          # single & background operator
+    ["bash", "-c", "rm \\\n-rf {v}"],                # backslash-newline line continuation
 ])
 def test_real_exec_path_refuses_and_does_not_run(tmp_path, argv):
     # The strongest test: invoke the REAL exec path (no --classify) and prove the rm did NOT run.
