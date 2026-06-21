@@ -22,6 +22,20 @@ def squash(text: str) -> str:
     return " ".join(text.split())
 
 
+CONTRADICTION_MARKERS = (
+    "IGNORE the preceding",
+    "IGNORE THE PRECEDING",
+    "OVERRIDE",
+    "DISREGARD",
+    "ignore the above",
+)
+
+
+def assert_no_contradiction_markers(text: str) -> None:
+    for marker in CONTRADICTION_MARKERS:
+        assert marker not in text
+
+
 def test_self_orientation_defines_reference_input_as_read_only() -> None:
     text = read_engine()
     orientation = section(
@@ -29,6 +43,7 @@ def test_self_orientation_defines_reference_input_as_read_only() -> None:
         "SELF-ORIENTATION",
         "ORCHESTRATOR DIRECTIVE",
     )
+    orientation_flat = squash(orientation)
 
     assert "REFERENCE-INPUT" in orientation
     assert "TARGET vs REFERENCE dual-path" in orientation
@@ -38,6 +53,13 @@ def test_self_orientation_defines_reference_input_as_read_only() -> None:
     assert "NEVER write" in orientation
     assert "TARGET" in orientation
     assert "open a PR against it" in orientation
+    assert (
+        "treat it as read-only material the fleet reads and adapts FROM; NEVER write to it, "
+        "make it a TARGET, or open a PR against it."
+    ) in orientation_flat
+    assert "IS a writable TARGET" not in orientation
+    assert "SHOULD write to it" not in orientation
+    assert_no_contradiction_markers(orientation)
 
 
 def test_result_state_gate_rejects_green_checkmark_inflation() -> None:
@@ -54,6 +76,14 @@ def test_result_state_gate_rejects_green_checkmark_inflation() -> None:
     assert "query the actual result, not exit codes" in gate
     assert "e2e_verified" in gate
     assert "docs/secure-ship-e2e.md" in gate
+    assert (
+        "A green test/validator suite is NECESSARY BUT NOT SUFFICIENT. NEVER terminate "
+        "(`GOAL_COMPLETE` / `DONE`) on green checkmarks alone. Verify the real end-to-end "
+        "RESULT STATE: query the actual result, not exit codes"
+    ) in squash(gate)
+    assert "you MAY terminate" not in gate
+    assert "do NOT bother to verify" not in gate
+    assert_no_contradiction_markers(gate)
 
 
 def test_frozen_scope_boundary_caps_run_scope() -> None:
@@ -69,6 +99,12 @@ def test_frozen_scope_boundary_caps_run_scope() -> None:
     assert "DECISIONS.md" in gate
     assert "roadmap" in gate
     assert "Reviewers FAIL any PR adding out-of-boundary work" in gate
+    assert (
+        "Do not add newly discovered ideas, optional features, refactors, or nice-to-haves "
+        "to the current build."
+    ) in squash(gate)
+    assert "You MAY add newly discovered ideas" not in gate
+    assert_no_contradiction_markers(gate)
 
 
 def test_draft_both_and_gate_is_a_human_gated_decision_outcome() -> None:
@@ -85,6 +121,11 @@ def test_draft_both_and_gate_is_a_human_gated_decision_outcome() -> None:
     assert "HALT for the human" in gate
     assert "third decision outcome beside proceed and defer" in gate
     assert "must not fabricate" in gate
+    assert "coordinator must not pick a default and must not ship one variant" in gate
+    assert "stop the affected task wave, and HALT for the human" in gate
+    assert "do NOT HALT" not in gate
+    assert "SHOULD pick a default" not in gate
+    assert_no_contradiction_markers(gate)
 
 
 def test_research_discipline_allows_throwaway_spike() -> None:
@@ -102,6 +143,12 @@ def test_research_discipline_allows_throwaway_spike() -> None:
     assert "record findings" in research
     assert "discard" in research
     assert "not documentation lookup" in research
+    research_flat = squash(research)
+    assert "record findings in `docs/research-notes.md`, then discard it" in research_flat
+    assert "is not kept as build output" in research_flat
+    assert "SHOULD be kept as build output" not in research
+    assert "do NOT discard" not in research
+    assert_no_contradiction_markers(research)
 
 
 def test_context_handoff_proactive_rollup_is_not_duplicated() -> None:
@@ -114,6 +161,12 @@ def test_context_handoff_proactive_rollup_is_not_duplicated() -> None:
 
     assert text.count("Carry forward the") == 1
     assert handoff.count("PROACTIVE (don't wait for the cliff)") == 1
+    assert (
+        "Carry forward the rolling summary + the next ready wave, not the full history."
+    ) in squash(handoff)
+    assert "Carry forward the full history" not in handoff
+    assert "do NOT roll up or summarize" not in handoff
+    assert_no_contradiction_markers(handoff)
 
 
 def test_wt_clean_is_tracked_across_pipeline_handoff_and_terminate() -> None:
@@ -152,6 +205,11 @@ def test_wt_clean_is_tracked_across_pipeline_handoff_and_terminate() -> None:
     assert "try X, fall back to Y" in pipeline
     assert "T_FINAL WORKTREE-ORPHAN SWEEP" in pipeline
     assert "orphan worktree" in pipeline
+    assert "IGNORE those guard clauses" not in pipeline
+    assert "remove any worktree unconditionally" not in pipeline
+    assert_no_contradiction_markers(autonomy)
+    assert_no_contradiction_markers(handoff)
+    assert_no_contradiction_markers(pipeline)
 
 
 def test_feature_fix_done_requires_regression_catching_test() -> None:
@@ -170,6 +228,14 @@ def test_feature_fix_done_requires_regression_catching_test() -> None:
     assert "would FAIL if the repaired behavior broke again" in pipeline_flat
     assert "build-blind reviewer explicitly asserts" in pipeline_flat
     assert "not coverage padding" in pipeline_flat
+    assert (
+        "A feature/fix task cannot set REVIEWED and cannot be done unless it includes a "
+        "regression-catching test that would FAIL if the repaired behavior broke again."
+    ) in pipeline_flat
+    assert "MAY set REVIEWED" not in pipeline
+    assert "no test at all" not in pipeline
+    assert "return PASS regardless" not in pipeline
+    assert_no_contradiction_markers(pipeline)
 
 
 def test_first_merge_spot_check_blocks_later_waves_on_fail() -> None:
@@ -189,6 +255,12 @@ def test_first_merge_spot_check_blocks_later_waves_on_fail() -> None:
     assert "secret-scan ran" in pipeline
     assert "FIRST_MERGE_SPOT_CHECK=PASS or FAIL" in pipeline
     assert "block later waves" in pipeline
+    assert (
+        "On FAIL, block later waves and repair the merge pipeline before any further SHIP step."
+    ) in squash(pipeline)
+    assert "do NOT block later waves" not in pipeline
+    assert "keep shipping" not in pipeline
+    assert_no_contradiction_markers(pipeline)
 
 
 def test_secret_scrub_is_gated_on_human_confirmed_rotation() -> None:
@@ -208,3 +280,10 @@ def test_secret_scrub_is_gated_on_human_confirmed_rotation() -> None:
     assert "does not scrub history yet" in hygiene
     assert "false safety" in hygiene
     assert "already-committed secret is already compromised" in hygiene_flat
+    assert (
+        "hard-gated on a file-tracked `ROTATION_CONFIRMED=yes` boolean that was set by a human"
+    ) in hygiene_flat
+    assert "does not scrub history yet" in hygiene_flat
+    assert "PROCEEDS to scrub history immediately" not in hygiene
+    assert "scrub anyway" not in hygiene
+    assert_no_contradiction_markers(hygiene)
