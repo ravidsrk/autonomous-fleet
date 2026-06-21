@@ -104,11 +104,25 @@ def _py_imports(path: Path) -> list[str]:
         if isinstance(node, ast.Import):
             names.extend(alias.name for alias in node.names)
         elif isinstance(node, ast.ImportFrom):
-            if node.module and node.level == 0:
-                names.append(node.module)
-                names.extend(f"{node.module}.{a.name}" for a in node.names)
-            elif node.level == 0:
-                names.extend(a.name for a in node.names)
+            if node.level == 0:
+                if node.module:
+                    names.append(node.module)
+                    names.extend(f"{node.module}.{a.name}" for a in node.names)
+                else:
+                    names.extend(a.name for a in node.names)
+            else:
+                # PEP 328 relative import (from . / from .x / from ..x). Reconstruct a best-effort
+                # dotted name anchored on the file's package dir so the suffix index can resolve it,
+                # instead of silently dropping the edge.
+                pkg_parts = list(path.parent.parts)
+                up = node.level - 1
+                if up:
+                    pkg_parts = pkg_parts[:-up] if up <= len(pkg_parts) else []
+                base = pkg_parts[-1] if pkg_parts else ""
+                mod = f"{base}.{node.module}" if base and node.module else (node.module or base)
+                if mod:
+                    names.append(mod)
+                names.extend(f"{mod}.{a.name}" if mod else a.name for a in node.names)
     return names
 
 
