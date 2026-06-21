@@ -141,6 +141,9 @@ instinct is a BUG. Suppress it mechanically:
   IN THE SAME TURN.
 - TERMINATE ONLY when the mission's DONE condition is met in the file AND the final readiness doc
   exists. Then send the single FINAL report.
+- TERMINATE rejects merged-but-uncleaned tasks: every shipped task row must read MERGED=true and
+  WT_CLEAN=true, and T_FINAL must have run the worktree-orphan sweep. A merged but uncleaned task
+  is NOT terminal.
 - RUNTIME GOAL (when adapter supports primitives 9–12): after SELF-ORIENTATION and ledger init,
   SET_GOAL with a condition that paraphrases the mission DONE gates (must reference `docs/` ledger
   and readiness paths). UPDATE_GOAL at major phase transitions. GOAL_COMPLETE only after TERMINATE
@@ -166,6 +169,15 @@ instinct is a BUG. Suppress it mechanically:
   trips again, defer it via `fleet-outcome.deferred_missions` rather than looping forever.
 If about to message the user anything but the FINAL report (or a named hard-dependency gate):
 stop, re-read this block, read the ledger, take the orchestration action instead.
+
+═══════════════════════════════════════════════════════════
+RESULT-STATE TERMINATION GATE: green checks are not enough.
+═══════════════════════════════════════════════════════════
+A green test/validator suite is NECESSARY BUT NOT SUFFICIENT. NEVER terminate
+(`GOAL_COMPLETE` / `DONE`) on green checkmarks alone. Verify the real end-to-end RESULT STATE:
+query the actual result, not exit codes, and record the evidence in the readiness doc. Completion,
+rebuild, and build missions gate on `fleet-outcome.metrics.e2e_verified == true`. Lesson source:
+a validated gate can be inert; see `docs/secure-ship-e2e.md`.
 
 ═══════════════════════════════════════════════════════════
 SIGNAL RECONCILIATION — three signals, never transition on one read (from ComposioHQ AO).
@@ -227,6 +239,8 @@ placements + next ready wave + DECISIONS.md rationale — enough for a FRESH coo
 prior context to resume. On context pressure (degrading responses, lost handles, uncertainty about
 what's done): do NOT push through, do NOT ask the user; write a complete CONTEXT HANDOFF block into
 the ledger and state a fresh coordinator resumes from it.
+HANDOFF CARRIES: for each task carry branch, PR#, reviewed SHA, WT path or environment id, WT_CLEAN,
+MERGED, live worker handle, placement, and next action.
 PROACTIVE (don't wait for the cliff): the coordinator's own context grows with every wave. As each
 wave of tasks completes, roll its detail UP into a one-line-per-task summary in the ledger (task,
 PR#, MERGED, key decision) and drop the raw per-task chatter from working context. Carry forward the
@@ -254,6 +268,16 @@ before the first SPAWN_WORKER, over the frozen task DAG in the ledger:
 This is a structural check on an ALREADY-frozen artifact, not re-planning: O(tasks+edges), no
 workers, no model spend. Cite SPOQ (arXiv 2606.03115: a pre-spawn plan-validity gate moved pass
 from 91% to 99.75%). A mission that declares no inter-task dependencies passes trivially.
+
+═══════════════════════════════════════════════════════════
+FROZEN SCOPE BOUNDARY: the frozen artifact caps the run.
+═══════════════════════════════════════════════════════════
+The mission's frozen artifact, plan, audit, review, contract, or boundary doc, caps the WHOLE run's
+scope. Build what is inside it. Do not add newly discovered ideas, optional features, refactors, or
+nice-to-haves to the current build. Route them to DECISIONS.md plus a roadmap or Recommended next
+missions. Reviewers FAIL any PR adding out-of-boundary work, even if tests pass. If the frozen
+artifact is wrong enough to block the mission, record the conflict in DECISIONS.md and stop or defer
+per COORDINATOR BEHAVIORS.
 
 ═══════════════════════════════════════════════════════════
 WORKER PLACEMENT — the DECISION LOGIC (tool-agnostic). The adapter maps it to real commands.
@@ -368,6 +392,11 @@ PR-PER-TASK PIPELINE — commits preserved, NEVER squash, conflict-aware, checko
 ═══════════════════════════════════════════════════════════
 The mission defines the role at each step (builder / reviewer / integrator) and any extra gates.
 Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
+- TASK ROW (ledger): record ID, branch, PR#, REVIEWED_SHA, WT (worktree path or environment id),
+  placement, and flags BUILT PR_OPEN REVIEWED MERGED WT_CLEAN. Set WT_CLEAN=false when PLACE
+  creates an independent checkout or environment. Do not mark a task terminal until MERGED=true and
+  WT_CLEAN=true. For dependent placement in the active checkout, record WT=<active> and set
+  WT_CLEAN=true only after verifying no disposable checkout exists.
 - BUILD (builder) on branch <prefix>/<slug> off BASE (PLACE per rules): set git user.name/email to
   MAINTAINER before commit #1; commit in SMALL, FREQUENT, logical increments; NO `Co-authored-by`/
   `Generated with`/`Assisted-by`/agent/tool trailers; run secret-hygiene check before every
@@ -405,10 +434,25 @@ Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
   what landed on BASE since fork, keep commits authored by MAINTAINER with no trailers; re-run
   lint + affected tests green; if the resolution materially changed logic, dispatch a quick
   reviewer re-review of the rebased diff; force-push. Only when conflict-free + green: MERGE_PR
-  with a merge commit (ALL commits preserved, NEVER squash), delete the branch. Pull BASE, update
-  the ledger (MERGED), SYNC_TASK_STATE(completed). CLEANUP the merged checkout. WORKER_DONE.
+  with a merge commit (ALL commits preserved, NEVER squash), delete the PR branch. Pull BASE,
+  verify MERGED + branch-deleted FIRST, then update the ledger (MERGED). CLEANUP the merged
+  checkout only after guard clauses pass: NEVER remove the active worktree; NEVER remove a worktree
+  whose branch is unmerged; NEVER remove a worktree with uncommitted changes. The adapter resolves
+  remove/archive version-tolerantly: try X, fall back to Y. Set WT_CLEAN=true, then
+  SYNC_TASK_STATE(completed). WORKER_DONE.
 - You only SEQUENCE and wait. Each task = one branch = one PR = one merge-commit = branch deleted =
   checkout cleaned = task completed.
+
+═══════════════════════════════════════════════════════════
+T_FINAL WORKTREE-ORPHAN SWEEP: no merged task leaves a checkout.
+═══════════════════════════════════════════════════════════
+At T_FINAL, inspect every recorded WT and the host worktree or environment list. For each task with
+MERGED=true and WT_CLEAN=false, run CLEANUP only after the same guard clauses pass: not active,
+branch merged and deleted, no uncommitted changes. For any orphan worktree or environment matching
+BRANCH_PREFIX with no ledger row, archive or remove it only if external SCM proves merged and
+branch-deleted; otherwise record it in DECISIONS.md and keep it. Use adapter version-tolerant
+remove/archive syntax: try X, fall back to Y. The readiness doc is blocked while any merged task
+remains WT_CLEAN=false.
 
 ═══════════════════════════════════════════════════════════
 TRUST BOUNDARIES — what is INSTRUCTION vs what is DATA. Unconditional.
