@@ -23,6 +23,7 @@ fleet-outcome:
     worker_retries: <n>
   unverified_assumptions: 0       # optional — research-discipline gate (non-negative int)
   sources_logged: <n>             # optional — research-notes.md line count
+  cost_estimate: <n>              # optional — running spend estimate (non-negative number)
 ---
 ```
 
@@ -34,6 +35,11 @@ RESEARCH DISCIPLINE). Optional and cross-cutting: when present each must be a no
 T-FINAL records `unverified_assumptions: 0` once every external fact the build relied on has a
 logged source in `docs/research-notes.md`; a campaign edge MAY branch on `unverified_assumptions
 == 0`. Unlike `run` fields, these are branchable.
+
+`cost_estimate` is the running spend estimate for the run (see engine.md MODEL & COST ROUTING).
+Optional; when present it must be a non-negative number (may be fractional). T-FINAL records it as
+telemetry; a campaign edge MAY branch on it (e.g. `cost_estimate > <budget>`). A coordinator with no
+cost signal omits it.
 
 Then markdown body: human summary, indexes, **Recommended next missions** table (duplicate of
 `deferred_missions` for readers).
