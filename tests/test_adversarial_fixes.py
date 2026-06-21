@@ -40,6 +40,8 @@ def _classify(cmd: str) -> str:
     "timeout 5 rm -rf /etc", "flock /tmp/lock git push --force",  # command-runner wrappers
     "doas -u root rm -rf /etc", "chrt -f 99 rm -rf /etc", "taskset -c 0 git push --force",
     "bash -c 'rm -rf /etc'", "sh -c 'git push --force'",  # bash -c embedded
+    "bash -ec 'rm -rf /etc'", "sh -ec 'git push --force'", "bash -xc 'rm -rf /etc'",  # bundled -c
+    "env -S 'rm -rf /etc'", "env --split-string='git push --force'",  # env split-string runs a cmd
     "bash -c '>/tmp/log rm -rf /etc'",                   # redirection-before-command in bash -c
     "git reset --hard origin", "git reset --hard @{upstream}", "git reset --hard origin/main",  # reset
     "gh pr merge 5", "gh repo delete acme/x",            # gh structural
@@ -64,6 +66,21 @@ def test_safe_commands_allowed(cmd):
 ])
 def test_recoverable_commands_ask(cmd):
     assert _classify(cmd) == "ASK", f"{cmd!r} must ASK"
+
+
+@pytest.mark.parametrize("argv", [
+    ["bash", "-ec", "rm -rf {v}"],
+    ["env", "-S", "rm -rf {v}"],
+    ["command", "rm", "-rf", "{v}"],
+])
+def test_real_exec_path_refuses_and_does_not_run(tmp_path, argv):
+    # The strongest test: invoke the REAL exec path (no --classify) and prove the rm did NOT run.
+    victim = tmp_path / "victim"
+    victim.mkdir()
+    cmd = [str(SANDBOX)] + [a.format(v=str(victim)) for a in argv]
+    r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode != 0, f"{cmd} should be refused"
+    assert victim.exists(), f"{cmd} reached exec and deleted the victim dir"
 
 
 # --- fleet_outcome.py: NaN/inf in cost_estimate, metrics, and eval_edge ordering ---

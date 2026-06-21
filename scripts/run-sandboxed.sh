@@ -239,7 +239,19 @@ _classify_statement_tokens() {
       # Skip the wrapper's own options so `time -p echo` resolves to echo (a data-consumer), not
       # `-p`. Operand-taking opts leave their operand as the head, but the scan / data-consumer
       # guard below handle whatever resolves.
-      while [[ $i -lt $n && "${argv[$i]}" == -?* ]]; do i=$((i + 1)); done
+      while [[ $i -lt $n && "${argv[$i]}" == -?* ]]; do
+        # `env -S '<cmd>'` / `env --split-string=<cmd>` runs <cmd> as a command — classify it.
+        if [[ "$wb" == "env" ]]; then
+          local ssev=""
+          case "${argv[$i]}" in
+            -S|--split-string) [[ $((i + 1)) -lt $n ]] && ssev="$(classify "${argv[$((i + 1))]}")" ;;
+            -S?*)              ssev="$(classify "${argv[$i]#-S}")" ;;
+            --split-string=*)  ssev="$(classify "${argv[$i]#--split-string=}")" ;;
+          esac
+          [[ "$ssev" == "DENY" || "$ssev" == "ASK" ]] && { echo "$ssev"; return 0; }
+        fi
+        i=$((i + 1))
+      done
       continue
     fi
     break
@@ -361,17 +373,22 @@ _classify_statement_tokens() {
     [[ "$g" == "release" ]] && { echo ASK; return 0; }
   fi
 
-  # 3d) Shell -c "<string>": re-classify the embedded command string recursively.
+  # 3d) Shell -c "<string>": re-classify the embedded command string recursively. Matches a bundled
+  #     short option containing c too (`-ec`, `-xc`), since `bash -ec '<cmd>'` also runs <cmd>.
   case "$cmd" in
     sh|bash|zsh|dash|ash)
       local jc=$((i + 1))
       while [[ $jc -lt $n ]]; do
-        if [[ "${argv[$jc]}" == "-c" && $((jc + 1)) -lt $n ]]; then
-          local sev2
-          sev2="$(classify "${argv[$((jc + 1))]}")"
-          [[ "$sev2" == "DENY" || "$sev2" == "ASK" ]] && { echo "$sev2"; return 0; }
-          break
-        fi
+        case "${argv[$jc]}" in
+          -c|-[A-Za-z]*c*)
+            if [[ $((jc + 1)) -lt $n ]]; then
+              local sev2
+              sev2="$(classify "${argv[$((jc + 1))]}")"
+              [[ "$sev2" == "DENY" || "$sev2" == "ASK" ]] && { echo "$sev2"; return 0; }
+            fi
+            break
+            ;;
+        esac
         jc=$((jc + 1))
       done
       ;;
