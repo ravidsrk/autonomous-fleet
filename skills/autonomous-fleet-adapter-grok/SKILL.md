@@ -74,8 +74,9 @@ engine and the identical loop are proven on the Claude Code and Codex adapters.
 - Subagent path (preferred for self-contained build/review units): launch via the Task tool with a
   role-scoped prompt (builder / reviewer / integrator) that includes the unit spec, acceptance
   criteria, ledger path, REPO_ROOT, MAINTAINER, BRANCH_PREFIX, and the completion contract (write
-  results back to the ledger + return a structured summary). Use `model: composer-2.5-fast` unless
-  the mission specifies otherwise.
+  results back to the ledger + return a structured summary). Let the host pick its DEFAULT grok model
+  unless the mission specifies otherwise; if you pass `-m <model>`, use an id the installed grok
+  actually accepts (the literal `composer-2.5-fast` is rejected as unknown — do not hard-code it).
 - Worktree sub-session path (for units needing an isolated long-running checkout): `git worktree
   add` per PLACE(independent), then drive work in that directory via Shell.
 - "Ready" is immediate for subagents; for a sub-session, when its checkout exists and deps are
