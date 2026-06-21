@@ -64,9 +64,10 @@ engine and the identical loop are proven on the Claude Code and Codex adapters.
   file/Shell work through the environment (`environment_create` -> env id + branch
   `container-use/<env>`, then `environment_file_write` / `environment_run_cmd`). One env per unit.
 - INSPECT(): `container-use list` / `log <env>` / `diff <env>` (non-destructive).
-- OPEN_PR / SHIP: `container-use checkout <env>` (local branch from `container-use/<env>`), push,
-  `gh pr create --base BASE`; OR `container-use merge <env>` into BASE. The SHA-pin + conflict-aware
-  rules from engine.md still apply.
+- OPEN_PR / SHIP (preferred): `container-use checkout <env>` (local branch from
+  `container-use/<env>`), push, `gh pr create --base BASE` — keeps the SHA-pin + conflict-aware
+  review gate. NOTE: `container-use merge <env>` merges into the CURRENT branch (no `--base`) and
+  bypasses the PR gate; use it only after `git checkout BASE`, not as the default.
 - CLEANUP: `container-use delete <env>` (or `--all`) instead of `git worktree remove`.
 - FALLBACK: no container-use MCP -> the plain `git worktree` path above. See docs/adopt-container-use.md.
 
