@@ -447,7 +447,9 @@ classify() {
     # then tokenize each statement (respecting quotes), then classify.
     joined="$1"
     local statements
-    statements=$(printf '%s' "$1" | sed -E 's/(&&|\|\||;|\|)/\
+    # Split on every shell statement separator, including a single `&` (background) and `|&` — the
+    # argv path already splits on `&`, so the string path must match it or `cd x & rm -rf y` slips.
+    statements=$(printf '%s' "$1" | sed -E 's/(&&|\|\||\|&|;|\||&)/\
 /g')
     local s
     while IFS= read -r s; do

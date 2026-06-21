@@ -43,6 +43,7 @@ def _classify(cmd: str) -> str:
     "bash -ec 'rm -rf /etc'", "sh -ec 'git push --force'", "bash -xc 'rm -rf /etc'",  # bundled -c
     "env -S 'rm -rf /etc'", "env --split-string='git push --force'",  # env split-string runs a cmd
     "bash -c '>/tmp/log rm -rf /etc'",                   # redirection-before-command in bash -c
+    "bash -c 'cd /tmp & rm -rf /etc'", "bash -c 'true & git push --force'",  # single & background op
     "git reset --hard origin", "git reset --hard @{upstream}", "git reset --hard origin/main",  # reset
     "gh pr merge 5", "gh repo delete acme/x",            # gh structural
 ])
