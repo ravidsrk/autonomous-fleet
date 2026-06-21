@@ -113,11 +113,11 @@ if ! git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 1
 fi
 
-VENV_PYTHON="$ROOT/.venv/bin/python"
-if [[ ! -x "$VENV_PYTHON" ]]; then
-  python3 -m venv "$ROOT/.venv"
-  "$VENV_PYTHON" -m pip install -q pyyaml==6.0.2 pytest==8.3.4
-fi
+# Bootstrap the venv via the shared helper: it RE-CHECKS `import yaml, pytest` and reinstalls from
+# requirements.txt, so a stale venv (binary present but pyyaml missing) self-heals instead of
+# crashing the runner with a raw ModuleNotFoundError traceback.
+source "$ROOT/scripts/lib/venv-bootstrap.sh"
+bootstrap_validation_venv "$ROOT"
 
 CAMPAIGN_INFO="$("$VENV_PYTHON" - <<'PY' "$CAMPAIGN_FILE"
 import sys, yaml
@@ -204,8 +204,13 @@ STEP=0
 VISITED=""
 
 while [[ -n "$CURRENT" ]]; do
-  if [[ -n "$VISITED" && " $VISITED " == *" $CURRENT "* ]]; then
-    echo "error: cycle detected at node $CURRENT" >&2
+  # Per-node REVISIT BUDGET, not an unconditional cycle abort: campaigns may have DESIGNED back-edges
+  # (e.g. deps->audit, bugs->docs in handoff-to-product) that revisit a node a few times to converge.
+  # Allow up to 3 entries per node; the STEP>20 global cap below still stops a non-converging loop.
+  VISITS=0
+  for _v in $VISITED; do [[ "$_v" == "$CURRENT" ]] && VISITS=$((VISITS + 1)); done
+  if [[ "$VISITS" -ge 3 ]]; then
+    echo "error: node $CURRENT revisited too many times (budget 3) — non-converging loop" >&2
     exit 1
   fi
 
@@ -233,6 +238,14 @@ while [[ -n "$CURRENT" ]]; do
     "$ROOT/scripts/run-mission-headless.sh" "$RUNTIME" "$MISSION" --max-turns "$MAX_TURNS" "${EXTRA[@]}"
     if [[ -f "$READINESS_ABS" ]]; then
       ./scripts/validate-fleet-outcome.sh "$READINESS_ABS"
+      # A node that finished BLOCKED must halt the campaign (GOAL_BLOCKED -> status:blocked), not
+      # fall through to "Campaign complete". status:blocked is a VALID outcome that passes validation.
+      NODE_STATUS="$("$VENV_PYTHON" -c "import sys; sys.path.insert(0, '$ROOT/scripts'); from lib.fleet_outcome import parse_readiness; print(parse_readiness('$READINESS_ABS').get('status', ''))" 2>/dev/null || true)"
+      if [[ "$NODE_STATUS" == "blocked" ]]; then
+        echo "" >&2
+        echo "Campaign BLOCKED at node $CURRENT (fleet-outcome.status: blocked). Halting; this is a human gate, not a completed campaign." >&2
+        exit 2
+      fi
     else
       echo "warn: $READINESS_ABS not found after node $CURRENT" >&2
     fi
