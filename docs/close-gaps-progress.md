@@ -4,7 +4,7 @@ PHASE: FIXING
 MISSION: adversarial-review-and-fix (self, dogfood)   REPO: autonomous-fleet
 BASE: ravidsrk/close-gaps (off ravidsrk/gap-analysis-doc = main + REVIEW_DOC)
 REVIEW_DOC: docs/gap-analysis-genesis-prompts.md (FROZEN)   COORDINATOR: this Claude Code session
-GREEN BASELINE: validate-all.sh PASS · pytest 188 -> 195 passed (regression floor; +4 e2e + 3 engine-discipline tests)
+GREEN BASELINE: validate-all.sh PASS · pytest 188 -> 205 passed (WAVE1+2; +e2e, engine-discipline, advreview-lanes, inference-cost tests)
 ROLES: builder = codex (codex exec — `--full-auto` is rejected by current codex; adapter fallback);
   fresh build-blind reviewer = the coordinator reviewing the diff only (cross-vendor to the codex
   build); integrator = coordinator. Builder and reviewer are never the same vendor on the same diff.
@@ -19,17 +19,17 @@ WAVE 1 (P1)
 - g-frozen-scope        [P1 frozenscope]   engine.md block              | CLOSED via merge 8c3f103
 - g-wt-clean            [P1 cleanup]       engine.md (tracked gate)     | CLOSED via merge 8c3f103 (adapter notes -> WAVE2)
 WAVE 2 (P2)
-- g-three-lane          [P2 lanes] adversarial-review-and-fix/SKILL.md  | OPEN
-- g-lane-b-draft        [P2 lanes] engine.md + adv-review               | OPEN
-- g-lane-0-refuse       [P2 lanes] adv-review DECISION DEFAULTS         | OPEN
-- g-rotate-before-scrub [P2 lanes] engine.md SECRET HYGIENE             | OPEN
-- g-evid-flag           [P2 audit] adv-review per-fix EVID              | OPEN
-- g-root-cause-cluster  [P2 audit] adv-review FOUNDATION/INDEP/touches  | OPEN
-- g-regression-done     [P2 antiinflation] engine.md DONE-condition     | OPEN
-- g-exercised-like-prod [P2 antiinflation] adv-review + engine default  | OPEN
-- g-first-merge-check   [P2 audit] engine.md pipeline spot-check        | OPEN
-- g-upgrade-maximal     [P2 missions] dependency-update/SKILL.md        | OPEN
-- g-inference-cost      [P2 missions] NEW skills/inference-cost/SKILL.md + MISSION_METRICS | OPEN
+- g-three-lane          [P2 lanes] adversarial-review-and-fix/SKILL.md  | CLOSED (WAVE2 -> BASE)
+- g-lane-b-draft        [P2 lanes] engine.md + adv-review               | CLOSED (WAVE2 -> BASE)
+- g-lane-0-refuse       [P2 lanes] adv-review DECISION DEFAULTS         | CLOSED (WAVE2 -> BASE)
+- g-rotate-before-scrub [P2 lanes] engine.md SECRET HYGIENE             | CLOSED (WAVE2 -> BASE)
+- g-evid-flag           [P2 audit] adv-review per-fix EVID              | CLOSED (WAVE2 -> BASE)
+- g-root-cause-cluster  [P2 audit] adv-review FOUNDATION/INDEP/touches  | CLOSED (WAVE2 -> BASE)
+- g-regression-done     [P2 antiinflation] engine.md DONE-condition     | CLOSED (WAVE2 -> BASE)
+- g-exercised-like-prod [P2 antiinflation] adv-review + engine default  | CLOSED (WAVE2 -> BASE)
+- g-first-merge-check   [P2 audit] engine.md pipeline spot-check        | CLOSED (WAVE2 -> BASE)
+- g-upgrade-maximal     [P2 missions] dependency-update/SKILL.md        | CLOSED (WAVE2 -> BASE)
+- g-inference-cost      [P2 missions] NEW skills/inference-cost/SKILL.md + MISSION_METRICS | CLOSED (WAVE2 -> BASE)
 WAVE 3 (P3)
 - g-capability-boundary [P3 missions] take-product-to-completion/SKILL.md | OPEN
 - g-reference-input     [P3 missions] engine.md SELF-ORIENTATION        | OPEN
