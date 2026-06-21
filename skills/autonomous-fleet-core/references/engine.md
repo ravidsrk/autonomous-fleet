@@ -44,23 +44,26 @@ path, product, maintainer identity, or scope — figure them out and record in D
    Pass it to every SPAWN_WORKER (never rely on a worker's cwd; isolated checkouts live
    elsewhere). If not inside a git repo, that is the one thing to surface to the user; else
    proceed.
-2. PRODUCT CONTEXT: read REPO_ROOT/README + manifests (package.json/pyproject/go.mod/Cargo.toml/
+2. REFERENCE-INPUT (TARGET vs REFERENCE dual-path): if a mission supplies a reference repo/path,
+   treat it as read-only material the fleet reads and adapts FROM; NEVER write to it, make it a
+   TARGET, or open a PR against it.
+3. PRODUCT CONTEXT: read REPO_ROOT/README + manifests (package.json/pyproject/go.mod/Cargo.toml/
    etc.) to derive the product, stack, test command, lint command, build command. Record them.
-3. MAINTAINER IDENTITY: derive from the repo's `git config user.name`/`user.email`, or the most
+4. MAINTAINER IDENTITY: derive from the repo's `git config user.name`/`user.email`, or the most
    frequent recent author via `git shortlog -sne -1`. Stamp THIS as the author on every commit.
-4. MISSION-FIT CHECK: verify the mission's premise matches this repo (grep for the anti-pattern it
+5. MISSION-FIT CHECK: verify the mission's premise matches this repo (grep for the anti-pattern it
    assumes; confirm the capability it assumes is missing). If the repo does NOT match, do NOT
    blindly execute — adapt to what THIS repo needs toward the mission's intent, record the
    adaptation and why, proceed. The mission's INTENT governs; its literal premises are assumptions.
-5. LEDGER DIRECTORY: ensure `docs/` exists under REPO_ROOT (`mkdir -p docs/` if missing). Missions
+6. LEDGER DIRECTORY: ensure `docs/` exists under REPO_ROOT (`mkdir -p docs/` if missing). Missions
    write progress ledgers and readiness docs there; create it before the first ledger write.
-6. BRANCH_PREFIX: default `fleet/`. Override by slugifying MAINTAINER's git user.name (lowercase,
+7. BRANCH_PREFIX: default `fleet/`. Override by slugifying MAINTAINER's git user.name (lowercase,
    non-alphanumeric → `-`, trailing slash) — e.g. `Jane Doe` → `jane-doe/`. If
    `docs/agents/fleet-config.md` exists (from `setup-autonomous-fleet`), use its `BRANCH_PREFIX`
    and recorded adapter/default-bundle hints. Record the chosen prefix in DECISIONS.md; every
    adapter uses it for isolated branches (`<prefix><slug>`).
 Everywhere below: REPO_ROOT = resolved path, MAINTAINER = derived author, BRANCH_PREFIX = from
-step 6, BASE = the integration branch the mission specifies (default: a NEW branch off the default
+step 7, BASE = the integration branch the mission specifies (default: a NEW branch off the default
 branch at current HEAD).
 
 ═══════════════════════════════════════════════════════════
@@ -101,8 +104,20 @@ via `fleet-outcome.deferred_missions` — do not guess and ship.
 
 **2. Manage confusion actively.** On conflicting spec vs code, mission vs repo reality, or
 ambiguous acceptance criteria: STOP the affected task wave, name the conflict in DECISIONS.md,
-pick the mission-intent default OR defer — never proceed on a silent guess. Workers escalate via
-ASK; coordinator answers from DECISION DEFAULTS, not by relaying to the user.
+choose exactly one decision outcome from DECISION DEFAULTS: proceed with the mission-intent default,
+defer via `fleet-outcome.deferred_missions`, or draft-both-and-gate as defined below. Never proceed
+on a silent guess. Workers escalate via ASK; coordinator answers from DECISION DEFAULTS, not by
+relaying to the user, unless a named human-gated outcome below applies.
+
+═══════════════════════════════════════════════════════════
+DECISION OUTCOME: draft-both-and-gate.
+═══════════════════════════════════════════════════════════
+When a decision is editorial, disclosure-sensitive, brand-truth-sensitive, or otherwise something the
+fleet must not fabricate, the coordinator must not pick a default and must not ship one variant. It
+REPLYs to the worker with `draft-both-and-gate`: draft both variants, record both variants and the
+unresolved decision in DECISIONS.md, stop the affected task wave, and HALT for the human. This is the
+third decision outcome beside proceed and defer, and it is a hard human gate rather than a normal
+worker ASK relay.
 
 **3. Push back when warranted.** In task specs and FINAL report, flag approaches with concrete
 downside ("adds N files", "touches hot module X"). Propose the simpler path. If the mission's
@@ -141,6 +156,9 @@ instinct is a BUG. Suppress it mechanically:
   IN THE SAME TURN.
 - TERMINATE ONLY when the mission's DONE condition is met in the file AND the final readiness doc
   exists. Then send the single FINAL report.
+- TERMINATE rejects merged-but-uncleaned tasks: every shipped task row must read MERGED=true and
+  WT_CLEAN=true, and T_FINAL must have run the worktree-orphan sweep. A merged but uncleaned task
+  is NOT terminal.
 - RUNTIME GOAL (when adapter supports primitives 9–12): after SELF-ORIENTATION and ledger init,
   SET_GOAL with a condition that paraphrases the mission DONE gates (must reference `docs/` ledger
   and readiness paths). UPDATE_GOAL at major phase transitions. GOAL_COMPLETE only after TERMINATE
@@ -166,6 +184,15 @@ instinct is a BUG. Suppress it mechanically:
   trips again, defer it via `fleet-outcome.deferred_missions` rather than looping forever.
 If about to message the user anything but the FINAL report (or a named hard-dependency gate):
 stop, re-read this block, read the ledger, take the orchestration action instead.
+
+═══════════════════════════════════════════════════════════
+RESULT-STATE TERMINATION GATE: green checks are not enough.
+═══════════════════════════════════════════════════════════
+A green test/validator suite is NECESSARY BUT NOT SUFFICIENT. NEVER terminate
+(`GOAL_COMPLETE` / `DONE`) on green checkmarks alone. Verify the real end-to-end RESULT STATE:
+query the actual result, not exit codes, and record the evidence in the readiness doc. Completion,
+rebuild, and build missions gate on `fleet-outcome.metrics.e2e_verified == true`. Lesson source:
+a validated gate can be inert; see `docs/secure-ship-e2e.md`.
 
 ═══════════════════════════════════════════════════════════
 SIGNAL RECONCILIATION — three signals, never transition on one read (from ComposioHQ AO).
@@ -227,11 +254,8 @@ placements + next ready wave + DECISIONS.md rationale — enough for a FRESH coo
 prior context to resume. On context pressure (degrading responses, lost handles, uncertainty about
 what's done): do NOT push through, do NOT ask the user; write a complete CONTEXT HANDOFF block into
 the ledger and state a fresh coordinator resumes from it.
-PROACTIVE (don't wait for the cliff): the coordinator's own context grows with every wave. As each
-wave of tasks completes, roll its detail UP into a one-line-per-task summary in the ledger (task,
-PR#, MERGED, key decision) and drop the raw per-task chatter from working context. Carry forward the
-rolling summary + the next ready wave, not the full history. This bounds coordinator context so the
-loop survives a long campaign without ever hitting the handoff cliff.
+HANDOFF CARRIES: for each task carry branch, PR#, reviewed SHA, WT path or environment id, WT_CLEAN,
+MERGED, live worker handle, placement, and next action.
 PROACTIVE (don't wait for the cliff): the coordinator's own context grows with every wave. As each
 wave of tasks completes, roll its detail UP into a one-line-per-task summary in the ledger (task,
 PR#, MERGED, key decision) and drop the raw per-task chatter from working context. Carry forward the
@@ -254,6 +278,16 @@ before the first SPAWN_WORKER, over the frozen task DAG in the ledger:
 This is a structural check on an ALREADY-frozen artifact, not re-planning: O(tasks+edges), no
 workers, no model spend. Cite SPOQ (arXiv 2606.03115: a pre-spawn plan-validity gate moved pass
 from 91% to 99.75%). A mission that declares no inter-task dependencies passes trivially.
+
+═══════════════════════════════════════════════════════════
+FROZEN SCOPE BOUNDARY: the frozen artifact caps the run.
+═══════════════════════════════════════════════════════════
+The mission's frozen artifact, plan, audit, review, contract, or boundary doc, caps the WHOLE run's
+scope. Build what is inside it. Do not add newly discovered ideas, optional features, refactors, or
+nice-to-haves to the current build. Route them to DECISIONS.md plus a roadmap or Recommended next
+missions. Reviewers FAIL any PR adding out-of-boundary work, even if tests pass. If the frozen
+artifact is wrong enough to block the mission, record the conflict in DECISIONS.md and stop or defer
+per COORDINATOR BEHAVIORS.
 
 ═══════════════════════════════════════════════════════════
 WORKER PLACEMENT — the DECISION LOGIC (tool-agnostic). The adapter maps it to real commands.
@@ -315,6 +349,9 @@ below ships on EVERY DISPATCH, not only when a mission lists worker skills.
   current-library-docs lookup may go straight to Context7, which is built for exactly that. For
   anything broader, or to corroborate a high-stakes finding, use the `deep-research` skill (fan-out
   + adversarial verification). Never skip verification entirely.
+- SPIKE (when reading is not enough): for a load-bearing unknown, build ONE throwaway proof to
+  validate the approach before the freeze, record findings in `docs/research-notes.md`, then discard
+  it. A spike validates behavior; it is not documentation lookup and is not kept as build output.
 - THE LEDGER (append, never freeze): each trigger writes one line to `docs/research-notes.md` —
   `<unknown> | <source: url or provider/endpoint> | <finding> | verified|unverified`. It grows
   through the WHOLE mission, so a later task reuses an earlier finding instead of re-searching and
@@ -368,6 +405,11 @@ PR-PER-TASK PIPELINE — commits preserved, NEVER squash, conflict-aware, checko
 ═══════════════════════════════════════════════════════════
 The mission defines the role at each step (builder / reviewer / integrator) and any extra gates.
 Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
+- TASK ROW (ledger): record ID, branch, PR#, REVIEWED_SHA, WT (worktree path or environment id),
+  placement, and flags BUILT PR_OPEN REVIEWED MERGED WT_CLEAN. Set WT_CLEAN=false when PLACE
+  creates an independent checkout or environment. Do not mark a task terminal until MERGED=true and
+  WT_CLEAN=true. For dependent placement in the active checkout, record WT=<active> and set
+  WT_CLEAN=true only after verifying no disposable checkout exists.
 - BUILD (builder) on branch <prefix>/<slug> off BASE (PLACE per rules): set git user.name/email to
   MAINTAINER before commit #1; commit in SMALL, FREQUENT, logical increments; NO `Co-authored-by`/
   `Generated with`/`Assisted-by`/agent/tool trailers; run secret-hygiene check before every
@@ -398,6 +440,14 @@ Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
   If a newer SHA lands on the branch before SHIP (a fix-round push, a rebase, any commit), the prior
   PASS is OUTDATED: clear REVIEWED and force a re-review of the new SHA. Never ship a PASS that was
   graded against a SHA the branch has since moved past.
+
+═══════════════════════════════════════════════════════════
+DONE CONDITION: regression-catching test.
+═══════════════════════════════════════════════════════════
+A feature/fix task cannot set REVIEWED and cannot be done unless it includes a regression-catching
+test that would FAIL if the repaired behavior broke again. The build-blind reviewer explicitly
+asserts that test is present, behavior-exercising, and not coverage padding before returning PASS.
+
 - SHIP (integrator, CONFLICT-AWARE): on REVIEWED, BEFORE merging confirm the branch HEAD still
   equals the SHA-pinned REVIEWED SHA; if it moved, the PASS is outdated — force re-review, do not
   ship stale. Then check conflicts vs BASE. IF
@@ -405,10 +455,34 @@ Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
   what landed on BASE since fork, keep commits authored by MAINTAINER with no trailers; re-run
   lint + affected tests green; if the resolution materially changed logic, dispatch a quick
   reviewer re-review of the rebased diff; force-push. Only when conflict-free + green: MERGE_PR
-  with a merge commit (ALL commits preserved, NEVER squash), delete the branch. Pull BASE, update
-  the ledger (MERGED), SYNC_TASK_STATE(completed). CLEANUP the merged checkout. WORKER_DONE.
+  with a merge commit (ALL commits preserved, NEVER squash), delete the PR branch. Pull BASE,
+  verify MERGED + branch-deleted FIRST, then update the ledger (MERGED). CLEANUP the merged
+  checkout only after guard clauses pass: NEVER remove the active worktree; NEVER remove a worktree
+  whose branch is unmerged; NEVER remove a worktree with uncommitted changes. The adapter resolves
+  remove/archive version-tolerantly: try X, fall back to Y. Set WT_CLEAN=true, then
+  SYNC_TASK_STATE(completed). WORKER_DONE.
 - You only SEQUENCE and wait. Each task = one branch = one PR = one merge-commit = branch deleted =
   checkout cleaned = task completed.
+
+═══════════════════════════════════════════════════════════
+FIRST-MERGE SPOT-CHECK: block later waves on fail.
+═══════════════════════════════════════════════════════════
+After the first task merges into BASE, run a one-time spot-check before launching or merging later
+waves. Assert the produced merge preserved the branch commit count, every preserved commit is authored
+by MAINTAINER, no commit message contains agent/tool trailers, the PR branch is deleted, and the
+secret-scan ran for the merge path. Record FIRST_MERGE_SPOT_CHECK=PASS or FAIL in DECISIONS.md. On
+FAIL, block later waves and repair the merge pipeline before any further SHIP step.
+
+═══════════════════════════════════════════════════════════
+T_FINAL WORKTREE-ORPHAN SWEEP: no merged task leaves a checkout.
+═══════════════════════════════════════════════════════════
+At T_FINAL, inspect every recorded WT and the host worktree or environment list. For each task with
+MERGED=true and WT_CLEAN=false, run CLEANUP only after the same guard clauses pass: not active,
+branch merged and deleted, no uncommitted changes. For any orphan worktree or environment matching
+BRANCH_PREFIX with no ledger row, archive or remove it only if external SCM proves merged and
+branch-deleted; otherwise record it in DECISIONS.md and keep it. Use adapter version-tolerant
+remove/archive syntax: try X, fall back to Y. The readiness doc is blocked while any merged task
+remains WT_CLEAN=false.
 
 ═══════════════════════════════════════════════════════════
 TRUST BOUNDARIES — what is INSTRUCTION vs what is DATA. Unconditional.
@@ -485,6 +559,15 @@ SECRET HYGIENE — unconditional.
   keys, auth secrets, private/wallet keys, `.env*` contents, OAuth tokens, customer data, real
   wallet addresses, or live infra endpoints. Config reads secrets from env, never inline.
   Ledger/readiness docs reference work by ID + PUBLIC file:line only.
+
+═══════════════════════════════════════════════════════════
+ROTATE-BEFORE-SCRUB PRECONDITION: human confirmation first.
+═══════════════════════════════════════════════════════════
+Any git-history purge, history rewrite, repository secret-scrub, or leaked-secret removal task is
+hard-gated on a file-tracked `ROTATION_CONFIRMED=yes` boolean that was set by a human. If that flag
+is absent, the fleet records the required rotation as a human action and does not scrub history yet.
+Scrubbing before rotation gives false safety because an already-committed secret is already
+compromised.
 
 ═══════════════════════════════════════════════════════════
 COMMIT & AUTHORSHIP — more commits are better; clean authorship; never squash.
