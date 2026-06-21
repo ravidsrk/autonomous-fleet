@@ -200,7 +200,11 @@ def eval_edge(expr: str, outcome: dict[str, Any]) -> bool:
                 return True
         return False
 
-    m = re.match(r"([\w_]+)\s*(==|!=|>=|<=|>|<)\s*(.+)", expr)
+    # Right operand is a SINGLE token anchored to end-of-string. A trailing token (a campaign-author
+    # typo like `status == blocked now`) must NOT match here — it falls through to the
+    # "unsupported expression" raise below so the edge is logged + skipped (the documented
+    # do-not-guess contract), instead of == silently comparing against a multi-word string.
+    m = re.match(r"([\w_]+)\s*(==|!=|>=|<=|>|<)\s*(\S+)\s*$", expr)
     if m:
         key, op, raw = m.group(1), m.group(2), m.group(3).strip()
         left = _metric_value(outcome, key)
@@ -241,6 +245,20 @@ def pick_next_node(
         if not isinstance(edge, dict):
             continue
         expr = edge.get("if", "always")
-        if eval_edge(str(expr), outcome):
-            return edge.get("to")
+        # An edge whose expression references a missing metric (or is malformed) must NOT crash the
+        # whole pick and strand a valid `if: always` fallback edge after it. Per the documented
+        # "unknown expression -> skip edge, do not guess" rule, treat a raising edge as not-taken.
+        try:
+            matched = eval_edge(str(expr), outcome)
+        except ValueError:
+            continue
+        if matched:
+            to = edge.get("to")
+            # A matched edge with no usable destination is a misconfigured campaign, not a terminal
+            # node: fail loudly rather than returning None (which reads as "no edge matched / DONE").
+            if not isinstance(to, str) or not to:
+                raise ValueError(
+                    f"matched edge on node {current_node!r} has no valid 'to': {edge!r}"
+                )
+            return to
     return None

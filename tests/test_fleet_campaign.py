@@ -302,18 +302,19 @@ def test_pick_next_node_skips_malformed_non_dict_edges():
     assert pick_next_node(campaign, "docs", DOC_SYNC_OUTCOME) == "tests"
 
 
-def test_pick_next_node_edge_missing_to_returns_none_value():
-    """M3b: an edge dict without 'to' is selected when its condition is true,
-    and its 'to' value is None — pinning current behavior (no crash, no fallback)."""
+def test_pick_next_node_matched_edge_missing_to_raises():
+    """F4: a matched edge with no 'to' is a misconfigured campaign, not a terminal node.
+    It now FAILS LOUDLY (raises) instead of returning None (which read as 'campaign done')."""
     campaign = {
         "edges": {
             "docs": [
-                {"if": "always"},  # missing 'to'
-                {"to": "tests", "if": "always"},  # never reached
+                {"if": "always"},  # missing 'to' -> misconfiguration
+                {"to": "tests", "if": "always"},
             ],
         }
     }
-    assert pick_next_node(campaign, "docs", DOC_SYNC_OUTCOME) is None
+    with pytest.raises(ValueError):
+        pick_next_node(campaign, "docs", DOC_SYNC_OUTCOME)
 
 
 def test_parse_fixture_readiness(tmp_path: Path):

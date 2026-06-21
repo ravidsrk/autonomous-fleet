@@ -245,5 +245,7 @@ def test_campaign_cycle_detected(tmp_path: Path):
         text=True,
         check=False,
     )
+    # A genuine runaway loop still aborts (designed back-edges are allowed a small revisit budget,
+    # but an unconditional a<->b cycle exhausts it / hits the step cap).
     assert r.returncode != 0
-    assert "cycle detected" in r.stderr
+    assert ("revisited too many times" in r.stderr) or ("step limit exceeded" in r.stderr)

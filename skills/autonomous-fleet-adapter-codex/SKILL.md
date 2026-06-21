@@ -59,9 +59,10 @@ own branch `container-use/<env>`.
   ALL file/shell work through the environment (`environment_create` -> env id + branch
   `container-use/<env>`, then `environment_file_write` / `environment_run_cmd`). One env per unit.
 - INSPECT(): `container-use list` / `log <env>` / `diff <env>` (non-destructive).
-- OPEN_PR / SHIP: `container-use checkout <env>` (local branch from `container-use/<env>`), push,
-  `gh pr create --base BASE`; OR `container-use merge <env>` into BASE. The SHA-pin + conflict-aware
-  rules from engine.md still apply.
+- OPEN_PR / SHIP (preferred): `container-use checkout <env>` (local branch from
+  `container-use/<env>`), push, `gh pr create --base BASE` — keeps the SHA-pin + conflict-aware
+  review gate. NOTE: `container-use merge <env>` merges into the CURRENT branch (no `--base`) and
+  bypasses the PR gate; use it only after `git checkout BASE`, not as the default.
 - CLEANUP: `container-use delete <env>` (or `--all`) instead of `git worktree remove`.
 - FALLBACK: no container-use MCP -> the plain `git worktree` path above. See docs/adopt-container-use.md.
 
@@ -99,7 +100,13 @@ Update FILE LEDGER flag. (No external task daemon — ledger is the task view.)
 
 ### SET_GOAL(condition) / UPDATE_GOAL / GOAL_COMPLETE / GOAL_BLOCKED
 
-Codex exposes `/goal` in the thread composer (pair with `/plan` for ambiguous scope).
+Codex exposes `/goal` in the INTERACTIVE thread composer (pair with `/plan` for ambiguous scope).
+HEADLESS CAVEAT: `codex exec` (the unattended path the headless runner uses) is SINGLE-SHOT and does
+NOT interpret slash commands — a `/goal ...` string in an exec prompt is inert text, and exec runs
+one turn then stops. So for headless codex there is no native goal/continuation harness: drive
+continuation with an EXTERNAL LOOP_POLL (cron / a loop that re-invokes `codex exec` on the same repo)
+that re-runs until the ledger's DONE condition holds. The `/goal` mechanic below is for interactive
+sessions only.
 
 **SET_GOAL:** `/goal <condition>` after ledger init. Shape with `/plan` first when scope is
 ambiguous. Record condition under `## Runtime goal` in ledger per `runtime-goals.md`. Condition must
