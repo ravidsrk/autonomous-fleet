@@ -3,56 +3,56 @@ fleet-outcome:
   mission: test-coverage
   status: done
   repo: ravidsrk/autonomous-fleet
-  base_branch: ravidsrk/dogfood-test-coverage
+  base_branch: ravidsrk/testcov-newcode
   prs_merged: 0
   metrics:
     gaps_open: 0
     coverage_regressed: false
   deferred_missions: []
   unverified_assumptions: 0
-  sources_logged: 4
-  cost_estimate: 0.2
+  sources_logged: 0
+  cost_estimate: 0.15
   run:
-    duration_min: 14
-    note: dogfood of the engine disciplines; codex worker timed out, reassigned
+    duration_min: 8
+    note: test-coverage dogfood on this session's new code (the close-gaps + earlier PRs)
 ---
 
-# test-coverage readiness (dogfood of the new disciplines, 2026-06-21)
+# test-coverage readiness — this session's new code (2026-06-21)
 
-Closed the three real coverage gaps the coverage map found, with the new engine disciplines active.
+Covered the under-tested gaps in the python code added/changed this session. The CLIs were already
+exercised via subprocess, which coverage.py cannot see (separate process), so the gaps were the
+`main()` bodies and the error paths.
 
 ## Coverage closed (re-measured externally)
-| module | before | after |
-|--------|--------|-------|
-| `scripts/eval-campaign-edge.py` | 0% | 93% |
-| `scripts/lib/mission_registry.py` | 0% | 100% |
-| `scripts/validate_fleet_outcome.py` | 22% | 74% |
-| TOTAL (scripts/) | 74% | 86% |
 
-8 new tests; full suite 107 -> 115, all green. `gaps_open: 0`, `coverage_regressed: false`.
+| module                              | before | after |
+| ----------------------------------- | ------ | ----- |
+| `scripts/coupling-graph.py`         | 75%    | 93%   |
+| `scripts/render-dashboard.py`       | 88%    | 96%   |
+| `scripts/validate_fleet_outcome.py` | 74%    | 89%   |
+| TOTAL (scripts/)                    | 85%    | 94%   |
 
-## Disciplines exercised (and what they caught)
-- COVERAGE MAP -> real gaps (coverage.py), not invented targets.
-- PLAN/DAG GATE: 3 independent test-file units, width 3, no cycles. PASS.
-- COUPLING-AWARE PLACEMENT: `coupling-graph.py` flagged `fleet_outcome.py` as the serialize-always
-  HUB (in_degree 4); the 3 test files are independent (parallel-eligible), `mission_registry.py`
-  standalone. A real, non-trivial coupling artifact.
-- CONTAINER-USE placement: a codex worker opened an env (`awake-pika`) but TIMED OUT mid-read before
-  writing; per the worker-failure/reassign rule the unit was reassigned to the claude coordinator.
-- CROSS-VENDOR REVIEW: codex reviewed the claude-authored tests (different vendor), ran them, VERDICT
-  PASS, no findings. `reviewed_sha: 0dbd18b`.
-- SIGNAL RECONCILIATION (the catch of the run): coverage was re-measured EXTERNALLY rather than
-  trusted; the first subprocess-based tests passed but did NOT move 2 of 3 modules (subprocess is
-  untracked by coverage.py). Rewrote to in-process `main()` invocation; coverage then moved for real.
-- RESEARCH: behaviors read from in-repo code, logged (docs/research-notes.md), `unverified_assumptions: 0`.
-- COST ROUTING: builder reassigned to coordinator (strong), reviewer = codex; `cost_estimate: 0.2`.
-- DASHBOARD: `render-dashboard.py` renders this ledger into the four zones.
+6 new tests in `tests/test_new_code_coverage.py`; full suite 208 -> 214.
 
-## Honest notes
-- The codex container-use worker timed out (420s) while still reading the modules; the container-use
-  placement itself is proven on the doc-sync dogfood, so this is a worker-budget issue, not a
-  placement failure. A longer per-worker deadline or a write-first prompt would have let it finish.
-- `cost_estimate` is coarse (no host exposes per-call spend), the known gap from the landscape research.
+## What got covered (real assertions, not padding)
 
-## Recommended next missions
-None.
+- coupling-graph.py CLI `main()`: the `--json` path (assert clusters/hubs/files in the JSON), the
+  human summary path (assert files:/clusters/hubs lines), and the non-directory `p.error` (SystemExit).
+- render-dashboard.py CLI `main()`: writes the HTML to `-o` and the file is non-empty.
+- validate_fleet_outcome.py: the `(ValueError, yaml.YAMLError)` except path added in the close-gaps
+  work (a malformed-YAML doc fails with "invalid", exit 1) and the not-found path (exit 1).
+
+## Discipline
+
+- IN-PROCESS main() invocation: subprocess tests don't move coverage, so the CLIs are called in
+  process via importlib (the lesson from the earlier test-coverage dogfood).
+- SIGNAL RECONCILIATION: coverage was re-measured externally to confirm the gaps actually moved
+  (75->93, 88->96, 74->89), not just that the suite is green.
+- run-sandboxed.sh is bash (coverage.py cannot measure it); it carries 23 behavioural classify cases
+  across test_sandbox_guard.py + test_adversarial_fixes.py.
+
+## Notes
+
+- gaps_open: 0 — the meaningful gaps in the new code are closed; the residual missed lines (coupling
+  13, render 6, validate 5) are minor error-edge branches, not behaviour gaps.
+- coverage_regressed: false (total 85 -> 94).
