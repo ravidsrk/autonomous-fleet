@@ -1,6 +1,6 @@
 # close-gaps progress (adversarial-review-and-fix dogfood vs the gap analysis)
 
-PHASE: FIXING
+PHASE: DONE
 MISSION: adversarial-review-and-fix (self, dogfood)   REPO: autonomous-fleet
 BASE: ravidsrk/close-gaps (off ravidsrk/gap-analysis-doc = main + REVIEW_DOC)
 REVIEW_DOC: docs/gap-analysis-genesis-prompts.md (FROZEN)   COORDINATOR: this Claude Code session
@@ -31,11 +31,11 @@ WAVE 2 (P2)
 - g-upgrade-maximal     [P2 missions] dependency-update/SKILL.md        | CLOSED (WAVE2 -> BASE)
 - g-inference-cost      [P2 missions] NEW skills/inference-cost/SKILL.md + MISSION_METRICS | CLOSED (WAVE2 -> BASE)
 WAVE 3 (P3)
-- g-capability-boundary [P3 missions] take-product-to-completion/SKILL.md | OPEN
-- g-reference-input     [P3 missions] engine.md SELF-ORIENTATION        | OPEN
-- g-spike               [P3 missions] engine.md RESEARCH DISCIPLINE     | OPEN
-- g-visual-baseline     [P3 missions] landing-page + design-integration | OPEN
-- g-dup-block           [P3 cleanup] engine.md duplicate-block removal   | OPEN
+- g-capability-boundary [P3 missions] take-product-to-completion/SKILL.md | CLOSED (WAVE3 -> BASE)
+- g-reference-input     [P3 missions] engine.md SELF-ORIENTATION        | CLOSED (WAVE3 -> BASE)
+- g-spike               [P3 missions] engine.md RESEARCH DISCIPLINE     | CLOSED (WAVE3 -> BASE)
+- g-visual-baseline     [P3 missions] landing-page + design-integration | CLOSED (WAVE3 -> BASE)
+- g-dup-block           [P3 cleanup] engine.md duplicate-block removal   | CLOSED (WAVE3 -> BASE)
 
 ## TASK ROWS
 TASK cg-e2e-verified | PRI=P1 | THEME=antiinflation | FILE=hot(fleet_outcome.py) | CLOSES=[g-antiinflation-e2e] | BUILT=t PR_OPEN=t REVIEWED=t MERGED=t ACCEPT=t WT_CLEAN=t | MERGE=5eff10e | WT=removed | WORKER=codex | NOTE=reviewed build-blind cross-vendor; neutering gate fails test_e2e_gate (non-inert)
@@ -70,3 +70,6 @@ adding the spot-check rail to engine.md's pipeline in the engine.md WAVE-2 batch
 T_FINAL (after all waves): RUN THE RAILS (feed fleet_outcome a done completion missing e2e -> rejected;
 planted-bad input -> validators FAIL; worktree sweep -> no orphans), write docs/close-gaps-readiness.md,
 mark human-owned follow-ups (BASE->main, npx skills republish) NOT done.
+
+## DONE
+All 20 gap-ids CLOSED on BASE. T_FINAL verified each new rail FIRES (e2e gate rejects done-without-e2e; inference-cost rejects a bad metric; engine rails present; dedup held; mechanisms non-inert). pytest 208, validate-all green. Worktree sweep clean. Readiness: docs/close-gaps-readiness.md. Human-owned: BASE->main, skills republish.
