@@ -116,6 +116,20 @@ def test_validate_outcome_requires_metrics():
     assert any("metrics" in e for e in errors)
 
 
+def test_validate_outcome_rejects_non_finite_registered_mission_metrics():
+    for bad in (float("inf"), float("nan")):
+        outcome = {
+            **DOC_SYNC_OUTCOME,
+            "metrics": {**DOC_SYNC_OUTCOME["metrics"], "drift_open": bad},
+        }
+
+        errors = validate_outcome(outcome)
+
+        assert any(
+            "metric 'drift_open' must be finite" in e for e in errors
+        ), errors
+
+
 def test_eval_ordering_coerces_string_and_float_metrics():
     """EVAL-05: ordering ops coerce defensively instead of raising TypeError."""
     outcome = {"metrics": {"coverage": 79.5}}

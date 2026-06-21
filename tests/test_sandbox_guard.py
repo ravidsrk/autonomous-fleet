@@ -173,6 +173,9 @@ def test_allow_execs_and_scrubs_credential_env() -> None:
     env = {
         "PATH": "/usr/bin:/bin",
         "HOME": "/tmp",
+        # LC_* survives the allowlist first; the credential filter must then drop
+        # this *_API_KEY name, making the defense-in-depth scrub observable.
+        "LC_API_KEY": "locale-shaped-secret",
         "AWS_SECRET_ACCESS_KEY": "shh",
         "GH_TOKEN": "ghp_x",
         "MY_API_KEY": "k",
@@ -189,6 +192,8 @@ def test_allow_execs_and_scrubs_credential_env() -> None:
     assert "AWS_SECRET_ACCESS_KEY" not in r.stdout
     assert "GH_TOKEN" not in r.stdout
     assert "MY_API_KEY" not in r.stdout
+    assert "LC_API_KEY" not in r.stdout
+    assert "locale-shaped-secret" not in r.stdout
     assert "PATH=" in r.stdout
 
 
