@@ -200,7 +200,11 @@ def eval_edge(expr: str, outcome: dict[str, Any]) -> bool:
                 return True
         return False
 
-    m = re.match(r"([\w_]+)\s*(==|!=|>=|<=|>|<)\s*(.+)", expr)
+    # Right operand is a SINGLE token anchored to end-of-string. A trailing token (a campaign-author
+    # typo like `status == blocked now`) must NOT match here — it falls through to the
+    # "unsupported expression" raise below so the edge is logged + skipped (the documented
+    # do-not-guess contract), instead of == silently comparing against a multi-word string.
+    m = re.match(r"([\w_]+)\s*(==|!=|>=|<=|>|<)\s*(\S+)\s*$", expr)
     if m:
         key, op, raw = m.group(1), m.group(2), m.group(3).strip()
         left = _metric_value(outcome, key)
