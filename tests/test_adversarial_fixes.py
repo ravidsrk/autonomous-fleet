@@ -113,6 +113,29 @@ def test_eval_edge_non_finite_raises():
         eval_edge("drift_open > 0", out)
 
 
+@pytest.mark.parametrize("expr", [
+    "status == blocked now",   # trailing token on equality -> was silently False
+    "status != done extra",
+    "drift_open == 0 == 1",
+    "drift_open >= 5 extra",   # trailing token on ordering -> was a crash
+])
+def test_eval_edge_trailing_token_raises_not_silent_wrong_branch(expr):
+    # A malformed multi-token operand must hit the documented "unsupported expression -> log + skip"
+    # path, not silently evaluate to a wrong boolean and misroute the campaign.
+    with pytest.raises(ValueError):
+        eval_edge(expr, {"status": "blocked", "metrics": {"drift_open": 6}, "drift_open": 6})
+
+
+@pytest.mark.parametrize("expr,ctx,expected", [
+    ("status == blocked", {"status": "blocked"}, True),
+    ("status != done", {"status": "blocked"}, True),
+    ("drift_open == 0", {"metrics": {"drift_open": 0}}, True),
+    ("drift_open > 4", {"metrics": {"drift_open": 5}}, True),
+])
+def test_eval_edge_legit_single_token_still_works(expr, ctx, expected):
+    assert eval_edge(expr, ctx) is expected
+
+
 # --- render-dashboard.py: malformed YAML must not crash the whole render ---
 
 def test_dashboard_survives_malformed_yaml(tmp_path):
