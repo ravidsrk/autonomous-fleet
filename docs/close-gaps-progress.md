@@ -4,7 +4,7 @@ PHASE: FIXING
 MISSION: adversarial-review-and-fix (self, dogfood)   REPO: autonomous-fleet
 BASE: ravidsrk/close-gaps (off ravidsrk/gap-analysis-doc = main + REVIEW_DOC)
 REVIEW_DOC: docs/gap-analysis-genesis-prompts.md (FROZEN)   COORDINATOR: this Claude Code session
-GREEN BASELINE: validate-all.sh PASS · pytest 188 -> 192 passed (regression floor; +4 e2e gate tests)
+GREEN BASELINE: validate-all.sh PASS · pytest 188 -> 195 passed (regression floor; +4 e2e + 3 engine-discipline tests)
 ROLES: builder = codex (codex exec — `--full-auto` is rejected by current codex; adapter fallback);
   fresh build-blind reviewer = the coordinator reviewing the diff only (cross-vendor to the codex
   build); integrator = coordinator. Builder and reviewer are never the same vendor on the same diff.
@@ -15,9 +15,9 @@ engine.md · scripts/lib/fleet_outcome.py · skills/adversarial-review-and-fix/S
 ## GAP CLOSE-INDEX (PARTIAL/MISSING + 4 verified-directly; CAPTURED 11 = DONE, do not touch)
 WAVE 1 (P1)
 - g-antiinflation-e2e   [P1 antiinflation] fleet_outcome.py             | CLOSED via merge 5eff10e (e2e gate; non-inert proven)
-- g-antiinflation-doctr [P1 antiinflation] engine.md invariant          | OPEN
-- g-frozen-scope        [P1 frozenscope]   engine.md block              | OPEN
-- g-wt-clean            [P1 cleanup]       engine.md + adapters         | OPEN
+- g-antiinflation-doctr [P1 antiinflation] engine.md invariant          | CLOSED via merge 8c3f103
+- g-frozen-scope        [P1 frozenscope]   engine.md block              | CLOSED via merge 8c3f103
+- g-wt-clean            [P1 cleanup]       engine.md (tracked gate)     | CLOSED via merge 8c3f103 (adapter notes -> WAVE2)
 WAVE 2 (P2)
 - g-three-lane          [P2 lanes] adversarial-review-and-fix/SKILL.md  | OPEN
 - g-lane-b-draft        [P2 lanes] engine.md + adv-review               | OPEN
@@ -44,3 +44,29 @@ FIRST-MERGE SPOT-CHECK (5eff10e): PASS — author=Ravindra Kumar, 1/1 commits pr
 
 ## DEFERRED (out-of-scope ideas noticed; frozen-scope rail — not built this run)
 (none yet)
+
+## TASK ROW (wave 1 cont.)
+TASK cg-engine-p1b | PRI=P1 | THEME=antiinflation/frozenscope/cleanup | FILE=hot(engine.md) | CLOSES=[g-antiinflation-doctr,g-frozen-scope,g-wt-clean] | BUILT=t PR_OPEN=t REVIEWED=t MERGED=t ACCEPT=t WT_CLEAN=t | MERGE=8c3f103 | WT=removed | WORKER=codex | NOTE=FROZEN-SCOPE RAIL FIRED: codex's build re-implemented the e2e metric out-of-scope (stale base + spec mention); review DROPPED it, kept only engine.md + test_engine_disciplines.py. Structural test proven non-inert.
+
+═══════════════════════════════════════════════════════════
+CONTEXT HANDOFF — WAVE 1 (P1) DONE; a fresh coordinator resumes at WAVE 2.
+═══════════════════════════════════════════════════════════
+PHASE=FIXING. BASE=ravidsrk/close-gaps @ 8c3f103 (off ravidsrk/gap-analysis-doc = main + REVIEW_DOC).
+Green line: validate-all PASS, pytest 195. Worktrees CLEAN (only sibling main + new-research). No
+open branches/PRs. REVIEW_DOC=docs/gap-analysis-genesis-prompts.md (frozen). Ledger=this file.
+DONE so far (CLOSED in BASE): the 4 P1 gaps — g-antiinflation-e2e (5eff10e: e2e_verified gate +
+test_e2e_gate.py, proven non-inert), g-antiinflation-doctr + g-frozen-scope + g-wt-clean (8c3f103:
+engine.md banners + test_engine_disciplines.py). First-merge spot-check PASS.
+NEXT = WAVE 2 (P2), then WAVE 3 (P3) — both still OPEN in the close-index above. Resume the same
+pipeline: codex builds in a worktree off BASE (per the hot-file map) -> cross-vendor build-blind
+review (NEUTER-THE-MECHANISM check: a new test must FAIL if the mechanism is removed; reject
+tautologies + scope creep, as caught above) -> --no-ff merge into BASE -> WT_CLEAN -> ledger.
+HOT-FILE SERIALIZATION (one in-flight each): engine.md (g-lane-b-draft, g-rotate-before-scrub,
+g-regression-done, g-reference-input, g-spike, g-dup-block); adversarial-review-and-fix/SKILL.md
+(g-three-lane, g-lane-0-refuse, g-evid-flag, g-root-cause-cluster, g-exercised-like-prod); the rest
+are independent files (dependency-update, take-product-to-completion, landing-page/design-integration,
+NEW skills/inference-cost). g-first-merge-check is ALREADY PRACTISED (recorded above) — close it by
+adding the spot-check rail to engine.md's pipeline in the engine.md WAVE-2 batch.
+T_FINAL (after all waves): RUN THE RAILS (feed fleet_outcome a done completion missing e2e -> rejected;
+planted-bad input -> validators FAIL; worktree sweep -> no orphans), write docs/close-gaps-readiness.md,
+mark human-owned follow-ups (BASE->main, npx skills republish) NOT done.
