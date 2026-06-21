@@ -4,7 +4,7 @@ PHASE: FIXING
 MISSION: adversarial-review-and-fix (self, dogfood)   REPO: autonomous-fleet
 BASE: ravidsrk/close-gaps (off ravidsrk/gap-analysis-doc = main + REVIEW_DOC)
 REVIEW_DOC: docs/gap-analysis-genesis-prompts.md (FROZEN)   COORDINATOR: this Claude Code session
-GREEN BASELINE: validate-all.sh PASS · pytest 188 passed (regression floor)
+GREEN BASELINE: validate-all.sh PASS · pytest 188 -> 192 passed (regression floor; +4 e2e gate tests)
 ROLES: builder = codex (codex exec — `--full-auto` is rejected by current codex; adapter fallback);
   fresh build-blind reviewer = the coordinator reviewing the diff only (cross-vendor to the codex
   build); integrator = coordinator. Builder and reviewer are never the same vendor on the same diff.
@@ -14,7 +14,7 @@ engine.md · scripts/lib/fleet_outcome.py · skills/adversarial-review-and-fix/S
 
 ## GAP CLOSE-INDEX (PARTIAL/MISSING + 4 verified-directly; CAPTURED 11 = DONE, do not touch)
 WAVE 1 (P1)
-- g-antiinflation-e2e   [P1 antiinflation] fleet_outcome.py + engine.md  | OPEN
+- g-antiinflation-e2e   [P1 antiinflation] fleet_outcome.py             | CLOSED via merge 5eff10e (e2e gate; non-inert proven)
 - g-antiinflation-doctr [P1 antiinflation] engine.md invariant          | OPEN
 - g-frozen-scope        [P1 frozenscope]   engine.md block              | OPEN
 - g-wt-clean            [P1 cleanup]       engine.md + adapters         | OPEN
@@ -38,7 +38,9 @@ WAVE 3 (P3)
 - g-dup-block           [P3 cleanup] engine.md duplicate-block removal   | OPEN
 
 ## TASK ROWS
-(none dispatched yet)
+TASK cg-e2e-verified | PRI=P1 | THEME=antiinflation | FILE=hot(fleet_outcome.py) | CLOSES=[g-antiinflation-e2e] | BUILT=t PR_OPEN=t REVIEWED=t MERGED=t ACCEPT=t WT_CLEAN=t | MERGE=5eff10e | WT=removed | WORKER=codex | NOTE=reviewed build-blind cross-vendor; neutering gate fails test_e2e_gate (non-inert)
+
+FIRST-MERGE SPOT-CHECK (5eff10e): PASS — author=Ravindra Kumar, 1/1 commits preserved (--no-ff), no trailers, branch deleted. Later waves unblocked.
 
 ## DEFERRED (out-of-scope ideas noticed; frozen-scope rail — not built this run)
 (none yet)
