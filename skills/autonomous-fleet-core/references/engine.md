@@ -44,23 +44,26 @@ path, product, maintainer identity, or scope — figure them out and record in D
    Pass it to every SPAWN_WORKER (never rely on a worker's cwd; isolated checkouts live
    elsewhere). If not inside a git repo, that is the one thing to surface to the user; else
    proceed.
-2. PRODUCT CONTEXT: read REPO_ROOT/README + manifests (package.json/pyproject/go.mod/Cargo.toml/
+2. REFERENCE-INPUT (TARGET vs REFERENCE dual-path): if a mission supplies a reference repo/path,
+   treat it as read-only material the fleet reads and adapts FROM; NEVER write to it, make it a
+   TARGET, or open a PR against it.
+3. PRODUCT CONTEXT: read REPO_ROOT/README + manifests (package.json/pyproject/go.mod/Cargo.toml/
    etc.) to derive the product, stack, test command, lint command, build command. Record them.
-3. MAINTAINER IDENTITY: derive from the repo's `git config user.name`/`user.email`, or the most
+4. MAINTAINER IDENTITY: derive from the repo's `git config user.name`/`user.email`, or the most
    frequent recent author via `git shortlog -sne -1`. Stamp THIS as the author on every commit.
-4. MISSION-FIT CHECK: verify the mission's premise matches this repo (grep for the anti-pattern it
+5. MISSION-FIT CHECK: verify the mission's premise matches this repo (grep for the anti-pattern it
    assumes; confirm the capability it assumes is missing). If the repo does NOT match, do NOT
    blindly execute — adapt to what THIS repo needs toward the mission's intent, record the
    adaptation and why, proceed. The mission's INTENT governs; its literal premises are assumptions.
-5. LEDGER DIRECTORY: ensure `docs/` exists under REPO_ROOT (`mkdir -p docs/` if missing). Missions
+6. LEDGER DIRECTORY: ensure `docs/` exists under REPO_ROOT (`mkdir -p docs/` if missing). Missions
    write progress ledgers and readiness docs there; create it before the first ledger write.
-6. BRANCH_PREFIX: default `fleet/`. Override by slugifying MAINTAINER's git user.name (lowercase,
+7. BRANCH_PREFIX: default `fleet/`. Override by slugifying MAINTAINER's git user.name (lowercase,
    non-alphanumeric → `-`, trailing slash) — e.g. `Jane Doe` → `jane-doe/`. If
    `docs/agents/fleet-config.md` exists (from `setup-autonomous-fleet`), use its `BRANCH_PREFIX`
    and recorded adapter/default-bundle hints. Record the chosen prefix in DECISIONS.md; every
    adapter uses it for isolated branches (`<prefix><slug>`).
 Everywhere below: REPO_ROOT = resolved path, MAINTAINER = derived author, BRANCH_PREFIX = from
-step 6, BASE = the integration branch the mission specifies (default: a NEW branch off the default
+step 7, BASE = the integration branch the mission specifies (default: a NEW branch off the default
 branch at current HEAD).
 
 ═══════════════════════════════════════════════════════════
@@ -258,11 +261,6 @@ wave of tasks completes, roll its detail UP into a one-line-per-task summary in 
 PR#, MERGED, key decision) and drop the raw per-task chatter from working context. Carry forward the
 rolling summary + the next ready wave, not the full history. This bounds coordinator context so the
 loop survives a long campaign without ever hitting the handoff cliff.
-PROACTIVE (don't wait for the cliff): the coordinator's own context grows with every wave. As each
-wave of tasks completes, roll its detail UP into a one-line-per-task summary in the ledger (task,
-PR#, MERGED, key decision) and drop the raw per-task chatter from working context. Carry forward the
-rolling summary + the next ready wave, not the full history. This bounds coordinator context so the
-loop survives a long campaign without ever hitting the handoff cliff.
 
 ═══════════════════════════════════════════════════════════
 PLAN/DAG VALIDATION GATE — validate the frozen task DAG before the FIRST SPAWN_WORKER (SPOQ).
@@ -351,6 +349,9 @@ below ships on EVERY DISPATCH, not only when a mission lists worker skills.
   current-library-docs lookup may go straight to Context7, which is built for exactly that. For
   anything broader, or to corroborate a high-stakes finding, use the `deep-research` skill (fan-out
   + adversarial verification). Never skip verification entirely.
+- SPIKE (when reading is not enough): for a load-bearing unknown, build ONE throwaway proof to
+  validate the approach before the freeze, record findings in `docs/research-notes.md`, then discard
+  it. A spike validates behavior; it is not documentation lookup and is not kept as build output.
 - THE LEDGER (append, never freeze): each trigger writes one line to `docs/research-notes.md` —
   `<unknown> | <source: url or provider/endpoint> | <finding> | verified|unverified`. It grows
   through the WHOLE mission, so a later task reuses an earlier finding instead of re-searching and
