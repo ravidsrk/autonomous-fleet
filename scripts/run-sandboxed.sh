@@ -454,13 +454,16 @@ classify() {
   local -a stmt=()
 
   if [[ $# -eq 1 ]]; then
-    # ONE arg = a command STRING (tests, or a caller passing a whole line). Split on operators,
-    # then tokenize each statement (respecting quotes), then classify.
-    joined="$1"
+    # ONE arg = a command STRING (tests, or a caller passing a whole line). First remove shell
+    # line-continuations (a backslash immediately before a newline) so `rm \<newline>-rf x` is the
+    # single command it really is; a BARE newline remains a statement separator. Then split on
+    # operators, tokenize each statement (respecting quotes), and classify.
+    local body="${1//\\$'\n'/}"
+    joined="$body"
     local statements
     # Split on every shell statement separator, including a single `&` (background) and `|&` — the
     # argv path already splits on `&`, so the string path must match it or `cd x & rm -rf y` slips.
-    statements=$(printf '%s' "$1" | sed -E 's/(&&|\|\||\|&|;|\||&)/\
+    statements=$(printf '%s' "$body" | sed -E 's/(&&|\|\||\|&|;|\||&)/\
 /g')
     local s
     while IFS= read -r s; do
