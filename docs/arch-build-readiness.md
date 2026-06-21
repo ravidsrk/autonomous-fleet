@@ -3,84 +3,63 @@ fleet-outcome:
   mission: adversarial-review-and-fix
   status: done
   repo: ravidsrk/autonomous-fleet
-  base_branch: ravidsrk/adversarial-fresh
-  prs_merged: 5
+  base_branch: ravidsrk/dogfood-adversarial
+  prs_merged: 0
   metrics:
     p0_open: 0
     p1_open: 0
     findings_open: 0
     ops_queue_count: 0
   deferred_missions: []
+  unverified_assumptions: 0
+  sources_logged: 0
+  cost_estimate: 1.4
+  run:
+    duration_min: 40
+    note: dogfood; cross-vendor review drove 7 hardening rounds on the safety classifier
 ---
 
-# arch-build-readiness — adversarial FIX run (2026-06-20)
+# arch-build-readiness (adversarial-review-and-fix dogfood, 2026-06-21)
 
-Status: COMPLETE on BASE. Every confirmed finding from the frozen review
-(`docs/adversarial-audit-2026-06-20.md`) is CLOSED on `ravidsrk/adversarial-fresh`. No OPS or
-verify-at-scale items. Downstream human gates (BASE -> main promotion) are NOT done and are
-human-owned.
+Fresh adversarial review + fix of THIS week's new code (PRs #21-25), run to dogfood the disciplines.
+9 confirmed findings, all closed; `findings_open: 0`, `p0_open: 0`, `p1_open: 0`, `ops_queue_count: 0`.
 
-## Verification (on BASE, HEAD c444ceb)
+## Findings closed
+- run-sandboxed.sh (4): command-prefix bypass, bash -c not classified, reset --hard bare-remote,
+  echo/infra/gh substring false-positives. Plus 7 cross-vendor-review rounds of additional false
+  negatives (see below).
+- coupling-graph.py (1): relative imports silently dropped -> reconstructed.
+- render-dashboard.py (1): malformed YAML crashed the whole render -> caught + skipped.
+- fleet_outcome.py (3): NaN/inf accepted in cost_estimate + metrics, and bypassed eval_edge ordering
+  gates -> finiteness checks; eval_edge raises on non-finite.
 
-- `pytest tests/ -q`: 25 passed (was 11 before this run; ~14 regression tests added).
-- `./scripts/validate-all.sh`: All checks passed (EXIT 0) — skill-creator soft-skips with a WARN,
-  fleet-outcome OK, goal-condition OK, pytest 25 passed.
-- `./scripts/validate-fleet-outcome.sh`: readiness docs pass.
-- `./scripts/validate-goal-condition.sh --scan-docs`: OK.
-- `bash -n` on every script: OK.
-- RCE-01 acceptance: `tests/test_injection.py` proves a crafted single-quote mission payload writing
-  to an absolute marker under tmp is never executed and the mission is rejected ("unknown mission").
+## What the dogfood proved (and the honest limit)
+The cross-vendor adversarial review was the discipline that mattered. Reviewing the run-sandboxed.sh
+classifier, codex found a real RCE-class FALSE NEGATIVE in round 3: `run-sandboxed.sh bash -c
+'rm -rf /etc'` actually reached exec, because classify() joined `$*` and re-tokenized, destroying the
+`-c` quoting. My own regression tests had MASKED it by invoking `--classify "single string"` instead
+of the separate-argv form the wrapper actually receives. A same-vendor review would likely have
+shared that blind spot. The fix: classify the real argv verbatim, and tests now `shlex.split` (the
+real path).
 
-## Close-index (29 findings, by closing PR)
+Seven rounds total, each closing a genuine false negative (basename/`/bin/rm`, operand-consuming
+wrapper options, command-runner wrappers timeout/flock/doas, redirection, `&` background op, bundled
+`bash -ec`, `env -S`, positional-param `rm "$@"` construction, line continuation). Each fix is locked
+by a real-exec-path test that proves the `rm` does NOT run (the victim dir survives).
 
-| PR  | branch                 | findings closed                                                              | merge   |
-|-----|------------------------|------------------------------------------------------------------------------|---------|
-| #9  | fix-drivers (P0)       | RCE-01, GIT-02, CLAUDE-03, CODEX-04, YOLO-11, CYCLE-12, DRYRUN-13, KEYERR-14, PIN-17a | 1952611 |
-| #10 | fix-gstack-gates       | F1                                                                           | 378031a |
-| #11 | fix-claims-honesty     | PROV-01, PROV-02, PROV-04, PROV-06, PROV-08, PROV-09, GEM-001, GEM-002, GEM-003, RD-2, RD-3 | da894ba |
-| #12 | fix-validators         | VENV-08, LEDGER-09, DUP-10, PIN-17b                                          | 785c38e |
-| #13 | fix-fleet-outcome      | EVAL-05, VALIDATE-06, EVAL-07, FM-15, DEFER-16                               | c444ceb |
+HONEST LIMIT (documented in the script header): a static token classifier CANNOT soundly parse bash.
+The residual evasion class — command substitution `$()`, `eval` of a built string, base64, non-sh
+interpreters — is out of reach by construction. Where detectable (a `-c` string referencing `$@`/`$1`)
+the classifier FAILS SAFE to ASK; otherwise a determined caller can evade it. This is exactly why the
+orchestration-landscape research put container-use (an OS-level container) as the real sandbox
+boundary: this script is the cheap mechanical net, not the boundary.
 
-All 29 confirmed findings: CLOSED. No finding marked CODE_CLOSED (nothing needed OPS/verify-at-scale).
-The audit's VERIFIED-TRUE strengths were preserved (real arXiv citation kept, "20 skills" intact,
-`/goal` v2.1.139 claim intact, REL-001/002/003 still real) — confirmed by the PR#11 review.
+## Verification
+- pytest 175 passed (61 in the new adversarial-fix regression suite, incl. real-exec-path tests).
+- validate-all green.
+- Real-exec proof: bash -c / env -S / command / `&` / line-continuation / positional-param forms all
+  REFUSED before exec; the /tmp victim dirs survived every time.
 
-## What landed (highlights)
-
-- P0 RCE closed: both drivers pass `$MISSION`/`$ROOT` as argv to `python -c` and validate the mission
-  against `MISSION_DOCS`; no value is interpolated into a Python literal. Proven by a regression test.
-- Runtime adapters fixed: GIT-02 worktree-safe `.git` check, claude `cd`/`--add-dir` (no `--cwd`),
-  codex `codex exec`. YOLO auto-approve is now opt-in with a threat-model comment.
-- Engine hardened: `eval_edge` no longer throws an uncaught TypeError; `validate_outcome` enforces
-  types/enums and warns on unknown missions; status quote-strip + missing-metric semantics fixed;
-  frontmatter tolerates leading blank/BOM/CRLF; deferred_missions matches full ids + bare strings.
-- Validators robust: `validate-all` soft-skips a missing skill-creator; a shared `venv-bootstrap.sh`
-  verifies imports; `validate_fleet_outcome` no longer double-counts; the goal-condition ledger parser
-  terminates on any uppercase key. Pinned `requirements.txt`.
-- Claims made honest: merge rates use real cross-agent aggregates (docs 84 / build 74 / test ~61.5 /
-  perf 55) citing arXiv 2601.15195; invented categories removed; gemoji relabeled interactive-only
-  with "26 runs, 57 assertions" and a fork SHA; "fully-autonomous" qualified; research "Done/proven"
-  downgraded. gstack gate ids switched to the real unprefixed names; `./setup --host` attribution fixed.
-
-## OPS / VERIFY-AT-SCALE queue
-
-None. This is a skills/scripts repo with no money/keys/prod surface; acceptance was local pytest +
-shell harness on fixtures.
-
-## Downstream human gates (NOT done by the swarm)
-
-- Promote `ravidsrk/adversarial-fresh` -> `main` via a human meta-PR. (Out of scope; human-owned.)
-- No deploy, no OPS applies, no live-env changes were performed.
-
-## Recorded execution decisions
-
-- REVIEW_DOC resolved to `docs/adversarial-audit-2026-06-20.md` (the only frozen review in the tree;
-  the `__REVIEW_DOC__` placeholder was unsubstituted and the default path did not exist).
-- @grok dispatched via interactive Orca terminals (headless `grok -p` is auth-broken on this host —
-  the same GEM-001 issue). @codex reviews run via `codex exec --dangerously-bypass-approvals-and-sandbox`
-  (interactive `dispatch --inject` mis-executed the worker_done template). Integrator gh actions
-  (PR open/merge) performed by the coordinator; the essential independence (codex reviewing grok's
-  code) was preserved.
-- Two review FAILs were false negatives from the cross-cutting GIT-02 test failing in worktrees
-  pre-drivers-merge; resolved by merging drivers first then rebasing. Two real review findings were
-  fixed in additional rounds: a weak injection test (PR#9) and a missing CRLF test (PR#13).
+## OPS / human boundary
+None. All fixes are code-only, verified on local fixtures + harmless /tmp targets. No secrets, no
+deploy, no real-target destructive op was ever run.

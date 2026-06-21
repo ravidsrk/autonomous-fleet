@@ -17,10 +17,17 @@
 # INSIDE a container / VM / restricted user account when the target is genuinely untrusted, and
 # never let production credentials reach this script's ambient environment in the first place.
 #
-# RESIDUAL RISK: the classifier is a heuristic over the joined command line, not a security
-# boundary. It deliberately does NOT model subshells, command substitution, eval, base64-decoded
-# payloads, or a binary that re-shells internally. A determined caller CAN evade it; it is a net
-# against accidental / obvious damage. Pair it with real OS-level sandboxing for untrusted targets.
+# RESIDUAL RISK: the classifier is a STATIC heuristic over tokens, not a security boundary. A
+# command CONSTRUCTED AT SHELL RUNTIME cannot be resolved from its text, so it deliberately does NOT
+# model: command substitution `$(...)`/backticks, `eval` of a built string, base64/encoded payloads,
+# positional/parameter expansion that injects args (`bash -c 'rm "$@"' _ -rf x`), or a binary that
+# re-shells internally. Where such a construct is DETECTABLE (e.g. a `-c` string referencing `$@`/
+# `$1`) it FAILS SAFE to ASK; where it is not, a determined caller CAN evade it. It is a net against
+# accidental / obvious damage. Pair it with real OS-level sandboxing (container-use) for untrusted
+# targets — that, not this script, is the boundary.
+# It FAILS SAFE: on an ambiguous wrapper construction (e.g. an unknown wrapper's positional operand
+# preceding the real command) it errs toward DENY/ASK rather than ALLOW. Refusing a rare safe
+# command is acceptable; silently running an irreversible one is not.
 #
 # This wrapper is code-only. It does NOT run anything against a live target on its own.
 #
@@ -105,6 +112,10 @@ _RM_SYSTEM_PARENTS=" /etc /usr /bin /sbin /lib /lib64 /var /boot /dev /proc /sys
 _SUDO_VALUE_OPTS=" -C -D -g -h -p -R -r -T -t -U -u --chdir --chroot --close-from --command-timeout --group --host --other-user --prompt --role --type --user "
 # git global options that consume the NEXT argv token as their value (e.g. git -C <dir> push ...).
 _GIT_GLOBAL_VALUE_OPTS=" -C -c --git-dir --work-tree --namespace --exec-path "
+# Transparent command wrappers that run their argument as a command without changing its blast
+# radius (`command rm -rf /`, `env git push --force`, `xargs rm`...). Stripped so the classifier
+# resolves to the real binary instead of the wrapper word — failing CLOSED.
+_CMD_WRAPPERS=" command builtin exec eval nohup nice ionice time timeout stdbuf setsid setarch env xargs flock doas chrt taskset unbuffer "
 
 # _membership $needle $haystack-with-leading-and-trailing-spaces -> 0 if present.
 _in_set() {
@@ -220,8 +231,38 @@ _classify_statement_tokens() {
     done
   fi
 
+  # 2b) Strip transparent command wrappers (command/exec/env/xargs/nice/nohup/...) so a prefix
+  #     cannot hide the real binary. Basename-matched, so `/usr/bin/env` counts too. We do NOT try
+  #     to parse each wrapper's own options here (operand-taking opts like `env -u X`, `nice -n 5`
+  #     differ per tool); instead `wrapper_seen` triggers the defense-in-depth scan below.
+  while [[ $i -lt $n ]]; do
+    local w="${argv[$i]}" wb="${argv[$i]##*/}"
+    if _is_env_assignment "$w"; then i=$((i + 1)); continue; fi
+    if [[ "$wb" == "sudo" ]] || _in_set "$wb" "$_CMD_WRAPPERS"; then
+      i=$((i + 1))
+      # Skip the wrapper's own options so `time -p echo` resolves to echo (a data-consumer), not
+      # `-p`. Operand-taking opts leave their operand as the head, but the scan / data-consumer
+      # guard below handle whatever resolves.
+      while [[ $i -lt $n && "${argv[$i]}" == -?* ]]; do
+        # `env -S '<cmd>'` / `env --split-string=<cmd>` runs <cmd> as a command — classify it.
+        if [[ "$wb" == "env" ]]; then
+          local ssev=""
+          case "${argv[$i]}" in
+            -S|--split-string) [[ $((i + 1)) -lt $n ]] && ssev="$(classify "${argv[$((i + 1))]}")" ;;
+            -S?*)              ssev="$(classify "${argv[$i]#-S}")" ;;
+            --split-string=*)  ssev="$(classify "${argv[$i]#--split-string=}")" ;;
+          esac
+          [[ "$ssev" == "DENY" || "$ssev" == "ASK" ]] && { echo "$ssev"; return 0; }
+        fi
+        i=$((i + 1))
+      done
+      continue
+    fi
+    break
+  done
+
   [[ $i -ge $n ]] && return 0
-  local cmd="${argv[$i]}"
+  local cmd="${argv[$i]##*/}"
 
   # 3a) rm severity.
   if [[ "$cmd" == "rm" ]]; then
@@ -291,7 +332,102 @@ _classify_statement_tokens() {
       echo ASK
       return 0
     fi
+    # 3b') git reset --hard <ref>: DENY when ref is remote-tracking / upstream (discards local AND
+    #      matches a remote), ASK otherwise. Structural so bare `origin` and `@{upstream}` are caught
+    #      (the regex tier only matched refs containing a literal '/').
+    if [[ $j -lt $n && "${argv[$j]}" == "reset" ]]; then
+      local has_hard=0 ref="" k=$((j + 1)) t
+      while [[ $k -lt $n ]]; do
+        t="${argv[$k]}"
+        if [[ "$t" == "--hard" ]]; then has_hard=1
+        elif [[ "$t" != -* && -z "$ref" ]]; then ref="$t"; fi
+        k=$((k + 1))
+      done
+      if [[ $has_hard -eq 1 && -n "$ref" ]]; then
+        case "$ref" in
+          origin|upstream|*/*|*@\{u\}*|*@\{upstream\}*|*@\{push\}*) echo DENY; return 0 ;;
+          *) echo ASK; return 0 ;;
+        esac
+      fi
+    fi
   fi
+
+  # 3c) Infra tools: ASK only when the infra tool is the RESOLVED command (not a substring), so
+  #     `echo "terraform apply"` no longer false-positives.
+  case "$cmd" in
+    kubectl|helm|terraform|tofu|databricks)
+      local jj=$((i + 1)) tt
+      while [[ $jj -lt $n ]]; do
+        tt="${argv[$jj]}"
+        case "$tt" in apply|deploy|destroy|delete) echo ASK; return 0 ;; esac
+        jj=$((jj + 1))
+      done
+      ;;
+  esac
+
+  # 3c') gh: pr merge / repo delete -> DENY; release -> ASK. Structural per resolved command so a
+  #      string mentioning them (echo gh pr merge) no longer false-positives.
+  if [[ "$cmd" == "gh" ]]; then
+    local jg=$((i + 1))
+    while [[ $jg -lt $n && "${argv[$jg]}" == -* ]]; do jg=$((jg + 1)); done
+    local g="${argv[$jg]:-}" v="${argv[$((jg + 1))]:-}"
+    case "$g $v" in
+      "pr merge"|"repo delete") echo DENY; return 0 ;;
+    esac
+    [[ "$g" == "release" ]] && { echo ASK; return 0; }
+  fi
+
+  # 3d) Shell -c "<string>": re-classify the embedded command string recursively. Matches a bundled
+  #     short option containing c too (`-ec`, `-xc`), since `bash -ec '<cmd>'` also runs <cmd>.
+  case "$cmd" in
+    sh|bash|zsh|dash|ash)
+      local jc=$((i + 1))
+      while [[ $jc -lt $n ]]; do
+        case "${argv[$jc]}" in
+          -c|-[A-Za-z]*c*)
+            if [[ $((jc + 1)) -lt $n ]]; then
+              local cstr="${argv[$((jc + 1))]}" sev2
+              # A -c script whose behavior depends on caller-supplied POSITIONAL args ($@ $* $# $1..$9)
+              # cannot be resolved from the string alone, e.g. `bash -c 'rm "$@"' _ -rf /path` runs
+              # `rm -rf /path`. Static analysis can't see the runtime args, so FAIL SAFE: refuse (ASK)
+              # rather than judge only the literal string. (Same reason $()/eval are out of scope.)
+              if printf '%s' "$cstr" | grep -Eq '\$[@*#0-9]|\$\{[@*#0-9]'; then
+                echo ASK; return 0
+              fi
+              sev2="$(classify "$cstr")"
+              [[ "$sev2" == "DENY" || "$sev2" == "ASK" ]] && { echo "$sev2"; return 0; }
+            fi
+            break
+            ;;
+        esac
+        jc=$((jc + 1))
+      done
+      ;;
+  esac
+
+  # 3e) Defense in depth. If the resolved head is NEITHER a command classified above NOR a pure
+  #     data-consumer (echo/printf/test/... which take their args as DATA, not as a command), it may
+  #     be an unrecognized wrapper (timeout/flock/doas/...), a leading redirection, or a stray option
+  #     hiding the real binary. Scan the tail for a dangerous command head and re-classify there.
+  #     The data-consumer skip is what keeps `env echo rm -rf /` (safe) from false-positiving.
+  case "$cmd" in
+    rm|git|gh|kubectl|helm|terraform|tofu|databricks|sh|bash|zsh|dash|ash) ;;
+    echo|printf|:|true|false|test|'['|export|unset|read|cd|pwd|alias|set|source|.) ;;
+    *)
+      local p worst="" s b
+      for (( p = i + 1; p < n; p++ )); do
+        b="${argv[$p]##*/}"
+        case "$b" in
+          rm|git|gh|kubectl|helm|terraform|tofu|databricks|sh|bash|zsh|dash|ash)
+            s="$(_classify_statement_tokens "${argv[@]:p}")"
+            [[ "$s" == "DENY" ]] && { echo DENY; return 0; }
+            [[ "$s" == "ASK" ]] && worst="ASK"
+            ;;
+        esac
+      done
+      [[ -n "$worst" ]] && { echo "$worst"; return 0; }
+      ;;
+  esac
 
   return 0
 }
@@ -302,63 +438,76 @@ _classify_statement_tokens() {
 _regex_deny() {
   local line="$1"
   printf '%s' "$line" | grep -Eq 'git[[:space:]].*reset[[:space:]]+--hard[[:space:]]+[A-Za-z0-9_./-]+/' && return 0
-  printf '%s' "$line" | grep -Eq 'gh[[:space:]]+(pr[[:space:]]+merge|repo[[:space:]]+delete)([[:space:]]|$)' && return 0
   return 1
 }
 _regex_ask() {
   local line="$1"
-  printf '%s' "$line" | grep -Eq 'gh[[:space:]]+release([[:space:]]|$)' && return 0
-  printf '%s' "$line" | grep -Eq '(kubectl|helm|terraform|tofu|databricks)[[:space:]].*(apply|deploy|destroy|delete)([[:space:]]|$)' && return 0
-  # bare `terraform apply` / `tofu destroy` with no trailing arg.
-  printf '%s' "$line" | grep -Eq '(kubectl|helm|terraform|tofu|databricks)[[:space:]]+(apply|deploy|destroy|delete)([[:space:]]|$)' && return 0
+  # gh (pr merge / repo delete / release) and infra tools (terraform/tofu/kubectl/helm/databricks
+  # apply|destroy|...) are classified STRUCTURALLY per resolved command in _classify_statement_tokens
+  # (3c/3c'), not by substring, so a string merely mentioning them no longer false-positives.
   return 1
 }
 
 # classify <argv...> -> echoes DENY|ASK|ALLOW (highest severity across all statements).
 classify() {
-  local joined="$*"
-  local verdict="ALLOW"
+  local verdict="ALLOW" joined sev
+  local -a stmt=()
 
-  # Split the joined line into statements on ; && || | and newline, then classify each.
-  # A literal newline separator is emitted by sed; read consumes it line by line.
-  local statements
-  statements=$(printf '%s' "$joined" | sed -E 's/(&&|\|\||;|\|)/\
+  if [[ $# -eq 1 ]]; then
+    # ONE arg = a command STRING (tests, or a caller passing a whole line). First remove shell
+    # line-continuations (a backslash immediately before a newline) so `rm \<newline>-rf x` is the
+    # single command it really is; a BARE newline remains a statement separator. Then split on
+    # operators, tokenize each statement (respecting quotes), and classify.
+    local body="${1//\\$'\n'/}"
+    joined="$body"
+    local statements
+    # Split on every shell statement separator, including a single `&` (background) and `|&` — the
+    # argv path already splits on `&`, so the string path must match it or `cd x & rm -rf y` slips.
+    statements=$(printf '%s' "$body" | sed -E 's/(&&|\|\||\|&|;|\||&)/\
 /g')
-
-  local stmt sev
-  while IFS= read -r stmt; do
-    # Trim leading/trailing whitespace.
-    stmt="${stmt#"${stmt%%[![:space:]]*}"}"
-    stmt="${stmt%"${stmt##*[![:space:]]}"}"
-    [[ -z "$stmt" ]] && continue
-    # Tokenize into an array (bash 3.2: read -a from the newline-delimited token stream).
-    local -a toks=()
-    local tok
-    while IFS= read -r tok; do
-      [[ -z "$tok" ]] && continue
-      toks+=("$tok")
-    done < <(_tokenize_statement "$stmt")
-    [[ ${#toks[@]} -eq 0 ]] && continue
-    sev=$(_classify_statement_tokens "${toks[@]}")
-    if [[ "$sev" == "DENY" ]]; then
-      echo DENY
-      return 0
-    elif [[ "$sev" == "ASK" ]]; then
-      verdict="ASK"
-    fi
-  done <<EOF
+    local s
+    while IFS= read -r s; do
+      s="${s#"${s%%[![:space:]]*}"}"; s="${s%"${s##*[![:space:]]}"}"
+      [[ -z "$s" ]] && continue
+      local -a toks=(); local tok
+      while IFS= read -r tok; do [[ -n "$tok" ]] && toks+=("$tok"); done < <(_tokenize_statement "$s")
+      [[ ${#toks[@]} -eq 0 ]] && continue
+      sev=$(_classify_statement_tokens "${toks[@]}")
+      [[ "$sev" == "DENY" ]] && { echo DENY; return 0; }
+      [[ "$sev" == "ASK" ]] && verdict="ASK"
+    done <<EOF
 $statements
 EOF
-
-  # Regex tiers over the whole joined line.
-  if _regex_deny "$joined"; then
-    echo DENY
-    return 0
+  else
+    # REAL argv: $@ are already shell-split tokens. Use them VERBATIM — a quoted argument like
+    # `bash -c '<cmd string>'` stays ONE token (the bash -c handler re-classifies it). Do NOT
+    # re-join + re-tokenize: that loses the quoting and splits the -c command string (the bug
+    # that let `bash -c 'rm -rf /etc'` reach exec). Split statements only at standalone operators.
+    joined="$*"
+    local t
+    for t in "$@"; do
+      case "$t" in
+        ";"|"&&"|"||"|"|"|"&")
+          if [[ ${#stmt[@]} -gt 0 ]]; then
+            sev=$(_classify_statement_tokens "${stmt[@]}")
+            [[ "$sev" == "DENY" ]] && { echo DENY; return 0; }
+            [[ "$sev" == "ASK" ]] && verdict="ASK"
+            stmt=()
+          fi
+          ;;
+        *) stmt+=("$t") ;;
+      esac
+    done
+    if [[ ${#stmt[@]} -gt 0 ]]; then
+      sev=$(_classify_statement_tokens "${stmt[@]}")
+      [[ "$sev" == "DENY" ]] && { echo DENY; return 0; }
+      [[ "$sev" == "ASK" ]] && verdict="ASK"
+    fi
   fi
-  if [[ "$verdict" == "ALLOW" ]] && _regex_ask "$joined"; then
-    verdict="ASK"
-  fi
 
+  # Regex backstop over the joined line (reset --hard to a remote ref); structural checks cover rest.
+  if _regex_deny "$joined"; then echo DENY; return 0; fi
+  if [[ "$verdict" == "ALLOW" ]] && _regex_ask "$joined"; then verdict="ASK"; fi
   echo "$verdict"
 }
 

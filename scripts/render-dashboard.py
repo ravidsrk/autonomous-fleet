@@ -27,6 +27,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from lib.fleet_outcome import parse_readiness, split_frontmatter  # noqa: E402
@@ -153,7 +155,8 @@ def build_model(repo: Path) -> dict[str, Any]:
     for path in sorted(docs.glob("*-readiness.md")):
         try:
             outcome = parse_readiness(path)
-        except ValueError:
+        except (ValueError, yaml.YAMLError):
+            # A malformed readiness doc must not crash the whole dashboard; skip it.
             continue
         outcome = {**outcome, "_source": path.name}
         outcomes.append(outcome)
