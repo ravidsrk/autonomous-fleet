@@ -24,15 +24,21 @@ MISSION_METRICS: dict[str, frozenset[str]] = {
     "targeted-migration": frozenset({"migration_items_open", "old_axis_removed"}),
     "design-integration": frozenset({"parity_items_open", "regressions"}),
     "landing-page-convergence": frozenset({"divergences_open"}),
-    "legacy-rebuild": frozenset({"units_open", "floor_preserved"}),
+    "legacy-rebuild": frozenset({"units_open", "floor_preserved", "e2e_verified"}),
     "take-product-to-completion": frozenset(
-        {"in_items_open", "roadmap_count", "stubs_remaining"}
+        {"in_items_open", "roadmap_count", "stubs_remaining", "e2e_verified"}
     ),
     "scaffold-align": frozenset(
         {"align_items_open", "check_green", "seam_frozen", "scaffold_ok"}
     ),
     "contract-first-build": frozenset(
-        {"in_items_open", "roadmap_count", "stubs_remaining", "ops_queue_count"}
+        {
+            "in_items_open",
+            "roadmap_count",
+            "stubs_remaining",
+            "ops_queue_count",
+            "e2e_verified",
+        }
     ),
     "agents-layer": frozenset(
         {
@@ -43,7 +49,13 @@ MISSION_METRICS: dict[str, frozenset[str]] = {
             "deploy_pending_ops",
         }
     ),
+    "inference-cost": frozenset(
+        {"cost_regressed", "quality_regressed", "levers_open"}
+    ),
 }
+E2E_VERIFIED_MISSIONS = frozenset(
+    {"take-product-to-completion", "legacy-rebuild", "contract-first-build"}
+)
 
 
 def split_frontmatter(text: str) -> tuple[str | None, str]:
@@ -106,6 +118,17 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
             for mkey in MISSION_METRICS[mission]:
                 if mkey not in metrics:
                     errors.append(f"{prefix}: metrics missing '{mkey}' for {mission}")
+            if (
+                mission in E2E_VERIFIED_MISSIONS
+                and outcome.get("status") == "done"
+                and metrics.get("e2e_verified") is not True
+            ):
+                errors.append(
+                    f"{prefix}: cannot be done without end-to-end verification: "
+                    "a green test suite is not proof a product works; "
+                    "e2e_verified must be true (verify the real end-to-end "
+                    "result state, not exit codes)"
+                )
             for mkey, mval in metrics.items():
                 if isinstance(mval, bool):
                     continue
