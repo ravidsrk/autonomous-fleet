@@ -1,6 +1,6 @@
 # doc-sync progress (dogfood of the new disciplines, 2026-06-21)
 
-PHASE: FIXING
+PHASE: DONE
 MISSION: doc-sync   REPO: autonomous-fleet   BASE: ravidsrk/dogfood-doc-sync (off main@1e14409)
 COORDINATOR: this Claude Code session
 
@@ -28,8 +28,9 @@ would cluster it trivially.)
 
 ## TASK ROW
 TASK doc-sync-readme | FILE=README.md | PLACE=container-use(independent) | WORKER=codex(cross-vendor
-to the claude coordinator+reviewer) | CODED=f REVIEWED=f MERGED=f | reviewed_sha=- | NOTE=edits made
-inside a container-use environment, then checked out + reviewed + merged.
+to the claude coordinator+reviewer) | CODED=t REVIEWED=t MERGED=f | reviewed_sha=5a4c3e0 | NOTE=built
+in container-use env distinct-monarch; reviewed via container-use diff; applied via container-use
+apply; README committed 0f06825; PR opened (merge is the human gate).
 
 ## DISCIPLINES EXERCISED (evidence appended as the run proceeds)
 - RESEARCH: docs/research-notes.md (facts verified, unverified_assumptions: 0).
