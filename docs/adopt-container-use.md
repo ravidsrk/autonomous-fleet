@@ -10,6 +10,23 @@ This is an adapter-layer change, not a core change. The engine keeps calling PRI
 adapter resolves `PLACE`/`SPAWN_WORKER`/`CLEANUP` to container-use environments instead of raw
 `git worktree`. The core never learns the word "container".
 
+## Verified working (2026-06-21, this host)
+
+Not just a design: the full loop was driven end to end against a live `container-use` v0.4.2 over
+Docker, through the MCP, on a throwaway git repo.
+
+- `environment_create` -> env `accurate-bluegill`, base image `ubuntu:24.04`, remote ref
+  `container-use/accurate-bluegill` (a real git branch).
+- `environment_file_write hello.txt` -> committed to that branch.
+- `environment_run_cmd` inside the environment returned `Linux 6.12.76-linuxkit aarch64` and
+  `root`, an isolated Linux container, NOT the macOS host. That single run proves both gaps closed:
+  OS sandbox (container != host) and isolation (per-env branch).
+- Coordinator side: `container-use list` showed the env, `container-use diff <env>` showed the
+  hello.txt change, and `git branch -a` listed `remotes/container-use/<env>` for checkout/merge.
+
+So the adapter mapping below (`autonomous-fleet-adapter-claude-code` PLACE(independent) via
+container-use) is verified-working, not verified-design.
+
 ## What container-use gives us
 
 - One environment per agent: a fresh container plus a dedicated git branch, created on first tool
