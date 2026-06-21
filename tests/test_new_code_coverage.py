@@ -47,6 +47,12 @@ def test_coupling_main_json(tmp_path, monkeypatch, capsys):
     assert cg.main() == 0
     data = json.loads(capsys.readouterr().out)
     assert "clusters" in data and "hubs" in data and "files" in data
+    assert data["edges"], data
+    assert ["pkg/a.py", "pkg/__init__.py"] in data["edges"]
+    assert ["pkg/a.py", "pkg/b.py"] in data["edges"]
+
+    expected_cluster = {"pkg/__init__.py", "pkg/a.py", "pkg/b.py"}
+    assert any(expected_cluster <= set(cluster) and len(cluster) >= 3 for cluster in data["clusters"])
 
 
 def test_coupling_main_human_summary(tmp_path, monkeypatch, capsys):

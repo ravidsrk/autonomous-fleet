@@ -58,7 +58,9 @@ def test_valid_readiness_doc_returns_zero(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["validate", str(doc)])
     rc = vfo.main()
     assert rc == 0
-    assert "OK" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "OK" in out
+    assert "mission=doc-sync" in out
 
 
 def test_invalid_status_returns_one_with_fail(tmp_path, monkeypatch, capsys):
