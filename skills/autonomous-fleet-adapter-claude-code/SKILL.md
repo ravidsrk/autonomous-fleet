@@ -24,9 +24,10 @@ tool, or sub-sessions scoped to a git worktree). No separate orchestration daemo
 LEDGER is the authority and TodoWrite is the live mirror. Branch prefix: use `BRANCH_PREFIX` from
 core self-orientation (default `fleet/`; recorded in DECISIONS.md).
 
-This adapter resolves the core's PRIMITIVES to Claude Code mechanics. Where Claude Code cannot
-provide a primitive natively (e.g. cross-session blocking message queues), the adapter substitutes
-the file ledger + polling, and says so.
+This adapter resolves the core's PRIMITIVES to Claude Code mechanics. Native blocking message
+queues now exist under agent teams (SendMessage, automatic delivery, idle notifications); where a
+host has them off, the adapter substitutes the file ledger + inbox markers as the FALLBACK, and
+says so.
 
 ## PRECONDITIONS (the core calls for these; here's the Claude Code form)
 A git repo (REPO_ROOT resolvable) · `gh auth status` via Bash (else local merge-commits into BASE)
@@ -46,6 +47,18 @@ concurrently within one coordinator turn. There is no persistent external task d
 
 ## PRIMITIVE → CLAUDE CODE MECHANIC
 
+CAPABILITY TIER (detect once at start, record in DECISIONS.md):
+- TEAMS tier if `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (check env / settings.json). Native
+  SendMessage, automatic delivery, idle notifications, shared task list with dependency tracking +
+  file locking. Use it for WAIT/ASK/REPLY/SYNC_TASK_STATE directly.
+- SUBAGENT tier otherwise (default). Foreground/background subagents via the Task tool. Native
+  blocking WAIT and fan-out completion-collect; NO native mid-run ASK (workers decide from DECISION
+  DEFAULTS).
+- INBOX fallback only when neither holds (teams off AND background tasks disabled, or a degraded
+  binary): file markers under docs/.inbox/.
+The FILE LEDGER stays the durable cross-turn authority in every tier (the shared task list is
+per-session and its status can lag).
+
 ### PLACE(kind)
 - `independent` → `git worktree add ../<repo>-<slug> -b <BRANCH_PREFIX><slug> BASE` (isolated
   checkout on its own branch for a parallel PR).
@@ -59,7 +72,9 @@ concurrently within one coordinator turn. There is no persistent external task d
   a structured summary). Subagents run in auto mode by default.
 - Worktree sub-session path (for units needing an isolated long-running checkout): `git worktree
   add` per PLACE(independent), then drive the agent CLI in that directory via Bash. Use the tool's
-  non-interactive/auto flag.
+  non-interactive/auto flag. PLACE(independent) can also bind to native `isolation: worktree`
+  subagent frontmatter (or `claude --bg` session worktrees under .claude/worktrees/) rather than
+  only a hand-driven `git worktree add`.
 - "Ready" is immediate for subagents; for a sub-session, when its checkout exists and deps are
   installed.
 
@@ -70,24 +85,44 @@ spec and completion contract. Subagent: pass the full payload in the Task-tool p
 launch). Sub-session: write the payload into the worktree and start the agent CLI on it via Bash.
 
 ### WAIT(types, timeout)
-Subagents return to the coordinator when done — collect their structured results. For sub-sessions
-or long Bash-driven work, poll: re-read the FILE LEDGER and check the worktree's git state /
-process. A subagent still running = alive; do not abort it. There is no busy-wait daemon — the
-coordinator advances when a subagent returns or a polled ledger flag flips.
+- TEAMS tier: do not poll. Teammate messages and idle notifications arrive automatically (the lead
+  does not poll for updates); a finished teammate notifies the lead on stop. WAIT == let those
+  arrive, then act. Reconcile each against the FILE LEDGER, which is authoritative because
+  shared-task status can lag.
+- SUBAGENT tier: a FOREGROUND subagent blocks until complete and returns its summary (native
+  non-busy WAIT for one worker). For fan-out, launch BACKGROUND subagents (`background: true`, or
+  "run in the background", or `CLAUDE_CODE_FORK_SUBAGENT=1`) and collect each result as it returns
+  to the main conversation. A still-running subagent is alive, never abort it.
+- INBOX fallback: re-read the FILE LEDGER and `docs/.inbox/<task>.done` (completion) / `.ask`
+  (blocked question) markers on a bounded cadence via LOOP_POLL or a foreground re-read loop.
+A WAIT timeout or empty result is a checkpoint, not a failure (per core).
 
 ### INSPECT() — non-destructive
 Read the FILE LEDGER (docs/<mission>-progress.md) and `git worktree list` + `gh pr list --base
 BASE` via Bash. TodoWrite reflects current state for visibility. None of these consume anything.
 
 ### WORKER_DONE / ASK / REPLY
-- WORKER_DONE: a subagent writes its result into the ledger (flags + files modified + summary) and
-  returns a structured summary to the coordinator; that return IS the completion signal. A
-  sub-session writes a completion line into the ledger that the coordinator polls.
-- ASK/REPLY: a subagent cannot block on a coordinator mid-run. Resolve blocking questions by giving
-  workers the mission's DECISION DEFAULTS up front so they decide autonomously and record the
-  decision in DECISIONS.md. If a genuinely unanswerable decision arises, the worker records it as a
-  BLOCKED item in the ledger and returns; the coordinator resolves it on the next turn from the
-  defaults — never escalates to the user.
+- WORKER_DONE:
+  - TEAMS: the teammate marks its shared-list task `completed` and goes idle, auto-notifying the
+    lead; it also writes its result into the FILE LEDGER (flags + files + summary). The ledger
+    write is the durable signal; the idle notification is the wake.
+  - SUBAGENT: the subagent writes its result into the ledger and returns a structured summary; that
+    return (foreground) or arriving result message (background) IS the completion signal.
+  - INBOX: the worker writes its ledger result and touches `docs/.inbox/<task>.done`.
+- ASK / REPLY:
+  - TEAMS tier (native): a teammate ASKs the lead with `SendMessage` (or, under required-plan-
+    approval, a plan-approval request); the lead REPLYs with `SendMessage` (or approve/reject),
+    deciding from the mission DECISION DEFAULTS, never relaying to the user. SendMessage exists only
+    with `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`; a SendMessage to a stopped worker auto-resumes it.
+  - SUBAGENT tier (no native mid-run ASK): a background subagent that hits an unanswerable decision
+    cannot block the coordinator (its prompting tool call just fails). Give every worker the
+    DECISION DEFAULTS up front so it decides autonomously and records the choice in DECISIONS.md. If
+    still unanswerable, the worker records a BLOCKED item in the ledger and returns; the coordinator
+    resolves it next turn from the defaults.
+  - INBOX fallback: the worker writes the question to `docs/.inbox/<task>.ask` and BLOCKs in the
+    ledger; the coordinator answers from DECISION DEFAULTS into `docs/.inbox/<task>.reply` and
+    re-dispatches.
+  Never escalate a worker question to the user.
 
 ### OPEN_PR / MERGE_PR(conflict-aware) / CLEANUP — all via Bash + gh
 - OPEN_PR: `gh pr create --base BASE --head <BRANCH_PREFIX><slug> --title "<title>" --body "<body>"`.
@@ -99,8 +134,10 @@ BASE` via Bash. TodoWrite reflects current state for visibility. None of these c
 - CLEANUP: `git worktree remove ../<repo>-<slug>` for the merged unit; pull BASE.
 
 ### SYNC_TASK_STATE(task, status)
-Update the FILE LEDGER flag and the TodoWrite entry. (No external task daemon to sync — the ledger
-+ TodoWrite together are the task view.)
+Update the FILE LEDGER flag and the TodoWrite entry. In TEAMS tier, also mirror to the native
+shared task list (pending/in_progress/completed, with dependencies) in addition to the ledger +
+TodoWrite; the ledger remains source of truth because shared-task status can lag. (Otherwise no
+external task daemon to sync — the ledger + TodoWrite together are the task view.)
 
 ### SET_GOAL(condition) / UPDATE_GOAL / GOAL_COMPLETE / GOAL_BLOCKED
 
