@@ -95,10 +95,10 @@ Evaluate a campaign branch manually:
 Trigger the umbrella skill (`autonomous-fleet`) to route an vague request, or name a mission
 directly. Open the **target repo** and use plain language:
 
-- *"sync the docs"* → `doc-sync`
-- *"raise test coverage on payments"* → `test-coverage`
-- *"fix these bugs"* → `bug-batch`
-- *"take this product to the finish line"* → `take-product-to-completion`
+- _"sync the docs"_ → `doc-sync`
+- _"raise test coverage on payments"_ → `test-coverage`
+- _"fix these bugs"_ → `bug-batch`
+- _"take this product to the finish line"_ → `take-product-to-completion`
 
 Each mission activates `autonomous-fleet-core` + your runtime adapter automatically.
 
@@ -169,39 +169,39 @@ Worker / Deferred sections; readiness docs lead with `fleet-outcome` YAML.
 
 ## Available skills
 
-| Skill | Type | Notes |
-|-------|------|-------|
-| `autonomous-fleet` | Umbrella | Entry point — routes to mission or program + core + adapter |
-| `fleet-program` | Program | Mission chains + conditional campaign DAGs |
-| `setup-autonomous-fleet` | Setup | First run on a repo — adapter, prefix, default bundle |
-| `autonomous-fleet-core` | Engine | Required for every run |
-| `autonomous-fleet-adapter-orca` | Adapter | Orca orchestration |
-| `autonomous-fleet-adapter-claude-code` | Adapter | Claude Code |
-| `autonomous-fleet-adapter-grok` | Adapter | Grok Build (`/goal`, `update_goal`) |
-| `autonomous-fleet-adapter-codex` | Adapter | OpenAI Codex (`/goal`) |
-| `autonomous-fleet-adapter-template` | Guide | Copy to author a new adapter |
-| `doc-sync` | Mission · Tier 1 | Documentation, CI, and build-update tasks show the highest merge-success rate among AI-agent PRs (arXiv 2601.15195 — Ehsani et al., MSR 2026, AIDev dataset of ~33k PRs). |
-| `test-coverage` | Mission · Tier 1 | |
-| `dependency-update` | Mission · Tier 1 | |
-| `cleanup` | Mission · Tier 1 | |
-| `bug-batch` | Mission · Tier 2 | Reproduce-first gate |
-| `adversarial-review-and-fix` | Mission · Tier 2 | Two-phase workhorse |
-| `targeted-migration` | Mission · Tier 2 | |
-| `design-integration` | Mission · Tier 2 | |
-| `landing-page-convergence` | Mission · Tier 2 | |
-| `legacy-rebuild` | Mission · Tier 3 | |
-| `take-product-to-completion` | Mission · Tier 3 | |
+| Skill                                  | Type             | Notes                                                                                                                                                                     |
+| -------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `autonomous-fleet`                     | Umbrella         | Entry point — routes to mission or program + core + adapter                                                                                                               |
+| `fleet-program`                        | Program          | Mission chains + conditional campaign DAGs                                                                                                                                |
+| `setup-autonomous-fleet`               | Setup            | First run on a repo — adapter, prefix, default bundle                                                                                                                     |
+| `autonomous-fleet-core`                | Engine           | Required for every run                                                                                                                                                    |
+| `autonomous-fleet-adapter-orca`        | Adapter          | Orca orchestration                                                                                                                                                        |
+| `autonomous-fleet-adapter-claude-code` | Adapter          | Claude Code                                                                                                                                                               |
+| `autonomous-fleet-adapter-grok`        | Adapter          | Grok Build (`/goal`, `update_goal`)                                                                                                                                       |
+| `autonomous-fleet-adapter-codex`       | Adapter          | OpenAI Codex (`/goal`)                                                                                                                                                    |
+| `autonomous-fleet-adapter-template`    | Guide            | Copy to author a new adapter                                                                                                                                              |
+| `doc-sync`                             | Mission · Tier 1 | Documentation, CI, and build-update tasks show the highest merge-success rate among AI-agent PRs (arXiv 2601.15195 — Ehsani et al., MSR 2026, AIDev dataset of ~33k PRs). |
+| `test-coverage`                        | Mission · Tier 1 |                                                                                                                                                                           |
+| `dependency-update`                    | Mission · Tier 1 |                                                                                                                                                                           |
+| `cleanup`                              | Mission · Tier 1 |                                                                                                                                                                           |
+| `bug-batch`                            | Mission · Tier 2 | Reproduce-first gate                                                                                                                                                      |
+| `adversarial-review-and-fix`           | Mission · Tier 2 | Two-phase workhorse                                                                                                                                                       |
+| `targeted-migration`                   | Mission · Tier 2 |                                                                                                                                                                           |
+| `design-integration`                   | Mission · Tier 2 |                                                                                                                                                                           |
+| `landing-page-convergence`             | Mission · Tier 2 |                                                                                                                                                                           |
+| `legacy-rebuild`                       | Mission · Tier 3 |                                                                                                                                                                           |
+| `take-product-to-completion`           | Mission · Tier 3 |                                                                                                                                                                           |
 
-**20 skills** under `skills/`. List all: `npx skills add https://github.com/ravidsrk/autonomous-fleet --list`
+**24 skills** under `skills/`. List all: `npx skills add https://github.com/ravidsrk/autonomous-fleet --list`
 
 ### Campaign presets (`scripts/campaigns/`)
 
-| Preset | Nodes |
-|--------|-------|
-| `repo-health` | doc-sync → test-coverage → cleanup |
+| Preset            | Nodes                                                 |
+| ----------------- | ----------------------------------------------------- |
+| `repo-health`     | doc-sync → test-coverage → cleanup                    |
 | `ship-with-proof` | adversarial-review-and-fix → test-coverage → doc-sync |
-| `align-then-ship` | take-product-to-completion (+ pre-gate) |
-| `quality-gate` | adversarial-review-and-fix → test-coverage |
+| `align-then-ship` | take-product-to-completion (+ pre-gate)               |
+| `quality-gate`    | adversarial-review-and-fix → test-coverage            |
 
 Community skill hooks: `skills/autonomous-fleet-core/references/community-skills.md`.
 
