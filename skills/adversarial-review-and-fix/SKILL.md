@@ -47,8 +47,14 @@ Community catalog: `autonomous-fleet-core` → `references/community-skills.md`.
 | Role | Skills | If unavailable |
 |------|--------|----------------|
 | @claude (Phase 0 audit, skeptic) | `security-and-hardening`; `cso` when Optional `cso` active | Code-only audit per mission |
-| @grok (fix loop) | `code-simplification` when fix touches >50 lines or adds new abstraction | In-tree primitives per frozen review |
-| @codex (review) | — | Mission review gate only |
+| @codex (fix builder) | `code-simplification` when fix touches >50 lines or adds new abstraction | In-tree primitives per frozen review |
+| @claude (fresh build-blind reviewer) | — | Mission review gate only |
+| @claude (integrator) | — | Mission ship gate only |
+
+Stage-9 final form (Aula prompt 24, prompts.md L3013): @grok retired. @codex builds; a fresh
+build-blind @claude reviews; @claude integrates. The cross-vendor reviewer rule still holds — the
+fresh @claude reviewer must not have seen the build conversation (the reviewer terminal is a fresh
+session distinct from the builder's, and is handed the diff + acceptance contract as TEXT ONLY).
 
 ## Deferred missions
 
@@ -86,31 +92,40 @@ acceptance is demonstrated on staging/testnet/fixtures. Converge to the confirme
 reinterpret beyond them; never fix a refuted non-issue.
 
 ## THREE-LANE REMEDIATION
-After P0-SKEPTIC freezes CONFIRMED findings, classify every confirmed finding before BOOTSTRAP:
+Engine definition: see `engine.md` → LANE PATTERN. The engine defines Lane A IMPLEMENT+MERGE,
+Lane B DRAFT-BOTH+HUMAN-GATE, and Lane 0 REFUSE+SURFACE as the three terminal lanes. This mission
+inherits them; below are the mission-specific ledger flags that go in the CLOSE-INDEX.
 
-- **Lane A IMPLEMENT+MERGE**: the finding is safely fixable inside the repo. Create a normal fix
-  task, run the PR-per-task pipeline, prove acceptance, and merge.
-- **Lane B DRAFT BOTH + HUMAN GATE**: the finding needs editorial, brand, legal, disclosure, or
-  truth-claim judgement the fleet must NOT fabricate. Draft both concrete variants, record both in
-  `DECISIONS.md`, HALT at a human decision gate, and never auto-merge either variant.
-- **Lane 0 REFUSE + HUMAN ACTION**: the finding requires a human-only action such as credential
-  rotation, console/IAM change, legal approval, or production access the fleet cannot perform.
-  Refuse execution, surface a named `HUMAN_ACTION_REQUIRED:<finding-id>` in
-  `docs/arch-ops-actions.md`, and record the action without executing it.
+After P0-SKEPTIC freezes CONFIRMED findings, classify every confirmed finding before BOOTSTRAP and
+record its lane in the CLOSE-INDEX (`lane: A|B|0`):
+
+- **Lane A** → fix task in the PR-per-task pipeline; terminal flag `MERGED=true`.
+- **Lane B** → both variants drafted, recorded in `DECISIONS.md`, opened as a `do-not-merge`
+  labelled draft PR; terminal flag `HUMAN_GATED=true`. Never auto-merge either variant.
+- **Lane 0** → code-side mitigation ships in Lane A; the precise out-of-band action surfaces as
+  `HUMAN_ACTION_REQUIRED:<finding-id>` in `docs/arch-ops-actions.md`; terminal flags
+  `CODE_CLOSED=true, OPS_QUEUED=true`.
 
 ## ROLE PIPELINE
 - PHASE 0: @claude REVIEWER produces findings FROM THE CODE → @codex SKEPTIC narrows/refutes
   AGAINST THE CODE → freeze.
-- PHASE 1: @grok CODES each fix; @codex is the FRESH BUILD-BLIND reviewer of each fix PR; @claude
-  is the INTEGRATOR (opens PR, conflict-aware merge, worktree cleanup). @grok never reviews its
-  own work; @codex never writes code; @claude never authors fixes.
+- PHASE 1 (Stage-9 final form, Aula prompt 24, prompts.md L3013): @codex BUILDS each fix; a
+  FRESH BUILD-BLIND @claude reviews each fix PR (different terminal session than any prior
+  @claude that touched this run; cross-vendor reviewer rule); @claude INTEGRATES (opens PR,
+  conflict-aware merge, worktree cleanup). @codex never reviews its own work; the reviewer
+  @claude never writes code; the integrator never authors fixes.
 
 ## LEDGER
+Engine definition: see `engine.md` → FROZEN-ARTIFACT CLOSE TEST (EVID). The engine defines EVID as
+the standard close-test boolean for any frozen-artifact item; this mission's ledger uses it.
+
 `docs/arch-build-progress.md`. PHASE marker (REVIEW | REVIEW_FROZEN | FIXING | VERIFY); a FINDING
-CLOSE-INDEX (every confirmed ID by wave: `OPEN | CLOSED via PR#n | CODE_CLOSED via PR#n (OPS:
-…)`); per-fix-task rows with flags `CODED EVID PR_OPEN REVIEWED MERGED ACCEPT`; `EVID` = the
-finding's own Evidence reproduction re-run and no longer reproduces; an OPS/VERIFY-AT-SCALE list +
-recorded decisions.
+CLOSE-INDEX (every confirmed ID by wave, with its `lane: A|B|0`, in state
+`OPEN | CLOSED via PR#n | CODE_CLOSED via PR#n (OPS: …) | HUMAN_GATED via PR#n`); per-fix-task rows
+with flags `CODED EVID PR_OPEN REVIEWED MERGED ACCEPT`; an OPS/VERIFY-AT-SCALE list + recorded
+decisions. Example EVID repro (mission-specific): the worker re-runs the EXACT command from the
+finding's Evidence block (the `curl` that returned the 500, the test that asserted the wrong
+value, the script that reproduced the race) and sets `EVID=true` only when it no longer reproduces.
 
 ## TASK STRUCTURE
 - **P0-REVIEW [@claude, Opus-class]** — CODE-GROUNDED adversarial review (read the actual source;
@@ -161,6 +176,30 @@ docs/arch-build-readiness.md with fleet-outcome.status done and mission metrics 
 Review frozen; every confirmed finding CLOSED or CODE_CLOSED(+OPS recorded); every fix task
 terminal; docs/arch-build-readiness.md exists. Terminal state = engineering landed on BASE + OPS
 queue surfaced — NOT deployed, NOT promoted to main. Then send the FINAL report.
+
+## FIX-ONLY MODE — when the review is already done
+Source: Stage-9 prompt 25 (Fix-Only Variant), prompts.md L3015-L3017. This is the most-recurring
+real shape across prompts 19-24 — each was a specialization of this generic fix-only template
+against a specific real audit. When the user supplies `__REVIEW_DOC__` (e.g. an existing adversarial
+review markdown, an audit dossier, a frozen finding set), enter FIX-ONLY MODE:
+
+- **SKIP Phase 0 entirely** — no P0-REVIEW, no P0-SKEPTIC, no re-reviewing the code. The supplied
+  `__REVIEW_DOC__` IS the frozen source of truth; reinterpretation is forbidden.
+- **BOOTSTRAP from `__REVIEW_DOC__`** — coordinator ingests `__REVIEW_DOC__`, transcribes every
+  finding ID into the CLOSE-INDEX verbatim (no renumbering, no silent dropping), classifies each
+  into Lane A / B / 0 per the engine's LANE PATTERN, and derives the wave order and hot-file map
+  from the doc if it doesn't already state them.
+- **Run only Phase 1** — fix → PR → fresh build-blind review → merge per the engine's PR-per-task
+  pipeline. The EVID gate (engine: FROZEN-ARTIFACT CLOSE TEST) still applies: every finding closes
+  only when its own Evidence repro stops reproducing.
+- **Cross-vendor reviewer rule still holds** — the fresh build-blind reviewer for Phase 1 is the
+  Stage-9 final-form @claude reviewer (different terminal session than the @codex builder; handed
+  the diff + acceptance contract as TEXT ONLY; must not have seen the build conversation).
+- **Fresh-run semantics retarget to fix-only** — ignore prior fix ledgers and in-flight fix
+  branches; start a clean ledger and a clean BASE off the default branch at current HEAD.
+- **Empty/missing `__REVIEW_DOC__` is a hard surface, not a spin-up** — if the supplied doc is
+  missing, empty, or has no confirmed findings, the coordinator surfaces it as a hard gate to the
+  user rather than spinning up a fix run with nothing to fix.
 
 ## DECISION DEFAULTS (mission-specific)
 - The review is grounded in the CODE, not any existing doc. Phase 1 converges to CONFIRMED Fixes;

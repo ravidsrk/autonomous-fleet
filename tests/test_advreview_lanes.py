@@ -43,25 +43,21 @@ def test_three_lane_remediation_section_has_all_lanes() -> None:
     lanes = section(text, "THREE-LANE REMEDIATION", "ROLE PIPELINE")
     lanes_flat = squash(lanes)
 
-    assert "Lane A IMPLEMENT+MERGE" in lanes
-    assert "Lane B DRAFT BOTH + HUMAN GATE" in lanes
-    assert "Lane 0 REFUSE + HUMAN ACTION" in lanes
-    assert "editorial, brand, legal, disclosure" in lanes
-    assert "Draft both concrete variants" in lanes
-    assert "`docs/DECISIONS.md`" in lanes
-    assert "HALT at a human decision gate" in lanes
-    assert "never auto-merge" in lanes
+    # Engine reference present — LANE PATTERN now lives in engine.md.
+    assert "engine.md" in lanes
+    assert "LANE PATTERN" in lanes
+    # Mission-specific ledger flags still recorded per lane.
+    assert "Lane A" in lanes
+    assert "Lane B" in lanes
+    assert "Lane 0" in lanes
+    assert "`MERGED=true`" in lanes
+    assert "`HUMAN_GATED=true`" in lanes
+    assert "`CODE_CLOSED=true, OPS_QUEUED=true`" in lanes
+    assert "`DECISIONS.md`" in lanes
+    assert "Never auto-merge" in lanes
     assert "`HUMAN_ACTION_REQUIRED:<finding-id>`" in lanes
     assert "`docs/arch-ops-actions.md`" in lanes
-    assert "without executing it" in lanes
-    assert (
-        "Draft both concrete variants, record both in `docs/DECISIONS.md`, HALT at a human "
-        "decision gate, and never auto-merge either variant."
-    ) in lanes_flat
-    assert (
-        "Refuse execution, surface a named `HUMAN_ACTION_REQUIRED:<finding-id>` in "
-        "`docs/arch-ops-actions.md`, and record the action without executing it."
-    ) in lanes_flat
+    assert "`lane: A|B|0`" in lanes
     assert "auto-merge it without a human gate" not in lanes
     assert "SHOULD execute the human-only action itself" not in lanes
     assert "without waiting" not in lanes
@@ -74,8 +70,15 @@ def test_evid_flag_is_ledger_and_fix_loop_gate() -> None:
     ledger_flat = squash(ledger)
     tasks = section(text, "TASK STRUCTURE", "Runtime goal")
 
+    # Engine reference for EVID definition.
+    assert "engine.md" in ledger
+    assert "FROZEN-ARTIFACT CLOSE TEST" in ledger
+    # Mission-specific ledger flags still present.
     assert "`CODED EVID PR_OPEN REVIEWED MERGED ACCEPT`" in ledger
-    assert "`EVID` = the finding's own Evidence reproduction re-run and no longer reproduces" in ledger_flat
+    # Mission-specific EVID repro example carried in the ledger section.
+    assert "EVID=true" in ledger_flat
+    assert "only when it no longer reproduces" in ledger_flat
+    # The fix-loop section still wires EVID as the gate before OPEN_PR.
     assert "Before OPEN_PR" in tasks
     assert "EXACT reproduction from the" in tasks
     assert "finding's Evidence block" in tasks
