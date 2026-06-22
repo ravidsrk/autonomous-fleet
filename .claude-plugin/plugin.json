@@ -1,0 +1,25 @@
+{
+  "name": "autonomous-fleet",
+  "description": "Portable multi-agent engineering framework for fully-autonomous coding runs across orchestration tools. A tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and 14 mission skills (doc-sync, test-coverage, dependency-update, cleanup, bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, contract-first-build, scaffold-align, inference-cost) that compose into multi-step engineering campaigns.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Ravindra Kumar",
+    "email": "ravindrakumar8088@gmail.com",
+    "url": "https://github.com/ravidsrk"
+  },
+  "homepage": "https://github.com/ravidsrk/autonomous-fleet",
+  "repository": "https://github.com/ravidsrk/autonomous-fleet",
+  "license": "MIT",
+  "keywords": [
+    "autonomous-agents",
+    "multi-agent",
+    "engineering-automation",
+    "claude-code",
+    "codex",
+    "grok-build",
+    "orca",
+    "agent-skills",
+    "mission-skills",
+    "campaign-orchestration"
+  ]
+}
