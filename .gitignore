@@ -2,4 +2,5 @@
 .agents/
 __pycache__/
 .pytest_cache/
---help/
+--help/.coverage
+htmlcov/
