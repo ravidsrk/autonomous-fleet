@@ -42,8 +42,6 @@ Say this in your coding agent's chat, after installation:
 
 Each run takes minutes to hours depending on scope. You get GitHub notifications when PRs are ready to review.
 
-> ⚠️ **Early stage notice.** This is a young framework with real disciplines but limited external proof yet. Internal dogfood evidence lives in [`docs/external-dogfood/`](docs/external-dogfood/). Expect rough edges; please open issues.
-
 ---
 
 # Try it
