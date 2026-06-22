@@ -154,7 +154,7 @@ value, the script that reproduced the race) and sets `EVID=true` only when it no
   re-runs the same Evidence reproduction and re-demonstrates each finding's acceptance. Fix a
   FOUNDATION cluster's root cause once; dependent findings in that cluster's `CLOSES=[ids]` inherit
   closure through the same PR when their Evidence and acceptance gates pass.
-- **T-FINAL [@grok]** — build green, lint clean, full suite green incl. added tests; every
+- **T-FINAL [@claude]** — build green, lint clean, full suite green incl. added tests; every
   confirmed finding CLOSED or CODE_CLOSED(+OPS recorded). Output `docs/arch-build-readiness.md`
   starting with **`fleet-outcome` YAML** (`p0_open`, `p1_open`, `findings_open`, `ops_queue_count`;
   see fleet-outcome.md), then finding status, OPS queue, **Recommended next missions**, all PRs.
