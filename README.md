@@ -101,7 +101,7 @@ That's it. The rest of this README is for going deeper.
 
 # The full menu
 
-> 24 skills total. Install the ones you need with `--skill <name>`, or grab everything with `--skill '*'`.
+> 21 skills total. Install the ones you need with `--skill <name>`, or grab everything with `--skill '*'`.
 
 ### Daily housekeeping
 
@@ -111,7 +111,6 @@ That's it. The rest of this README is for going deeper.
 | [`test-coverage`](skills/test-coverage/) | Raise coverage on a specific module or file |
 | [`dependency-update`](skills/dependency-update/) | Bump deps, one PR per package, with per-package rollback |
 | [`cleanup`](skills/cleanup/) | Remove dead code, unused imports, lint debt — one sweep per axis |
-| [`scaffold-align`](skills/scaffold-align/) | Verify the scaffold matches the plan, then freeze the plan |
 
 > 💡 Why start with `doc-sync`? It has the **highest merge-success rate** of any AI-agent PR category in the AIDev dataset (~33k PRs across major repos). [arXiv:2601.15195](https://arxiv.org/abs/2601.15195), Ehsani et al., MSR 2026.
 
@@ -132,7 +131,6 @@ That's it. The rest of this README is for going deeper.
 |---|---|
 | [`legacy-rebuild`](skills/legacy-rebuild/) | Gradually rebuild a legacy module behind a feature seam |
 | [`take-product-to-completion`](skills/take-product-to-completion/) | Multi-week ship to launch — only finishes when end-to-end works |
-| [`contract-first-build`](skills/contract-first-build/) | Greenfield build on a frozen API contract + plan |
 
 ### Run a campaign (chain skills together)
 
@@ -156,7 +154,6 @@ These get pulled in automatically by the skills above:
 | [`autonomous-fleet-core`](skills/autonomous-fleet-core/) | The engine — every run goes through it |
 | [`fleet-program`](skills/fleet-program/) | The campaign runner — chains missions with conditional gates |
 | [`setup-autonomous-fleet`](skills/setup-autonomous-fleet/) | First-run repo configuration |
-| [`agents-layer`](skills/agents-layer/) | Stub-to-live cutover helper for agent integrations |
 
 And one adapter per supported runtime:
 
@@ -340,7 +337,7 @@ autonomous-fleet/
 │   │       ├── fleet-outcome.md         # readiness YAML spec
 │   │       └── runtime-goals.md         # /goal + ledger binding
 │   ├── autonomous-fleet-adapter-{orca,claude-code,grok,codex,template}/
-│   └── (14 mission skills)
+│   └── (12 mission skills)
 ├── docs/
 │   ├── external-dogfood/                # gemoji repo-health + ship-with-proof evidence
 │   ├── research-community-skills.md

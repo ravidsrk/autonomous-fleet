@@ -40,11 +40,11 @@ Both feed the same review pipeline. Use the Console form unless you already have
 **Repository:** https://github.com/ravidsrk/autonomous-fleet
 **Pinned SHA:** `2a0f7b9664fac8c19f192bac26809ee9f7360fd4` (or whatever `main` is at submission time)
 **Category:** development
-**One-line pitch:** Multi-agent engineering framework for fully-autonomous coding runs. One portable engine. 4 runtime adapters. 24 skills (5 infrastructure + 5 adapters + 14 missions).
+**One-line pitch:** Multi-agent engineering framework for fully-autonomous coding runs. One portable engine. 4 runtime adapters. 22 skills (5 infrastructure + 5 adapters + 12 missions).
 
 **Description** (paste into form):
 
-> Portable multi-agent engineering framework for fully-autonomous coding runs. One tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and 14 mission skills (doc-sync, test-coverage, dependency-update, cleanup, bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, contract-first-build, scaffold-align, inference-cost) that compose into multi-step engineering campaigns via fleet-program DAGs.
+> Portable multi-agent engineering framework for fully-autonomous coding runs. One tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and 12 mission skills (doc-sync, test-coverage, dependency-update, cleanup, bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, inference-cost) that compose into multi-step engineering campaigns via fleet-program DAGs.
 
 **Marketplace entry** (ready-to-paste JSON): see [`autonomous-fleet.marketplace-entry.json`](./autonomous-fleet.marketplace-entry.json)
 

@@ -28,33 +28,12 @@ MISSION_METRICS: dict[str, frozenset[str]] = {
     "take-product-to-completion": frozenset(
         {"in_items_open", "roadmap_count", "stubs_remaining", "e2e_verified"}
     ),
-    "scaffold-align": frozenset(
-        {"align_items_open", "check_green", "seam_frozen", "scaffold_ok"}
-    ),
-    "contract-first-build": frozenset(
-        {
-            "in_items_open",
-            "roadmap_count",
-            "stubs_remaining",
-            "ops_queue_count",
-            "e2e_verified",
-        }
-    ),
-    "agents-layer": frozenset(
-        {
-            "migration_items_open",
-            "seam_unwired_open",
-            "old_axis_removed",
-            "evals_passing",
-            "deploy_pending_ops",
-        }
-    ),
     "inference-cost": frozenset(
         {"cost_regressed", "quality_regressed", "levers_open"}
     ),
 }
 E2E_VERIFIED_MISSIONS = frozenset(
-    {"take-product-to-completion", "legacy-rebuild", "contract-first-build"}
+    {"take-product-to-completion", "legacy-rebuild"}
 )
 
 

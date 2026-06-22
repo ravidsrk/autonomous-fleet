@@ -6,11 +6,11 @@ This file provides guidance to AI coding agents (Claude Code, Cursor, GitHub Cop
 
 `autonomous-fleet` is a portable framework for running multi-agent engineering jobs designed for fully-autonomous coding runs across orchestration tools. A tool-agnostic **core** holds the method; thin **mission** skills describe specific jobs; per-tool **adapters** map the method to each runtime's real commands.
 
-24 skills are organized into 3 tiers:
+21 skills are organized into 3 tiers:
 
-- 🟦 **Tier 1 · Infrastructure** (5) — engine, entry point, program orchestrator, setup, agents-layer
+- 🟦 **Tier 1 · Infrastructure** (4) — engine, entry point, program orchestrator, setup
 - 🟪 **Tier 2 · Adapters** (5) — Grok, Claude Code, Codex, Orca, template
-- 🟧 **Tier 3 · Missions** (14) — doc-sync, test-coverage, dependency-update, cleanup, bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, contract-first-build, scaffold-align, inference-cost
+- 🟧 **Tier 3 · Missions** (12) — doc-sync, test-coverage, dependency-update, cleanup, bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, inference-cost
 
 # Skill Discovery
 
