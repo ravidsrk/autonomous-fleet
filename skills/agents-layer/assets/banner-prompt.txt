@@ -1,0 +1,28 @@
+Horizontal banner image, 2:1 aspect ratio (about 1200×600 feel).
+
+PALETTE (strict):
+  - Background: deep midnight #0B1220 (subtle cool gradient toward #0F172A at edges)
+  - Primary accent: warm amber #F59E0B
+  - Secondary accent: cool slate / steel blue #94A3B8
+  - Highlight: white #FFFFFF (sparingly)
+  - Ink for any text: warm off-white #F8FAFC
+
+STYLE: Clean schematic / cockpit / control-room aesthetic. Engineering-serious, not cyberpunk. Linear.app + Vercel + GitHub-Actions dark-mode feel. Thin precise lines, generous spacing, subtle drop shadows. NOT photorealistic, NOT neon, NOT glowing-grid cyberpunk.
+
+COMMON RULES:
+  - Top-left corner: small monospace text exactly: "skills/agents-layer"
+  - Bottom-center: thin horizontal amber accent line above a one-line caption: "the discipline layer · invariants + guards"
+  - No fake domain names, no garbled words, no made-up text labels
+  - All visible text must be ONLY the labels explicitly listed below — every label appears EXACTLY ONCE
+  - No real brand logos (no GitHub/Anthropic/OpenAI/Cursor logos), only abstract iconic glyphs
+
+
+COMPOSITION:
+  CENTER: a thin amber circular ring (like a perimeter / boundary). Inside the ring: 4 small slate-blue dots arranged in a square pattern, connected to each other with thin slate-blue lines forming an X shape.
+
+  Outside the ring, at the 4 cardinal directions (N, E, S, W), tiny amber chevron arrowheads pointing INWARD (toward the ring) — suggesting "containment".
+
+  TOP-RIGHT: small monospace warm off-white text exactly: "GUARDS"
+  BOTTOM-LEFT: small monospace exactly: "INVARIANTS"
+
+  These two words are the ONLY text besides the top-left + caption.

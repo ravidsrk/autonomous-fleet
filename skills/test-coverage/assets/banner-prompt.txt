@@ -1,0 +1,26 @@
+Horizontal banner image, 2:1 aspect ratio (about 1200×600 feel).
+
+PALETTE (strict):
+  - Background: deep midnight #0B1220 (subtle cool gradient toward #0F172A at edges)
+  - Primary accent: warm amber #F59E0B
+  - Secondary accent: cool slate / steel blue #94A3B8
+  - Highlight: white #FFFFFF (sparingly)
+  - Ink for any text: warm off-white #F8FAFC
+
+STYLE: Clean schematic / cockpit / control-room aesthetic. Engineering-serious, not cyberpunk. Linear.app + Vercel + GitHub-Actions dark-mode feel. Thin precise lines, generous spacing, subtle drop shadows. NOT photorealistic, NOT neon, NOT glowing-grid cyberpunk.
+
+COMMON RULES:
+  - Top-left corner: small monospace text exactly: "skills/test-coverage"
+  - Bottom-center: thin horizontal amber accent line above a one-line caption: "find untested code · add real tests"
+  - No fake domain names, no garbled words, no made-up text labels
+  - All visible text must be ONLY the labels explicitly listed below — every label appears EXACTLY ONCE
+  - No real brand logos (no GitHub/Anthropic/OpenAI/Cursor logos), only abstract iconic glyphs
+
+
+COMPOSITION:
+  CENTER: a horizontal bar (about 50% canvas width) made of 10 small adjacent rectangles like a coverage meter. The leftmost 7 are filled amber, the rightmost 3 are empty (slate-blue stroke only).
+  ABOVE the bar, small monospace warm off-white text exactly: "COVERAGE"
+  BELOW the bar, on the right side aligned under the 3 empty rectangles, small monospace warm off-white text exactly: "GAP"
+  Above the bar, on the right side, a small amber circular target icon with a center dot.
+
+  These two words ("COVERAGE", "GAP") are the ONLY text besides top-left + caption.
