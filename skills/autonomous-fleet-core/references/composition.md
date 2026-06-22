@@ -41,7 +41,7 @@ BASE branches, and DONE conditions will corrupt the run.
 
 When work is out of mission scope:
 
-1. Record the finding in `docs/DECISIONS.md`.
+1. Record the finding in `DECISIONS.md`.
 2. Add a row to the mission readiness doc under **Recommended next missions** (mission id,
    reason, blocker if any).
 3. **Do not** start the deferred mission in the same run.

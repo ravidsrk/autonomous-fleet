@@ -26,7 +26,7 @@ Read what already exists; do not assume:
 - `git rev-parse --show-toplevel`, `git remote -v`, default branch
 - `CLAUDE.md` / `AGENTS.md` — existing agent sections?
 - `docs/agents/fleet-config.md` — prior setup output?
-- `docs/DECISIONS.md` — recorded `BRANCH_PREFIX` or adapter choice?
+- `DECISIONS.md` — recorded `BRANCH_PREFIX` or adapter choice?
 - `.agents/skills/` or host skill dirs — which fleet skills are installed?
 - `gh auth status` — PR workflow available?
 
@@ -95,7 +95,7 @@ Update `## Autonomous fleet` in-place if it exists — no duplicate blocks.
 
 Write `docs/agents/fleet-config.md`.
 
-Append a one-line setup record to `docs/DECISIONS.md` with adapter, prefix, bundle, date.
+Append a one-line setup record to `DECISIONS.md` with adapter, prefix, bundle, date.
 
 ### 5. Install skills (if missing)
 
