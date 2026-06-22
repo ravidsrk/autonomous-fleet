@@ -31,7 +31,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib.fleet_outcome import parse_readiness, split_frontmatter  # noqa: E402
+from lib.fleet_outcome import parse_readiness  # noqa: E402
 
 ZONES = ("Working", "Needs you", "In review", "Ready to merge")
 
