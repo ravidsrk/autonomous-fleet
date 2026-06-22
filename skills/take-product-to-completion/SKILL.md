@@ -112,7 +112,7 @@ and a ROADMAP list (deferred, never built this run).
   ROADMAP in DECISIONS.md); nothing IN may be thinned. Write every IN/FIX item to the SCOPE
   INDEX. **CAPABILITY-BOUNDARY rail:** if a root blocker is a capability the fleet cannot
   conjure (missing AI engine, unavailable external API, credential the fleet must not handle),
-  surface `CAPABILITY_BOUNDARY:<name>` as a named human decision in `docs/DECISIONS.md`. Split
+  surface `CAPABILITY_BOUNDARY:<name>` as a named human decision in `DECISIONS.md`. Split
   the boundary into `BUILDABLE_NOW` vs `BLOCKED_ON_<boundary>`; build the buildable side fully,
   leave the blocked side named and unclaimed, and do not report DONE around it. This artifact is
   what the user should review.
@@ -165,7 +165,7 @@ Then send the FINAL report.
 - Mobile-first / fully responsive and a11y basics across all screens.
 - Capability boundary is not roadmap and not failure theater. If the product needs an AI engine,
   unavailable external API, human-held credential, or similar capability the fleet cannot conjure,
-  name the human decision in `docs/DECISIONS.md`, split buildable-now from
+  name the human decision in `DECISIONS.md`, split buildable-now from
   `blocked-on-<boundary>`, and keep the final outcome blocked until the boundary is resolved.
 - Any other ambiguity → the option that yields the most complete, professional product while
   still converging.

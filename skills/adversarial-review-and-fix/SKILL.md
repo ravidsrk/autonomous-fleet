@@ -92,7 +92,7 @@ After P0-SKEPTIC freezes CONFIRMED findings, classify every confirmed finding be
   task, run the PR-per-task pipeline, prove acceptance, and merge.
 - **Lane B DRAFT BOTH + HUMAN GATE**: the finding needs editorial, brand, legal, disclosure, or
   truth-claim judgement the fleet must NOT fabricate. Draft both concrete variants, record both in
-  `docs/DECISIONS.md`, HALT at a human decision gate, and never auto-merge either variant.
+  `DECISIONS.md`, HALT at a human decision gate, and never auto-merge either variant.
 - **Lane 0 REFUSE + HUMAN ACTION**: the finding requires a human-only action such as credential
   rotation, console/IAM change, legal approval, or production access the fleet cannot perform.
   Refuse execution, surface a named `HUMAN_ACTION_REQUIRED:<finding-id>` in
