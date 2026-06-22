@@ -46,8 +46,15 @@ Do not load a second mission skill in the same run. ROADMAP items defer to futur
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @grok (build areas, landing) | `frontend-design` | Completion boundary + per-area specs |
-| @claude (review, plan, ship) | — | Mission gates T1–T3 |
+| @claude (plan, T1 review, T3 boundary) | — | Mission gates T1–T3 |
+| @codex (build areas, landing) | `frontend-design` | Completion boundary + per-area specs |
+| @claude (fresh build-blind reviewer) | — | Mission review gate only |
+| @claude (integrator / ship) | — | Mission ship gate only |
+
+Stage-9 final form (Aula prompt 24, prompts.md L3013): @grok retired. @codex builds; a fresh
+build-blind @claude reviews each fix PR (different terminal session than the planner/integrator
+@claude); @claude integrates. The cross-vendor reviewer rule still holds — the reviewer must not
+have seen the build conversation, and is handed the diff + acceptance contract as TEXT ONLY.
 
 ## Deferred missions
 
@@ -79,10 +86,13 @@ end, the landing page rebuilt to the positioning, zero feature regressions, real
 everywhere. "A customer would pay for this and call it finished" — not "it demos."
 
 ## ROLE PIPELINE
+Stage-9 final form (Aula prompt 24, prompts.md L3013):
 - @claude PROBES + PLANS (adversarial review, research, the frozen boundary, per-area specs).
-- @grok CODES each area to full depth.
-- @codex REVIEWS each PR (fresh, build-blind): genuinely complete + full-depth, real tests, no
-  stubs/placeholders, nothing IN thinned, nothing out-of-boundary added, no regressions.
+- @codex CODES each area to full depth.
+- A FRESH BUILD-BLIND @claude REVIEWS each PR (different terminal session than the planner;
+  cross-vendor reviewer rule; handed diff + acceptance contract as TEXT ONLY): genuinely complete
+  + full-depth, real tests, no stubs/placeholders, nothing IN thinned, nothing out-of-boundary
+  added, no regressions.
 - @claude SHIPS: opens PR, merges (conflict-aware), cleans worktree.
 
 ## LEDGER
@@ -129,7 +139,14 @@ and a ROADMAP list (deferred, never built this run).
   no reachable half-built screens, coherent visual language. New ideas → ROADMAP.
 - **T_FINAL [@claude]** — build green, lint clean, full suite green. Walk the product as a new
   user end to end, zero dead ends; confirm every IN item fully implemented (zero stubs), every
-  prior capability still works, ROADMAP is honest future scope. Output
+  prior capability still works, ROADMAP is honest future scope.
+  **RESULT-STATE TERMINATION GATE (engine: `engine.md` → RESULT-STATE TERMINATION GATE).** Green
+  CI ≠ done. Walk the product as a new user end to end, then QUERY THE ACTUAL RESULT STATE —
+  direct DB queries, API responses, on-chain state, audit rows — to confirm the action HAPPENED.
+  Example from the Aula run (prompts.md L3013): approving an item in the UI must produce
+  (a) approved-count incremented, (b) non-zero `api_cost` recorded, (c) audit row written. Exit
+  codes don't prove this; querying the DB does. The `e2e_verified` readiness flag means the
+  result-state query passed, not that the test suite was green. Output
   `docs/completion-readiness.md` with **`fleet-outcome` YAML** (`in_items_open`, `roadmap_count`,
   `stubs_remaining`), scope/roadmap summary, **Recommended next missions**, all PRs. Ship as the
   final PR.
