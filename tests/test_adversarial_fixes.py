@@ -5,7 +5,6 @@ One test (or group) per finding, asserting the bug is closed.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import shlex
 import subprocess
