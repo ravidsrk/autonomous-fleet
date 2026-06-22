@@ -81,6 +81,49 @@ def test_eval_deferred_contains():
     assert eval_edge("deferred_missions contains test-coverage", outcome) is False
 
 
+def test_parse_readiness_rejects_missing_frontmatter(tmp_path: Path):
+    doc = tmp_path / "missing-readiness.md"
+    doc.write_text("# body only\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="missing YAML frontmatter"):
+        parse_readiness(doc)
+
+
+def test_parse_readiness_rejects_unclosed_frontmatter(tmp_path: Path):
+    doc = tmp_path / "unclosed-readiness.md"
+    doc.write_text("---\nfleet-outcome:\n  mission: doc-sync\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="missing YAML frontmatter"):
+        parse_readiness(doc)
+
+
+def test_parse_readiness_requires_fleet_outcome_mapping(tmp_path: Path):
+    no_key = tmp_path / "no-key-readiness.md"
+    no_key.write_text("---\nmission: doc-sync\n---\n# body\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="frontmatter must contain fleet-outcome key"):
+        parse_readiness(no_key)
+
+    scalar = tmp_path / "scalar-readiness.md"
+    scalar.write_text("---\nfleet-outcome: done\n---\n# body\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="fleet-outcome must be a mapping"):
+        parse_readiness(scalar)
+
+
+def test_validate_outcome_rejects_non_list_deferred_missions():
+    errors = validate_outcome({**DOC_SYNC_OUTCOME, "deferred_missions": "bug-batch"})
+
+    assert errors == ["fleet-outcome: deferred_missions must be a list"]
+
+
+def test_eval_edge_parses_boolean_operands_and_orders_bools():
+    assert eval_edge("ready == true", {"metrics": {"ready": True}}) is True
+    assert eval_edge("ready != false", {"metrics": {"ready": True}}) is True
+    assert eval_edge("ready >= true", {"metrics": {"ready": True}}) is True
+    assert eval_edge("ready > false", {"metrics": {"ready": True}}) is True
+
+
 def test_pick_next_docs_if_bugs_skips_bug_batch():
     campaign = {
         "edges": {

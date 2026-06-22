@@ -88,3 +88,57 @@ def test_gate_catches_a_known_real_mutation(tmp_path):
     assert "is not True" in (ROOT / "scripts" / "lib" / "fleet_outcome.py").read_text(
         encoding="utf-8"
     )
+
+
+def test_restore_all_rewrites_active_files(tmp_path):
+    f = tmp_path / "probe.txt"
+    f.write_text("ORIGINAL", encoding="utf-8")
+    mc._ACTIVE[f] = "ORIGINAL"
+    f.write_text("MUTATED", encoding="utf-8")
+    mc._restore_all()
+    assert f.read_text(encoding="utf-8") == "ORIGINAL"
+    assert not mc._ACTIVE
+
+
+def test_restore_all_swallows_unwritable_path(tmp_path):
+    # a path that can't be written (a directory) must not raise out of the emergency restore
+    mc._ACTIVE[tmp_path] = "x"
+    mc._restore_all()  # OSError swallowed
+    assert not mc._ACTIVE
+
+
+def test_no_mutations_selected_returns_2(capsys):
+    rc = mc.run(ROOT / "tests" / "mutations.yaml", {"no-such-id"}, quiet=True)
+    assert rc == 2
+    assert "no mutations selected" in capsys.readouterr().err
+
+
+def test_refuses_to_run_on_dirty_target(tmp_path, capsys):
+    _require_clean("README.md")
+    readme = ROOT / "README.md"
+    original = readme.read_text(encoding="utf-8")
+    manifest = _manifest(
+        tmp_path,
+        [
+            {
+                "id": "dirty-probe",
+                "file": "README.md",
+                "find": "autonomous-fleet",
+                "replace": "x",
+                "guards": ["tests/test_license.py"],
+            }
+        ],
+    )
+    try:
+        readme.write_text(original + "\n<!-- dirty -->\n", encoding="utf-8")
+        rc = mc.run(manifest, None, quiet=True)
+    finally:
+        readme.write_text(original, encoding="utf-8")
+    assert rc == 2
+    assert "uncommitted changes" in capsys.readouterr().err
+
+
+def test_main_entry_point_runs_gate(monkeypatch):
+    _require_clean("scripts/lib/fleet_outcome.py")
+    monkeypatch.setattr(sys, "argv", ["mutation_check", "--id", "e2e-gate-inert"])
+    assert mc.main() == 0  # main() + non-quiet caught print + the restore finally
