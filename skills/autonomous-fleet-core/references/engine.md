@@ -278,7 +278,7 @@ rolling summary + the next ready wave, not the full history. This bounds coordin
 loop survives a long campaign without ever hitting the handoff cliff.
 
 ═══════════════════════════════════════════════════════════
-PLAN/DAG VALIDATION GATE — validate the frozen task DAG before the FIRST SPAWN_WORKER (SPOQ).
+PLAN/DAG VALIDATION GATE — validate the frozen task DAG before the FIRST SPAWN_WORKER.
 ═══════════════════════════════════════════════════════════
 The decomposition is already frozen by the time you spawn; a cheap structural check on it before the
 first worker launches catches a malformed plan before it costs a wave of workers. Run ONCE, right
@@ -291,8 +291,10 @@ before the first SPAWN_WORKER, over the frozen task DAG in the ledger:
   it in the ledger; it bounds the initial spawn wave (with the concurrency cap) and feeds WORKER
   PLACEMENT. A width of 1 on a multi-task mission is a smell the decomposition over-serialized.
 This is a structural check on an ALREADY-frozen artifact, not re-planning: O(tasks+edges), no
-workers, no model spend. Cite SPOQ (arXiv 2606.03115: a pre-spawn plan-validity gate moved pass
-from 91% to 99.75%). A mission that declares no inter-task dependencies passes trivially.
+workers, no model spend. Empirically: validating the DAG before any worker spawns catches
+mis-decomposition cheaply (the cost is one extra coordinator pass; the alternative is failed
+workers and burned model spend). A mission that declares no inter-task dependencies passes
+trivially.
 
 ═══════════════════════════════════════════════════════════
 FROZEN SCOPE BOUNDARY: the frozen artifact caps the run.
@@ -369,15 +371,16 @@ WORKER PLACEMENT — the DECISION LOGIC (tool-agnostic). The adapter maps it to 
 - Always wait for the worker to be ready before DISPATCH (the adapter defines "ready"). Keep
   dependency chains ≤3–4 deep. Retire each isolated checkout the moment its PR merges; no
   speculative/duplicate workers. Log placement + concurrency per task.
-- COUPLING-AWARE PARTITIONING (run at decomposition, UPSTREAM of the hot-file rule below; Co-Coder):
+- COUPLING-AWARE PARTITIONING (run at decomposition, UPSTREAM of the hot-file rule below):
   before splitting work, build a static import/symbol graph of the touched files. Then: (a) CLUSTER
   tightly-coupled files (a file and the symbols it imports/defines that the change spans) into ONE
   task rather than slicing a coupled unit across parallel PRs that then fight at merge; (b) mark
   high-in-degree HUB / utility files (imported by many — base classes, shared types, core config) as
   SERIALIZE-ALWAYS singletons: at most one in-flight task may touch a hub, upstream of and stricter
   than the per-file hot rule. This is the same conflict-minimizing intuition the hot-file rule
-  encodes, applied at the GRAPH level before tasks exist. Cite Co-Coder (arXiv 2606.00953: +14%
-  pass, -35% cost on dependency-dense repos). Optional tooling: `scripts/coupling-graph.py` emits the
+  encodes, applied at the GRAPH level before tasks exist. Empirically: partitioning by
+  module-coupling (not just file-touch overlap) reduces review-time conflicts and reviewer-
+  rejections on the FOUNDATION cluster. Optional tooling: `scripts/coupling-graph.py` emits the
   import/symbol graph + hub list; absent it, derive coupling by inspection. A mission over loosely
   coupled files (the common case) clusters trivially and proceeds.
 - PARALLELISM: parallelize ACROSS non-overlapping files/modules; SERIALIZE work that touches the
