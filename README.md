@@ -22,7 +22,7 @@
 
 # What it is
 
-A library of skills you install into your coding agent (Claude Code, Grok, Codex, or Orca). Once installed, you describe a chunk of work in plain English. Behind the scenes, a small team of worker agents (usually 2–5) split it up, work in parallel on their own git branches, and open one pull request per piece — with the merge discipline, scope guardrails, and verification a senior engineer would apply.
+A library of skills you install into your coding agent (Claude Code, Grok, Codex, or [Orca](https://github.com/diggerhq/orca)). Once installed, you describe a chunk of work in plain English. In the background, a small team of worker agents (usually 2–5) split it up, work in parallel on their own git branches, and open one pull request per piece — with the same disciplines a senior engineer would apply: small commits, conflict-aware merges, a frozen scope per run, and verification that the change actually works end-to-end before it's marked done.
 
 **You stay the reviewer. They do the typing.**
 
@@ -38,7 +38,7 @@ Say this in your coding agent's chat, after installation:
 | *"Raise test coverage on the payments module"* | One PR per file being tested (typically 3–8 PRs). Coverage report in each PR description. |
 | *"Reproduce and fix these 12 bugs"* | One reproducer per bug → one fix PR per area of the code. Bugs that can't be reproduced get flagged, not faked. |
 | *"Red-team this API and patch what you find"* | A review report opened as a GitHub issue, then one PR per finding it patches. |
-| *"Take this product to launch-ready"* | A multi-step campaign (review → coverage → docs → end-to-end check). Stops if any step fails its verification check. |
+| *"Get this ready to ship"* | A multi-step campaign: review the surface → close findings → raise test coverage → sync the docs → check end-to-end works. Stops if any step fails. |
 
 Each run takes minutes to hours depending on scope. You get GitHub notifications when PRs are ready to review.
 
