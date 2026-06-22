@@ -1,5 +1,7 @@
 # scaffold-align
 
+> **Exploratory — not a live mission.** Labels below may be stale; SKILL.md frontmatter is authoritative. See ../../README.md for the promotion rule.
+
 <p align="center">
   <img src="assets/banner.jpg" alt="scaffold-align — autonomous-fleet skill" width="100%">
 </p>

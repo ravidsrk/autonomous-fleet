@@ -19,6 +19,8 @@ metadata:
   fleet-component: "mission"
 ---
 
+<!-- Corpus: prompts.md L2963 (Stage 8 Tier 3 grouping — high blast radius). Builder choice per Stage-9 final form (prompts.md L3013): @codex. -->
+
 
 # Mission: legacy-rebuild
 
@@ -43,7 +45,7 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @grok (rebuild units) | `frontend-design` if UI; else stack skill from manifests | Legacy floor + target architecture docs |
+| @codex (rebuild units) | `frontend-design` if UI; else stack skill from manifests | Legacy floor + target architecture docs |
 
 ## Deferred missions
 
@@ -73,8 +75,11 @@ build/module system, dead code); adopt a current best-practice stack; preserve a
 behaviour, data, and external contracts. Each rebuilt unit lands working and tested.
 
 ## ROLE PIPELINE
+
+**Builder choice (Stage-9 final form).** Per prompts.md L3013 (Aula run, Stage-9 prompt 24), @grok is retired for general-purpose builds. Flipping to @codex.
+
 - @claude AUDITS + captures the FLOOR + RESEARCHES + freezes the architecture + per-unit specs.
-- @grok CODES each unit on the modern architecture.
+- @codex CODES each unit on the modern architecture.
 - @codex REVIEWS each PR (fresh, build-blind): conforms to target architecture, preserves the
   unit's floor behaviour, real green tests, no legacy anti-pattern reintroduced.
 - @claude SHIPS: opens PR, conflict-aware merge, worktree cleanup.
@@ -106,7 +111,7 @@ via PR#n`).
 - **T-FOUNDATION [relay]** — establish the new architecture's foundation (modern build/bundler,
   project structure, dependency upgrades to current versions, base tooling + test harness). Gates
   dependent units.
-- **T-UNITS… [per unit, loop]** — @grok rebuilds the unit on the modern architecture preserving
+- **T-UNITS… [per unit, loop]** — @codex rebuilds the unit on the modern architecture preserving
   its floor behaviour (tests) → @codex reviews (architecture conformance + feature parity + real
   green tests) → @claude ships. Independent units parallel; file-overlapping/dependent serialized.
 - **T-FINAL [@claude]** — build green (on the NEW build system), lint clean, full suite green. The

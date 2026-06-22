@@ -20,6 +20,8 @@ metadata:
   fleet-component: "mission"
 ---
 
+<!-- Corpus: prompts.md L2953-2964 (Stage 8 distillation, Tier 1 grouping at L2961 names doc-sync as run-unattended); see docs/doc-sync-readiness.md for the dogfood run. -->
+
 
 # Mission: doc-sync
 

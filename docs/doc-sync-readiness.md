@@ -26,7 +26,8 @@ behind. Closed that drift.
 
 - Mission table: added the 4 missions that existed under skills/ but were not listed, scaffold-align
   (Tier 1), inference-cost (Tier 2), contract-first-build (Tier 3), agents-layer (Tier 3). The table
-  now lists all 15 mission skills, grouped by tier.
+  now lists all 15 mission skills, grouped by tier. (Historical state; later reduced to
+  12 after the 2026-06-22 exploratory move — see follow-up below.)
 - Layout tree: added the same 4 mission directories to the skills/ tree.
 - 2026-06-22 follow-up: three of those four (scaffold-align, contract-first-build, agents-layer)
   were moved to docs/exploratory/missions/ because they are not on the Stage 8 distillation list

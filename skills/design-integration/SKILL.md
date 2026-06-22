@@ -19,6 +19,8 @@ metadata:
   fleet-component: "mission"
 ---
 
+<!-- Corpus: prompts.md L2962 (Stage 8 Tier 2 grouping) + Stage-6 prompts 15-16: "Krawl Design-Integration to Parity" at L2038 and "Design-Adoption via MCP" at L2330. -->
+
 
 # Mission: design-integration
 
@@ -82,6 +84,13 @@ behaves as the design, zero feature regressions, every flow working. No partial 
 half-migrated screens reachable.
 
 ## ROLE PIPELINE
+
+**Builder choice (Stage-9 carryover).** This mission keeps @grok as builder
+because Stage 6 (prompts.md L1488, L2038) showed @grok+frontend-design
+produces materially better visual fidelity on landing-page and design-parity
+runs than @codex. Stage-9's general retirement of @grok (prompts.md L3013)
+does not apply to design/landing missions.
+
 - @claude IMPORTS the design + PROBES the existing product + builds the PARITY MAP + thin per-area
   specs.
 - @grok CODES each area to full depth (visual match + feature).

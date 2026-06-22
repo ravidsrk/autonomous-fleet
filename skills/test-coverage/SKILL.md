@@ -18,6 +18,7 @@ metadata:
   fleet-component: "mission"
 ---
 
+<!-- Corpus: prompts.md L2953-2964 (Stage 8 distillation, Tier 1 grouping at L2961); see docs/test-coverage-progress.md for the dogfood run (SIGNAL RECONCILIATION caught a real gap). -->
 
 # Mission: test-coverage
 

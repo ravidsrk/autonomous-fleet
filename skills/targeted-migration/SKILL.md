@@ -19,6 +19,8 @@ metadata:
   fleet-component: "mission"
 ---
 
+<!-- Corpus: prompts.md L2962 (Stage 8 Tier 2 grouping). Builder choice per Stage-9 final form (prompts.md L3013): @codex. -->
+
 
 # Mission: targeted-migration
 
@@ -43,7 +45,7 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @grok (migrate) | Stack skill matching repo if installed (`nextjs`, `wrangler`, etc.) | Target framework docs + migration guide |
+| @codex (migrate) | Stack skill matching repo if installed (`nextjs`, `wrangler`, etc.) | Target framework docs + migration guide |
 
 ## Deferred missions
 
@@ -66,6 +68,9 @@ a rebuild: only the target axis changes; the rest of the system is preserved exa
 and shippable per PR; at every merge the app builds and tests pass.
 
 ## ROLE PIPELINE
+
+**Builder choice (Stage-9 final form).** Per prompts.md L3013 (Aula run, Stage-9 prompt 24), @grok is retired for general-purpose builds. Flipping to @codex.
+
 - @claude plans the migration (inventory all usages, sequence, compatibility strategy) and codes
   each increment.
 - @codex REVIEWS each PR (fresh, build-blind): correctly migrated to the new axis, behaviour

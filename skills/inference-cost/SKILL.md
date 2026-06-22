@@ -18,6 +18,8 @@ metadata:
   fleet-component: "mission"
 ---
 
+<!-- Corpus: prompts.md L2987 — Stage-9 prompt 18 "Inference-Cost Optimization (sanctioned levers only)". -->
+
 
 # Mission: inference-cost
 
