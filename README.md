@@ -146,9 +146,10 @@ Every readiness doc **must lead** with this YAML — campaign edges, the ledger,
 ```yaml
 fleet-outcome:
   mission: test-coverage
-  status: green                    # green | red | partial
-  e2e_verified: true               # ← real end-to-end state, not exit codes
-  unverified_assumptions: 0        # ← required to be 0 before progression
+  status: green                  # green | red | partial
+  e2e_verified: true             # real end-to-end state, not exit codes
+  unverified_assumptions: 0      # required to be 0 before progression
+  wt_clean: true                 # worktree cleanup tracked
   coverage:
     before: 41.2
     after: 78.6
@@ -159,8 +160,7 @@ fleet-outcome:
   cost_estimate:
     usd: 1.84
     model: grok-4-fast
-  wt_clean: true                   # ← worktree cleanup tracked
-  next_mission_hint: doc-sync      # ← optional campaign hint
+  next_mission_hint: doc-sync    # optional campaign hint
 ```
 
 Full spec: [`skills/autonomous-fleet-core/references/fleet-outcome.md`](skills/autonomous-fleet-core/references/fleet-outcome.md)
@@ -228,8 +228,8 @@ List all skills via the marketplace: `npx skills add https://github.com/ravidsrk
 - External facts → monid-verified, logged to `docs/research-notes.md`
 - `unverified_assumptions: 0` gate enforced before completion
 - Per-task model/cost routing emits `cost_estimate` in `fleet-outcome`
-- Commands pass through [`scripts/run-sandboxed.sh`](scripts/run-sandboxed.sh) (classifier + env scrub)
-- Optional container-use placement → isolated container + git branch per worker
+- Commands pass through [`scripts/run-sandboxed.sh`](scripts/run-sandboxed.sh) — classifier + env scrub
+- Optional `container-use` placement gives each worker an isolated VM + git branch
 
 ### 🎯 Anti-inflation gates
 
@@ -284,11 +284,12 @@ Then:
 
 ```bash
 npx skills init my-new-mission              # scaffold
-# follow .agents/skills/skill-creator/SKILL.md
 ./scripts/validate-skills.sh                # validate
 ```
 
-For a new runtime adapter, copy [`skills/autonomous-fleet-adapter-template/`](skills/autonomous-fleet-adapter-template/) and wire the four required hooks.
+Follow the `skill-creator` workflow at `.agents/skills/skill-creator/SKILL.md` between those two steps.
+
+For a new runtime adapter, copy [`skills/autonomous-fleet-adapter-template/`](skills/autonomous-fleet-adapter-template/) and fill the six primitives: `PLACE`, `SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`, `SYNC_TASK_STATE`.
 
 ---
 
