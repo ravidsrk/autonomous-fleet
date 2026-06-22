@@ -30,3 +30,6 @@ jobs:
 
       - name: Run all validators and tests
         run: ./scripts/validate-all.sh
+
+      - name: Mutation gate (assert tests catch representative bugs)
+        run: ./scripts/mutation-check.sh
