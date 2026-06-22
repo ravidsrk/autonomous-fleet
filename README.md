@@ -214,7 +214,7 @@ The framework has four layers. You only interact with the top layer; the rest ha
 │  adapter-{claude-code, grok, codex, orca, template}          │
 │  ↑ maps the engine to one runtime's real commands            │
 ├──────────────────────────────────────────────────────────────┤
-│  missions × 14                                               │
+│  missions × 12                                               │
 │  Tier 1 (recurring) → Tier 2 (campaign) → Tier 3 (ship)      │
 └──────────────────────────────────────────────────────────────┘
 ```

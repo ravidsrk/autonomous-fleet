@@ -479,11 +479,6 @@ Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
   If a newer SHA lands on the branch before SHIP (a fix-round push, a rebase, any commit), the prior
   PASS is OUTDATED: clear REVIEWED and force a re-review of the new SHA. Never ship a PASS that was
   graded against a SHA the branch has since moved past.
-  SHA-PIN (from AO code-review-manager.ts): record the exact reviewed SHA (`git rev-parse HEAD` on
-  the branch) in the task row alongside REVIEWED. A PASS is bound to THAT SHA, not the branch name.
-  If a newer SHA lands on the branch before SHIP (a fix-round push, a rebase, any commit), the prior
-  PASS is OUTDATED: clear REVIEWED and force a re-review of the new SHA. Never ship a PASS that was
-  graded against a SHA the branch has since moved past.
 
 ═══════════════════════════════════════════════════════════
 DONE CONDITION: regression-catching test.
