@@ -109,7 +109,7 @@ def _py_imports(path: Path) -> list[str]:
                     names.append(node.module)
                     names.extend(f"{node.module}.{a.name}" for a in node.names)
                 else:
-                    names.extend(a.name for a in node.names)
+                    names.extend(a.name for a in node.names)  # pragma: no cover - parser
             else:
                 # PEP 328 relative import (from . / from .x / from ..x). Reconstruct a best-effort
                 # dotted name anchored on the file's package dir so the suffix index can resolve it,

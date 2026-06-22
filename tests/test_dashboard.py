@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -106,3 +109,53 @@ def test_render_html_is_self_contained(tmp_path: Path):
     # Renders a real task and the readiness mission.
     assert "build-three" in out
     assert "doc-sync" in out
+
+
+def test_table_parser_skips_malformed_and_header_like_rows():
+    rd = _load()
+    rows = rd._parse_table_rows(
+        "\n".join(
+            [
+                "| TASK | CODED | NOTE |",
+                "|------|-------|------|",
+                "| too | many | cells | here |",
+                "| TASK | t | repeated header |",
+                "| real-task | t | valid |",
+            ]
+        ),
+        "ledger.md",
+    )
+
+    assert rows == [
+        {
+            "name": "real-task",
+            "flags": {"CODED": "t"},
+            "note": "valid",
+            "meta": {"NOTE": "valid"},
+            "source": "ledger.md",
+        }
+    ]
+
+
+def test_build_model_skips_malformed_readiness_docs(tmp_path: Path):
+    rd = _load()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "bad-readiness.md").write_text("# no frontmatter\n", encoding="utf-8")
+
+    model = rd.build_model(tmp_path)
+
+    assert model["outcomes"] == []
+    assert all(tasks == [] for tasks in model["zones"].values())
+    assert model["done"] == []
+
+
+def test_dashboard_main_rejects_repo_without_docs(tmp_path: Path, monkeypatch, capsys):
+    rd = _load()
+    monkeypatch.setattr(sys, "argv", ["rd", "--repo", str(tmp_path)])
+
+    with pytest.raises(SystemExit) as excinfo:
+        rd.main()
+
+    assert excinfo.value.code == 2
+    assert f"{tmp_path}/docs not found" in capsys.readouterr().err
