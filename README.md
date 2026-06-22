@@ -1,8 +1,8 @@
 <h1 align="center">autonomous-fleet</h1>
 
 <p align="center">
-  <strong>Portable multi-agent engineering framework for fully-autonomous coding runs.</strong><br/>
-  One tool-agnostic engine. 4 runtime adapters. 14 mission skills. Published as <a href="https://agentskills.io/">Agent Skills</a>.
+  <strong>You describe the work. A team of AI agents ships the PRs.</strong><br/>
+  Drop-in skills for Claude Code, Cursor, Grok, Codex, and Orca.
 </p>
 
 <p align="center">
@@ -20,29 +20,180 @@
 
 ---
 
-# What an autonomous run actually does
+# What it is
 
-In the **target repo**, the operator says:
+A library of skills you install into your coding agent (Claude Code, Cursor, Codex, Grok, or Orca). Once installed, you describe a chunk of work in plain English. Behind the scenes, several worker agents split it up, work in parallel on their own git branches, and open one pull request per piece — with the merge discipline, scope guardrails, and verification a senior engineer would apply.
 
-> *"raise test coverage on the payments module"*
-
-What happens, in order:
-
-1. `autonomous-fleet` (umbrella) routes the request → `test-coverage` mission
-2. `test-coverage` activates `autonomous-fleet-core` + the configured adapter (e.g. `grok`)
-3. The adapter binds the run to the runtime's native `/goal` loop ([runtime-goals.md](skills/autonomous-fleet-core/references/runtime-goals.md))
-4. Workers receive a coupling-graph slice, a frozen scope boundary, and the mission's `## Worker skills` table
-5. PRs open one-per-unit; commits preserved, conflict-aware merges, checkout cleanup on every merge
-6. Readiness doc emits machine-readable `fleet-outcome` YAML; the campaign edge evaluator gates on it
-7. File ledger survives compaction; `render-dashboard.py` projects attention zones from the ledger
-
-No babysitting. The discipline lives in the engine, not in the prompt.
-
-> Headless execution still requires runtime CLI auth and isn't end-to-end validated yet. Use the interactive agent + `/goal` when CLI auth is unavailable.
+You stay the reviewer. They do the typing.
 
 ---
 
-# The model
+# What you can ask it to do
+
+Say this in your coding agent's chat, after installation:
+
+| You say | What it ships |
+|---|---|
+| *"Sync the docs to match the code"* | One PR per stale doc file. Drift index updated. Lint passing. |
+| *"Raise test coverage on the payments module"* | Multiple PRs adding tests by file. Coverage report in each PR description. |
+| *"Fix these 12 bugs"* | One reproducer per bug → one fix PR per surface. Skipped if it can't repro. |
+| *"Red-team this API surface and patch the findings"* | A review report opened as an issue, then PRs that close each finding. |
+| *"Take this product to launch-ready"* | A multi-mission campaign — review → coverage → docs → e2e gate. Stops when a gate fails. |
+
+No babysitting between steps. You get GitHub notifications when PRs are ready to review.
+
+---
+
+# Try it in 60 seconds
+
+### Step 1 — Install the skills into your repo
+
+Open a terminal in your project. Run:
+
+```bash
+npx skills add https://github.com/ravidsrk/autonomous-fleet \
+  --skill setup-autonomous-fleet \
+  --skill autonomous-fleet \
+  --skill autonomous-fleet-core \
+  --skill autonomous-fleet-adapter-claude-code \
+  --skill doc-sync \
+  -y
+```
+
+This creates a `.agents/skills/` folder (gitignored — your `git status` stays clean). The folder works with Claude Code, Cursor, Codex, Grok, and Orca.
+
+> Using a different agent? Replace `autonomous-fleet-adapter-claude-code` with `-grok`, `-codex`, or `-orca`. Want every skill? Use `--skill '*'`.
+
+### Step 2 — Configure once
+
+Open your coding agent's chat window (Claude Code, Cursor's AI panel, whatever you use). Type:
+
+```
+/setup-autonomous-fleet
+```
+
+It asks which agent you're on and which branch prefix to use, then writes the config.
+
+### Step 3 — Ask it to do something
+
+Same chat window. Plain English:
+
+```
+sync the docs to match the code
+```
+
+You'll see: a plan written first, then worker agents kicked off, then PRs appear in GitHub as each one finishes. Each PR has a readiness doc explaining what was done and why.
+
+That's it. The rest of this README is for when you want to go deeper.
+
+---
+
+# The full menu
+
+> 24 skills total. Install the ones you need with `--skill <name>`, or grab everything with `--skill '*'`.
+
+### Daily housekeeping
+
+| Skill | Ask it to… |
+|---|---|
+| [`doc-sync`](skills/doc-sync/) | Sync README, CI files, and build scripts to match the code |
+| [`test-coverage`](skills/test-coverage/) | Raise coverage on a specific module or file |
+| [`dependency-update`](skills/dependency-update/) | Bump deps, one PR per package, with per-package rollback |
+| [`cleanup`](skills/cleanup/) | Remove dead code, unused imports, lint debt — one sweep per axis |
+| [`scaffold-align`](skills/scaffold-align/) | Verify the scaffold matches the plan, then freeze the plan |
+
+> 💡 Why start with `doc-sync`? It has the **highest merge-success rate** of any AI-agent PR category in the AIDev dataset (~33k PRs across major repos). [arXiv:2601.15195](https://arxiv.org/abs/2601.15195), Ehsani et al., MSR 2026.
+
+### Multi-step jobs
+
+| Skill | Ask it to… |
+|---|---|
+| [`bug-batch`](skills/bug-batch/) | Reproduce a list of bugs first, then fix them batched by surface |
+| [`adversarial-review-and-fix`](skills/adversarial-review-and-fix/) | Red-team a surface, write a review, then patch the findings |
+| [`targeted-migration`](skills/targeted-migration/) | Run a scoped migration (library swap, syntax shift, framework bump) |
+| [`design-integration`](skills/design-integration/) | Integrate a design system into the existing UI |
+| [`landing-page-convergence`](skills/landing-page-convergence/) | Converge a landing page on a target spec or metric |
+| [`inference-cost`](skills/inference-cost/) | Reduce LLM cost with measurement-first, sanctioned levers only |
+
+### Ship a product
+
+| Skill | Ask it to… |
+|---|---|
+| [`legacy-rebuild`](skills/legacy-rebuild/) | Gradually rebuild a legacy module behind a feature seam |
+| [`take-product-to-completion`](skills/take-product-to-completion/) | Multi-week ship to launch — only finishes when end-to-end works |
+| [`contract-first-build`](skills/contract-first-build/) | Greenfield build on a frozen API contract + plan |
+
+### Run a campaign (chain skills together)
+
+```bash
+./scripts/run-campaign.sh claude-code --preset repo-health      # doc-sync → test-coverage → cleanup
+./scripts/run-campaign.sh claude-code --preset ship-with-proof  # review-fix → test-coverage → doc-sync
+./scripts/run-campaign.sh claude-code --preset quality-gate     # review-fix → test-coverage
+./scripts/run-campaign.sh claude-code --preset align-then-ship  # take-product-to-completion (gated)
+```
+
+Each step waits for the previous one to pass a verification gate. If a gate fails, the campaign stops and tells you why. Add `--dry-run` to see the plan without running it.
+
+<details>
+<summary>Plumbing skills you don't call directly</summary>
+
+These get pulled in automatically by the skills above:
+
+| Skill | Role |
+|---|---|
+| [`autonomous-fleet`](skills/autonomous-fleet/) | The entry point — routes vague requests to the right mission |
+| [`autonomous-fleet-core`](skills/autonomous-fleet-core/) | The engine — every run goes through it |
+| [`fleet-program`](skills/fleet-program/) | The campaign runner — chains missions with conditional gates |
+| [`setup-autonomous-fleet`](skills/setup-autonomous-fleet/) | First-run repo configuration |
+| [`agents-layer`](skills/agents-layer/) | Stub-to-live cutover helper for agent integrations |
+
+And one adapter per supported runtime:
+
+| Skill | Runtime |
+|---|---|
+| [`adapter-claude-code`](skills/autonomous-fleet-adapter-claude-code/) | Claude Code |
+| [`adapter-grok`](skills/autonomous-fleet-adapter-grok/) | Grok Build |
+| [`adapter-codex`](skills/autonomous-fleet-adapter-codex/) | OpenAI Codex |
+| [`adapter-orca`](skills/autonomous-fleet-adapter-orca/) | Orca |
+| [`adapter-template`](skills/autonomous-fleet-adapter-template/) | Template — copy this to add a new runtime |
+
+</details>
+
+---
+
+# What every run guarantees
+
+These are the disciplines baked into the engine, so you don't have to remember to ask for them:
+
+### 🔒 The work won't go sideways
+
+- One PR per unit — never one giant blob
+- Original commits preserved, never squashed
+- Merges are conflict-aware; worktrees cleaned up after every merge
+- Testnet / staging only — merge ≠ deploy
+- The file ledger survives session restarts and context compaction
+
+### 🧪 The work is verified, not just attempted
+
+- External facts get verified against real sources (logged to `docs/research-notes.md`)
+- A run can't complete with `unverified_assumptions > 0`
+- Every run reports `cost_estimate` (model + USD) in its outcome
+- Shell commands go through a sandboxed wrapper that scrubs env vars
+- Optional `container-use` placement gives each worker an isolated VM
+
+### 🎯 "Done" means actually done
+
+- A green test suite is **not** "done"
+- Shipping missions only complete when end-to-end is verified (not just exit codes)
+- Every run has a frozen scope boundary — no surprise expansions
+- Editorial / credential decisions route through explicit lanes (fix / draft-and-gate / refuse) — never fabricated
+
+---
+
+<details>
+<summary><b>Under the hood — the architecture</b></summary>
+
+The framework has four layers. You only interact with the top layer; the rest happens automatically.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -52,7 +203,7 @@ No babysitting. The discipline lives in the engine, not in the prompt.
 ├──────────────────────────────────────────────────────────────┤
 │  autonomous-fleet-core               ← engine (THE method)   │
 ├──────────────────────────────────────────────────────────────┤
-│  adapter-{grok, claude-code, codex, orca, template}          │
+│  adapter-{claude-code, grok, codex, orca, template}          │
 │  ↑ maps the engine to one runtime's real commands            │
 ├──────────────────────────────────────────────────────────────┤
 │  missions × 14                                               │
@@ -60,16 +211,14 @@ No babysitting. The discipline lives in the engine, not in the prompt.
 └──────────────────────────────────────────────────────────────┘
 ```
 
-- **Core + Mission + Adapter** = a single-mission run
-- **Core + fleet-program + Adapter** = a campaign (linear or conditional, one mission at a time per repo)
-
-The three tier banners below correspond to the three horizontal bands above.
+- **Core + mission + adapter** = a single-mission run
+- **Core + fleet-program + adapter** = a campaign (linear or conditional, one mission at a time per repo)
 
 <table>
   <tr>
-    <td width="33%" align="center"><img src="assets/tier-infrastructure.png" alt="Tier 1 — Infrastructure" width="100%"></td>
-    <td width="33%" align="center"><img src="assets/tier-adapters.png" alt="Tier 2 — Adapters" width="100%"></td>
-    <td width="33%" align="center"><img src="assets/tier-missions.jpg" alt="Tier 3 — Missions" width="100%"></td>
+    <td width="33%" align="center"><img src="assets/tier-infrastructure.png" alt="Infrastructure" width="100%"></td>
+    <td width="33%" align="center"><img src="assets/tier-adapters.png" alt="Adapters" width="100%"></td>
+    <td width="33%" align="center"><img src="assets/tier-missions.jpg" alt="Missions" width="100%"></td>
   </tr>
   <tr>
     <td align="center"><strong>🟦 Infrastructure</strong><br/><sub>engine · entry · program · setup</sub></td>
@@ -78,70 +227,12 @@ The three tier banners below correspond to the three horizontal bands above.
   </tr>
 </table>
 
----
+</details>
 
-# Quick start
+<details>
+<summary><b>Under the hood — the run outcome (<code>fleet-outcome</code>)</b></summary>
 
-### 1. Install the starter set
-
-```bash
-npx skills add https://github.com/ravidsrk/autonomous-fleet \
-  --skill setup-autonomous-fleet \
-  --skill autonomous-fleet \
-  --skill fleet-program \
-  --skill autonomous-fleet-core \
-  --skill autonomous-fleet-adapter-grok \
-  --skill doc-sync \
-  -y
-```
-
-Skills land in `.agents/skills/` (gitignored, universal across Cursor / Codex / Claude Code / Grok / Orca). Created on first install — your `git status` will stay clean.
-
-- **All 24 skills at once:** add `--skill '*'`
-- **Different adapter:** swap `--skill autonomous-fleet-adapter-grok` for `claude-code`, `codex`, or `orca`
-- **From a clone:** `git clone … && ./scripts/install-skills.sh [--all]`
-
-### 2. Configure the repo
-
-In your **target repo**, run the setup skill once:
-
-```
-/setup-autonomous-fleet
-```
-
-This writes adapter, branch prefix, and default campaign bundle to the repo's config.
-
-### 3. Trigger a mission
-
-Use plain language — the umbrella routes — or name the mission directly:
-
-| Say                                                | Mission                       |
-| -------------------------------------------------- | ----------------------------- |
-| *"sync the docs"*                                  | `doc-sync`                    |
-| *"raise test coverage on payments"*                | `test-coverage`               |
-| *"fix these bugs"*                                 | `bug-batch`                   |
-| *"red-team this surface and patch the findings"*   | `adversarial-review-and-fix`  |
-| *"converge the landing page on the target metric"* | `landing-page-convergence`    |
-| *"take this product to the finish line"*           | `take-product-to-completion`  |
-
-Each mission activates `autonomous-fleet-core` + your adapter automatically. Workers compose domain skills from each mission's `## Worker skills` table at dispatch.
-
-### 4. Or run a campaign
-
-```bash
-./scripts/run-campaign.sh grok --preset repo-health        # doc-sync → test-coverage → cleanup
-./scripts/run-campaign.sh grok --preset ship-with-proof    # review-and-fix → test-coverage → doc-sync
-./scripts/run-campaign.sh grok --preset align-then-ship    # take-product-to-completion (+ pre-gate)
-./scripts/run-campaign.sh grok --preset quality-gate       # review-and-fix → test-coverage
-```
-
-Campaign edges branch on the next mission's required `fleet-outcome` state. Add `--dry-run` for a no-op plan.
-
----
-
-# The artifact: `fleet-outcome`
-
-Every readiness doc **must lead** with this YAML — campaign edges, the ledger, and the dashboard all gate on it:
+Every run emits a readiness document with this YAML block at the top. Campaign edges, the file ledger, and the dashboard all read it to decide what's next.
 
 ```yaml
 fleet-outcome:
@@ -165,92 +256,20 @@ fleet-outcome:
 
 Full spec: [`skills/autonomous-fleet-core/references/fleet-outcome.md`](skills/autonomous-fleet-core/references/fleet-outcome.md)
 
----
+</details>
 
-# Skills inventory (24)
+<details>
+<summary><b>Validate it locally</b></summary>
 
-### 🟦 Infrastructure (5) — required scaffolding for any run
-
-| Skill | Purpose |
-|---|---|
-| [`autonomous-fleet`](skills/autonomous-fleet/) | Umbrella entry — routes a vague request to mission/program + core + adapter |
-| [`autonomous-fleet-core`](skills/autonomous-fleet-core/) | The engine. Required for every run |
-| [`fleet-program`](skills/fleet-program/) | Linear + conditional campaign DAGs |
-| [`setup-autonomous-fleet`](skills/setup-autonomous-fleet/) | First-run repo config (adapter, prefix, bundle) |
-| [`agents-layer`](skills/agents-layer/) | One-axis stub→live cutover at agent seams |
-
-### 🟪 Adapters (5) — one engine, many runtimes
-
-| Skill | Runtime |
-|---|---|
-| [`adapter-grok`](skills/autonomous-fleet-adapter-grok/) | Grok Build (`/goal`, `update_goal`) |
-| [`adapter-claude-code`](skills/autonomous-fleet-adapter-claude-code/) | Claude Code |
-| [`adapter-codex`](skills/autonomous-fleet-adapter-codex/) | OpenAI Codex (`/goal`) |
-| [`adapter-orca`](skills/autonomous-fleet-adapter-orca/) | Orca orchestration |
-| [`adapter-template`](skills/autonomous-fleet-adapter-template/) | Copy this to wire a new runtime |
-
-### 🟧 Missions (14) — Tier 1 (recurring) → Tier 2 (campaign) → Tier 3 (ship)
-
-| Skill | Tier | What it does |
-|---|---|---|
-| [`doc-sync`](skills/doc-sync/) | 1 | Docs, CI, build-update tasks. Highest AI-agent merge-success rate ([arXiv 2601.15195 — Ehsani et al., MSR 2026](https://arxiv.org/abs/2601.15195), AIDev dataset ~33k PRs) |
-| [`test-coverage`](skills/test-coverage/) | 1 | Raise coverage on a target surface; preserve commit granularity |
-| [`dependency-update`](skills/dependency-update/) | 1 | Bump deps with conflict-aware merges + per-package rollback |
-| [`cleanup`](skills/cleanup/) | 1 | Dead code, unused imports, lint debt; one-axis sweeps |
-| [`scaffold-align`](skills/scaffold-align/) | 1 | Verify scaffold matches plan; freeze the build plan |
-| [`bug-batch`](skills/bug-batch/) | 2 | Reproduce-first gate, then batched fixes per surface |
-| [`adversarial-review-and-fix`](skills/adversarial-review-and-fix/) | 2 | Two-phase: red-team the surface, then patch the findings |
-| [`targeted-migration`](skills/targeted-migration/) | 2 | Scoped one-axis migration (lib swap, syntax shift, framework bump) |
-| [`design-integration`](skills/design-integration/) | 2 | Integrate a design system into the existing UI surface |
-| [`landing-page-convergence`](skills/landing-page-convergence/) | 2 | Converge a landing page on a target spec / metric |
-| [`inference-cost`](skills/inference-cost/) | 2 | Measurement-first cost reduction; sanctioned levers only |
-| [`legacy-rebuild`](skills/legacy-rebuild/) | 3 | Gradual rebuild of a legacy module behind a feature seam |
-| [`take-product-to-completion`](skills/take-product-to-completion/) | 3 | Multi-week ship to launch-ready; gated on `e2e_verified` |
-| [`contract-first-build`](skills/contract-first-build/) | 3 | Greenfield authed build on a frozen contract + plan |
-
-List all skills via the marketplace: `npx skills add https://github.com/ravidsrk/autonomous-fleet --list`
-
----
-
-# What every run guarantees
-
-### 🔒 Process safety
-
-- Repo + maintainer discovered — no placeholders
-- One PR per unit; commits preserved (never squashed)
-- Conflict-aware merges; checkout cleanup on every merge
-- Testnet/staging only; merge ≠ deploy
-- File ledger survives compaction and session restarts
-- Runtime goals bind native `/goal` loops to ledger DONE
-
-### 🧪 Engine disciplines
-
-- External facts → monid-verified, logged to `docs/research-notes.md`
-- `unverified_assumptions: 0` gate enforced before completion
-- Per-task model/cost routing emits `cost_estimate` in `fleet-outcome`
-- Commands pass through [`scripts/run-sandboxed.sh`](scripts/run-sandboxed.sh) — classifier + env scrub
-- Optional `container-use` placement gives each worker an isolated VM + git branch
-
-### 🎯 Anti-inflation gates
-
-- A green test suite is **not** "done"
-- Completion / rebuild missions gate on `e2e_verified` — real end-to-end state, not exit codes
-- FROZEN SCOPE BOUNDARY caps every run
-- Worktree cleanup tracked as `WT_CLEAN` gate
-- Editorial / credential decisions route through surfacing lanes (fix / draft-and-gate / refuse) — never fabricated
-
----
-
-# Validate locally
+If you're hacking on the framework itself:
 
 ```bash
-./scripts/validate-all.sh                          # skills + fleet-outcome + goals + pytest (recommended)
+./scripts/validate-all.sh                          # everything (recommended)
 ./scripts/run-campaign.sh grok --preset repo-health --dry-run
 ./scripts/run-mission-headless.sh grok doc-sync --max-turns 50
 ```
 
-<details>
-<summary>Individual validators</summary>
+Individual validators:
 
 ```bash
 ./scripts/validate-skills.sh                       # SKILL.md packages (agentskills.io)
@@ -264,17 +283,16 @@ pytest tests/test_fleet_campaign.py                # campaign edge evaluator
   --current-node docs
 ```
 
-Skill validation uses [`skill-creator`](https://github.com/anthropics/skills/tree/main/skills/skill-creator)'s `quick_validate.py`.
+Skill validation uses [`skill-creator`](https://github.com/anthropics/skills/tree/main/skills/skill-creator)'s `quick_validate.py`. CI runs `validate-all.sh` on every push and PR to `main`.
+
+> ⚠️ Headless execution still requires runtime CLI auth and isn't fully end-to-end validated yet. When CLI auth isn't available, drive the run from the interactive agent's `/goal` instead.
 
 </details>
 
-CI runs `./scripts/validate-all.sh` on every push / PR to `main`.
+<details>
+<summary><b>Author your own skill or adapter</b></summary>
 
----
-
-# Authoring new skills
-
-Install Anthropic's `skill-creator` once (not bundled here — not needed to *run* missions, only to author new ones):
+Install Anthropic's `skill-creator` once — not bundled here because it's only needed if you're authoring, not running:
 
 ```bash
 npx skills add https://github.com/anthropics/skills --skill skill-creator -y -p
@@ -291,7 +309,7 @@ Follow the `skill-creator` workflow at `.agents/skills/skill-creator/SKILL.md` b
 
 For a new runtime adapter, copy [`skills/autonomous-fleet-adapter-template/`](skills/autonomous-fleet-adapter-template/) and fill the six primitives: `PLACE`, `SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`, `SYNC_TASK_STATE`.
 
----
+</details>
 
 <details>
 <summary><b>Repository layout</b></summary>
