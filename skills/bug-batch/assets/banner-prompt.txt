@@ -1,0 +1,28 @@
+Horizontal banner image, 2:1 aspect ratio (about 1200×600 feel).
+
+PALETTE (strict):
+  - Background: deep midnight #0B1220 (subtle cool gradient toward #0F172A at edges)
+  - Primary accent: warm amber #F59E0B
+  - Secondary accent: cool slate / steel blue #94A3B8
+  - Highlight: white #FFFFFF (sparingly)
+  - Ink for any text: warm off-white #F8FAFC
+
+STYLE: Clean schematic / cockpit / control-room aesthetic. Engineering-serious, not cyberpunk. Linear.app + Vercel + GitHub-Actions dark-mode feel. Thin precise lines, generous spacing, subtle drop shadows. NOT photorealistic, NOT neon, NOT glowing-grid cyberpunk.
+
+COMMON RULES:
+  - Top-left corner: small monospace text exactly: "skills/bug-batch"
+  - Bottom-center: thin horizontal amber accent line above a one-line caption: "batch bug-fix workflow · evidence-first"
+  - No fake domain names, no garbled words, no made-up text labels
+  - All visible text must be ONLY the labels explicitly listed below — every label appears EXACTLY ONCE
+  - No real brand logos (no GitHub/Anthropic/OpenAI/Cursor logos), only abstract iconic glyphs
+
+
+COMPOSITION:
+  LEFT half: a vertical stack of 4 small slate-blue rounded rectangles (issue cards), each with a tiny amber dot on its left edge (like a priority marker).
+  CENTER: a thin amber arrow pointing right.
+  RIGHT half: a single slate-blue rounded rectangle slightly larger, with an amber checkmark icon inside.
+
+  ABOVE the arrow, small monospace warm off-white text exactly: "BATCH FIX"
+  ABOVE the right rectangle, small monospace exactly: "PR"
+
+  These two labels are the ONLY text besides top-left + caption.

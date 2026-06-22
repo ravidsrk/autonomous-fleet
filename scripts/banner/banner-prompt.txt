@@ -1,0 +1,29 @@
+Horizontal banner, 16:9 aspect ratio (about 1280×720 feel) for a GitHub README hero.
+
+PALETTE (strict): background deep midnight #0B1220 with subtle cool gradient toward #0F172A. Primary accent warm amber #F59E0B. Secondary cool slate #94A3B8. Ink warm off-white #F8FAFC. NO neon, NO cyberpunk.
+
+STYLE: Editorial schematic / cockpit aesthetic. Think Linear.app + Vercel + Stripe Press in dark mode. Thin precise lines, generous breathing room, premium feel.
+
+COMPOSITION:
+
+  CENTER (60% of canvas): a single bold typographic headline.
+  Giant lowercase word "fleet" in elegant serif (Instrument Serif feel), warm off-white. The dot of the "i" in "fleet" is a warm amber circle #F59E0B (small but present). Above the word, in small letter-spaced monospace caps: "AUTONOMOUS". The pair reads:
+
+    AUTONOMOUS
+       fleet
+
+  BELOW the headline: one thin amber horizontal line about 200px wide, then a single line of small monospace text in warm off-white reading EXACTLY:
+    "multi-agent engineering · 24 skills · 4 runtimes · 1 portable engine"
+
+  TOP-LEFT corner: small monospace text exactly: "ravidsrk/autonomous-fleet"
+  TOP-RIGHT corner: a tiny abstract schematic glyph — three small dots connected by thin amber lines forming a triangle (suggesting "fleet coordination"). Very subtle.
+  BOTTOM-CENTER edge: a thin amber line, full canvas width, with 4 small tick marks evenly spaced and a tiny amber dot at each tick — suggesting a coordination timeline. No labels on the ticks.
+
+  Faint subtle background detail: a barely-visible network of thin slate-blue lines connecting 6-8 small dots, very low opacity (about 8%), spread across the canvas behind the headline. Suggests "a fleet at coordinated rest". Must not compete with the headline.
+
+DO NOT:
+  - Render any text other than: "AUTONOMOUS", "fleet", "multi-agent engineering · 24 skills · 4 runtimes · 1 portable engine", "ravidsrk/autonomous-fleet"
+  - Use neon/glow effects
+  - Render dense terminal text
+  - Use any blue brighter than slate
+  - Render robots, humans, or photorealistic objects

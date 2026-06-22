@@ -1,0 +1,29 @@
+Horizontal banner image, 2:1 aspect ratio (about 1200×600 feel).
+
+PALETTE (strict):
+  - Background: deep midnight #0B1220 (subtle cool gradient toward #0F172A at edges)
+  - Primary accent: warm amber #F59E0B
+  - Secondary accent: cool slate / steel blue #94A3B8
+  - Highlight: white #FFFFFF (sparingly)
+  - Ink for any text: warm off-white #F8FAFC
+
+STYLE: Clean schematic / cockpit / control-room aesthetic. Engineering-serious, not cyberpunk. Linear.app + Vercel + GitHub-Actions dark-mode feel. Thin precise lines, generous spacing, subtle drop shadows. NOT photorealistic, NOT neon, NOT glowing-grid cyberpunk.
+
+COMMON RULES:
+  - Top-left corner: small monospace text exactly: "skills/adversarial-review-and-fix"
+  - Bottom-center: thin horizontal amber accent line above a one-line caption: "three-lane review · refuse / draft-both / cluster"
+  - No fake domain names, no garbled words, no made-up text labels
+  - All visible text must be ONLY the labels explicitly listed below — every label appears EXACTLY ONCE
+  - No real brand logos (no GitHub/Anthropic/OpenAI/Cursor logos), only abstract iconic glyphs
+
+
+COMPOSITION:
+  CENTER: a small magnifying-glass icon in slate-blue with a thin amber handle. Inside the lens circle: a tiny amber crosshair "+".
+  Around the magnifier, 3 thin amber horizontal lines radiating to the right (like motion lines), each ending in a small dot of a different shape: a small amber square (lane 1), small amber triangle (lane 2), small amber circle (lane 3).
+
+  TO THE RIGHT OF EACH dot, small monospace warm off-white text. The 3 labels, top to bottom, EXACTLY:
+    "REFUSE"
+    "DRAFT BOTH"
+    "CLUSTER"
+
+  These three labels are the ONLY text besides top-left + caption.

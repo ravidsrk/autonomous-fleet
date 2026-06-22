@@ -1,0 +1,27 @@
+Horizontal banner image, 2:1 aspect ratio (about 1200×600 feel).
+
+PALETTE (strict):
+  - Background: deep midnight #0B1220 (subtle cool gradient toward #0F172A at edges)
+  - Primary accent: warm amber #F59E0B
+  - Secondary accent: cool slate / steel blue #94A3B8
+  - Highlight: white #FFFFFF (sparingly)
+  - Ink for any text: warm off-white #F8FAFC
+
+STYLE: Clean schematic / cockpit / control-room aesthetic. Engineering-serious, not cyberpunk. Linear.app + Vercel + GitHub-Actions dark-mode feel. Thin precise lines, generous spacing, subtle drop shadows. NOT photorealistic, NOT neon, NOT glowing-grid cyberpunk.
+
+COMMON RULES:
+  - Top-left corner: small monospace text exactly: "skills/inference-cost"
+  - Bottom-center: thin horizontal amber accent line above a one-line caption: "measure cost · sanction levers · refuse the ToS hack"
+  - No fake domain names, no garbled words, no made-up text labels
+  - All visible text must be ONLY the labels explicitly listed below — every label appears EXACTLY ONCE
+  - No real brand logos (no GitHub/Anthropic/OpenAI/Cursor logos), only abstract iconic glyphs
+
+
+COMPOSITION:
+  LEFT half: a small amber gauge / dial drawn in thin lines (semicircular arc), with the needle pointing about 60% of the way (in the warm amber zone). Below the gauge, small monospace warm off-white text exactly: "COST"
+  RIGHT half: a vertical stack of 3 small slate-blue rounded pill shapes. To the right of each pill, small monospace warm off-white text. The 3 labels, top to bottom, EXACTLY:
+    "MEASURE"
+    "REDUCE"
+    "DOCUMENT"
+
+  Labels visible: "COST", "MEASURE", "REDUCE", "DOCUMENT" — each exactly once. No other text besides top-left + caption.

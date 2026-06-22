@@ -1,0 +1,29 @@
+Horizontal banner image, 2:1 aspect ratio (about 1200×600 feel).
+
+PALETTE (strict):
+  - Background: deep midnight #0B1220 (subtle cool gradient toward #0F172A at edges)
+  - Primary accent: warm amber #F59E0B
+  - Secondary accent: cool slate / steel blue #94A3B8
+  - Highlight: white #FFFFFF (sparingly)
+  - Ink for any text: warm off-white #F8FAFC
+
+STYLE: Clean schematic / cockpit / control-room aesthetic. Engineering-serious, not cyberpunk. Linear.app + Vercel + GitHub-Actions dark-mode feel. Thin precise lines, generous spacing, subtle drop shadows. NOT photorealistic, NOT neon, NOT glowing-grid cyberpunk.
+
+COMMON RULES:
+  - Top-left corner: small monospace text exactly: "tier 3 / missions"
+  - Bottom-center: thin horizontal amber accent line above a one-line caption: "discrete jobs · safe to chain"
+  - No fake domain names, no garbled words, no made-up text labels
+  - All visible text must be ONLY the labels explicitly listed below — every label appears EXACTLY ONCE
+  - No real brand logos (no GitHub/Anthropic/OpenAI/Cursor logos), only abstract iconic glyphs
+
+
+COMPOSITION:
+  CENTER: a single thin amber horizontal arrow pointing from left to right, spanning about 70% of the canvas width. Along the arrow, 6 small evenly-spaced amber dots (tick marks).
+
+  ABOVE each tick mark, a small slate-blue rounded square (like a Trello card), each containing a different small abstract iconic glyph (gear, document, bug, brush, layer, shield — kept very minimal, like icons in a Linear dashboard). NO TEXT inside the cards.
+
+  Above the row of cards, in small monospace warm off-white centered, exactly: "MISSION SEQUENCE"
+
+  Below the arrow, faintly, in small slate monospace exactly: "doc-sync → tests → cleanup → ..."
+
+  The two text strings above are the ONLY text other than the top-left/bottom captions. No other words anywhere.

@@ -1,0 +1,34 @@
+Horizontal banner image, 2:1 aspect ratio (about 1200×600 feel).
+
+PALETTE (strict):
+  - Background: deep midnight #0B1220 (subtle cool gradient toward #0F172A at edges)
+  - Primary accent: warm amber #F59E0B
+  - Secondary accent: cool slate / steel blue #94A3B8
+  - Highlight: white #FFFFFF (sparingly)
+  - Ink for any text: warm off-white #F8FAFC
+
+STYLE: Clean schematic / cockpit / control-room aesthetic. Engineering-serious, not cyberpunk. Linear.app + Vercel + GitHub-Actions dark-mode feel. Thin precise lines, generous spacing, subtle drop shadows. NOT photorealistic, NOT neon, NOT glowing-grid cyberpunk.
+
+COMMON RULES:
+  - Top-left corner: small monospace text exactly: "tier 1 / infrastructure"
+  - Bottom-center: thin horizontal amber accent line above a one-line caption: "engine · entry · setup"
+  - No fake domain names, no garbled words, no made-up text labels
+  - All visible text must be ONLY the labels explicitly listed below — every label appears EXACTLY ONCE
+  - No real brand logos (no GitHub/Anthropic/OpenAI/Cursor logos), only abstract iconic glyphs
+
+
+COMPOSITION:
+  CENTER: a clean isometric illustration of a single matte-amber cube sitting on a thin amber line "base plate". From the cube's faces, three soft amber light beams angle gently upward and outward (about 30° apart). Each beam ends at a small slate-blue circular socket floating in space — suggesting "the engine powers connected runtimes".
+
+  AROUND the cube (no labels):
+    - One thin amber circular orbit ring drawn loosely around it
+    - Two or three small slate-blue dots on the orbit
+
+  RIGHT 30% of canvas, a small monospace stack of three lines, warm off-white text on midnight:
+    "engine.run()"
+    "adapter.connect()"
+    "mission.execute()"
+
+  These three short lines are the ONLY visible text besides the top-left/bottom captions.
+
+DO NOT render any text other than the three monospace lines and the top-left/bottom captions.

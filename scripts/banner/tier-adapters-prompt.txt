@@ -1,0 +1,33 @@
+Horizontal banner image, 2:1 aspect ratio (about 1200×600 feel).
+
+PALETTE (strict):
+  - Background: deep midnight #0B1220 (subtle cool gradient toward #0F172A at edges)
+  - Primary accent: warm amber #F59E0B
+  - Secondary accent: cool slate / steel blue #94A3B8
+  - Highlight: white #FFFFFF (sparingly)
+  - Ink for any text: warm off-white #F8FAFC
+
+STYLE: Clean schematic / cockpit / control-room aesthetic. Engineering-serious, not cyberpunk. Linear.app + Vercel + GitHub-Actions dark-mode feel. Thin precise lines, generous spacing, subtle drop shadows. NOT photorealistic, NOT neon, NOT glowing-grid cyberpunk.
+
+COMMON RULES:
+  - Top-left corner: small monospace text exactly: "tier 2 / adapters"
+  - Bottom-center: thin horizontal amber accent line above a one-line caption: "one core · many runtimes"
+  - No fake domain names, no garbled words, no made-up text labels
+  - All visible text must be ONLY the labels explicitly listed below — every label appears EXACTLY ONCE
+  - No real brand logos (no GitHub/Anthropic/OpenAI/Cursor logos), only abstract iconic glyphs
+
+
+COMPOSITION:
+  LEFT 30%: one warm amber cube (the engine) drawn in isometric. From its right face, four thin amber "bus" lines fan out horizontally toward the right.
+
+  RIGHT 60%: four small dark cards arranged vertically (stacked, with gentle spacing). Each card is a rounded rectangle, slate-blue stroke, warm dark interior, with one small abstract iconic glyph in the center (a different simple shape per card: small triangle, small square, small circle, small hexagon). NO TEXT inside the cards.
+
+  TO THE RIGHT of each card, one short monospace label in warm off-white. The 4 labels, top to bottom, EXACTLY:
+    "GROK"
+    "CLAUDE-CODE"
+    "CODEX"
+    "ORCA"
+
+  Each card connects back to the engine cube with a thin amber line.
+
+  Each label appears EXACTLY ONCE. No other text on the canvas.

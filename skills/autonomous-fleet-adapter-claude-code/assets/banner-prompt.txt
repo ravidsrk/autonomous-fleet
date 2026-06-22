@@ -1,0 +1,26 @@
+Horizontal banner image, 2:1 aspect ratio (about 1200×600 feel).
+
+PALETTE (strict):
+  - Background: deep midnight #0B1220 (subtle cool gradient toward #0F172A at edges)
+  - Primary accent: warm amber #F59E0B
+  - Secondary accent: cool slate / steel blue #94A3B8
+  - Highlight: white #FFFFFF (sparingly)
+  - Ink for any text: warm off-white #F8FAFC
+
+STYLE: Clean schematic / cockpit / control-room aesthetic. Engineering-serious, not cyberpunk. Linear.app + Vercel + GitHub-Actions dark-mode feel. Thin precise lines, generous spacing, subtle drop shadows. NOT photorealistic, NOT neon, NOT glowing-grid cyberpunk.
+
+COMMON RULES:
+  - Top-left corner: small monospace text exactly: "skills/autonomous-fleet-adapter-claude-code"
+  - Bottom-center: thin horizontal amber accent line above a one-line caption: "runtime adapter · Anthropic Claude Code"
+  - No fake domain names, no garbled words, no made-up text labels
+  - All visible text must be ONLY the labels explicitly listed below — every label appears EXACTLY ONCE
+  - No real brand logos (no GitHub/Anthropic/OpenAI/Cursor logos), only abstract iconic glyphs
+
+
+COMPOSITION:
+  LEFT third: a single matte amber cube (the engine) drawn in isometric.
+  RIGHT third: a small dark slate-blue card. Inside the card, only an abstract iconic glyph: a small set of 3 horizontal slate-blue lines (suggesting "code") above a tiny amber dot.
+  CENTER: a thin amber horizontal line connecting the two with a single small amber dot in the middle.
+
+  BELOW the card, small monospace warm off-white text exactly: "CLAUDE-CODE"
+  This is the ONLY label besides top-left + caption.

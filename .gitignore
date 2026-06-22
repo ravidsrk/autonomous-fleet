@@ -2,5 +2,8 @@
 .agents/
 __pycache__/
 .pytest_cache/
---help/.coverage
+.coverage
 htmlcov/
+.tmp-images/
+.DS_Store
+*.pyc
