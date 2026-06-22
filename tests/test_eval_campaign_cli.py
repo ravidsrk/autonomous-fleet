@@ -11,6 +11,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
@@ -83,3 +85,13 @@ def test_campaign_picks_next_node(tmp_path, monkeypatch, capsys):
     rc = ece.main()
     assert rc == 0
     assert json.loads(capsys.readouterr().out)["next"] == "tests"
+
+
+def test_requires_expr_or_campaign_node(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["eval", "--readiness", str(_doc(tmp_path))])
+
+    with pytest.raises(SystemExit) as excinfo:
+        ece.main()
+
+    assert excinfo.value.code == 2
+    assert "provide --expr or (--campaign and --current-node)" in capsys.readouterr().err

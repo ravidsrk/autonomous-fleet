@@ -70,3 +70,27 @@ def test_invalid_status_returns_one_with_fail(tmp_path, monkeypatch, capsys):
     rc = vfo.main()
     assert rc == 1
     assert "FAIL" in capsys.readouterr().out
+
+
+def test_default_scan_with_no_docs_returns_zero(monkeypatch, capsys):
+    monkeypatch.setattr(sys, "argv", ["validate"])
+    monkeypatch.setattr(vfo, "collect_readiness_paths", lambda _root: [])
+
+    rc = vfo.main()
+    out = capsys.readouterr().out
+
+    assert rc == 0
+    assert out == "No readiness docs found.\n"
+
+
+def test_default_scan_skips_paths_that_disappear(tmp_path, monkeypatch, capsys):
+    missing = tmp_path / "gone-readiness.md"
+    monkeypatch.setattr(sys, "argv", ["validate"])
+    monkeypatch.setattr(vfo, "collect_readiness_paths", lambda _root: [missing])
+
+    rc = vfo.main()
+    out = capsys.readouterr().out
+
+    assert rc == 0
+    assert f"SKIP {missing} (not found)" in out
+    assert "All readiness docs passed fleet-outcome validation." in out

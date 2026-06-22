@@ -21,8 +21,9 @@ echo "== validate-goal-condition =="
 ./scripts/validate-goal-condition.sh --scan-docs
 
 echo ""
-echo "== pytest =="
-"$VENV_PYTHON" -m pytest tests/ -q
+echo "== pytest + coverage (100% gate) =="
+"$VENV_PYTHON" -m coverage run --source=scripts -m pytest tests/ -q
+"$VENV_PYTHON" -m coverage report --fail-under=100
 
 echo ""
 echo "All checks passed."
