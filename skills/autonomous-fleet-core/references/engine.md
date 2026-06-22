@@ -290,6 +290,59 @@ artifact is wrong enough to block the mission, record the conflict in DECISIONS.
 per COORDINATOR BEHAVIORS.
 
 ═══════════════════════════════════════════════════════════
+FROZEN-ARTIFACT CLOSE TEST (EVID): the finding's own reproduction is its gate.
+═══════════════════════════════════════════════════════════
+When a mission ingests a frozen artifact — an audit, dossier, review, finding set, or other pre-
+shipped inventory — every item's own reproduction command IS its acceptance gate. Source pattern:
+the FORCING-CHECKLIST block every directive carries (directives.md "THE FORCING CHECKLIST" pattern),
+encoded today as a mission-private flag inside `adversarial-review-and-fix` (EVID). Lifted here so
+every audit-ingesting mission (`adversarial-review-and-fix`, `bug-batch`, `inference-cost`, and any
+future fix-only / closure mission) inherits the same close-test instead of redefining it.
+- STANDARD CLOSE-TEST BOOLEAN. `EVID` = "the finding's own Evidence reproduction re-run no longer
+  reproduces." It is the OBJECTIVE close-test for any item lifted from a frozen artifact: either the
+  evidence repro stops reproducing, OR the acceptance criterion the artifact states is demonstrated.
+  Belief, green CI, or "the diff looks right" do NOT clear EVID — only the artifact's own repro does.
+- LEDGER CLOSE-INDEX (verbatim transcription). The mission's ledger transcribes the artifact's IDs
+  verbatim into a CLOSE-INDEX. Every ID carries its current state: `OPEN`, `CLOSED via PR#n`, or a
+  lane-specific terminal state (see LANE PATTERN below). No invented IDs; no silent dropping; no
+  renumbering.
+- REVIEWER VERIFIES AGAINST THE SAME ARTIFACT. The fresh build-blind reviewer verifies EVID against
+  the SAME frozen artifact, not against a re-interpretation. The artifact, not the builder's prose
+  about it, is the spec.
+- TERMINATION. The run terminates only when EVERY ID in the CLOSE-INDEX is `CLOSED` or in its
+  lane's terminal state (see LANE PATTERN). One OPEN ID = the run is not done.
+
+═══════════════════════════════════════════════════════════
+LANE PATTERN — three terminal lanes so the loop always terminates.
+═══════════════════════════════════════════════════════════
+Not every finding can be closed by merging a PR. Without lanes, the loop blocks forever on items
+that need out-of-band action — credential rotation, DNS attach, `npm publish`, `terraform apply`,
+legal sign-off, an editorial truth claim the fleet must not fabricate. Lanes are what let a fully-
+autonomous run both "fix everything it can" AND reach a clean terminal state. Source: directives.md
+"THE LANE PATTERN — why the loop can always terminate" and Stage-9 prompt 23 (Deep Feed: fix /
+draft / refuse).
+- **Lane A — IMPLEMENT+MERGE.** The default for any code-closeable finding. Normal PR-per-task
+  pipeline (build → open PR → fresh build-blind review → merge). Terminal state: `MERGED=true`
+  (with WT_CLEAN=true and the engine's other terminal flags satisfied).
+- **Lane B — DRAFT-BOTH+HUMAN-GATE.** When the decision is editorial, brand-truth-sensitive,
+  disclosure-sensitive, or otherwise something the fleet must NOT fabricate. Open as a DRAFT PR
+  labelled `do-not-merge`; ship BOTH candidate fixes when the ambiguity is real; record both
+  variants and the unresolved decision in `DECISIONS.md`; the human gate is the only thing that
+  flips it to merged. This composes with the existing `draft-both-and-gate` decision outcome above
+  — it is the physical artifact that outcome produces. Terminal state: `HUMAN_GATED=true`.
+- **Lane 0 — REFUSE+SURFACE.** Workers NEVER run `npm publish`, `docker push`, `terraform apply`,
+  DNS attach, key rotation, mainnet tx, or any production deploy (composes with SAFETY RAILS and
+  the `run-sandboxed.sh` deny-list). The code-side mitigation ships in Lane A; the precise out-of-
+  band action is RECORDED as `HUMAN_ACTION_REQUIRED:<id>` in `docs/arch-ops-actions.md` (or the
+  mission's equivalent ops queue), with the exact command and preconditions. Terminal state:
+  `CODE_CLOSED=true, OPS_QUEUED=true`.
+- LEDGER NOTE. Each task row in the CLOSE-INDEX records its lane (`lane: A|B|0`) so the verifier
+  can confirm terminal state matches the lane: Lane A wants `MERGED=true`; Lane B wants
+  `HUMAN_GATED=true` with both drafts in DECISIONS.md; Lane 0 wants `CODE_CLOSED=true` plus an
+  `HUMAN_ACTION_REQUIRED:<id>` row in the ops queue. A row whose lane-terminal-flag does not match
+  its lane is NOT terminal.
+
+═══════════════════════════════════════════════════════════
 WORKER PLACEMENT — the DECISION LOGIC (tool-agnostic). The adapter maps it to real commands.
 ═══════════════════════════════════════════════════════════
 "Fresh worker" ≠ new isolated checkout. Decide placement by dependency on uncommitted state:
@@ -463,6 +516,18 @@ asserts that test is present, behavior-exercising, and not coverage padding befo
   SYNC_TASK_STATE(completed). WORKER_DONE.
 - You only SEQUENCE and wait. Each task = one branch = one PR = one merge-commit = branch deleted =
   checkout cleaned = task completed.
+
+═══════════════════════════════════════════════════════════
+CLUSTER-INHERITANCE CLOSE: one PR closes the foundation + its dependents.
+═══════════════════════════════════════════════════════════
+When a single root cause produces multiple findings (e.g. one shared bug surfaces as five
+separately-IDed issues), the FOUNDATION cluster fix closes the dependent findings IN THE SAME PR.
+The ledger CLOSE-INDEX records every dependent ID as `CLOSED via PR#n` pointing at the foundation
+PR. Workers must explicitly enumerate `CLOSES=[ids]` in the PR body so the reviewer and the verifier
+can confirm coverage — and each dependent ID is only marked closed when ITS OWN EVID repro (per the
+FROZEN-ARTIFACT CLOSE TEST) and acceptance gate pass against the foundation PR. Cite directives.md
+"Frontguard 16-cluster root-cause map" (FOUNDATION clusters bias first; dependents inherit) and the
+FOUNDATION/INDEPENDENT + `touches:` overlap hint pattern.
 
 ═══════════════════════════════════════════════════════════
 FIRST-MERGE SPOT-CHECK: block later waves on fail.
