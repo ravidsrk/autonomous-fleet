@@ -61,9 +61,6 @@ Add under `fleet-outcome.metrics`:
 | `landing-page-convergence` | `docs/landing-readiness.md` | `divergences_open: 0` |
 | `legacy-rebuild` | `docs/rebuild-readiness.md` | `units_open: 0`, `floor_preserved: true`, `e2e_verified: true` |
 | `take-product-to-completion` | `docs/completion-readiness.md` | `in_items_open: 0`, `roadmap_count: <n>`, `stubs_remaining: 0`, `e2e_verified: true` |
-| `scaffold-align` | `docs/scaffold-align-readiness.md` | `align_items_open: 0`, `check_green: true`, `seam_frozen: true`, `scaffold_ok: true` |
-| `contract-first-build` | `docs/contract-build-readiness.md` | `in_items_open: 0`, `roadmap_count: <n>`, `stubs_remaining: 0`, `ops_queue_count: <n>`, `e2e_verified: true` |
-| `agents-layer` | `docs/agents-layer-readiness.md` | `migration_items_open: 0`, `seam_unwired_open: 0`, `old_axis_removed: true`, `evals_passing: true`, `deploy_pending_ops: true` |
 | `inference-cost` | `docs/inference-cost-readiness.md` | `cost_regressed: false`, `quality_regressed: false`, `levers_open: 0` |
 
 ## Example (adversarial-review-and-fix)

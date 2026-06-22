@@ -28,6 +28,11 @@ behind. Closed that drift.
   (Tier 1), inference-cost (Tier 2), contract-first-build (Tier 3), agents-layer (Tier 3). The table
   now lists all 15 mission skills, grouped by tier.
 - Layout tree: added the same 4 mission directories to the skills/ tree.
+- 2026-06-22 follow-up: three of those four (scaffold-align, contract-first-build, agents-layer)
+  were moved to docs/exploratory/missions/ because they are not on the Stage 8 distillation list
+  in prompts.md (L2960-2964) and have no -progress.md or -readiness.md from a real run; only
+  inference-cost remains in skills/. The mission table now lists 12 mission skills. See
+  docs/exploratory/README.md for the promotion rule.
 - "What every run guarantees": added the close-gaps disciplines, the anti-inflation e2e gate
   (completion/rebuild missions gate on e2e_verified, verify the real result state not exit codes),
   the FROZEN SCOPE BOUNDARY, the WT_CLEAN tracked cleanup gate, and the surfacing lanes
