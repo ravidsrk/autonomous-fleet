@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>You describe the work. A team of AI agents ships the PRs.</strong><br/>
-  Drop-in skills for Claude Code, Cursor, Grok, Codex, and Orca.
+  Drop-in skills for Claude Code, Grok, Codex, and Orca.
 </p>
 
 <p align="center">
@@ -22,9 +22,9 @@
 
 # What it is
 
-A library of skills you install into your coding agent (Claude Code, Cursor, Codex, Grok, or Orca). Once installed, you describe a chunk of work in plain English. Behind the scenes, several worker agents split it up, work in parallel on their own git branches, and open one pull request per piece — with the merge discipline, scope guardrails, and verification a senior engineer would apply.
+A library of skills you install into your coding agent (Claude Code, Grok, Codex, or Orca). Once installed, you describe a chunk of work in plain English. Behind the scenes, a small team of worker agents (usually 2–5) split it up, work in parallel on their own git branches, and open one pull request per piece — with the merge discipline, scope guardrails, and verification a senior engineer would apply.
 
-You stay the reviewer. They do the typing.
+**You stay the reviewer. They do the typing.**
 
 ---
 
@@ -34,21 +34,25 @@ Say this in your coding agent's chat, after installation:
 
 | You say | What it ships |
 |---|---|
-| *"Sync the docs to match the code"* | One PR per stale doc file. Drift index updated. Lint passing. |
-| *"Raise test coverage on the payments module"* | Multiple PRs adding tests by file. Coverage report in each PR description. |
-| *"Fix these 12 bugs"* | One reproducer per bug → one fix PR per surface. Skipped if it can't repro. |
-| *"Red-team this API surface and patch the findings"* | A review report opened as an issue, then PRs that close each finding. |
-| *"Take this product to launch-ready"* | A multi-mission campaign — review → coverage → docs → e2e gate. Stops when a gate fails. |
+| *"The docs are out of date, fix them"* | One PR per stale doc file. A summary doc listing what was out of sync. |
+| *"Raise test coverage on the payments module"* | One PR per file being tested (typically 3–8 PRs). Coverage report in each PR description. |
+| *"Reproduce and fix these 12 bugs"* | One reproducer per bug → one fix PR per area of the code. Bugs that can't be reproduced get flagged, not faked. |
+| *"Red-team this API and patch what you find"* | A review report opened as a GitHub issue, then one PR per finding it patches. |
+| *"Take this product to launch-ready"* | A multi-step campaign (review → coverage → docs → end-to-end check). Stops if any step fails its verification check. |
 
-No babysitting between steps. You get GitHub notifications when PRs are ready to review.
+Each run takes minutes to hours depending on scope. You get GitHub notifications when PRs are ready to review.
+
+> ⚠️ **Early stage notice.** This is a young framework with real disciplines but limited external proof yet. Internal dogfood evidence lives in [`docs/external-dogfood/`](docs/external-dogfood/). Expect rough edges; please open issues.
 
 ---
 
-# Try it in 60 seconds
+# Try it
+
+> Install takes about a minute. The first PR usually shows up in a few minutes.
 
 ### Step 1 — Install the skills into your repo
 
-Open a terminal in your project. Run:
+**In a terminal,** in your project's root directory:
 
 ```bash
 npx skills add https://github.com/ravidsrk/autonomous-fleet \
@@ -60,31 +64,40 @@ npx skills add https://github.com/ravidsrk/autonomous-fleet \
   -y
 ```
 
-This creates a `.agents/skills/` folder (gitignored — your `git status` stays clean). The folder works with Claude Code, Cursor, Codex, Grok, and Orca.
+This creates a `.agents/skills/` folder (gitignored — your `git status` stays clean). The folder is the universal [`agentskills.io`](https://agentskills.io/) format, which Claude Code, Grok, Codex, and Orca all read.
 
 > Using a different agent? Replace `autonomous-fleet-adapter-claude-code` with `-grok`, `-codex`, or `-orca`. Want every skill? Use `--skill '*'`.
 
-### Step 2 — Configure once
+### Step 2 — Configure the repo once
 
-Open your coding agent's chat window (Claude Code, Cursor's AI panel, whatever you use). Type:
+**In your coding agent's chat** (Claude Code's chat panel, Codex's chat, etc.), invoke the skill:
 
 ```
 /setup-autonomous-fleet
 ```
 
-It asks which agent you're on and which branch prefix to use, then writes the config.
+> In Claude Code and Codex, `/setup-autonomous-fleet` is a slash command. In Grok and Orca, paste the skill's name as a natural-language instruction (the runtimes that don't have slash UIs route by skill name). Either way, the skill picks up your repo's config.
 
-### Step 3 — Ask it to do something
+It asks which agent you're on, which branch prefix to use, and writes the config to your repo.
 
-Same chat window. Plain English:
+### Step 3 — Ask it to do work
+
+**In the same chat,** plain English:
 
 ```
-sync the docs to match the code
+The docs are out of date, fix them
 ```
 
-You'll see: a plan written first, then worker agents kicked off, then PRs appear in GitHub as each one finishes. Each PR has a readiness doc explaining what was done and why.
+What you'll see, in order:
+1. A plan written to a file you can read and abort if you don't like it.
+2. Worker agents kicked off (you'll see them spawn).
+3. PRs appear in GitHub as each one finishes — usually within a few minutes.
 
-That's it. The rest of this README is for when you want to go deeper.
+Each PR has a readiness doc explaining what was done, why, and how it was verified. **You review and merge.**
+
+To stop a run mid-flight, close the chat (workers check in with the ledger and exit). The file ledger survives, so you can pick up where you left off in a new chat.
+
+That's it. The rest of this README is for going deeper.
 
 ---
 
