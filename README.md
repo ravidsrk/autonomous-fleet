@@ -22,9 +22,29 @@
 
 # What it is
 
-A library of skills you install into your coding agent (Claude Code, Grok, Codex, or [Orca](https://github.com/diggerhq/orca)). Once installed, you describe a chunk of work in plain English. In the background, a small team of worker agents (usually 2–5) split it up, work in parallel on their own git branches, and open one pull request per piece — with the same disciplines a senior engineer would apply: small commits, conflict-aware merges, a frozen scope per run, and verification that the change actually works end-to-end before it's marked done.
+A library of skills you install into your coding agent (Claude Code, Grok, Codex, or [Orca](https://github.com/diggerhq/orca)). Once installed, you describe a chunk of work in plain English. In the background, a small team of worker agents (a **builder**, a **fresh build-blind reviewer**, and an **integrator** — usually different model families) split it up, work in parallel on their own git branches, and open one pull request per piece — with the same disciplines a senior engineer would apply: small commits, conflict-aware merges, a frozen scope per run, and verification that the change actually works end-to-end before it's marked done.
 
-**You stay the reviewer. They do the typing.**
+**You stay the reviewer of last resort. The agents do the typing — and review each other before you ever see the PR.**
+
+---
+
+# How it ships work — the role topology
+
+Inside a run, the workers aren't a homogeneous swarm. Each task moves through three distinct roles, and the framework deliberately uses **different terminals — often different model families — for each**, so review isn't self-marking:
+
+| Role | What it does | Default staffing |
+|---|---|---|
+| 🛠️ **Builder** | Writes the code on a fresh worktree, opens the PR | `@codex` (OpenAI Codex / GPT-5) |
+| 🔍 **Reviewer** | Reads only the PR diff and `EVID` — **never the builder's session** | `@claude` (Anthropic, fresh terminal) |
+| 🚦 **Integrator** | Closes findings, merges, cleans the worktree | `@claude` |
+
+This topology came out of the **Aula run** — the framework's defining Stage-9 finding (`prompts.md L3013` in the source corpus). A previous run had committed *"DONE — all 15 features ready for main"* while the end-to-end demo aborted at step 5, with two untested cross-tenant security leaks and the entire front half of the product missing. Root cause: the same model that built the work was marking its own homework. The fix became a structural rule, not a stylistic preference.
+
+**Build-blindness is structural, not instructed.** The reviewer is spawned in a separate terminal with **no access to the builder's session, scratchpads, or prior context** — so it can only judge the artifact (the diff + `EVID`), not the intent. If you can read your own commit message while reviewing your own diff, that's not review.
+
+**Design missions stay on `@grok`.** For `design-integration` and `landing-page-convergence`, the corpus showed `@grok` with the `frontend-design` specialization produces materially better visual fidelity than `@codex`. The Stage-9 builder retirement applies to general-purpose builds only; design missions explicitly carry the exception in their `SKILL.md`.
+
+**Single-vendor hosts are honest about the trade-off.** If you only have one model family available (e.g. running everything on Claude Code), the framework still enforces **terminal separation** — the reviewer gets a fresh session with no context inheritance — but it loses the cross-vendor blind-spot diversity. Every run's `fleet-outcome` records which mode it ran in, so it's never silent.
 
 ---
 
@@ -91,7 +111,7 @@ What you'll see, in order:
 2. Worker agents kicked off (you'll see them spawn).
 3. PRs appear in GitHub as each one finishes — usually within a few minutes.
 
-Each PR has a readiness doc explaining what was done, why, and how it was verified. **You review and merge.**
+Each PR has a readiness doc explaining what was done, why, and how it was verified — **and a different agent than the one that built it has already signed off on the review**. You're the final reviewer; the first reviewer was a fresh build-blind agent who never saw the builder's session.
 
 To stop a run mid-flight, close the chat (workers check in with the ledger and exit). The file ledger survives, so you can pick up where you left off in a new chat.
 
