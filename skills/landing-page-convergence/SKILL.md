@@ -19,6 +19,8 @@ metadata:
   fleet-component: "mission"
 ---
 
+<!-- Corpus: prompts.md L2962 (Stage 8 Tier 2 grouping) + Stage-6 prompts 13-14: "Landing-Page Rebuild (Corey Haines marketing skills)" at L1488 and "Landing-Page Rebuild — with deep-research step" at L1759. -->
+
 
 # Mission: landing-page-convergence
 
@@ -83,6 +85,13 @@ links/CTAs unless the design's section structure requires content the page lacks
 match the design).
 
 ## ROLE PIPELINE
+
+**Builder choice (Stage-9 carryover).** This mission keeps @grok as builder
+because Stage 6 (prompts.md L1488, L2038) showed @grok+frontend-design
+produces materially better visual fidelity on landing-page and design-parity
+runs than @codex. Stage-9's general retirement of @grok (prompts.md L3013)
+does not apply to design/landing missions.
+
 - @claude EXTRACTS the design + DIFFS production + rebuilds each section.
 - @codex REVIEWS each PR (fresh, build-blind): matches the design export
   (tokens/spacing/type/layout), the claimed D-item is actually closed, responsive, no

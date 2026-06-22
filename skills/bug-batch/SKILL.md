@@ -19,6 +19,8 @@ metadata:
   fleet-component: "mission"
 ---
 
+<!-- Corpus: prompts.md L2962 (Stage 8 Tier 2 grouping — "bug-batch (reproduce-first gate)"). -->
+
 
 # Mission: bug-batch
 

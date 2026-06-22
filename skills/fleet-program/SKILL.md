@@ -19,6 +19,8 @@ metadata:
   fleet-component: "program"
 ---
 
+<!-- Corpus: prompts.md L2966 — "a campaign layer (fleet-program) that composes missions into sequential/conditional workflows with a machine-readable fleet-outcome gate between them — the validated-handoff that the research said was non-negotiable for chaining missions without compounding errors." -->
+
 # fleet-program
 
 Meta-skill for **mission-level orchestration**: linear programs and **conditional campaign DAGs**.

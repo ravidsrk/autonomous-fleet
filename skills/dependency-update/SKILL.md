@@ -19,6 +19,8 @@ metadata:
   fleet-component: "mission"
 ---
 
+<!-- Corpus: prompts.md L2961 (Stage 8 Tier 1 grouping) + Stage-9 prompt 22 "Upgrade-Everything-to-Latest (majors included, one-major-per-PR)" at prompts.md L3003. -->
+
 
 # Mission: dependency-update
 

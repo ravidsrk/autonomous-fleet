@@ -19,6 +19,8 @@ metadata:
   fleet-component: "mission"
 ---
 
+<!-- Corpus: prompts.md L2962 (Stage 8 Tier 2 grouping) + the whole Stage-9 audit-driven fix-run lineage (prompts.md L2987-L3015: prompts 17/19/20/21/23/24/25) + L3013 (Aula final form). Real-run input: docs/adversarial-audit-2026-06-20.md. -->
+
 
 # Mission: adversarial-review-and-fix
 

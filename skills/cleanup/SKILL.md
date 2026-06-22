@@ -19,6 +19,8 @@ metadata:
   fleet-component: "mission"
 ---
 
+<!-- Corpus: prompts.md L2961 (Stage 8 Tier 1 grouping) + Stage-9 worktree-cleanup gate (prompts.md L2979 prose + prompt 21 at L2999) — cleanup-as-flag, not cleanup-as-prose. -->
+
 
 # Mission: cleanup
 

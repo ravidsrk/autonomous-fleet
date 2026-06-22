@@ -22,6 +22,8 @@ metadata:
   fleet-component: "mission"
 ---
 
+<!-- Corpus: prompts.md L2963 (Stage 8 Tier 3 grouping) + Stages 4-5 (prompts 9-12 at L788-L1488: ship-v1, product-completion, handoff triad, autonomy enforcement) + Stage-9 prompt 24 "Aula Completion-for-Real" at prompts.md L3011-L3013 (final-form role topology). -->
+
 
 # Mission: take-product-to-completion
 

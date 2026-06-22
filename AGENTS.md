@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This file provides guidance to AI coding agents (Claude Code, Cursor, GitHub Copilot, Antigravity, Gemini CLI, OpenCode, Grok Build, Mogra, etc.) when working with code in this repository.
+This file provides guidance to AI coding agents working with code in this repository. The framework ships adapters for Claude Code, Codex, Grok, and Orca; the conventions documented here are followed by any agent that reads AGENTS.md.
 
 # Repository Overview
 
