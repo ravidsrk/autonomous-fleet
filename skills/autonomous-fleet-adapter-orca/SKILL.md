@@ -6,8 +6,8 @@ description: >-
   the real Orca orchestration CLI commands. Load this alongside autonomous-fleet-core when
   running a mission on Orca. Handles Orca's worktree/terminal model, --inject dispatch,
   check --wait supervision, version-tolerant worker_done, and task-update syncing. Default
-  agent handles: @grok builds, @codex reviews (codex exec), @claude integrates —
-  overridable by the mission's role pipeline.
+  agent handles: @codex builds, a fresh build-blind @claude reviews, @claude integrates
+  (@grok builds design missions) — overridable by the mission's role pipeline.
 license: MIT
 compatibility: Requires Orca orchestration CLI, git, and gh CLI
 metadata:

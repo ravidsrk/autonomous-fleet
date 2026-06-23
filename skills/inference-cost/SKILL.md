@@ -12,7 +12,7 @@ description: >-
 license: MIT
 compatibility: Requires git, gh CLI, and billed provider API keys in the target repository env
 metadata:
-  author: "Ravindra Kumar <ravidsrk@gmail.com>"
+  author: "ravidsrk"
   version: "1.0.0"
   tier: "2"
   fleet-component: "mission"
@@ -27,7 +27,7 @@ metadata:
 
 Before executing, activate these skills and read their full instructions:
 
-1. `autonomous-fleet-core` - read `references/engine.md` and `references/composition.md` when coordinating
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
 2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
