@@ -51,7 +51,7 @@ For every request:
 # Common Operations
 
 - **Add a new skill:** Copy structure from an existing one (e.g. `doc-sync`), update `SKILL.md` frontmatter, generate a banner (see below), generate `README.md` from frontmatter, run validator.
-- **Validate all skills:** `./scripts/validate-skills.sh` (single-skill) or `./scripts/validate-all.sh` (skills + fleet-outcome + goals + pytest).
+- **Validate all skills:** `./scripts/validate-skills.sh` (single-skill) or `./scripts/validate-all.sh` (skills + fleet-outcome + goals + run-archive + pytest with 100% coverage gate). CI additionally runs ShellCheck and `./scripts/mutation-check.sh`.
 - **Run a mission headless:** `./scripts/run-mission-headless.sh <adapter> <mission> --max-turns 50`
 - **Run a campaign preset:** `./scripts/run-campaign.sh <adapter> --preset repo-health --dry-run`
 

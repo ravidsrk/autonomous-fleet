@@ -305,7 +305,7 @@ Full spec: [`skills/autonomous-fleet-core/references/fleet-outcome.md`](skills/a
 If you're hacking on the framework itself:
 
 ```bash
-./scripts/validate-all.sh                          # everything (recommended)
+./scripts/validate-all.sh                          # everything: skills + fleet-outcome + goals + run-archive + pytest (100% coverage gate)
 ./scripts/run-campaign.sh grok --preset repo-health --dry-run
 ./scripts/run-mission-headless.sh grok doc-sync --max-turns 50
 ```
@@ -316,7 +316,17 @@ Individual validators:
 ./scripts/validate-skills.sh                       # SKILL.md packages (agentskills.io)
 ./scripts/validate-fleet-outcome.sh                # readiness doc fleet-outcome YAML
 ./scripts/validate-goal-condition.sh --scan-docs   # /goal binding
-pytest tests/test_fleet_campaign.py                # campaign edge evaluator
+python scripts/validate_run_archive.py             # Layer 4: .fleet/runs/<run_id>/ manifest + sha256 + mtime ordering
+pytest tests/                                      # full suite (27 files, 100% coverage gate)
+
+# Operator gates (run on a specific run-id)
+python scripts/verify_findings.py \
+  .fleet/runs/<run_id>/p0-review-findings.json \
+  --repo .                                         # Layer 1: re-quote every reviewer-cited line
+python scripts/stop_verify.py                      # Layer 2: stop-verify hook (returns decision:block / allow)
+
+# CI-only gate (mirrors .github/workflows/ci.yml)
+./scripts/mutation-check.sh                        # assert every manifest mutation is caught by guard tests
 
 ./scripts/eval-campaign-edge.sh \
   --readiness docs/doc-sync-readiness.md \
@@ -363,30 +373,42 @@ autonomous-fleet/
 │   ├── setup-autonomous-fleet/          # per-repo config
 │   ├── autonomous-fleet-core/
 │   │   ├── SKILL.md
-│   │   └── references/
-│   │       ├── engine.md                # full engine spec
-│   │       ├── composition.md           # skill loading rules
-│   │       ├── community-skills.md      # gstack / agent-skills / mattpocock hooks
-│   │       ├── fleet-outcome.md         # readiness YAML spec
-│   │       └── runtime-goals.md         # /goal + ledger binding
+│   │   ├── references/
+│   │   │   ├── engine.md                # full engine spec
+│   │   │   ├── composition.md           # skill loading rules
+│   │   │   ├── community-skills.md      # gstack / agent-skills / mattpocock hooks
+│   │   │   ├── fleet-outcome.md         # readiness YAML spec
+│   │   │   ├── runtime-goals.md         # /goal + ledger binding
+│   │   │   ├── review-findings.md       # Layer 1: JSON Schema for reviewer findings + verifier CLI
+│   │   │   ├── strict-mode.md           # Layer 2: stop-verify Claude Code hook (opt-in)
+│   │   │   └── run-archive.md           # Layer 4: .fleet/runs/<run_id>/ manifest scheme
+│   │   └── assets/
+│   │       ├── fleet-review-findings.schema.json   # Layer 1 schema
+│   │       ├── fleet-review-findings.example.json
+│   │       ├── fleet-run-manifest.schema.json      # Layer 4 manifest schema
+│   │       └── hooks/                              # Layer 2 stop-verify hook + hooks.json
 │   ├── autonomous-fleet-adapter-{orca,claude-code,grok,codex,template}/
 │   └── (12 mission skills)
 ├── docs/
+│   ├── README.md                        # docs/ index — load-bearing files warning
 │   ├── external-dogfood/                # gemoji repo-health + ship-with-proof evidence
 │   ├── research-community-skills.md
 │   └── doc-sync-audit.md                # latest drift index
 ├── scripts/
-│   ├── validate-all.sh
+│   ├── validate-all.sh                  # umbrella: skills + fleet-outcome + goals + run-archive + pytest
 │   ├── validate-{skills,fleet-outcome,goal-condition}.sh
+│   ├── validate_run_archive.py          # Layer 4 manifest + on-disk integrity validator
+│   ├── verify_findings.py               # Layer 1 reviewer-findings source verifier
+│   ├── stop_verify.py                   # Layer 2 stop-verify hook entrypoint
+│   ├── mutation-check.sh                # standing mutation gate (CI: assert tests catch known bugs)
 │   ├── eval-campaign-edge.{sh,py}
 │   ├── coupling-graph.py                # import/symbol graph for coupling-aware decomposition
 │   ├── render-dashboard.py              # ledger → attention-zone HTML dashboard
 │   ├── run-{campaign,mission-headless,sandboxed}.sh
-│   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate
-│   ├── lib/fleet_outcome.py
+│   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate, secure-ship, handoff-to-product
+│   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, stop_verify, mission_registry, venv-bootstrap
 │   └── install-skills.sh
-├── tests/
-│   └── test_fleet_campaign.py
+├── tests/                               # 27 test files; validators + engine doctrine + 4-layer substrate
 ├── .agents/skills/                      # installed skill copies (gitignored)
 └── skills-lock.json                     # lockfile for npx skills
 ```
