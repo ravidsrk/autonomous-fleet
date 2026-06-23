@@ -509,7 +509,7 @@ def test_archive_enabled_doctrine_block_present_with_all_four_hard_rules() -> No
     # Retention policy explicit. Without this, operators won't know whether
     # the engine garbage-collects archives.
     assert "does not garbage-collect" in arch_flat or "Retention" in arch
-    assert "scripts/prune-run-archives.sh" in arch
+    assert "out-of-band" in arch
 
     # Lineage citation.
     assert "competitor-audit-2026-06-22.md" in arch

@@ -78,6 +78,7 @@ hook — there is no need to copy `stop-verify.sh` into the repo.
 In any repo a worker will run in:
 
 ```bash
+mkdir -p .claude
 # If .claude/settings.json doesn't exist yet, copy the template wholesale:
 cp "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/hooks.json" \
    .claude/settings.json
