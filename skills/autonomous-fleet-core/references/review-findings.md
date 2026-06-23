@@ -30,7 +30,7 @@ Lineage:
   quoted-line grep originated there.
 - xreview (Aronchick) `internal/schema/review.json` — confidence,
   fix_alternatives, fix_strategy originated there.
-- 2026-06-22 competitor audit (`/workspace/audit-work/borrowable-patterns-report.md`).
+- 2026-06-22 competitor audit (`docs/competitor-audit-2026-06-22.md`).
 
 ## The protocol
 

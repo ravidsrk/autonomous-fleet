@@ -385,9 +385,9 @@ autonomous-fleet/
 │   │   └── assets/
 │   │       ├── fleet-review-findings.schema.json   # Layer 1 schema
 │   │       ├── fleet-review-findings.example.json
-│   │       ├── fleet-run-manifest.schema.json      # Layer 4 manifest schema
-│   │       └── hooks/                              # Layer 2 stop-verify hook + hooks.json
+│   │       └── fleet-run-manifest.schema.json      # Layer 4 manifest schema
 │   ├── autonomous-fleet-adapter-{orca,claude-code,grok,codex,template}/
+│   │       └── (claude-code) assets/hooks/         # Layer 2 stop-verify hook + hooks.json (opt-in)
 │   └── (12 mission skills)
 ├── docs/
 │   ├── README.md                        # docs/ index — load-bearing files warning

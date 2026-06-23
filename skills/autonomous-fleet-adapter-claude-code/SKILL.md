@@ -191,3 +191,12 @@ Do not replace full mission coordinator — Ralph lacks PR pipeline gates.
   session restarts. Update it at every lifecycle change, before yielding the turn.
 - One in-flight unit per hot file still holds: do not run two subagents editing the same file
   concurrently. Parallelize subagents across non-overlapping files.
+
+## STRICT MODE (optional Stop hook)
+This adapter ships the reference implementation of the engine's `RUNTIME ENFORCEMENT GATE`: a Claude
+Code Stop hook that refuses to end a worker session until verifiable evidence (EVID / WT_CLEAN /
+e2e_verified / a passing verify-findings summary / test or e2e artifacts) exists on disk in a
+freshness window. It is OPT-IN and fail-open (a broken gate degrades to loose mode, never traps a worker).
+- Assets: `assets/hooks/stop-verify.sh` (wrapper) + `assets/hooks/hooks.json` (Stop-entry template).
+- Install, configuration, discipline levels (loose / strict / paranoid), verify, and uninstall:
+  see `autonomous-fleet-core/references/strict-mode.md`.

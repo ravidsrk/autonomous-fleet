@@ -37,11 +37,11 @@ set -uo pipefail
 # ── Resolve the autonomous-fleet repo path ────────────────────────────
 # Operators set AUTONOMOUS_FLEET_HOME to the checkout root. If unset, we
 # walk up from this script's location — works when the hook is installed
-# as a SYMLINK from .claude/hooks/ to skills/autonomous-fleet-core/assets/hooks/.
+# as a SYMLINK from .claude/hooks/ to skills/autonomous-fleet-adapter-claude-code/assets/hooks/.
 FLEET_HOME="${AUTONOMOUS_FLEET_HOME:-}"
 if [ -z "$FLEET_HOME" ]; then
   this_script="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || python3 -c "import os,sys; print(os.path.realpath(sys.argv[1]))" "${BASH_SOURCE[0]}")"
-  # this_script -> skills/autonomous-fleet-core/assets/hooks/stop-verify.sh
+  # this_script -> skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh
   # repo root   -> 4 levels up
   FLEET_HOME="$(cd "$(dirname "$this_script")/../../../.." && pwd)"
 fi
