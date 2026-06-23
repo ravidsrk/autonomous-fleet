@@ -45,8 +45,8 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude (repro test, fix, integrator) | — | Repo test conventions |
-| @codex (review) | — | Mission review gate only |
+| @codex (repro test, fix) | — | Repo test conventions |
+| @claude (review, integrator) | — | Mission review gate only |
 
 ## Deferred missions
 

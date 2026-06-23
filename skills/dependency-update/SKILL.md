@@ -45,7 +45,8 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude (bump, fix, integrator) | — | Package manager docs + changelogs |
+| @codex (bump, fix) | — | Package manager docs + changelogs |
+| @claude (review, integrator) | — | Package manager docs + changelogs |
 
 ## Deferred missions
 

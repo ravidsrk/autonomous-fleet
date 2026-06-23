@@ -40,8 +40,8 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
 | `claude_design` MCP | DESIGN SOURCE uses MCP connector | User must `/design-login` - HARD EXTERNAL DEPENDENCY |
-| `design-review` | After a parity wave; coordinator wants visual QA sampling | Rely on @codex review gate only |
-| `qa-only` | Staging/preview URL exists; report-only fidelity check | Screenshot + @codex review only |
+| `design-review` | After a parity wave; coordinator wants visual QA sampling | Rely on @claude review gate only |
+| `qa-only` | Staging/preview URL exists; report-only fidelity check | Screenshot + @claude review only |
 
 Community catalog: `autonomous-fleet-core` → `references/community-skills.md`. At most 2 optional
 skills active (including MCP row).
@@ -52,7 +52,7 @@ skills active (including MCP row).
 |------|--------|----------------|
 | @grok (build items) | `frontend-design`, `frontend-ui-engineering`; iOS → `swiftui-liquid-glass` | Design extract + parity spec |
 | @grok (QA fix loop) | `qa` when staging URL and user wants fix-verify loop | Mission fidelity gate only |
-| @claude (extract, map, ship) | `domain-modeling` when new product terms surface | claude_design MCP / export per DESIGN SOURCE |
+| @claude (extract, map, fresh review, ship) | `domain-modeling` when new product terms surface | claude_design MCP / export per DESIGN SOURCE |
 
 ## Deferred missions
 

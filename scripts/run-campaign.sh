@@ -249,6 +249,8 @@ while [[ -n "$CURRENT" ]]; do
   else
     EXTRA=(--repo "$REPO_ROOT")
     [[ "$YOLO" -eq 1 ]] && EXTRA+=(--yolo)
+    # Propagate the acknowledgement so the child's RCE gate doesn't re-fire on an external repo.
+    [[ "$YOLO_ACK" -eq 1 ]] && EXTRA+=(--yolo-untrusted-acknowledged)
     "$ROOT/scripts/run-mission-headless.sh" "$RUNTIME" "$MISSION" --max-turns "$MAX_TURNS" "${EXTRA[@]}"
     if [[ -f "$READINESS_ABS" ]]; then
       ./scripts/validate-fleet-outcome.sh "$READINESS_ABS"
