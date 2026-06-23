@@ -321,6 +321,7 @@ python scripts/verify_findings.py \
   .fleet/runs/<run_id>/p0-review-findings.json \
   --repo .                                         # Layer 1: re-quote every reviewer-cited line
 python scripts/stop_verify.py                      # Layer 2: stop-verify hook (returns decision:block / allow)
+python scripts/verify_blind_fix.py .fleet/runs/<run_id>/  # Layer 3: blind-fix anti-anchoring guard
 
 # CI-only gate (mirrors .github/workflows/ci.yml)
 ./scripts/mutation-check.sh                        # assert every manifest mutation is caught by guard tests
@@ -392,18 +393,19 @@ autonomous-fleet/
 │   ├── research-community-skills.md
 │   └── doc-sync-audit.md                # latest drift index
 ├── scripts/
-│   ├── validate-all.sh                  # umbrella: skills + fleet-outcome + goals + run-archive + pytest
+│   ├── validate-all.sh                  # umbrella: skills + fleet-outcome + goals + run-archive + blind-fix + pytest
 │   ├── validate-{skills,fleet-outcome,goal-condition}.sh
 │   ├── validate_run_archive.py          # Layer 4 manifest + on-disk integrity validator
 │   ├── verify_findings.py               # Layer 1 reviewer-findings source verifier
 │   ├── stop_verify.py                   # Layer 2 stop-verify hook entrypoint
+│   ├── verify_blind_fix.py              # Layer 3 anti-anchoring (blind-fix) verifier
 │   ├── mutation-check.sh                # standing mutation gate (CI: assert tests catch known bugs)
 │   ├── eval-campaign-edge.{sh,py}
 │   ├── coupling-graph.py                # import/symbol graph for coupling-aware decomposition
 │   ├── render-dashboard.py              # ledger → attention-zone HTML dashboard
 │   ├── run-{campaign,mission-headless,sandboxed}.sh
 │   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate, secure-ship, handoff-to-product
-│   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, stop_verify, mission_registry, venv-bootstrap
+│   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, stop_verify, mission_registry, venv-bootstrap
 │   └── install-skills.sh
 ├── tests/                               # 27 test files; validators + engine doctrine + 4-layer substrate
 ├── .agents/skills/                      # installed skill copies (gitignored)

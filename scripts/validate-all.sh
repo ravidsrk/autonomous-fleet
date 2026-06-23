@@ -28,6 +28,27 @@ echo "== validate-run-archive =="
 "$VENV_PYTHON" scripts/validate_run_archive.py
 
 echo ""
+echo "== verify-blind-fix (Layer 3) =="
+# Layer 3 (anti-anchoring) verifier. Spec: references/blind-fix.md.
+# Scans every .fleet/runs/<run_id>/ archive that contains a
+# p0-review-findings.json and validates each finding has a valid
+# blind-fix file (canonical or explicit chain path). No archives = exit 0.
+shopt -s nullglob
+bf_status=0
+for run_dir in .fleet/runs/*/; do
+  if [[ -f "$run_dir/p0-review-findings.json" ]]; then
+    if ! "$VENV_PYTHON" scripts/verify_blind_fix.py "$run_dir"; then
+      bf_status=1
+    fi
+  fi
+done
+shopt -u nullglob
+if (( bf_status != 0 )); then
+  echo "verify-blind-fix: at least one archive failed Layer 3" >&2
+  exit 1
+fi
+
+echo ""
 echo "== pytest + coverage (100% gate) =="
 "$VENV_PYTHON" -m coverage run --source=scripts -m pytest tests/ -q
 "$VENV_PYTHON" -m coverage report --fail-under=100
