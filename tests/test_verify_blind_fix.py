@@ -934,7 +934,3 @@ def test_validate_all_existing_coverage_edges(tmp_path: Path) -> None:
         "progress.md",
     )
     assert [row["name"] for row in rows] == ["demo"]
-    exec(
-        compile("\n" * 54 + "pass\n", str(REPO_ROOT / "scripts" / "render-dashboard.py"), "exec"),
-        {},
-    )

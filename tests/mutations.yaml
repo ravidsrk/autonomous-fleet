@@ -193,3 +193,15 @@ mutations:
     find: 'total_cost += cost_float'
     replace: 'total_cost += 0.0'
     guards: [tests/test_analyze_cost.py]
+
+  - id: trace-details-secret-scan-off
+    file: scripts/lib/emit_trace.py
+    find: 'if _SECRET_RE.search(value):'
+    replace: 'if False:'
+    guards: [tests/test_review_fixes_2.py]
+
+  - id: lock-steal-second-liveness-check-off
+    file: scripts/lib/locks.py
+    find: 'if _pid_alive(current_holder_pid):'
+    replace: 'if False:'
+    guards: [tests/test_locks_review_fixes.py, tests/test_review_fixes_2.py]

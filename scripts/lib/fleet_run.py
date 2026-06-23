@@ -309,10 +309,8 @@ def write_manifest(
         payload["notes"] = notes
 
     manifest_path = archive_root / "manifest.json"
-    manifest_path.write_text(
-        json.dumps(payload, indent=2, sort_keys=False) + "\n",
-        encoding="utf-8",
-    )
+    # Doctrine (engine.md TRACE EMISSION): trace first, ledger second — never the reverse,
+    # or a crash leaves the manifest on disk with no externally-visible cause. Emit BEFORE write.
     if emitter is not None:
         emitter.emit(
             "T-FINAL",
@@ -320,6 +318,10 @@ def write_manifest(
             "succeeded",
             details={"manifest": manifest_path.name, "files": len(file_list)},
         )
+    manifest_path.write_text(
+        json.dumps(payload, indent=2, sort_keys=False) + "\n",
+        encoding="utf-8",
+    )
     return manifest_path
 
 

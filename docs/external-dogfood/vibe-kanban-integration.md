@@ -7,7 +7,7 @@ already checked in.
 
 ## Trace Stream
 
-Fleet runs write one JSONL event per ledger state transition to:
+The trace CONTRACT defines one JSONL event per ledger state transition; today `fleet_run.write_manifest` is the reference emitter (the T-FINAL event), and the coordinator/adapters emit the rest per the engine TRACE EMISSION doctrine (rollout in progress). to:
 
 ```text
 .fleet/runs/<run_id>/trace.jsonl
