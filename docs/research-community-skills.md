@@ -27,7 +27,7 @@
 | **gstack** | ~59 `SKILL.md` | Virtual eng team (CEO, design, eng, QA, security, ship) | Slash commands; user chains (`/office-hours` → `/autoplan` → implement → `/ship`) |
 | **agent-skills** | 24 skills + 7 commands | SDLC pipeline | `/spec` → `/plan` → `/build` → `/test` → `/review` → `/ship`; skills auto-trigger by activity |
 | **mattpocock/skills** | ~25 skills | Small opinionated primitives | `/grill-me`, `/domain-modeling`, `/triage`; composable, no campaign layer |
-| **autonomous-fleet** | 21 skills | Mission-centric engineering | core + adapter + **one mission**; `fleet-program` for DAGs; file ledgers + `fleet-outcome` |
+| **autonomous-fleet** | 12 skills | Mission-centric engineering | core + adapter + **one mission**; `fleet-program` for DAGs; file ledgers + `fleet-outcome` |
 
 ### Architectural contrast
 
