@@ -21,6 +21,13 @@ echo "== validate-goal-condition =="
 ./scripts/validate-goal-condition.sh --scan-docs
 
 echo ""
+echo "== validate-run-archive =="
+# Run-archive scheme (engine.md ARCHIVE_ENABLED). Default scan looks under
+# .fleet/runs/ for any run_id-shaped directories. No archives = exit 0 (the
+# discipline is gated on artifact production, not on a directory existing).
+"$VENV_PYTHON" scripts/validate_run_archive.py
+
+echo ""
 echo "== pytest + coverage (100% gate) =="
 "$VENV_PYTHON" -m coverage run --source=scripts -m pytest tests/ -q
 "$VENV_PYTHON" -m coverage report --fail-under=100

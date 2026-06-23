@@ -138,12 +138,29 @@ value, the script that reproduced the race) and sets `EVID=true` only when it no
   (mark FOUNDATION), root-cause CLUSTERS drafted from shared causes, hot-file collision map,
   validated-strengths do-not-touch list. Each cluster must be tagged `FOUNDATION|INDEPENDENT` with
   a `touches:` file-list and `CLOSES=[ids]`. Output docs/adversarial-review-fresh.md.
+
+  **SCHEMA-VERIFIED FINDINGS (machine-checkable counterpart):** alongside the markdown review doc,
+  the reviewer emits a JSON findings document conformant to
+  `autonomous-fleet-core/assets/fleet-review-findings.schema.json` at
+  `.fleet/runs/<run_id>/p0-review-findings.json`. Each finding's `evidence.quoted_line` MUST be the
+  EXACT verbatim line from the cited source file. The coordinator immediately runs
+  `python scripts/verify_findings.py .fleet/runs/<run_id>/p0-review-findings.json --repo <REPO_ROOT>
+  --write --summary-out .fleet/runs/<run_id>/p0-verify-summary.json`. If exit != 0 (schema error or
+  unverified finding), the run HALTS at P0-REVIEW — unverified findings are likely reviewer
+  hallucination and MUST NOT enter the fix loop. The reviewer either fixes the quotes and re-emits,
+  or omits the unverified findings. See `autonomous-fleet-core/references/review-findings.md` for the
+  full protocol.
 - **P0-SKEPTIC [@codex, fresh, gated on P0-REVIEW]** — stress every finding AGAINST THE CODE
   (open each cited file:line; verify it's real, severity right, Fix sound, named primitive
   exists, won't break a strength). Produce CONFIRMED (with narrowed scope) and REFUTED/DO-NOT-FIX
   sets. Finalize root-cause CLUSTERS over the CONFIRMED set, preserving `FOUNDATION|INDEPENDENT`,
   `touches:`, and `CLOSES=[ids]`. Update the doc inline. Set PHASE=REVIEW_FROZEN. Confirmed =
   Phase 1 spec; refuted = never fixed.
+
+  Emit a parallel JSON skeptic doc at `.fleet/runs/<run_id>/p0-skeptic-findings.json` carrying ONLY
+  the CONFIRMED set, same schema as P0-REVIEW. Re-run `scripts/verify_findings.py` against it; exit
+  != 0 halts (a CONFIRMED finding whose quote no longer locates means the skeptic narrowed scope
+  past the original line — re-cite or drop).
 - **BOOTSTRAP** — transcribe confirmed finding IDs into the ledger CLOSE-INDEX (waves from the
   ranking: P0s first, then FOUNDATION, then rest); apply the THREE-LANE REMEDIATION classification;
   register Lane A fix tasks in the ledger and SYNC_TASK_STATE(ready) via the active adapter (create
@@ -156,10 +173,64 @@ value, the script that reproduced the race) and sets `EVID=true` only when it no
   re-runs the same Evidence reproduction and re-demonstrates each finding's acceptance. Fix a
   FOUNDATION cluster's root cause once; dependent findings in that cluster's `CLOSES=[ids]` inherit
   closure through the same PR when their Evidence and acceptance gates pass.
+
+  When schema-verified findings are in use, the FIX LOOP consumes ONLY the verified set from
+  `.fleet/runs/<run_id>/p0-skeptic-findings.json` (i.e. findings where `verified: true`). A finding
+  with `verified: false` is held for manual operator inspection — never fed to a builder. This is
+  the corpus-grounded counter to reviewer hallucination: the orchestrator gates the loop, not the
+  builder's good faith.
+
+  **ANTI-ANCHORING — fresh build-blind reviewer commits its blind fix BEFORE reading the PR diff
+  (engine.md ANTI-ANCHORING).** When a builder's PR is handed to the fresh @claude reviewer, the
+  reviewer FIRST reads only the finding (the cited file:line + cascade paths from the schema-
+  verified findings doc), forms an independent hypothesis about the correct point-of-creation fix,
+  and writes that blind fix to `.fleet/runs/<run_id>/reviewer-blind-fix-<finding-id>.md` BEFORE
+  opening the candidate PR diff. The blind-fix file names: the point of creation
+  (file:function:line), the shape of the change, and the reviewer's pre-commit confidence (0-100).
+  Only AFTER the blind fix is committed to disk does the reviewer open the candidate diff. The
+  review then compares the candidate to its pre-committed blind fix; a candidate at a different
+  call-stack depth than the blind fix triggers the ROOT_CAUSE_DEPTH HARD RULE and the reviewer
+  emits a `category: root_cause_depth` finding (with `cascade_impact` listing the other paths
+  the root cause still triggers — schema-required). A blind-fix file whose mtime is AFTER the
+  candidate-findings file means the protocol was violated; the coordinator surfaces this and
+  re-runs review on the affected PR.
 - **T-FINAL [@claude]** — build green, lint clean, full suite green incl. added tests; every
   confirmed finding CLOSED or CODE_CLOSED(+OPS recorded). Output `docs/arch-build-readiness.md`
   starting with **`fleet-outcome` YAML** (`p0_open`, `p1_open`, `findings_open`, `ops_queue_count`;
   see fleet-outcome.md), then finding status, OPS queue, **Recommended next missions**, all PRs.
+  When schema-verified review findings were emitted, also surface
+  `verified_findings`, `unverified_findings`, `auto_applicable_findings`, and
+  `human_gated_findings` in the metrics block (sourced from
+  `.fleet/runs/<run_id>/p0-verify-summary.json`). `unverified_findings == 0` is a HARD precondition
+  for `status: done` — a T-FINAL that ships with unverified findings still in flight is a
+  reviewer-hallucination leak and MUST be `status: partial` instead.
+
+  **ROOT_CAUSE_DEPTH attestation (engine.md ROOT_CAUSE_DEPTH).** Set top-level
+  `root_cause_audited: true` in the fleet-outcome WHEN every `category: root_cause_depth` finding
+  closed in this mission had its `cascade_impact` paths re-EVIDed by the builder (each cited
+  cascade path's own reproduction was run and stopped reproducing). Set `root_cause_audited: false`
+  if any cascade path was deferred to a follow-up mission (which MUST then appear in
+  `deferred_missions`). Omit the field entirely when no root-cause-depth findings were filed.
+  This makes the discipline auditable across runs without bloating non-applicable readiness docs.
+
+  **Run-archive manifest (engine.md ARCHIVE_ENABLED).** Before opening the final PR, T-FINAL
+  writes `manifest.json` to the run's archive directory `.fleet/runs/<run_id>/` by walking the
+  directory and emitting one entry per first-class artifact (every findings JSON, verifier
+  summary, blind-fix file, prompt, response, diff, this readiness doc, the progress doc). Use
+  `python scripts/lib/fleet_run.py` style — typically driven by a worker step that calls
+  `fleet_run.write_manifest(archive_root, run_id=..., mission='adversarial-review-and-fix',
+  files=[...])`. Then run `python scripts/validate_run_archive.py .fleet/runs/<run_id>/`. The
+  validator enforces three mtime-ordering invariants from Commits 1-3 disciplines: blind_fix
+  before findings (per producer), verify_summary after findings, readiness with the latest mtime
+  in the archive. A validator that exits non-zero means the discipline is unsatisfied — fix the
+  archive (re-create the missing/re-order the misplaced file) and re-emit the manifest before
+  shipping. Set top-level `archive_enabled: true` in the fleet-outcome ONLY after the validator
+  passes; also set top-level `run_id: <run_id>` so post-hoc tools (INFLATION POST-MORTEM,
+  dashboards) can jump straight to the archive. `archive_enabled: false` is incompatible with
+  `status: done` — the fleet-outcome validator rejects that combination (the archive IS the
+  audit trail). Missions that emitted no first-class artifacts (rare for adversarial-review-and-
+  fix — should never happen) OMIT both fields rather than asserting them false.
+
   Ship as the final PR.
 
 ## Runtime goal

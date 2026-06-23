@@ -194,3 +194,56 @@ def test_coupling_resolves_relative_imports(tmp_path):
         for c in clusters
     )
     assert coupled, f"relative import not resolved into a cluster: {data}"
+
+
+# --- fleet_outcome.py: Commit 3 — root_cause_audited optional cross-cutting bool ---
+
+
+def test_root_cause_audited_accepts_true():
+    """The happy path for the ROOT_CAUSE_DEPTH discipline assertion: a review
+    mission that re-EVIDed every cascade records `root_cause_audited: true` at
+    the top level. Pin the field's existence at the validator surface."""
+    assert validate_outcome({**BASE, "root_cause_audited": True}) == []
+
+
+def test_root_cause_audited_accepts_false():
+    """A review mission that deferred at least one cascade legitimately records
+    `false`. The validator does NOT couple this to deferred_missions presence —
+    that coupling lives in the mission's SKILL.md (T-FINAL) prose, not the
+    schema. Pin to prevent over-coupling at the validator layer."""
+    assert validate_outcome({**BASE, "root_cause_audited": False}) == []
+
+
+def test_root_cause_audited_accepts_omission():
+    """Missions that filed no root_cause_depth findings OMIT the field. Pin
+    that absence is not a validation error — otherwise non-applicable readiness
+    docs would carry meaningless assertions, the opposite of the discipline."""
+    payload = dict(BASE)
+    assert "root_cause_audited" not in payload
+    assert validate_outcome(payload) == []
+
+
+def test_root_cause_audited_rejects_string():
+    """The field is a discipline assertion (bool), not free text. A string
+    "yes" or "audited by Q" silently passing would let coordinators record
+    untyped attestations and the discipline becomes unauditable. Reject."""
+    errors = validate_outcome({**BASE, "root_cause_audited": "yes"})
+    assert any("root_cause_audited" in e for e in errors), errors
+    # The error must name the field AND the expected type so the operator
+    # fixes the right thing.
+    assert any("bool" in e for e in errors), errors
+
+
+def test_root_cause_audited_rejects_int():
+    """1/0 truthiness is forbidden — bool only. Without this, a coordinator
+    that meant "1 audited finding" would silently coerce to true and the
+    semantic shift would be invisible."""
+    errors = validate_outcome({**BASE, "root_cause_audited": 1})
+    assert any("root_cause_audited" in e for e in errors), errors
+
+
+def test_root_cause_audited_rejects_none():
+    """Explicit null is a different signal than omission — operators must use
+    omission, not a null sentinel, so the validator stays unambiguous."""
+    errors = validate_outcome({**BASE, "root_cause_audited": None})
+    assert any("root_cause_audited" in e for e in errors), errors

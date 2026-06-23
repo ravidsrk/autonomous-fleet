@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-fleet/schemas/fleet-review-findings.schema.json",
+  "title": "Fleet Review Findings",
+  "description": "Structured reviewer output emitted by adversarial-review-and-fix and other review missions. Every finding MUST cite a verbatim quoted_line from the source file so the orchestrator can grep-verify the claim. Findings whose quote can't be found in the cited file are marked unverified and DOWNGRADED in the fleet-outcome — this is the corpus-grounded counter to reviewer hallucination. Lineage: GodModeSkill work-converge quoted-line check + xreview internal/schema/review.json (confidence, fix_alternatives, fix_strategy).",
+  "type": "object",
+  "required": ["schema_version", "mission", "review_id", "findings", "verdict"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "description": "Schema version. Bump on breaking changes.",
+      "type": "string",
+      "const": "1.0"
+    },
+    "mission": {
+      "description": "Mission that emitted these findings (typically adversarial-review-and-fix).",
+      "type": "string",
+      "minLength": 1
+    },
+    "review_id": {
+      "description": "Stable identifier for this review run (e.g. <branch>-<round>-<reviewer>). Used for archive paths and cross-references.",
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9._/-]+$"
+    },
+    "reviewer": {
+      "description": "Optional: the reviewer agent identity (vendor/model/role). Surfaces in fleet-outcome for cross-vendor diversity audit.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "vendor": { "type": "string" },
+        "model": { "type": "string" },
+        "role": { "type": "string", "enum": ["build-blind-reviewer", "skeptic", "integrator-review", "other"] }
+      }
+    },
+    "round": {
+      "description": "Review round number (1-based). Disagreement loops increment this.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "verdict": {
+      "type": "object",
+      "required": ["decision", "reasoning"],
+      "additionalProperties": false,
+      "properties": {
+        "decision": {
+          "type": "string",
+          "enum": ["approve", "request_changes", "partial"],
+          "description": "approve = ready to integrate; request_changes = blocking findings exist; partial = some findings addressed but others remain."
+        },
+        "reasoning": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One paragraph: why approve, why not, or what partial means."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["id", "severity", "category", "claim", "evidence", "fix_alternatives", "confidence", "fix_strategy"],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "$comment": "ROOT_CAUSE_DEPTH discipline (engine.md): findings tagged category=root_cause_depth MUST name the other call paths the root cause can trigger. A root_cause_depth finding without cascade_impact is almost always a symptom-fix finding miscategorised — the schema rejects it the same way it rejects an unverified quoted_line. Source: SWE-Review HARD RULE.",
+          "if": {
+            "properties": { "category": { "const": "root_cause_depth" } },
+            "required": ["category"]
+          },
+          "then": {
+            "required": ["cascade_impact"],
+            "properties": {
+              "cascade_impact": {
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ],
+      "properties": {
+        "id": {
+          "description": "Stable identifier within this review (e.g. F-001). Survives across rounds — the same finding keeps the same id when re-asserted.",
+          "type": "string",
+          "pattern": "^[A-Z]+-[0-9]+$"
+        },
+        "severity": {
+          "type": "string",
+          "enum": ["critical", "high", "medium", "low"]
+        },
+        "category": {
+          "type": "string",
+          "enum": ["bug", "security", "architecture", "performance", "style", "test", "root_cause_depth", "other"]
+        },
+        "claim": {
+          "type": "string",
+          "minLength": 1,
+          "description": "One-sentence description of the issue."
+        },
+        "evidence": {
+          "type": "object",
+          "required": ["file_path", "quoted_line"],
+          "additionalProperties": false,
+          "properties": {
+            "file_path": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Path relative to repo root (forward slashes), or an absolute path. The verifier resolves relative paths against the repo root."
+            },
+            "line_number": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Optional 1-based line number where quoted_line appears. The verifier does not require this match — quoted_line is the source of truth — but inconsistent line_number is reported as a soft warning."
+            },
+            "quoted_line": {
+              "type": "string",
+              "minLength": 1,
+              "description": "EXACT verbatim line from the source file, character-for-character including whitespace. The orchestrator runs a whitespace-tolerant grep against the cited file; findings whose quoted_line is not found are marked verified=false and DOWNGRADED in the quorum (likely hallucination from over-eager review). If you cannot quote the exact line, omit the finding."
+            },
+            "context_lines": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20,
+              "description": "Optional: how many surrounding lines were considered (informational, not verified)."
+            }
+          }
+        },
+        "fix_alternatives": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "description": "1-4 labeled fix proposals. Forces the reviewer to think laterally rather than locking onto one fix. xreview lineage: 2-3 alternatives is the sweet spot.",
+          "items": {
+            "type": "object",
+            "required": ["label", "description", "effort"],
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "type": "string",
+                "pattern": "^[A-Z]$",
+                "description": "A, B, C, D — single uppercase letter."
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "effort": {
+                "type": "string",
+                "enum": ["minimal", "moderate", "large"],
+                "description": "minimal = ≤10 line change, moderate = single-file refactor, large = cross-module."
+              },
+              "recommended": {
+                "type": "boolean",
+                "description": "At most one alternative should be recommended=true. Builder MAY pick a different one with justification."
+              }
+            }
+          }
+        },
+        "confidence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Reviewer's confidence (0-100) that this finding is a real defect. Below 60: ask the reviewer to either gather more evidence or omit. Above 80: candidate for auto-apply. Below 50 with severity=low: candidate to drop entirely."
+        },
+        "fix_strategy": {
+          "type": "string",
+          "enum": ["auto", "ask"],
+          "description": "auto = builder may apply the recommended fix without human gating; ask = human must approve. Default to ask for severity=critical and for changes touching public APIs."
+        },
+        "cascade_impact": {
+          "type": "string",
+          "description": "Optional: what other code paths / call sites are affected by this defect. Helps the builder decide if the fix needs to be broader. Required for findings with category=root_cause_depth."
+        },
+        "trigger": {
+          "type": "string",
+          "description": "Optional: input or code path that triggers the bug. Useful for repro and EVID."
+        },
+        "verified": {
+          "type": "boolean",
+          "description": "Set by verify-findings, NOT by the reviewer. true = quoted_line found in cited file; false = quote not found (likely hallucination); absent = not yet verified."
+        },
+        "verify_reason": {
+          "type": "string",
+          "description": "Set by verify-findings when verified=false. Human-readable reason ('file not found', 'quoted-line not found in cited file', etc.)."
+        }
+      }
+    }
+  }
+}

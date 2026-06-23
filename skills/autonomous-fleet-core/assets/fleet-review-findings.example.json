@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0",
+  "mission": "adversarial-review-and-fix",
+  "review_id": "example-r1-claude",
+  "reviewer": {
+    "vendor": "anthropic",
+    "model": "claude-opus-4.5",
+    "role": "build-blind-reviewer"
+  },
+  "round": 1,
+  "findings": [
+    {
+      "id": "REL-001",
+      "severity": "high",
+      "category": "bug",
+      "claim": "Worktree path fallback to active checkout is silent and unbounded.",
+      "evidence": {
+        "file_path": "scripts/run-sandboxed.sh",
+        "line_number": 142,
+        "quoted_line": "    [ -z \"$wt\" ] && wt=\"$ACTIVE_CHECKOUT\""
+      },
+      "fix_alternatives": [
+        {
+          "label": "A",
+          "description": "Replace silent fallback with explicit error: return 1 with diagnostic.",
+          "effort": "minimal",
+          "recommended": true
+        },
+        {
+          "label": "B",
+          "description": "Gate fallback behind a --allow-active-fallback opt-in flag.",
+          "effort": "moderate"
+        }
+      ],
+      "confidence": 92,
+      "fix_strategy": "auto",
+      "trigger": "Any call to run-sandboxed.sh from a worker whose worktree was already cleaned.",
+      "cascade_impact": "Three callers in scripts/lib/ rely on the WT_CLEAN gate; silent fallback breaks all three."
+    },
+    {
+      "id": "ARCH-001",
+      "severity": "medium",
+      "category": "root_cause_depth",
+      "claim": "Null guard at point of use covers one call site; two siblings call the same upstream factory.",
+      "evidence": {
+        "file_path": "src/factory.py",
+        "line_number": 27,
+        "quoted_line": "    return cls(maybe_none) if maybe_none else None"
+      },
+      "fix_alternatives": [
+        {
+          "label": "A",
+          "description": "Move the null guard into the factory constructor so all 3 call sites benefit.",
+          "effort": "moderate",
+          "recommended": true
+        },
+        {
+          "label": "B",
+          "description": "Replicate the guard at each call site (faster but doesn't fix root cause).",
+          "effort": "minimal"
+        }
+      ],
+      "confidence": 78,
+      "fix_strategy": "ask",
+      "cascade_impact": "The two other callers in src/cli.py and src/api.py will still hit the null path because the guard is colocated with one consumer rather than the producer."
+    }
+  ],
+  "verdict": {
+    "decision": "request_changes",
+    "reasoning": "One high-severity reliability bug (silent worktree fallback) and one root-cause-depth finding (null guard at the wrong layer). Both have verifiable evidence; the root-cause one carries cascade_impact as required. Address before merge."
+  }
+}
