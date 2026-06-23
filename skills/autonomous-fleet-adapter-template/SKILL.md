@@ -10,7 +10,7 @@ license: MIT
 compatibility: Reference template for adapter authors; not a runnable mission
 metadata:
   author: "ravidsrk"
-  version: "1.0.0"
+  version: "1.1.0"
   fleet-component: "adapter-template"
   runnable: "false"
 ---
@@ -38,12 +38,22 @@ gitleaks / BASE exists).
 
 ### PLACE(kind)
 - `independent` → <how your tool makes an isolated checkout on its own branch off BASE>.
+- `independent` via container-use (OPTIONAL) → if your runtime can register the container-use MCP
+  (`<tool> mcp add container-use -- container-use stdio`, needs Docker), reuse the canonical sandboxed
+  loop in core `engine.md` → CONTAINER-USE-PLACEMENT and record your registration command +
+  verification status here. Omit this bullet if unsupported.
 - `dependent` → <how your tool runs a fresh worker in the current checkout/branch>.
 
 ### SPAWN_WORKER(role, placement) → handle in auto/max mode
 <the command(s) to create a worker in the given placement, with the tool's auto/skip-permissions +
-max-effort flags. Map roles (builder/reviewer/integrator) to specific agent CLIs. State what
-"ready" means and how you wait for it before DISPATCH.>
+max-effort flags. State what "ready" means and how you wait for it before DISPATCH.>
+**CAPABILITY TIERS.** Declare the worker-spawn mechanisms your runtime offers, richest first (e.g.
+native multi-agent teams → subagents → a single-session/inbox fallback) and which this adapter uses.
+A thinner runtime may collapse to one tier — say so explicitly rather than leaving it implied.
+**ROLE → AGENT CLI.** Map each role to a concrete CLI honouring the cross-vendor rule: builder
+`@codex` (or `@grok` for design missions), a fresh build-blind reviewer `@claude`, integrator
+`@claude`. With only one vendor available, keep terminal separation (a fresh reviewer session) and
+record the single-vendor mode.
 
 ### DISPATCH(task, handle)
 <how a task spec is handed to a worker so it will report completion. If your tool injects a

@@ -69,27 +69,12 @@ per-session and its status can lag).
   worktree).
 
 ### PLACE(independent) via container-use (optional: isolated container + branch + sandbox)
-When the container-use MCP is configured, PLACE(independent) MAY use a container-use ENVIRONMENT
-instead of a host `git worktree`, closing the OS-sandbox gap (the worker runs in an isolated Linux
-container, not the host) and the isolation gap (each environment is its own git branch) in one move.
-Verified end to end on a live host (container-use v0.4.2 + Docker): `environment_create` yields an
-`ubuntu:24.04` container + branch `container-use/<env>`, file writes commit to that branch, and
-commands run INSIDE the container (`uname` reports Linux, not the macOS host).
-- SPAWN_WORKER(independent): give the subagent the container-use MCP tools (allow
-  `mcp__container-use__environment_*`) and instruct it to do ALL file/shell work through the
-  environment (container-use's own server rule: "use ONLY Environments; never touch `.git`
-  yourself"). The worker calls `environment_create` (returns an env id + branch `container-use/<env>`),
-  then `environment_file_write` / `environment_run_cmd` inside it. One environment per task unit.
-- INSPECT(): `container-use list` (all envs), `container-use log <env>` (what the worker did),
-  `container-use diff <env>` (changes without checkout). Non-destructive, exactly INSPECT.
-- OPEN_PR / SHIP (preferred): `container-use checkout <env>` (creates a local branch from
-  `container-use/<env>`), push, `gh pr create --base BASE` — this keeps the SHA-pinned-review +
-  conflict-aware merge gate from engine.md. NOTE: `container-use merge <env>` merges into your
-  CURRENT git branch (not a `--base` you name) and BYPASSES the PR/review gate, so use it only after
-  an explicit `git checkout BASE`, never as the default ship path.
-- CLEANUP: `container-use delete <env>` (or `--all` at run end) instead of `git worktree remove`.
-- FALLBACK: no container-use MCP -> the plain `git worktree` PLACE(independent) above (host-level
-  isolation, no sandbox). Adoption details: docs/adopt-container-use.md.
+Register: `claude mcp add container-use -- container-use stdio` (needs Docker), then allow the
+subagent the `mcp__container-use__environment_*` tools. PLACE(independent) MAY then use a
+container-use ENVIRONMENT instead of a host `git worktree` — the canonical loop (SPAWN_WORKER /
+INSPECT / OPEN_PR / CLEANUP / FALLBACK and the `merge`-bypasses-the-PR-gate warning) lives in
+`engine.md` → CONTAINER-USE-PLACEMENT. Verified end to end on a live host (container-use v0.4.2 +
+Docker): commands run INSIDE the container (`uname` reports Linux, not the macOS host).
 
 ### SPAWN_WORKER(role, placement)
 - Subagent path (preferred for self-contained build/review units): launch via the Task tool with a

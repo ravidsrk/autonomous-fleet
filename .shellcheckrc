@@ -1,0 +1,4 @@
+# venv-bootstrap.sh is sourced via a runtime "$ROOT/..." path that shellcheck cannot resolve
+# statically. The helper is linted on its own as scripts/lib/venv-bootstrap.sh, so following it
+# from each caller adds nothing. SC1091 is the "couldn't follow source" info — safe to disable.
+disable=SC1091

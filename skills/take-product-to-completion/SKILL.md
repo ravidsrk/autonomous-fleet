@@ -128,13 +128,13 @@ and a ROADMAP list (deferred, never built this run).
   the boundary into `BUILDABLE_NOW` vs `BLOCKED_ON_<boundary>`; build the buildable side fully,
   leave the blocked side named and unclaimed, and do not report DONE around it. This artifact is
   what the user should review.
-- **T4 CRITICAL PATH [@codex+review, gated on T3]** — make signup → core value work end to end;
+- **T4 CRITICAL PATH [@codex build, fresh @claude review, gated on T3]** — make signup → core value work end to end;
   fix FIX-list items blocking the primary flow. Must work fully before cosmetic polish.
-- **T5 LANDING PAGE [@codex+review, gated on T3; parallel to T4 if non-overlapping]** — rebuild
+- **T5 LANDING PAGE [@codex build, fresh @claude review, gated on T3; parallel to T4 if non-overlapping]** — rebuild
   to the brief: positioning-led, conversion-oriented, fully responsive, real copy, no
   placeholders.
 - **T6…Tn PER IN-AREA [loop, gated on T4]** — @codex builds each area to FULL DEPTH (complete,
-  all loading/empty/error/edge states, polished, with tests) → @codex reviews (complete +
+  all loading/empty/error/edge states, polished, with tests) → fresh build-blind @claude reviews (complete +
   full-depth + tests real + nothing thinned/out-of-boundary + no regressions) → @claude ships.
   Parallelize non-overlapping areas; serialize overlapping ones.
 - **T_POLISH [@claude]** — whole-product consistency pass: no broken links, no console errors,

@@ -12,7 +12,7 @@ description: >-
 license: MIT
 compatibility: Requires git, gh CLI, and billed provider API keys in the target repository env
 metadata:
-  author: "Ravindra Kumar <ravidsrk@gmail.com>"
+  author: "ravidsrk"
   version: "1.0.0"
   tier: "2"
   fleet-component: "mission"
@@ -27,7 +27,7 @@ metadata:
 
 Before executing, activate these skills and read their full instructions:
 
-1. `autonomous-fleet-core` - read `references/engine.md` and `references/composition.md` when coordinating
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
 2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
@@ -44,8 +44,8 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude (baseline, implement, integrator) | Provider SDK/docs skill if present | Repo harness conventions + official provider docs |
-| @codex (review) | - | Mission review gate only |
+| @codex (implement scoped changes) | Provider SDK/docs skill if present | Repo harness conventions + official provider docs |
+| @claude (baseline, review, integrator) | — | Mission review gate only |
 
 ## Deferred missions
 
@@ -80,9 +80,9 @@ missing, record the blocker and stop the live-call portion of the mission.
 
 ## ROLE PIPELINE
 
-- @claude builds the baseline harness, selects sanctioned levers, implements scoped changes, and
-  produces the readiness table.
-- @codex REVIEWS each PR (fresh, build-blind): harness is real, costs are measured from the same
+- @claude establishes the baseline harness, selects sanctioned levers, and produces the readiness table.
+- @codex implements the scoped optimization changes.
+- A fresh build-blind @claude REVIEWS each PR: harness is real, costs are measured from the same
   sample, quality thresholds did not regress, and no forbidden credential/subscription hack exists.
 - @claude is the INTEGRATOR: opens PR, merges (conflict-aware), cleans worktree.
 
@@ -104,7 +104,7 @@ candidate lever, `OPEN | SHIPPED via PR#n | REJECTED (quality/cost reason) | DEF
   model routing, prompt caching, batch/flex-tier pricing for async work, a provider-abstraction
   layer that preserves semantics, and token hygiene. Define acceptance thresholds: expected cost
   delta, max latency impact, and the exact quality gate. Freeze the CALL-CLASS INDEX.
-- **T-OPTIMIZE... [per call class or lever, loop]** - implement one coherent optimization per PR.
+- **T-OPTIMIZE... [per call class or lever, loop]** - @codex implements one coherent optimization per PR; a fresh build-blind @claude reviews each PR before @claude merges.
   Run the baseline harness and candidate harness against the same frozen sample. If a cheaper
   model, shorter prompt, cache behavior, batch mode, or provider route degrades any required sample
   or violates the rubric, reject it for that call class and do not ship it. Keep only changes with

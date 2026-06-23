@@ -3,23 +3,27 @@
 #
 # Usage:
 #   ./scripts/install-skills.sh              # starter set (umbrella + program + core + grok + doc-sync)
-#   ./scripts/install-skills.sh --all        # install all 20 fleet skills
+#   ./scripts/install-skills.sh --all        # install all 21 fleet skills
 #   ./scripts/install-skills.sh doc-sync bug-batch   # install named skills
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SOURCE="$ROOT"
 
+# Pin the skills CLI for supply-chain integrity. An unpinned `npx skills` fetches and runs
+# whatever the latest published release happens to be. Bump deliberately.
+SKILLS_CLI="skills@1.5.12"
+
 if [[ "${1:-}" == "--all" ]]; then
-  exec npx skills add "$SOURCE" --skill '*' -y -p
+  exec npx "$SKILLS_CLI" add "$SOURCE" --skill '*' -y -p
 fi
 
 if [[ $# -gt 0 ]]; then
-  exec npx skills add "$SOURCE" --skill "$@" -y -p
+  exec npx "$SKILLS_CLI" add "$SOURCE" --skill "$@" -y -p
 fi
 
 # Default starter set for Grok-based runs
-exec npx skills add "$SOURCE" \
+exec npx "$SKILLS_CLI" add "$SOURCE" \
   --skill setup-autonomous-fleet \
   --skill autonomous-fleet \
   --skill fleet-program \

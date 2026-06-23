@@ -21,6 +21,7 @@ MISSION="${2:-}"
 MAX_TURNS=50
 HANDOFF=""
 YOLO=0
+YOLO_ACK=0
 REPO_ROOT=""
 
 usage() {
@@ -33,6 +34,7 @@ Options:
   --handoff PATH    Prompt file (default: generated minimal handoff)
   --yolo            Auto-approve tools (Grok only; default: off)
   --no-yolo         Deprecated alias for default (no auto-approve)
+  --yolo-untrusted-acknowledged  Required with --yolo when --repo is outside this clone (accepts RCE risk)
 
 Examples:
   ./scripts/run-mission-headless.sh grok doc-sync --max-turns 50
@@ -68,6 +70,10 @@ while [[ $# -gt 0 ]]; do
       YOLO=0
       shift
       ;;
+    --yolo-untrusted-acknowledged)
+      YOLO_ACK=1
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -91,11 +97,18 @@ if ! git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 1
 fi
 
-VENV_PYTHON="$ROOT/.venv/bin/python"
-if [[ ! -x "$VENV_PYTHON" ]]; then
-  python3 -m venv "$ROOT/.venv"
-  "$VENV_PYTHON" -m pip install -q pyyaml==6.0.2 pytest==8.3.4
+# RCE guard: --yolo auto-approves every tool call. Against an external --repo that is a full
+# remote-code-execution surface, so require explicit acknowledgement (or run under the sandbox).
+if [[ "$YOLO" -eq 1 && "$REPO_ROOT" != "$ROOT" && "$YOLO_ACK" -ne 1 ]]; then
+  echo "error: --yolo against an external --repo auto-approves every tool call — a full RCE surface." >&2
+  echo "       Run under scripts/run-sandboxed.sh, or pass --yolo-untrusted-acknowledged to accept the risk." >&2
+  exit 2
 fi
+
+# Bootstrap the venv via the shared helper: it re-checks `import yaml, pytest` and reinstalls from
+# requirements.txt, so a stale venv self-heals instead of drifting from the pinned dependency set.
+source "$ROOT/scripts/lib/venv-bootstrap.sh"
+bootstrap_validation_venv "$ROOT"
 
 validate_mission() {
   local mission="$1"

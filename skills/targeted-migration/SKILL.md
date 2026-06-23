@@ -71,9 +71,9 @@ and shippable per PR; at every merge the app builds and tests pass.
 
 **Builder choice (Stage-9 final form).** Per prompts.md L3013 (Aula run, Stage-9 prompt 24), @grok is retired for general-purpose builds. Flipping to @codex.
 
-- @claude plans the migration (inventory all usages, sequence, compatibility strategy) and codes
-  each increment.
-- @codex REVIEWS each PR (fresh, build-blind): correctly migrated to the new axis, behaviour
+- @claude plans the migration (inventory all usages, sequence, compatibility strategy).
+- @codex codes each increment.
+- A fresh build-blind @claude REVIEWS each PR: correctly migrated to the new axis, behaviour
   identical, nothing else changed, suite green, no half-migrated state left reachable.
 - @claude is the INTEGRATOR: opens PR, merges (conflict-aware), cleans worktree.
 
@@ -89,9 +89,9 @@ and the compatibility/cutover strategy.
   behaviour. Output `docs/migration-plan.md` with a MIGRATION INDEX. FROZEN — increments conform.
 - **T-FOUNDATION [@claude, if needed]** — establish the new axis alongside the old (install, base
   config, any adapter/shim that lets modules migrate incrementally). Gates the per-module work.
-- **T-MIGRATE… [per module/usage-group, loop]** — each is one PR. @claude migrates that slice to
-  the new axis, preserves behaviour (characterization tests prove it), suite green → @codex
-  reviews (correct migration, behaviour identical, nothing else touched) → @claude merges.
+- **T-MIGRATE… [per module/usage-group, loop]** — each is one PR. @codex migrates that slice to
+  the new axis, preserves behaviour (characterization tests prove it), suite green → fresh
+  build-blind @claude reviews (correct migration, behaviour identical, nothing else touched) → @claude merges.
   Parallelize independent modules; serialize shared ones. Update the MIGRATION INDEX.
 - **T-CLEANUP [@claude]** — once every usage is migrated, remove the old axis (dependency,
   adapter/shim, dead compatibility code). Confirm nothing references it.
