@@ -101,3 +101,27 @@ mutations:
     find: 'if blind_mt >= findings_mt:'
     replace: 'if blind_mt >= findings_mt and False:'
     guards: [tests/test_run_archive.py]
+
+  - id: blind-fix-mtime-ordering-off
+    file: scripts/lib/verify_blind_fix.py
+    find: 'findings_mtime is not None and mtime > findings_mtime'
+    replace: 'False'
+    guards: [tests/test_verify_blind_fix.py]
+
+  - id: blind-fix-stub-detector-off
+    file: scripts/lib/verify_blind_fix.py
+    find: 'if _has_stub(body):'
+    replace: 'if False:'
+    guards: [tests/test_verify_blind_fix.py]
+
+  - id: blind-fix-diff-marker-detector-off
+    file: scripts/lib/verify_blind_fix.py
+    find: 'if _has_diff_marker(text):'
+    replace: 'if False:'
+    guards: [tests/test_verify_blind_fix.py]
+
+  - id: blind-fix-path-containment-off
+    file: scripts/lib/verify_blind_fix.py
+    find: 'if os.path.isabs(declared):'
+    replace: 'if False:'
+    guards: [tests/test_verify_blind_fix.py]

@@ -2,9 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://autonomous-fleet/schemas/fleet-review-findings.schema.json",
   "title": "Fleet Review Findings",
-  "description": "Structured reviewer output emitted by adversarial-review-and-fix and other review missions. Every finding MUST cite a verbatim quoted_line from the source file so the orchestrator can grep-verify the claim. Findings whose quote can't be found in the cited file are marked unverified and DOWNGRADED in the fleet-outcome — this is the corpus-grounded counter to reviewer hallucination. Lineage: GodModeSkill work-converge quoted-line check + xreview internal/schema/review.json (confidence, fix_alternatives, fix_strategy).",
+  "description": "Structured reviewer output emitted by adversarial-review-and-fix and other review missions. Every finding MUST cite a verbatim quoted_line from the source file so the orchestrator can grep-verify the claim. Findings whose quote can't be found in the cited file are marked unverified and DOWNGRADED in the fleet-outcome \u2014 this is the corpus-grounded counter to reviewer hallucination. Lineage: GodModeSkill work-converge quoted-line check + xreview internal/schema/review.json (confidence, fix_alternatives, fix_strategy).",
   "type": "object",
-  "required": ["schema_version", "mission", "review_id", "findings", "verdict"],
+  "required": [
+    "schema_version",
+    "mission",
+    "review_id",
+    "findings",
+    "verdict"
+  ],
   "additionalProperties": false,
   "properties": {
     "schema_version": {
@@ -27,9 +33,21 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "vendor": { "type": "string" },
-        "model": { "type": "string" },
-        "role": { "type": "string", "enum": ["build-blind-reviewer", "skeptic", "integrator-review", "other"] }
+        "vendor": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "build-blind-reviewer",
+            "skeptic",
+            "integrator-review",
+            "other"
+          ]
+        }
       }
     },
     "round": {
@@ -39,16 +57,25 @@
     },
     "findings": {
       "type": "array",
-      "items": { "$ref": "#/$defs/finding" }
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
     },
     "verdict": {
       "type": "object",
-      "required": ["decision", "reasoning"],
+      "required": [
+        "decision",
+        "reasoning"
+      ],
       "additionalProperties": false,
       "properties": {
         "decision": {
           "type": "string",
-          "enum": ["approve", "request_changes", "partial"],
+          "enum": [
+            "approve",
+            "request_changes",
+            "partial"
+          ],
           "description": "approve = ready to integrate; request_changes = blocking findings exist; partial = some findings addressed but others remain."
         },
         "reasoning": {
@@ -62,17 +89,34 @@
   "$defs": {
     "finding": {
       "type": "object",
-      "required": ["id", "severity", "category", "claim", "evidence", "fix_alternatives", "confidence", "fix_strategy"],
+      "required": [
+        "id",
+        "severity",
+        "category",
+        "claim",
+        "evidence",
+        "fix_alternatives",
+        "confidence",
+        "fix_strategy"
+      ],
       "additionalProperties": false,
       "allOf": [
         {
-          "$comment": "ROOT_CAUSE_DEPTH discipline (engine.md): findings tagged category=root_cause_depth MUST name the other call paths the root cause can trigger. A root_cause_depth finding without cascade_impact is almost always a symptom-fix finding miscategorised — the schema rejects it the same way it rejects an unverified quoted_line. Source: SWE-Review HARD RULE.",
+          "$comment": "ROOT_CAUSE_DEPTH discipline (engine.md): findings tagged category=root_cause_depth MUST name the other call paths the root cause can trigger. A root_cause_depth finding without cascade_impact is almost always a symptom-fix finding miscategorised \u2014 the schema rejects it the same way it rejects an unverified quoted_line. Source: SWE-Review HARD RULE.",
           "if": {
-            "properties": { "category": { "const": "root_cause_depth" } },
-            "required": ["category"]
+            "properties": {
+              "category": {
+                "const": "root_cause_depth"
+              }
+            },
+            "required": [
+              "category"
+            ]
           },
           "then": {
-            "required": ["cascade_impact"],
+            "required": [
+              "cascade_impact"
+            ],
             "properties": {
               "cascade_impact": {
                 "minLength": 1
@@ -83,17 +127,31 @@
       ],
       "properties": {
         "id": {
-          "description": "Stable identifier within this review (e.g. F-001). Survives across rounds — the same finding keeps the same id when re-asserted.",
+          "description": "Stable identifier within this review (e.g. F-001). Survives across rounds \u2014 the same finding keeps the same id when re-asserted.",
           "type": "string",
           "pattern": "^[A-Z]+-[0-9]+$"
         },
         "severity": {
           "type": "string",
-          "enum": ["critical", "high", "medium", "low"]
+          "enum": [
+            "critical",
+            "high",
+            "medium",
+            "low"
+          ]
         },
         "category": {
           "type": "string",
-          "enum": ["bug", "security", "architecture", "performance", "style", "test", "root_cause_depth", "other"]
+          "enum": [
+            "bug",
+            "security",
+            "architecture",
+            "performance",
+            "style",
+            "test",
+            "root_cause_depth",
+            "other"
+          ]
         },
         "claim": {
           "type": "string",
@@ -102,7 +160,10 @@
         },
         "evidence": {
           "type": "object",
-          "required": ["file_path", "quoted_line"],
+          "required": [
+            "file_path",
+            "quoted_line"
+          ],
           "additionalProperties": false,
           "properties": {
             "file_path": {
@@ -113,7 +174,7 @@
             "line_number": {
               "type": "integer",
               "minimum": 1,
-              "description": "Optional 1-based line number where quoted_line appears. The verifier does not require this match — quoted_line is the source of truth — but inconsistent line_number is reported as a soft warning."
+              "description": "Optional 1-based line number where quoted_line appears. The verifier does not require this match \u2014 quoted_line is the source of truth \u2014 but inconsistent line_number is reported as a soft warning."
             },
             "quoted_line": {
               "type": "string",
@@ -135,13 +196,17 @@
           "description": "1-4 labeled fix proposals. Forces the reviewer to think laterally rather than locking onto one fix. xreview lineage: 2-3 alternatives is the sweet spot.",
           "items": {
             "type": "object",
-            "required": ["label", "description", "effort"],
+            "required": [
+              "label",
+              "description",
+              "effort"
+            ],
             "additionalProperties": false,
             "properties": {
               "label": {
                 "type": "string",
                 "pattern": "^[A-Z]$",
-                "description": "A, B, C, D — single uppercase letter."
+                "description": "A, B, C, D \u2014 single uppercase letter."
               },
               "description": {
                 "type": "string",
@@ -149,8 +214,12 @@
               },
               "effort": {
                 "type": "string",
-                "enum": ["minimal", "moderate", "large"],
-                "description": "minimal = ≤10 line change, moderate = single-file refactor, large = cross-module."
+                "enum": [
+                  "minimal",
+                  "moderate",
+                  "large"
+                ],
+                "description": "minimal = \u226410 line change, moderate = single-file refactor, large = cross-module."
               },
               "recommended": {
                 "type": "boolean",
@@ -167,7 +236,10 @@
         },
         "fix_strategy": {
           "type": "string",
-          "enum": ["auto", "ask"],
+          "enum": [
+            "auto",
+            "ask"
+          ],
           "description": "auto = builder may apply the recommended fix without human gating; ask = human must approve. Default to ask for severity=critical and for changes touching public APIs."
         },
         "cascade_impact": {
@@ -185,6 +257,32 @@
         "verify_reason": {
           "type": "string",
           "description": "Set by verify-findings when verified=false. Human-readable reason ('file not found', 'quoted-line not found in cited file', etc.)."
+        },
+        "blind_fix_chain": {
+          "type": "object",
+          "description": "Optional: pointer to this finding's blind-fix attestation. The verifier (scripts/verify_blind_fix.py, Layer 3 of the substrate) uses this to override the canonical .fleet/runs/<run_id>/reviewer-blind-fix-<id>.md location. Path is always run-archive-relative (absolute paths and `..` escapes are rejected). See skills/autonomous-fleet-core/references/blind-fix.md.",
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Run-archive-relative path to the blind-fix file. Empty string falls back to the canonical location."
+            },
+            "reviewer_quote_sha": {
+              "type": "string",
+              "description": "Optional: git SHA of the commit where the reviewer wrote the quoted_line. Used for temporal ordering across reviewer/fixer commits.",
+              "pattern": "^[0-9a-f]{7,40}$"
+            },
+            "fixer_draft_sha": {
+              "type": "string",
+              "description": "Optional: git SHA of the fixer's draft commit. MUST be earlier than the reviewer's findings commit for the chain to verify.",
+              "pattern": "^[0-9a-f]{7,40}$"
+            },
+            "integration_sha": {
+              "type": "string",
+              "description": "Optional: git SHA of the merged/integrated fix commit.",
+              "pattern": "^[0-9a-f]{7,40}$"
+            }
+          }
         }
       }
     }
