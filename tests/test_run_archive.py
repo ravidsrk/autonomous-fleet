@@ -815,3 +815,59 @@ def test_fleet_outcome_validator_rejects_malformed_run_id(bad_rid):
     payload = {**_BASE_OUTCOME, "run_id": bad_rid, "archive_enabled": True}
     errs = validate_outcome(payload)
     assert any("run_id" in e for e in errs), (bad_rid, errs)
+
+
+# ───────────────────────────────────────────────────────────────────────
+# Canonical example fixture (Commit A scaffolding)
+# ───────────────────────────────────────────────────────────────────────
+
+
+def test_example_fixture_archive_validates():
+    """The .fleet/runs/example-fixture/ archive is the canonical input every
+    validator in validate-all.sh exercises. It MUST validate end-to-end:
+
+    1. The manifest validator accepts schema + on-disk integrity + every
+       mtime-ordering invariant (blind_fix < findings, verify_summary >
+       findings, readiness is latest).
+    2. The Layer 1 source-verifier returns ``unverified_findings: 1`` (the
+       fixture intentionally includes one simulated hallucination so the
+       downgrade path is exercised) and ``verified_findings: 1`` (the
+       real, greppable line in scripts/coupling-graph.py).
+
+    A regression in any of those layers fails this test before the rest of
+    the suite even runs. The generator is ``scripts/_build_example_fixture.py``
+    — regenerate and recommit if the schemas change.
+    """
+    fixture_dir = ROOT / ".fleet" / "runs" / "example-fixture"
+    assert fixture_dir.is_dir(), (
+        "missing canonical fixture: regenerate with "
+        "`python scripts/_build_example_fixture.py`"
+    )
+
+    # Manifest validator over the fixture.
+    payload, errors = load_and_validate_manifest(fixture_dir)
+    assert errors == [], errors
+    assert payload is not None
+    assert payload["mission"] == "adversarial-review-and-fix"
+
+    # Cross-check validate_manifest_payload directly (smoke test of the
+    # public lib API used by the validate_run_archive.py CLI).
+    direct = validate_manifest_payload(
+        payload, archive_root=fixture_dir, check_files_on_disk=True
+    )
+    assert direct == []
+
+    # Layer 1 source-verifier over the fixture's findings doc.
+    from lib.verify_findings import (  # noqa: E402
+        load_findings_doc,
+        verify_findings_doc,
+    )
+
+    doc = load_findings_doc(fixture_dir / "p0-review-findings.json")
+    summary = verify_findings_doc(doc, ROOT)
+    # The fixture has exactly two findings: one verified (real line in
+    # scripts/coupling-graph.py) and one simulated hallucination.
+    assert summary["total_findings"] == 2
+    assert summary["verified_findings"] == 1
+    assert summary["unverified_findings"] == 1
+    assert summary["unverified_ids"] == ["F-002"]

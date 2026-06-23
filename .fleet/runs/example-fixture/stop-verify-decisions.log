@@ -1,0 +1,2 @@
+{"decision": "block", "reason": "unverified findings present", "ts": "2026-06-23T00:04:00Z", "worker": "reviewer-1"}
+{"decision": "allow", "reason": "all findings verified or downgraded", "ts": "2026-06-23T00:06:30Z", "worker": "reviewer-1"}
