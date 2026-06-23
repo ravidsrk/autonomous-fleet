@@ -68,6 +68,15 @@ Each run takes minutes to hours depending on scope. You get GitHub notifications
 
 > Install takes about a minute. The first PR usually shows up in a few minutes.
 
+### Before you start
+
+autonomous-fleet drives *your* coding agent — it doesn't ship one. You'll need:
+
+- **A supported agent, installed and authenticated** — [Claude Code](https://claude.com/claude-code), Codex, Grok, or Orca.
+- **[Node.js](https://nodejs.org/) ≥ 18** — for `npx skills` (the [agentskills.io](https://agentskills.io/) installer).
+- **`git` and an authenticated [`gh`](https://cli.github.com/)** — every task ships as a GitHub PR.
+- **CLI auth for your chosen runtime** only if you use the headless campaign scripts (`grok login`, etc.). The interactive path in Step 3 needs just the agent itself.
+
 ### Step 1 — Install the skills into your repo
 
 **In a terminal,** in your project's root directory:
@@ -155,11 +164,13 @@ That's it. The rest of this README is for going deeper.
 ### Run a campaign (chain skills together)
 
 ```bash
-./scripts/run-campaign.sh claude-code --preset repo-health      # doc-sync → test-coverage → cleanup
-./scripts/run-campaign.sh claude-code --preset ship-with-proof  # review-fix → test-coverage → doc-sync
-./scripts/run-campaign.sh claude-code --preset quality-gate     # review-fix → test-coverage
-./scripts/run-campaign.sh claude-code --preset align-then-ship  # take-product-to-completion (gated)
+./scripts/run-campaign.sh claude --preset repo-health      # doc-sync → test-coverage → cleanup
+./scripts/run-campaign.sh claude --preset ship-with-proof  # review-fix → test-coverage → doc-sync
+./scripts/run-campaign.sh claude --preset quality-gate     # review-fix → test-coverage
+./scripts/run-campaign.sh claude --preset align-then-ship  # take-product-to-completion (gated)
 ```
+
+> ⚠️ **Headless note.** The campaign scripts drive each runtime's CLI in headless mode, which needs that CLI authenticated on the host (e.g. `grok login`) and isn't yet fully validated end-to-end. If a run can't authenticate, drive the same missions interactively from your agent's chat / `/goal` instead.
 
 Each step waits for the previous one to pass a verification gate. If a gate fails, the campaign stops and tells you why. Add `--dry-run` to see the plan without running it.
 
