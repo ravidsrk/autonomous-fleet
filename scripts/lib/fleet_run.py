@@ -45,7 +45,10 @@ import secrets
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable
+from typing import TYPE_CHECKING, Any, Iterable
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .emit_trace import TraceEmitter
 
 # ───────────────────────────────────────────────────────────────────────
 # Pinned constants. The schema is authoritative; these mirror its enums
@@ -267,6 +270,7 @@ def write_manifest(
     base_branch: str | None = None,
     notes: str | None = None,
     created_utc: datetime | None = None,
+    emitter: TraceEmitter | None = None,
 ) -> Path:
     """Emit `archive_root/manifest.json` from the given file entries.
 
@@ -309,6 +313,13 @@ def write_manifest(
         json.dumps(payload, indent=2, sort_keys=False) + "\n",
         encoding="utf-8",
     )
+    if emitter is not None:
+        emitter.emit(
+            "T-FINAL",
+            "INTEGRATOR",
+            "succeeded",
+            details={"manifest": manifest_path.name, "files": len(file_list)},
+        )
     return manifest_path
 
 

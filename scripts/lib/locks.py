@@ -68,12 +68,28 @@ def _pid_alive(pid: int) -> bool:
     return True
 
 
+def _read_steal_payload(lock_path: Path) -> tuple[str, dict[str, Any]]:
+    """Read a lock body for steal checks.
+
+    Empty lock files are recoverable corruption: they can be replaced by
+    a steal because they cannot identify a live local holder.
+    """
+    text = lock_path.read_text(encoding="utf-8")
+    if not text.strip():
+        return text, {}
+    try:
+        payload: dict[str, Any] = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise LockStealError(f"lock file unparseable: {lock_path} ({exc})") from exc
+    return text, payload
+
+
 class FileLock:
     """File-based exclusive lock under a run-archive's ``locks/`` dir.
 
-    Acquire is exclusive-create (``O_CREAT|O_EXCL``); release is
-    owner-checked. Stealing is a separate, explicit primitive that
-    callers MUST gate on a confirmed-dead signal.
+    Acquire publishes a complete pre-written record with an atomic
+    no-clobber link; release is owner-checked. Stealing is a separate,
+    explicit primitive that callers MUST gate on a confirmed-dead signal.
     """
 
     LOCKS_SUBDIR = "locks"
@@ -112,13 +128,19 @@ class FileLock:
         deadline = time.monotonic() + self.timeout_s
         delay = self.poll_interval_s
         while True:
+            payload = {
+                "owner": self.owner,
+                "acquired_at": _now_iso(),
+                "pid": os.getpid(),
+            }
+            tmp = self.lock_path.with_name(
+                f".{self.lock_path.name}.{os.getpid()}.{time.monotonic_ns()}.tmp"
+            )
+            tmp.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
             try:
-                fd = os.open(
-                    str(self.lock_path),
-                    os.O_CREAT | os.O_EXCL | os.O_WRONLY,
-                    0o644,
-                )
+                os.link(tmp, self.lock_path)
             except FileExistsError:
+                tmp.unlink(missing_ok=True)
                 if time.monotonic() >= deadline:
                     raise LockTimeoutError(
                         f"acquire timed out after {self.timeout_s}s: {self.lock_path}"
@@ -127,15 +149,7 @@ class FileLock:
                 delay = min(delay * 2, self.max_poll_interval_s)
                 continue
 
-            payload = {
-                "owner": self.owner,
-                "acquired_at": _now_iso(),
-                "pid": os.getpid(),
-            }
-            try:
-                os.write(fd, json.dumps(payload, sort_keys=True).encode("utf-8"))
-            finally:
-                os.close(fd)
+            tmp.unlink(missing_ok=True)
             self._held = True
             return self
 
@@ -176,54 +190,49 @@ class FileLock:
     ) -> "FileLock":
         """Steal a dead-holder's lock and acquire it for the new owner.
 
-        Refuses to steal unless the holder pid is verifiably dead.
-        Age-based fallback (``max_stale_s``) covers the case where the
-        holder is on a different host and pid liveness can't be checked
-        locally — but the caller's circuit-breaker discipline MUST have
-        already declared the holder dead before invoking this.
+        Refuses to steal if the holder pid resolves to a live local
+        process. ``max_stale_s`` is retained for API compatibility only:
+        lock age never authorizes stealing a live local holder.
         """
+        del max_stale_s
         lock = cls(run_dir, name, owner=new_owner or f"pid-{os.getpid()}-stolen")
         if not lock.lock_path.is_file():
             raise LockStealError(f"no lock to steal: {lock.lock_path}")
 
-        text = lock.lock_path.read_text(encoding="utf-8")
-        try:
-            payload: dict[str, Any] = json.loads(text)
-        except json.JSONDecodeError as exc:
-            # Garbled lock file is a corruption signal, not stealable.
-            raise LockStealError(
-                f"lock file unparseable: {lock.lock_path} ({exc})"
-            ) from exc
+        text, payload = _read_steal_payload(lock.lock_path)
 
         holder_pid = payload.get("pid")
         if isinstance(holder_pid, int) and _pid_alive(holder_pid):
-            # Age check as a tiebreaker for cross-host setups.
-            acquired = payload.get("acquired_at")
-            age_s = float("inf")
-            if isinstance(acquired, str):
-                try:
-                    acquired_dt = datetime.strptime(acquired, "%Y-%m-%dT%H:%M:%SZ").replace(
-                        tzinfo=timezone.utc
-                    )
-                    age_s = (datetime.now(timezone.utc) - acquired_dt).total_seconds()
-                except ValueError:
-                    age_s = float("inf")
-            if age_s < max_stale_s:
-                raise LockStealError(
-                    f"holder pid {holder_pid} still alive and lock age "
-                    f"{age_s:.0f}s < max_stale_s={max_stale_s}: {lock.lock_path}"
-                )
+            raise LockStealError(
+                f"holder pid {holder_pid} still alive: {lock.lock_path}"
+            )
 
-        # Holder gone (or stale beyond max_stale_s) — replace atomically.
         new_payload = {
             "owner": lock.owner,
             "acquired_at": _now_iso(),
             "pid": os.getpid(),
             "stolen_from": payload.get("owner"),
         }
-        tmp = lock.lock_path.with_suffix(".lock.tmp")
+        tmp = lock.lock_path.with_name(
+            f".{lock.lock_path.name}.{os.getpid()}.{time.monotonic_ns()}.tmp"
+        )
         tmp.write_text(json.dumps(new_payload, sort_keys=True), encoding="utf-8")
-        os.replace(tmp, lock.lock_path)
+        try:
+            current_text, current_payload = _read_steal_payload(lock.lock_path)
+            if current_text != text:
+                raise LockStealError(f"lock changed before steal: {lock.lock_path}")
+            current_holder_pid = current_payload.get("pid")
+            if isinstance(current_holder_pid, int):
+                if _pid_alive(current_holder_pid):
+                    raise LockStealError(
+                        f"holder pid {current_holder_pid} revived before steal: "
+                        f"{lock.lock_path}"
+                    )
+            # Revalidated dead/indeterminate holder; os.replace is atomic but not CAS.
+            os.replace(tmp, lock.lock_path)
+        except Exception:
+            tmp.unlink(missing_ok=True)
+            raise
         lock._held = True
         return lock
 
