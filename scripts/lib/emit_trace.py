@@ -85,7 +85,9 @@ _OPTIONAL_FIELDS = (
 _ALLOWED_FIELDS = frozenset(_REQUIRED_FIELDS + _OPTIONAL_FIELDS)
 
 _TS_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$")
-_RUN_ID_RE = re.compile(r"^\d{8}T\d{6}Z-[a-z][a-z0-9-]*-[0-9a-f]{6}$")
+# MUST stay identical to fleet_run.RUN_ID_PATTERN (pinned by a drift test); kept as a
+# literal here rather than imported to avoid a circular import (fleet_run imports this module).
+_RUN_ID_RE = re.compile(r"^[0-9]{8}T[0-9]{6}Z-[a-z][a-z0-9-]*[a-z0-9]-[0-9a-f]{6}$")
 _EVIDENCE_HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 _UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
@@ -99,10 +101,20 @@ def _utc_now_iso() -> str:
 
 
 _SECRET_RE = re.compile(
-    r"sk-[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}"
-    r"|xai-[A-Za-z0-9-]{16,}|-----BEGIN[A-Z ]*PRIVATE KEY-----"
+    r"sk-[A-Za-z0-9]{16,}"
+    r"|sk_(?:live|test)_[A-Za-z0-9]{16,}"          # Stripe
+    r"|AKIA[0-9A-Z]{16}"                            # AWS access key id
+    r"|gh[opusr]_[A-Za-z0-9]{30,}"                  # GitHub p/o/u/s/r tokens
+    r"|xai-[A-Za-z0-9-]{16,}"                       # x.ai
+    r"|xox[bpras]-[A-Za-z0-9-]{10,}"               # Slack
+    r"|AIza[0-9A-Za-z_\-]{35}"                      # Google API key
+    r"|eyJ[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}"  # JWT
+    r"|Bearer\s+[A-Za-z0-9._\-]{20,}"              # bearer header
+    r"|-----BEGIN[A-Z ]*PRIVATE KEY-----"
 )
-_HOST_PATH_RE = re.compile(r"(?:^|[\s\"'=:])/(?:home|Users|root)/|/\.(?:ssh|aws|gnupg)/")
+_HOST_PATH_RE = re.compile(
+    r"(?:^|[\s\"'=:])/(?:home|Users|root|etc|var|opt)/|/\.(?:ssh|aws|gnupg)/"
+)
 
 
 def _scan_details(details: dict) -> list[str]:
