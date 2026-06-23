@@ -83,20 +83,27 @@ def test_zero_byte_lock_file_is_stealable_corruption(tmp_path: Path) -> None:
         stolen.release()
 
 
-def test_acquire_publishes_complete_record_without_final_os_write(
+def test_acquire_writes_record_to_staging_not_final_path(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    real_write = locks_module.os.write
+    """The record is written to a staging tmp then published via os.link — never
+    write_text'd directly into the final lock path (which would expose a partial
+    record to a concurrent reader)."""
+    real_write_text = Path.write_text
+    written: list[Path] = []
 
-    def fail_old_final_write(fd: int, data: bytes) -> int:
-        if b"atomic-owner" in data:
-            raise AssertionError("old acquire wrote into the final lock file")
-        return real_write(fd, data)
+    def recording_write_text(self, *a, **kw):
+        written.append(Path(self))
+        return real_write_text(self, *a, **kw)
 
-    monkeypatch.setattr(locks_module.os, "write", fail_old_final_write)
+    monkeypatch.setattr(Path, "write_text", recording_write_text)
     lock = FileLock(tmp_path, "atomic-review", owner="atomic-owner").acquire()
     try:
-        assert lock.lock_path.stat().st_size > 0
+        # The final lock path was NEVER write_text'd; a staging tmp was.
+        assert lock.lock_path not in written
+        assert any(
+            p.name.startswith(f".{lock.lock_path.name}.") for p in written
+        ), written
         payload = json.loads(lock.lock_path.read_text(encoding="utf-8"))
         assert payload["owner"] == "atomic-owner"
         assert payload["pid"] == os.getpid()
