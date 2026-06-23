@@ -40,7 +40,7 @@ Both feed the same review pipeline. Use the Console form unless you already have
 **Repository:** https://github.com/ravidsrk/autonomous-fleet
 **Pinned SHA:** `2a0f7b9664fac8c19f192bac26809ee9f7360fd4` (or whatever `main` is at submission time)
 **Category:** development
-**One-line pitch:** Multi-agent engineering framework for fully-autonomous coding runs. One portable engine. 4 runtime adapters. 22 skills (5 infrastructure + 5 adapters + 12 missions).
+**One-line pitch:** Multi-agent engineering framework for fully-autonomous coding runs. One portable engine. 4 runtime adapters. 21 skills (4 infrastructure + 5 adapters + 12 missions).
 
 **Description** (paste into form):
 

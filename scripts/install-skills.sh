@@ -3,7 +3,7 @@
 #
 # Usage:
 #   ./scripts/install-skills.sh              # starter set (umbrella + program + core + grok + doc-sync)
-#   ./scripts/install-skills.sh --all        # install all 20 fleet skills
+#   ./scripts/install-skills.sh --all        # install all 21 fleet skills
 #   ./scripts/install-skills.sh doc-sync bug-batch   # install named skills
 set -euo pipefail
 

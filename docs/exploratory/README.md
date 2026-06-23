@@ -16,7 +16,7 @@ exhibited the pattern.
 ## Contents
 
 - `missions/scaffold-align/` — moved 2026-06-22. Not on the Stage 8
-  distillation list of 11 missions. No -progress.md or -readiness.md
+  distillation list. No -progress.md or -readiness.md
   reference. Re-promote after a real "freeze a scaffold then build
   inside it" run.
 

@@ -15,7 +15,7 @@
 | **Parallel work inside a mission?** | Supported via `PLACE(independent)` + hot-file rule | Document in adapter template; Orca can express deps natively |
 | **Conditional / multi-mission flows?** | Umbrella picks one mission; missions have internal gates (T3 after T1+T2) | Add `fleet-program` meta-skill for explicit DAGs and handoffs |
 
-The framework is already well aligned with agentskills.io **progressive disclosure** (catalog → SKILL.md → `references/`). The main gap is **cross-mission orchestration** and a **consistent composition contract** across all 11 missions.
+The framework is already well aligned with agentskills.io **progressive disclosure** (catalog → SKILL.md → `references/`). The main gap is **cross-mission orchestration** and a **consistent composition contract** across all 12 missions.
 
 ---
 
@@ -40,7 +40,7 @@ From the [specification](https://agentskills.io/specification) and [client imple
 
 ### Cross-client install layout
 
-`npx skills` and `.agents/skills/` are the interoperability surface. autonomous-fleet publishes **20** skills under `skills/*/` (umbrella, program, setup, core, 5 adapters, 11 missions); installs copy into `.agents/skills/`. Project skills can shadow user skills (project wins).
+`npx skills` and `.agents/skills/` are the interoperability surface. autonomous-fleet publishes **21** skills under `skills/*/` (umbrella, program, setup, core, 5 adapters, 12 missions); installs copy into `.agents/skills/`. Project skills can shadow user skills (project wins).
 
 **Takeaway for fleet:** Required stack (core + adapter + mission) fits tier-2 activation. `references/engine.md` is correct tier-3 usage. Optional third-party skills should be tier-2 **only when triggered**, with explicit “read when …” lines to avoid catalog bloat.
 
@@ -258,7 +258,7 @@ Adding optional skills (e.g. `skill-creator`, `qa`) can add 2–5k+ tokens each.
 
 ### P0 — Low effort, high clarity (no new skills)
 
-1. **Standardize `## Required skills`** on all 11 missions (match `doc-sync` template).
+1. **Standardize `## Required skills`** on all 12 missions (match `doc-sync` template).
 2. **Add `## Optional skills`** template to mission authoring guide (`autonomous-fleet-adapter-template` or core `references/composition.md`):
 
    ```markdown
