@@ -21,6 +21,7 @@ MISSION="${2:-}"
 MAX_TURNS=50
 HANDOFF=""
 YOLO=0
+YOLO_ACK=0
 REPO_ROOT=""
 
 usage() {
@@ -33,6 +34,7 @@ Options:
   --handoff PATH    Prompt file (default: generated minimal handoff)
   --yolo            Auto-approve tools (Grok only; default: off)
   --no-yolo         Deprecated alias for default (no auto-approve)
+  --yolo-untrusted-acknowledged  Required with --yolo when --repo is outside this clone (accepts RCE risk)
 
 Examples:
   ./scripts/run-mission-headless.sh grok doc-sync --max-turns 50
@@ -68,6 +70,10 @@ while [[ $# -gt 0 ]]; do
       YOLO=0
       shift
       ;;
+    --yolo-untrusted-acknowledged)
+      YOLO_ACK=1
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -89,6 +95,14 @@ fi
 if ! git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "error: --repo '$REPO_ROOT' is not a git repository" >&2
   exit 1
+fi
+
+# RCE guard: --yolo auto-approves every tool call. Against an external --repo that is a full
+# remote-code-execution surface, so require explicit acknowledgement (or run under the sandbox).
+if [[ "$YOLO" -eq 1 && "$REPO_ROOT" != "$ROOT" && "$YOLO_ACK" -ne 1 ]]; then
+  echo "error: --yolo against an external --repo auto-approves every tool call — a full RCE surface." >&2
+  echo "       Run under scripts/run-sandboxed.sh, or pass --yolo-untrusted-acknowledged to accept the risk." >&2
+  exit 2
 fi
 
 VENV_PYTHON="$ROOT/.venv/bin/python"
