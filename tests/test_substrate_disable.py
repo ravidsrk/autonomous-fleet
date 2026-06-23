@@ -129,40 +129,40 @@ def test_disable_knob_rejects_falsy_values(
     )
 
 
-def test_layer2_legacy_alias_still_works() -> None:
-    """STOP_VERIFY_DISABLED was Layer 2's original kill switch and is
-    documented in operator runbooks. It must keep working alongside
-    the new FLEET_DISABLE_STOP_VERIFY alias."""
-    # We can't easily exercise stop_verify.py end-to-end without an
-    # actual transcript, so test the helper directly.
+def test_no_legacy_alias_exported() -> None:
+    """The substrate has no installed-user base — there are no legacy
+    aliases. If someone re-adds `stop_verify_legacy_disabled` (or any
+    other compatibility shim) this test fails. Pin the rule that the
+    helper module exports only the four documented names."""
     sys.path.insert(0, str(SCRIPTS))
-    from lib.substrate_disable import stop_verify_legacy_disabled
+    import lib.substrate_disable as sd
 
-    # Clean slate.
-    os.environ.pop("STOP_VERIFY_DISABLED", None)
+    assert sorted(sd.__all__) == [
+        "announce_disabled",
+        "is_disabled",
+        "is_truthy",
+    ]
+    # Belt-and-suspenders: the legacy shim must not exist as an
+    # attribute either (someone could forget to remove it from __all__).
+    assert not hasattr(sd, "stop_verify_legacy_disabled")
+
+
+def test_legacy_stop_verify_disabled_env_var_is_ignored() -> None:
+    """Setting the OLD env var name must NOT disable Layer 2. This
+    pins the "no legacy aliases" rule end-to-end: a stale runbook
+    that still says `STOP_VERIFY_DISABLED=1` should fail loudly
+    rather than silently disable the gate."""
+    sys.path.insert(0, str(SCRIPTS))
+    from lib.substrate_disable import is_disabled
+
+    # Clean slate then set ONLY the legacy name.
     os.environ.pop("FLEET_DISABLE_STOP_VERIFY", None)
-    assert stop_verify_legacy_disabled() is False
-
     os.environ["STOP_VERIFY_DISABLED"] = "1"
     try:
-        assert stop_verify_legacy_disabled() is True
+        # The canonical helper looks at FLEET_DISABLE_STOP_VERIFY only.
+        assert is_disabled("FLEET_DISABLE_STOP_VERIFY") is False
     finally:
         os.environ.pop("STOP_VERIFY_DISABLED")
-
-    os.environ["FLEET_DISABLE_STOP_VERIFY"] = "yes"
-    try:
-        assert stop_verify_legacy_disabled() is True
-    finally:
-        os.environ.pop("FLEET_DISABLE_STOP_VERIFY")
-
-
-def test_layer2_neither_env_var_means_enabled() -> None:
-    sys.path.insert(0, str(SCRIPTS))
-    from lib.substrate_disable import stop_verify_legacy_disabled
-
-    os.environ.pop("STOP_VERIFY_DISABLED", None)
-    os.environ.pop("FLEET_DISABLE_STOP_VERIFY", None)
-    assert stop_verify_legacy_disabled() is False
 
 
 def test_is_truthy_canon() -> None:
@@ -244,24 +244,21 @@ def test_in_process_disable_path_executes_announce_and_returns_zero(
     assert f"{label}: DISABLED via {env_var}=1" in captured.err
 
 
-def test_in_process_layer2_disable_path_via_legacy_env(
-    monkeypatch, capsys
-) -> None:
-    """Layer 2 has a different control flow (it reads stdin and emits
-    a JSON decision), so its in-process path needs a stdin stub."""
-    # Layer 2 disable triggers an ALLOW emission, not a stderr notice
-    # like the other 3 layers. We exercise stop_verify_legacy_disabled()
-    # directly to cover both env-var arms in-process.
+def test_in_process_layer2_disable_path_via_env(monkeypatch) -> None:
+    """Layer 2's disable check is the same is_disabled() helper used
+    by every other layer — exercise it in-process so coverage sees
+    the truthy and falsy branches without needing a full stdin stub."""
     sys.path.insert(0, str(SCRIPTS))
-    from lib.substrate_disable import stop_verify_legacy_disabled
+    from lib.substrate_disable import is_disabled
 
-    monkeypatch.setenv("STOP_VERIFY_DISABLED", "1")
-    monkeypatch.delenv("FLEET_DISABLE_STOP_VERIFY", raising=False)
-    assert stop_verify_legacy_disabled() is True
-
-    monkeypatch.delenv("STOP_VERIFY_DISABLED")
     monkeypatch.setenv("FLEET_DISABLE_STOP_VERIFY", "1")
-    assert stop_verify_legacy_disabled() is True
+    assert is_disabled("FLEET_DISABLE_STOP_VERIFY") is True
+
+    monkeypatch.setenv("FLEET_DISABLE_STOP_VERIFY", "false")
+    assert is_disabled("FLEET_DISABLE_STOP_VERIFY") is False
+
+    monkeypatch.delenv("FLEET_DISABLE_STOP_VERIFY")
+    assert is_disabled("FLEET_DISABLE_STOP_VERIFY") is False
 
 
 def test_bench_driver_actually_exports_disable_vars(tmp_path: Path) -> None:

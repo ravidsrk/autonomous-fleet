@@ -449,7 +449,7 @@ Each verification-substrate layer honors a `FLEET_DISABLE_*` env var. When set t
 (case-insensitive `1`/`true`/`yes`/`on`), the layer's CLI exits 0 with a `<layer>: DISABLED via
 <NAME>=1 (no-op exit 0)` stderr notice, BEFORE arg parsing. Registry:
 - Layer 1 (review-findings) → `FLEET_DISABLE_VERIFY_FINDINGS`
-- Layer 2 (stop-verify)     → `FLEET_DISABLE_STOP_VERIFY` (also `STOP_VERIFY_DISABLED` for back-compat)
+- Layer 2 (stop-verify)     → `FLEET_DISABLE_STOP_VERIFY`
 - Layer 3 (blind-fix)       → `FLEET_DISABLE_BLIND_FIX`
 - Layer 4 (run-archive)     → `FLEET_DISABLE_RUN_ARCHIVE`
 "Disabled" means "treat the layer's verdict as PASS for this run" — explicit operator contract.
