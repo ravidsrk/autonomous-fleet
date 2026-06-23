@@ -60,7 +60,7 @@ Different purposes. Same philosophy: SKILL.md is the source of truth, agents rea
 🟪 5 adapters (Claude Code, Codex, Grok, Orca, template)
 🟧 3 shipped missions (doc-sync, test-coverage, adversarial-review-and-fix)
 
-9 more missions are exploratory docs pending real-run promotion evidence.
+12 more missions are exploratory docs pending real-run promotion evidence.
 
 Compose into campaigns via fleet-program DAGs.
 
@@ -149,7 +149,7 @@ A portable framework for **fully-autonomous coding runs across orchestration too
 
 🟪 **Adapters (5)** — `claude-code`, `codex`, `grok`, `orca`, and a template for adding new runtimes. Each adapter maps the portable engine to one runtime's real commands.
 
-🟧 **Missions (3 shipped)** — `doc-sync`, `test-coverage`, `adversarial-review-and-fix`. Nine demoted missions now live in `docs/exploratory/missions/`: `dependency-update`, `cleanup`, `bug-batch`, `targeted-migration`, `design-integration`, `landing-page-convergence`, `legacy-rebuild`, `take-product-to-completion`, `inference-cost`.
+🟧 **Missions (3 shipped)** — `doc-sync`, `test-coverage`, `adversarial-review-and-fix`. Twelve missions live in `docs/exploratory/missions/`: the 9 demoted in this pass (`dependency-update`, `cleanup`, `bug-batch`, `targeted-migration`, `design-integration`, `landing-page-convergence`, `legacy-rebuild`, `take-product-to-completion`, `inference-cost`) plus 3 earlier (`agents-layer`, `contract-first-build`, `scaffold-align`).
 
 Shipped missions compose into campaigns via `fleet-program` DAGs. Built-in presets: `repo-health`, `ship-with-proof`, `quality-gate`.
 
