@@ -27,7 +27,7 @@
     },
     "run_id": {
       "type": "string",
-      "pattern": "^[0-9]{8}T[0-9]{6}Z-[a-z][a-z0-9-]*-[0-9a-f]{6}$",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[a-z][a-z0-9-]*[a-z0-9]-[0-9a-f]{6}$",
       "description": "Run id from the archive layout (YYYYMMDDTHHMMSSZ-<mission>-<6-hex>). Must match the parent run-archive directory."
     },
     "mission": {

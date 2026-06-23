@@ -3,7 +3,7 @@ name: autonomous-fleet-core
 description: >-
   The portable, tool-agnostic ENGINE for running fully-autonomous multi-agent engineering
   jobs. Shipped mission skills (doc-sync, test-coverage, adversarial-review-and-fix) invoke
-  THIS engine plus exactly one ADAPTER (orca, claude-code, grok, or another runtime). Nine
+  THIS engine plus exactly one ADAPTER (orca, claude-code, grok, or another runtime). Twelve
   additional missions are documented under docs/exploratory/missions/ and re-promote on
   real-run evidence. This core holds
   everything that does NOT depend on orchestration tool: self-orientation, fully-autonomous

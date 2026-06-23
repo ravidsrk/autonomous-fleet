@@ -30,6 +30,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from lib.fleet_run import (  # noqa: E402
+    MAX_ARCHIVE_BYTES,
     RUN_ID_PATTERN,
     SCHEMA_VERSION,
     VALID_KINDS,
@@ -871,3 +872,79 @@ def test_example_fixture_archive_validates():
     assert summary["verified_findings"] == 1
     assert summary["unverified_findings"] == 1
     assert summary["unverified_ids"] == ["F-002"]
+
+
+# ── 5 MB archive cap (references/run-archive.md) ──────────────────────────
+def _cap_manifest(nbytes: int) -> dict:
+    return {
+        "schema_version": "1.0",
+        "run_id": "20260101T000000Z-doc-sync-abc123",
+        "mission": "doc-sync",
+        "created_utc": "2026-01-01T00:00:00Z",
+        "files": [
+            {
+                "path": "p0-review-findings.json",
+                "kind": "findings",
+                "sha256": "a" * 64,
+                "mtime_utc": "2026-01-01T00:00:01Z",
+                "producer": "p0-reviewer",
+                "bytes": nbytes,
+            }
+        ],
+    }
+
+
+def test_size_cap_allows_under_5mb():
+    errs = validate_manifest_payload(_cap_manifest(1000), check_files_on_disk=False)
+    assert not any("cap" in e for e in errs)
+
+
+def test_size_cap_rejects_over_5mb():
+    errs = validate_manifest_payload(
+        _cap_manifest(MAX_ARCHIVE_BYTES + 1), check_files_on_disk=False
+    )
+    assert any("cap" in e for e in errs)
+
+
+def test_size_cap_over_with_root_no_lfs(tmp_path):
+    errs = validate_manifest_payload(
+        _cap_manifest(MAX_ARCHIVE_BYTES + 1),
+        archive_root=tmp_path,
+        check_files_on_disk=False,
+    )
+    assert any("cap" in e for e in errs)
+
+
+def test_size_cap_lfs_escape(tmp_path):
+    # The LFS rule that tracks the oversized file exempts the archive; the
+    # comment / blank / non-lfs lines exercise the .gitattributes parser.
+    (tmp_path / ".gitattributes").write_text(
+        "# lfs config\n\n*.txt text\np0-review-findings.json filter=lfs diff=lfs\n"
+    )
+    errs = validate_manifest_payload(
+        _cap_manifest(MAX_ARCHIVE_BYTES + 1),
+        archive_root=tmp_path,
+        check_files_on_disk=False,
+    )
+    assert not any("cap" in e for e in errs)
+
+
+def test_size_cap_unrelated_lfs_pattern_still_fails(tmp_path):
+    # An LFS rule that does NOT match the oversized file must not exempt it.
+    (tmp_path / ".gitattributes").write_text("*.response filter=lfs\n")
+    errs = validate_manifest_payload(
+        _cap_manifest(MAX_ARCHIVE_BYTES + 1),
+        archive_root=tmp_path,
+        check_files_on_disk=False,
+    )
+    assert any("cap" in e for e in errs)
+
+
+def test_size_cap_gitattributes_unreadable(tmp_path):
+    (tmp_path / ".gitattributes").mkdir()  # read_text -> IsADirectoryError (OSError)
+    errs = validate_manifest_payload(
+        _cap_manifest(MAX_ARCHIVE_BYTES + 1),
+        archive_root=tmp_path,
+        check_files_on_disk=False,
+    )
+    assert any("cap" in e for e in errs)

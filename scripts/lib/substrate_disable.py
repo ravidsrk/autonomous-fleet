@@ -1,53 +1,15 @@
-"""Substrate kill-switch convention.
+"""Substrate kill-switch convention — helper API.
 
-Each of the 4 verification-substrate layers exposes a `FLEET_DISABLE_*`
-env var that, when set to a truthy value, makes the layer's CLI early-
-exit with code 0 and a one-line stderr notice. This is the operator-
-facing kill switch and the comparator the `bench-adversarial.sh` driver
-needs to flip the substrate off without forking the codebase.
+Each verification-substrate layer exposes a `FLEET_DISABLE_*` env var that, when
+set truthy (case-insensitive "1"/"true"/"yes"/"on"), makes the layer's CLI early-
+exit 0 with a one-line stderr notice. The disable applies to the CLI entrypoint
+only — library imports are unaffected. One knob per layer, no legacy aliases (the
+stale `STOP_VERIFY_DISABLED` name is NOT honored — delete on sight if seen).
 
-Env var → layer mapping:
-
-  FLEET_DISABLE_VERIFY_FINDINGS  → scripts/verify_findings.py     (Layer 1)
-  FLEET_DISABLE_STOP_VERIFY      → scripts/stop_verify.py         (Layer 2)
-  FLEET_DISABLE_BLIND_FIX        → scripts/verify_blind_fix.py    (Layer 3)
-  FLEET_DISABLE_RUN_ARCHIVE      → scripts/validate_run_archive.py (Layer 4)
-
-Truthy values (case-insensitive): "1", "true", "yes", "on".
-
-Semantics:
-
-  * The disable is intentionally a noop+exit-0 — NOT a silent skip
-    embedded in a longer pipeline. This makes it impossible to miss in
-    a `set -x` log: every disabled run prints
-    `<layer>: DISABLED via FLEET_DISABLE_<NAME>=1 (no-op exit 0)` to
-    stderr.
-
-  * The disable applies to the CLI entrypoint only, not to the library
-    functions. Library imports continue to work; tests that import
-    `scripts.lib.verify_findings` directly are unaffected.
-
-  * The convention is symmetric: setting the env var to "0" / "false" /
-    "" leaves the layer enabled. Unset is also enabled.
-
-Why a convention rather than a config file:
-
-  Operators need to flip a single layer off for one run (e.g. during
-  a comparator bench or to unblock an emergency). Env vars compose
-  cleanly with `FLEET_DISABLE_*=1 fleet run ...` and don't leave
-  persistent state behind. A config-file knob would require careful
-  cleanup and would invite "I forgot to flip it back" footguns.
-
-One knob per layer:
-
-  There is exactly ONE env var per layer. No legacy aliases, no
-  fallbacks. The substrate has no installed-user base yet, so we
-  refuse to ship a back-compat surface that would immediately become
-  technical debt. If you find docs/code referencing any other name
-  (e.g. STOP_VERIFY_DISABLED), it's stale — delete on sight.
-
-Reference: docs/external-dogfood/adversarial-bench-2026-06.md
-methodology section; engine.md SUBSTRATE KILL-SWITCH CONVENTION block.
+This module is the helper API (`is_disabled` / `announce_disabled` / the env-var
+registry). The full doctrine — registry, semantics, rationale, bench-comparator
+use — lives in `references/substrate-disable-knobs.md` (single source of truth).
+Keep this docstring an API summary, not a second copy.
 """
 from __future__ import annotations
 
