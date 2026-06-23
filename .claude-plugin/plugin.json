@@ -1,7 +1,7 @@
 {
   "name": "autonomous-fleet",
-  "description": "Portable multi-agent engineering framework for fully-autonomous coding runs across orchestration tools. A tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and 12 mission skills (doc-sync, test-coverage, dependency-update, cleanup, bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, inference-cost) that compose into multi-step engineering campaigns.",
-  "version": "1.0.0",
+  "description": "Portable multi-agent engineering framework for fully-autonomous coding runs across orchestration tools. A tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and 3 shipped mission skills (doc-sync, test-coverage, adversarial-review-and-fix) that compose into multi-step engineering campaigns; 12 more missions ship as exploratory docs pending real-run promotion.",
+  "version": "0.9.0",
   "author": {
     "name": "Ravindra Kumar",
     "email": "ravindrakumar8088@gmail.com",

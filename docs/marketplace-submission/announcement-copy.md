@@ -101,7 +101,7 @@ Why two repos? Different purposes deserve different identities. Same author, sam
 > • Adapters (Claude Code / Codex / Grok / Orca / template)
 > • Missions (doc-sync, test-coverage, adversarial-review-and-fix)
 >
-> Nine additional missions live as exploratory docs pending real-run promotion evidence.
+> Twelve additional missions live as exploratory docs pending real-run promotion evidence.
 >
 > Shipped missions compose into campaigns via DAG presets like `repo-health` and `ship-with-proof`.
 >
