@@ -6,7 +6,7 @@ Covers:
 - ConstructionLock + RequestLock subclasses
 - steal() rejects when holder is alive
 - steal() succeeds when holder pid is dead
-- steal() age-based fallback for stale locks
+- steal() never uses lock age to steal a live local holder
 - Corrupted lock files (unparseable JSON) on release + steal
 
 Pattern mirrors tests/test_verify_blind_fix.py: 100% coverage, in-process
@@ -247,40 +247,34 @@ def test_steal_succeeds_when_holder_dead(
         new.release()
 
 
-def test_steal_age_fallback_succeeds_on_stale_lock(tmp_path: Path) -> None:
+def test_steal_rejects_stale_lock_when_holder_alive(tmp_path: Path) -> None:
     held = FileLock(tmp_path, "stale", owner="stale-owner").acquire()
     # Rewrite acquired_at to ancient history while the pid is still ours
-    # (the test's own pid). max_stale_s=0 forces "stale".
+    # (the test's own pid). Age must not authorize stealing a live holder.
     payload = json.loads(held.lock_path.read_text())
     payload["acquired_at"] = "1970-01-01T00:00:00Z"
     held.lock_path.write_text(json.dumps(payload))
 
-    new = FileLock.steal(tmp_path, "stale", new_owner="grim", max_stale_s=0.5)
     try:
-        payload2 = json.loads(new.lock_path.read_text())
-        assert payload2["owner"] == "grim"
+        with pytest.raises(LockStealError) as excinfo:
+            FileLock.steal(tmp_path, "stale", new_owner="grim", max_stale_s=0.5)
+        assert "still alive" in str(excinfo.value)
     finally:
-        new.release()
+        held.release()
 
 
-def test_steal_age_unparseable_with_live_pid_falls_through(tmp_path: Path) -> None:
-    """Unparseable acquired_at sets age=inf. If holder is alive, the
-    'age < max_stale_s' check is False (inf is not < any finite max),
-    so steal *succeeds* — the holder's liveness alone isn't sufficient
-    to block when age is unbounded. This documents the actual behaviour."""
+def test_steal_bad_timestamp_still_rejects_live_holder(tmp_path: Path) -> None:
+    """Timestamp parsing must not be a liveness tiebreaker."""
     held = FileLock(tmp_path, "bad-ts", owner="A").acquire()
     payload = json.loads(held.lock_path.read_text())
     payload["acquired_at"] = "not-an-iso-date"
     held.lock_path.write_text(json.dumps(payload))
-    # Holder pid is alive (test's own pid); age is inf; max_stale_s is finite.
-    # inf < finite is False → steal proceeds.
-    new = FileLock.steal(tmp_path, "bad-ts", new_owner="thief", max_stale_s=10000)
-    payload2 = json.loads(new.lock_path.read_text())
-    assert payload2["owner"] == "thief"
-    # NOTE: held.release() will fail with LockOwnershipError because thief
-    # now owns it — that's the expected state, not a test failure. Don't
-    # call held.release().
-    new.release()
+    try:
+        with pytest.raises(LockStealError) as excinfo:
+            FileLock.steal(tmp_path, "bad-ts", new_owner="thief", max_stale_s=10000)
+        assert "still alive" in str(excinfo.value)
+    finally:
+        held.release()
 
 
 def test_steal_rejects_corrupted_lockfile(tmp_path: Path) -> None:
@@ -306,7 +300,7 @@ def test_steal_with_default_owner(tmp_path: Path, monkeypatch: pytest.MonkeyPatc
 def test_steal_with_non_int_pid(tmp_path: Path) -> None:
     """A lock with no pid field (or non-int) is treated as 'liveness unknown'.
 
-    Falls through to age-check; if age is also unknown/zero, steal succeeds.
+    Stealing is allowed because no local live holder can be confirmed.
     """
     held = FileLock(tmp_path, "nopid", owner="A").acquire()
     payload = json.loads(held.lock_path.read_text())

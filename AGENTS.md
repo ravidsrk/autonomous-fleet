@@ -6,11 +6,11 @@ This file provides guidance to AI coding agents working with code in this reposi
 
 `autonomous-fleet` is a portable framework for running multi-agent engineering jobs designed for fully-autonomous coding runs across orchestration tools. A tool-agnostic **core** holds the method; thin **mission** skills describe specific jobs; per-tool **adapters** map the method to each runtime's real commands.
 
-21 skills are organized into 3 tiers:
+12 skill directories are organized into 3 tiers:
 
-- 🟦 **Tier 1 · Infrastructure** (4) — engine, entry point, program orchestrator, setup
+- 🟦 **Tier 1 · Infrastructure** (4) — engine, entry point, fleet-program campaign shell, setup
 - 🟪 **Tier 2 · Adapters** (5) — Grok, Claude Code, Codex, Orca, template
-- 🟧 **Tier 3 · Missions** (12) — doc-sync, test-coverage, dependency-update, cleanup, bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, inference-cost
+- 🟧 **Tier 3 · Missions** (3 shipped) — doc-sync, test-coverage, adversarial-review-and-fix. The 9 demoted missions now live in `docs/exploratory/missions/`: dependency-update, cleanup, bug-batch, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, inference-cost.
 
 # Skill Discovery
 
@@ -57,7 +57,7 @@ For every request:
 
 # Imagery & Banners
 
-The repo is anchored by **1 hero banner + 3 tier banners + 21 per-skill banners**. Every image has its prompt checked in alongside it — reproducer artifacts are first-class.
+The repo is anchored by **1 hero banner + 3 tier banners + 12 per-skill banners**. Every image has its prompt checked in alongside it — reproducer artifacts are first-class.
 
 **Design language (keep new skills consistent):**
 

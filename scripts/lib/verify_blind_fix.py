@@ -15,9 +15,11 @@ for the failure-mode coverage.
 """
 from __future__ import annotations
 
+import json
 import os
 import re
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -139,17 +141,84 @@ def _resolve_explicit(run_dir: Path, declared: str) -> Path | None:
     return candidate
 
 
-def _check_file(path: Path, findings_mtime: float | None) -> tuple[bool, list[str], float | None]:
+def _parse_manifest_mtime(raw: Any) -> float | None:
+    """Parse a manifest ``mtime_utc`` value to epoch seconds."""
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        return datetime.fromisoformat(raw.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
+
+
+def _load_manifest_mtimes(run_dir: Path) -> dict[str, float] | None:
+    """Return manifest path -> mtime map, or None when no manifest exists."""
+    manifest_path = run_dir / "manifest.json"
+    if not manifest_path.is_file():
+        return None
+    try:
+        payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return {}
+    if not isinstance(payload, dict):
+        return {}
+    files = payload.get("files")
+    if not isinstance(files, list):
+        return {}
+
+    mtimes: dict[str, float] = {}
+    for entry in files:
+        if not isinstance(entry, dict):
+            continue
+        rel_path = entry.get("path")
+        mtime = _parse_manifest_mtime(entry.get("mtime_utc"))
+        if isinstance(rel_path, str) and rel_path.strip() and mtime is not None:
+            mtimes[rel_path.strip().replace("\\", "/")] = mtime
+    return mtimes
+
+
+def _manifest_mtime_for(
+    path: Path,
+    *,
+    run_dir: Path,
+    manifest_mtimes: dict[str, float] | None,
+) -> float | None:
+    """Look up ``path`` in manifest mtimes without filesystem-time fallback."""
+    if manifest_mtimes is None:
+        return None
+    try:
+        rel_path = path.resolve().relative_to(run_dir.resolve()).as_posix()
+    except (OSError, ValueError):  # pragma: no cover - defensive path race/escape guard
+        return None
+    return manifest_mtimes.get(rel_path)
+
+
+def _check_file(
+    path: Path,
+    findings_mtime: float | None,
+    *,
+    blind_fix_mtime: float | None = None,
+    use_manifest_mtime: bool = False,
+    require_findings_mtime: bool = False,
+) -> tuple[bool, list[str], float | None]:
     """Run all per-file invariants. Returns (ok, reasons, mtime)."""
     reasons: list[str] = []
     if not path.is_file():
         return False, [f"missing: {path}"], None
-    try:
-        mtime = path.stat().st_mtime
-    except OSError as exc:
-        return False, [f"stat failed: {exc}"], None
+    if use_manifest_mtime:
+        mtime = blind_fix_mtime
+        if mtime is None:
+            reasons.append(f"mtime missing from manifest for {path.name}")
+    else:
+        try:
+            mtime = path.stat().st_mtime
+        except OSError as exc:
+            return False, [f"stat failed: {exc}"], None
 
-    if findings_mtime is not None and mtime > findings_mtime:
+    if require_findings_mtime and findings_mtime is None:
+        reasons.append("findings mtime missing from manifest")
+
+    if findings_mtime is not None and mtime is not None and mtime > findings_mtime:
         reasons.append(
             f"mtime({path.name})={mtime:.0f} > findings.mtime={findings_mtime:.0f} "
             "(blind-fix must precede findings)"
@@ -195,14 +264,22 @@ def verify_blind_fix_doc(
         and per-finding results.
     """
     run_dir = Path(run_dir)
+    manifest_mtimes = _load_manifest_mtimes(run_dir)
     findings_mtime: float | None = None
     if findings_path is not None:
-        try:
-            findings_mtime = findings_path.stat().st_mtime
-        except OSError:
-            # Findings doc's mtime is unreadable — skip the ordering check.
-            # Content checks on each blind-fix file still run.
-            findings_mtime = None
+        if manifest_mtimes is None:
+            try:
+                findings_mtime = findings_path.stat().st_mtime
+            except OSError:
+                # Findings doc's mtime is unreadable — skip the ordering check.
+                # Content checks on each blind-fix file still run.
+                findings_mtime = None
+        else:
+            findings_mtime = _manifest_mtime_for(
+                findings_path,
+                run_dir=run_dir,
+                manifest_mtimes=manifest_mtimes,
+            )
 
     reviewer_block = findings_doc.get("reviewer") or {}
     reviewer_slug: str | None = None
@@ -280,7 +357,21 @@ def verify_blind_fix_doc(
             )
             continue
 
-        ok, reasons, mtime = _check_file(chosen, findings_mtime)
+        if manifest_mtimes is None:
+            ok, reasons, mtime = _check_file(chosen, findings_mtime)
+        else:
+            blind_fix_mtime = _manifest_mtime_for(
+                chosen,
+                run_dir=run_dir,
+                manifest_mtimes=manifest_mtimes,
+            )
+            ok, reasons, mtime = _check_file(
+                chosen,
+                findings_mtime,
+                blind_fix_mtime=blind_fix_mtime,
+                use_manifest_mtime=True,
+                require_findings_mtime=findings_path is not None,
+            )
         results.append(
             BlindFixFinding(
                 finding_id=finding_id,

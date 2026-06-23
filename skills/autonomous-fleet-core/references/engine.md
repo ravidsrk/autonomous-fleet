@@ -414,6 +414,13 @@ existing readers render it, not by building a GUI.
   commits. The trace is the source of truth for "what happened"; the ledger is derived state. Trace
   first, ledger second — never the reverse, or a crashed coordinator leaves a row with no
   externally-visible cause.
+- The mechanism is the `emit_trace.TraceEmitter` library, which the coordinator and each adapter call
+  at every transition; `fleet_run.write_manifest(..., emitter=...)` is the reference in-code
+  integration (it emits the `T-FINAL` archive transition, test + mutation covered). Enforcement is the
+  schema + `emit_trace.validate_event` + the schema-drift test + the trace mutations, NOT auto-wiring,
+  because the file ledger is coordinator-driven.
+- The `details` object is free-form but MUST NOT carry secrets or host-absolute paths; reference
+  sensitive evidence by `evidence_hash`. The stream is meant for publication to external dashboards.
 - Schema is versioned (`schema_version: "1.0"`) and breaking changes require a NEW `$id`; consumers
   pin to the version they understand. Adding a primitive, role, or status to the enum is a breaking
   change for the same reason — closed enums are part of the contract.

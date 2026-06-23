@@ -9,7 +9,7 @@ Drafted post copy for the dual-launch of `agent-skills` + `autonomous-fleet`. At
 > Two open-source agent toolkits live today, sharing one design philosophy:
 >
 > 🟦 `agent-skills` — 5 capability skills (DNS, AWS migration, research, image gen)
-> 🟧 `autonomous-fleet` — 21-skill multi-agent engineering framework
+> 🟧 `autonomous-fleet` — 12-skill multi-agent framework
 >
 > github.com/ravidsrk/agent-skills
 > github.com/ravidsrk/autonomous-fleet
@@ -32,7 +32,7 @@ Drafted post copy for the dual-launch of `agent-skills` + `autonomous-fleet`. At
 > So I built two:
 >
 > 1. `agent-skills` → 5 production capability skills
-> 2. `autonomous-fleet` → 21-skill framework, runs on Claude Code / Codex / Grok / Orca
+> 2. `autonomous-fleet` → 12-skill framework, runs on Claude Code / Codex / Grok / Orca
 >
 > One author. Two identities. Both open-source.
 
@@ -42,7 +42,7 @@ Drafted post copy for the dual-launch of `agent-skills` + `autonomous-fleet`. At
 1/ Shipped two open-source AI-agent repos today:
 
 🟦 agent-skills — 5 capability skills that just work
-🟧 autonomous-fleet — multi-agent engineering framework with 21 skills
+🟧 autonomous-fleet — multi-agent engineering framework with 12 shipped skills
 
 Different purposes. Same philosophy: SKILL.md is the source of truth, agents read it, agents do the work.
 
@@ -56,9 +56,11 @@ Different purposes. Same philosophy: SKILL.md is the source of truth, agents rea
 
 3/ autonomous-fleet is bigger — a portable framework for fully-autonomous coding runs across orchestration tools:
 
-🟦 1 core engine
-🟪 4 runtime adapters (Claude Code, Codex, Grok, Orca)
-🟧 12 mission skills (doc-sync, test-coverage, bug-batch, take-product-to-completion, …)
+🟦 4 infrastructure skills (core, entry point, fleet-program shell, setup)
+🟪 5 adapters (Claude Code, Codex, Grok, Orca, template)
+🟧 3 shipped missions (doc-sync, test-coverage, adversarial-review-and-fix)
+
+9 more missions are exploratory docs pending real-run promotion evidence.
 
 Compose into campaigns via fleet-program DAGs.
 
@@ -94,12 +96,14 @@ Why two repos? Different purposes deserve different identities. Same author, sam
 >
 > **🟧 `autonomous-fleet` (`github.com/ravidsrk/autonomous-fleet`)**
 >
-> A portable multi-agent engineering framework with 21 skills organized in three tiers:
-> • Infrastructure (engine + program orchestrator + setup)
-> • Adapters (Claude Code / Codex / Grok / Orca)
-> • Missions (doc-sync, test-coverage, dependency-update, bug-batch, take-product-to-completion, and 7 more)
+> A portable multi-agent engineering framework with 12 shipped skills organized in three tiers:
+> • Infrastructure (engine + entry point + fleet-program campaign shell + setup)
+> • Adapters (Claude Code / Codex / Grok / Orca / template)
+> • Missions (doc-sync, test-coverage, adversarial-review-and-fix)
 >
-> Missions compose into campaigns via DAG presets like `repo-health` and `ship-with-proof`.
+> Nine additional missions live as exploratory docs pending real-run promotion evidence.
+>
+> Shipped missions compose into campaigns via DAG presets like `repo-health` and `ship-with-proof`.
 >
 > Both are MIT-licensed, follow the agentskills.io spec, and install via `npx skills`. Both have full CI, validators, and dashboards.
 >
@@ -137,17 +141,17 @@ Reach-for-when-needed skills that solve specific high-value tasks. Each skill is
 
 [`github.com/ravidsrk/agent-skills`](https://github.com/ravidsrk/agent-skills)
 
-## `autonomous-fleet` — multi-agent engineering framework (21 skills)
+## `autonomous-fleet` — multi-agent engineering framework (12 skills)
 
 A portable framework for **fully-autonomous coding runs across orchestration tools**. Three tiers:
 
-🟦 **Infrastructure (5)** — the engine, the umbrella entry point, the program orchestrator, setup, and the discipline layer
+🟦 **Infrastructure (4)** — the engine, the umbrella entry point, the `fleet-program` campaign shell, and setup
 
 🟪 **Adapters (5)** — `claude-code`, `codex`, `grok`, `orca`, and a template for adding new runtimes. Each adapter maps the portable engine to one runtime's real commands.
 
-🟧 **Missions (12)** — `doc-sync`, `test-coverage`, `dependency-update`, `cleanup`, `bug-batch`, `adversarial-review-and-fix`, `targeted-migration`, `design-integration`, `landing-page-convergence`, `legacy-rebuild`, `take-product-to-completion`, `inference-cost`.
+🟧 **Missions (3 shipped)** — `doc-sync`, `test-coverage`, `adversarial-review-and-fix`. Nine demoted missions now live in `docs/exploratory/missions/`: `dependency-update`, `cleanup`, `bug-batch`, `targeted-migration`, `design-integration`, `landing-page-convergence`, `legacy-rebuild`, `take-product-to-completion`, `inference-cost`.
 
-Missions compose into campaigns via `fleet-program` DAGs. Built-in presets: `repo-health`, `ship-with-proof`, `align-then-ship`, `quality-gate`.
+Shipped missions compose into campaigns via `fleet-program` DAGs. Built-in presets: `repo-health`, `ship-with-proof`, `quality-gate`.
 
 [`github.com/ravidsrk/autonomous-fleet`](https://github.com/ravidsrk/autonomous-fleet)
 

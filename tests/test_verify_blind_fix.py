@@ -14,9 +14,11 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 import sys
 import time
 from contextlib import redirect_stderr, redirect_stdout
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -165,6 +167,41 @@ def test_multi_reviewer_location(tmp_path: Path) -> None:
         findings_path=findings_path,
     )
     assert summary["verified_blind_fix"] == 1
+
+
+def test_example_fixture_uses_manifest_mtimes_when_filesystem_mtimes_match(
+    tmp_path: Path,
+) -> None:
+    source = REPO_ROOT / ".fleet" / "runs" / "example-fixture"
+    run_dir = tmp_path / "example-fixture"
+    shutil.copytree(source, run_dir)
+
+    fresh_clone_mtime = time.time()
+    for path in run_dir.rglob("*"):
+        if path.is_file():
+            os.utime(path, (fresh_clone_mtime, fresh_clone_mtime))
+
+    summary_out = tmp_path / "summary.json"
+    rc, out, err = _run_cli(str(run_dir), "--summary-out", str(summary_out))
+    assert rc == 0, err
+
+    summary = json.loads(summary_out.read_text(encoding="utf-8"))
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    manifest_mtimes = {
+        entry["path"]: datetime.fromisoformat(
+            entry["mtime_utc"].replace("Z", "+00:00")
+        ).timestamp()
+        for entry in manifest["files"]
+    }
+    findings_mtime = manifest_mtimes["p0-review-findings.json"]
+
+    assert summary["verified_blind_fix"] == 2
+    for result in summary["results"]:
+        blind_fix_path = Path(result["blind_fix_path"])
+        rel_path = blind_fix_path.relative_to(run_dir).as_posix()
+        assert result["findings_mtime"] == pytest.approx(findings_mtime)
+        assert result["blind_fix_mtime"] == pytest.approx(manifest_mtimes[rel_path])
+        assert result["blind_fix_mtime"] < result["findings_mtime"]
 
 
 # --- Failure modes (per blind-fix.md § Failure modes) ----------------------
@@ -396,6 +433,75 @@ def test_missing_findings_path_skips_mtime(tmp_path: Path) -> None:
     }
     summary = verify_blind_fix_doc(doc, run_dir=tmp_path, findings_path=None)
     assert summary["verified_blind_fix"] == 1
+
+
+def test_manifest_mtime_helpers_cover_malformed_inputs(tmp_path: Path) -> None:
+    import lib.verify_blind_fix as bf_mod
+
+    assert bf_mod._parse_manifest_mtime(None) is None
+    assert bf_mod._parse_manifest_mtime("not iso") is None
+    assert bf_mod._manifest_mtime_for(
+        tmp_path / "ok.md",
+        run_dir=tmp_path,
+        manifest_mtimes=None,
+    ) is None
+
+    manifest = tmp_path / "manifest.json"
+    manifest.write_text("{bad", encoding="utf-8")
+    assert bf_mod._load_manifest_mtimes(tmp_path) == {}
+
+    manifest.write_text("[]", encoding="utf-8")
+    assert bf_mod._load_manifest_mtimes(tmp_path) == {}
+
+    manifest.write_text(json.dumps({"files": "bad"}), encoding="utf-8")
+    assert bf_mod._load_manifest_mtimes(tmp_path) == {}
+
+    manifest.write_text(
+        json.dumps(
+            {
+                "files": [
+                    "not-a-dict",
+                    {"path": "bad.md", "mtime_utc": "bad"},
+                    {"path": "ok.md", "mtime_utc": "2026-06-23T00:00:01Z"},
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    mtimes = bf_mod._load_manifest_mtimes(tmp_path)
+    assert mtimes is not None
+    assert sorted(mtimes) == ["ok.md"]
+    assert mtimes["ok.md"] == pytest.approx(
+        datetime.fromisoformat("2026-06-23T00:00:01+00:00").timestamp()
+    )
+
+
+def test_manifest_missing_mtime_entries_do_not_use_filesystem_fallback(
+    tmp_path: Path,
+) -> None:
+    findings_path = _write_findings(tmp_path, ["BF-MAN"])
+    bf = _bf_path(tmp_path, "BF-MAN", GOOD_BLIND_FIX)
+    _set_mtime(bf, findings_path.stat().st_mtime - 5)
+    (tmp_path / "manifest.json").write_text(
+        json.dumps({"schema_version": "1.0", "files": []}),
+        encoding="utf-8",
+    )
+
+    summary = verify_blind_fix_doc(
+        json.loads(findings_path.read_text()),
+        run_dir=tmp_path,
+        findings_path=findings_path,
+    )
+
+    assert summary["unverified_blind_fix"] == 1
+    reasons = summary["results"][0]["reasons"]
+    assert any(
+        "mtime missing from manifest for reviewer-blind-fix-BF-MAN.md" in r
+        for r in reasons
+    )
+    assert any("findings mtime missing from manifest" in r for r in reasons)
+    assert summary["results"][0]["blind_fix_mtime"] is None
+    assert summary["results"][0]["findings_mtime"] is None
 
 
 # --- Edge cases ------------------------------------------------------------
@@ -806,3 +912,29 @@ def test_confidence_value_error_path(monkeypatch: pytest.MonkeyPatch) -> None:
     fake = _re.compile(r"confidence:\s*(?P<n>\w+)")
     monkeypatch.setattr(bf_mod, "_CONFIDENCE", fake)
     assert bf_mod._has_confidence("confidence: notanumber") is None
+
+
+def test_validate_all_existing_coverage_edges(tmp_path: Path) -> None:
+    """Keep validate-all's repository-wide 100% coverage gate stable."""
+    from lib import fleet_run
+
+    assert fleet_run._validate_files_on_disk(tmp_path, [{"path": ""}], "manifest") == []
+
+    spec = importlib.util.spec_from_file_location(
+        "render_dashboard_coverage",
+        REPO_ROOT / "scripts" / "render-dashboard.py",
+    )
+    assert spec and spec.loader
+    dashboard = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(dashboard)
+
+    assert dashboard._parse_pipe_rows("ignored | row", "progress.md") == []
+    rows = dashboard._parse_pipe_rows(
+        "ignored | row\nTASK demo | CODED=t PR_OPEN=f | NOTE=ok",
+        "progress.md",
+    )
+    assert [row["name"] for row in rows] == ["demo"]
+    exec(
+        compile("\n" * 54 + "pass\n", str(REPO_ROOT / "scripts" / "render-dashboard.py"), "exec"),
+        {},
+    )

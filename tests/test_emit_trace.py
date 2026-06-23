@@ -35,12 +35,18 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
+from lib import fleet_run  # noqa: E402
 from lib.emit_trace import (  # noqa: E402
     PRIMITIVES,
     ROLES,
     SCHEMA_VERSION,
     STATUSES,
     TraceEmitter,
+    _EVIDENCE_HASH_RE,
+    _REQUIRED_FIELDS,
+    _RUN_ID_RE,
+    _TS_RE,
+    _UUID_RE,
     iter_trace_file,
     validate_event,
 )
@@ -86,6 +92,20 @@ def _valid_event(**overrides: object) -> dict:
     }
     event.update(overrides)
     return event
+
+
+def _manifest_archive(tmp_path: Path) -> tuple[Path, fleet_run.FileEntry]:
+    archive_root = tmp_path / "run"
+    archive_root.mkdir()
+    readiness = archive_root / "readiness.md"
+    readiness.write_text("ready\n", encoding="utf-8")
+    entry = fleet_run.file_entry_for(
+        readiness,
+        archive_root,
+        kind="readiness",
+        producer="integrator",
+    )
+    return archive_root, entry
 
 
 # --- TraceEmitter -----------------------------------------------------------
@@ -196,6 +216,45 @@ def test_doctrine_emit_before_ledger_write(tmp_path: Path) -> None:
     with TraceEmitter(run_dir, mission=MISSION, run_id=RUN_ID) as emitter:
         event = emitter.emit("DISPATCH", "COORDINATOR", "started")
         commit_ledger_row(event)
+
+
+def test_write_manifest_with_emitter_emits_t_final(tmp_path: Path) -> None:
+    archive_root, entry = _manifest_archive(tmp_path)
+    trace_path = archive_root / "trace.jsonl"
+
+    with TraceEmitter(archive_root, mission=MISSION, run_id=RUN_ID) as emitter:
+        manifest_path = fleet_run.write_manifest(
+            archive_root,
+            run_id=RUN_ID,
+            mission=MISSION,
+            files=[entry],
+            emitter=emitter,
+        )
+
+    assert manifest_path == archive_root / "manifest.json"
+    lines = trace_path.read_text(encoding="utf-8").splitlines()
+    assert len(lines) == 1
+    event = json.loads(lines[0])
+    assert validate_event(event) == []
+    assert event["primitive"] == "T-FINAL"
+    assert event["role"] == "INTEGRATOR"
+    assert event["status"] == "succeeded"
+    assert event["run_id"] == RUN_ID
+    assert event["details"] == {"manifest": "manifest.json", "files": 1}
+
+
+def test_write_manifest_without_emitter_does_not_emit_trace(tmp_path: Path) -> None:
+    archive_root, entry = _manifest_archive(tmp_path)
+
+    manifest_path = fleet_run.write_manifest(
+        archive_root,
+        run_id=RUN_ID,
+        mission=MISSION,
+        files=[entry],
+    )
+
+    assert manifest_path.is_file()
+    assert not (archive_root / "trace.jsonl").exists()
 
 
 # --- validate_event ---------------------------------------------------------
@@ -453,6 +512,10 @@ def test_cli_requires_subcommand() -> None:
 # --- Schema-drift guard -----------------------------------------------------
 
 
+def _lib_pattern(pattern: str) -> str:
+    return pattern.replace(r"\d", "[0-9]")
+
+
 def test_schema_drift_against_assets() -> None:
     schema_path = (
         REPO_ROOT
@@ -466,4 +529,32 @@ def test_schema_drift_against_assets() -> None:
     assert tuple(schema["properties"]["primitive"]["enum"]) == PRIMITIVES
     assert tuple(schema["properties"]["role"]["enum"]) == ROLES
     assert tuple(schema["properties"]["status"]["enum"]) == STATUSES
+    assert schema["required"] == list(_REQUIRED_FIELDS)
+    assert schema["properties"]["ts"]["pattern"] == _lib_pattern(_TS_RE.pattern)
+    assert schema["properties"]["run_id"]["pattern"] == _lib_pattern(
+        _RUN_ID_RE.pattern
+    )
+    assert schema["properties"]["evidence_hash"]["pattern"] == _lib_pattern(
+        _EVIDENCE_HASH_RE.pattern
+    )
+    assert schema["properties"]["parent_event"]["pattern"] == _lib_pattern(
+        _UUID_RE.pattern
+    )
+    assert schema["properties"]["mission"]["minLength"] == 1
+    assert schema["properties"]["cost_delta"]["minimum"] == 0
     assert schema["additionalProperties"] is False
+
+
+def test_example_trace_asset_validates_clean() -> None:
+    example_path = (
+        REPO_ROOT
+        / "skills"
+        / "autonomous-fleet-core"
+        / "assets"
+        / "fleet-trace.v1.example.jsonl"
+    )
+    lines = example_path.read_text(encoding="utf-8").splitlines()
+    assert len(lines) >= 4
+    for line_no, line in enumerate(lines, start=1):
+        event = json.loads(line)
+        assert validate_event(event) == [], f"line {line_no}: {event}"
