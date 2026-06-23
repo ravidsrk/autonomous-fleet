@@ -28,7 +28,7 @@ metadata:
 
 Before executing, activate these skills and read their full instructions:
 
-1. `autonomous-fleet-core` - read `references/engine.md` and `references/composition.md` when coordinating
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
 2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.

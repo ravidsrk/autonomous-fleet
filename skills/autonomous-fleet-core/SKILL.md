@@ -50,4 +50,4 @@ the first.
 The active adapter must implement: `PLACE`, `SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`,
 `WORKER_DONE` / `ASK` / `REPLY`, `OPEN_PR` / `MERGE_PR` / `CLEANUP`, `SYNC_TASK_STATE`.
 When the host supports goal mode, also implement: `SET_GOAL`, `UPDATE_GOAL`, `GOAL_COMPLETE`,
-`GOAL_BLOCKED` (Orca exempt — see `runtime-goals.md`).
+`GOAL_BLOCKED`, and `LOOP_POLL` (host-native scheduler; Orca exempt — see `runtime-goals.md`).
