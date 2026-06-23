@@ -186,6 +186,75 @@ If about to message the user anything but the FINAL report (or a named hard-depe
 stop, re-read this block, read the ledger, take the orchestration action instead.
 
 ═══════════════════════════════════════════════════════════
+ROOT_CAUSE_DEPTH: a fix at the wrong call-stack depth is a symptom fix, no matter how green tests are.
+═══════════════════════════════════════════════════════════
+EVID asks "does the original reproduction stop reproducing?" e2e_verified asks "does the real
+end-to-end flow work?" ROOT_CAUSE_DEPTH asks an upstream question both can MISS: is the patch at
+the SAME call-stack depth as the bug's root cause, or does it guard a symptom one frame above?
+A null guard at the caller silences the crash and turns CI green but leaves the source of the null
+intact — any other caller of that source hits the same bug. A test that only exercises the patched
+path keeps EVID=true forever even though the fix is wrong.
+
+HARD RULE — symptom-fix detection. The reviewer marks a finding `category: root_cause_depth` and
+verdict `request_changes` if ANY of these match, EVEN WHEN TESTS PASS:
+
+- The patch is at a different/shallower location than the reviewer's identified root cause.
+- The reviewer finds itself thinking "this doesn't fix the root cause but it prevents the crash."
+- The patch adds a guard/check/conversion at the point of USE instead of fixing the point of
+  CREATION.
+- The patch fixes ONE manifestation but the root cause can trigger the same issue via other paths
+  (a `cascade_impact` field naming those other paths is REQUIRED when this finding is filed —
+  a root-cause-depth finding without a cascade is almost always a symptom-fix finding in disguise,
+  miscategorised).
+
+Where this lands mechanically: in the schema-verified findings shape (see
+`references/review-findings.md`), `category: root_cause_depth` REQUIRES `cascade_impact`. A
+finding tagged `root_cause_depth` with no cascade is a schema violation — the verifier rejects it
+the same way it rejects an unverified `quoted_line`. The builder fixes the cited POINT OF CREATION
+and re-runs EVID across every cascade path named in `cascade_impact`; closing only the originally
+reported path does not satisfy the finding.
+
+Lineage: SWE-Review (Wang et al., 2026) `prompts/agentic_review.md` HARD RULE, the most-cited
+reviewer rubric in the academic literature. Composed for the fleet via the `cascade_impact`
+required-field gate so the discipline is schema-enforced rather than prose-aspirational. See
+`audit-work/borrowable-patterns-report.md` #3 and `audit-work/competitor-deepdive/swe-review.md`
+section 4.1.
+
+═══════════════════════════════════════════════════════════
+ANTI-ANCHORING: reviewer commits its own fix BEFORE reading the candidate patch.
+═══════════════════════════════════════════════════════════
+The cross-vendor build-blind reviewer rule says the reviewer never sees the build conversation.
+That's necessary but not sufficient: even WITH no build context, a reviewer handed a patch and
+asked "is this correct?" anchors on whatever it sees. The reviewer rationalises the existing fix,
+because rationalising an artifact is cognitively cheaper than independently re-deriving the
+correct one. SWE-Review's empirical result: reviewers given the same patch in two orders — patch
+first vs root-cause-first — produce systematically different decisions on the same case.
+
+The mechanical countermeasure: BEFORE the reviewer opens the candidate diff, it writes its
+INDEPENDENT proposed fix to `.fleet/runs/<run_id>/reviewer-blind-fix-<reviewer>.md` (one file
+per reviewer in multi-reviewer setups). The blind fix names:
+
+- The POINT OF CREATION (file:function:line — same call-stack-depth language as ROOT_CAUSE_DEPTH).
+- The shape of the change the reviewer would make (a paragraph; no code required).
+- The reviewer's pre-commit confidence (0–100).
+
+ONLY THEN does the reviewer open the candidate patch. The review then compares the candidate to
+its own pre-committed blind fix and writes findings accordingly. A candidate that agrees with the
+blind fix at the same call-stack depth gets weight; a candidate at a different depth triggers the
+ROOT_CAUSE_DEPTH HARD RULE above.
+
+The blind-fix file is a first-class fleet artifact: it lands in `.fleet/runs/<run_id>/`
+alongside the findings JSON, ships with the readiness doc's archive bundle, and is auditable
+post-hoc. A review run whose blind-fix file is missing or is mtime-AFTER the candidate-findings
+file is structurally suspect — the protocol requires blind-fix BEFORE patch read, and the
+filesystem must reflect that order.
+
+Lineage: SWE-Review's "Step 3: Write YOUR Proposed Fix (BEFORE reading the patch)" prompt step
+(`prompts/agentic_review.md` Step 3). The committed-in-writing-first technique is the
+proven anti-anchoring scaffold from the academic literature. See
+`audit-work/borrowable-patterns-report.md` #4.
+
+═══════════════════════════════════════════════════════════
 RESULT-STATE TERMINATION GATE: green checks are not enough.
 ═══════════════════════════════════════════════════════════
 A green test/validator suite is NECESSARY BUT NOT SUFFICIENT. NEVER terminate
@@ -193,6 +262,102 @@ A green test/validator suite is NECESSARY BUT NOT SUFFICIENT. NEVER terminate
 query the actual result, not exit codes, and record the evidence in the readiness doc. Completion,
 rebuild, and build missions gate on `fleet-outcome.metrics.e2e_verified == true`. Lesson source:
 a validated gate can be inert; see `docs/secure-ship-e2e.md`.
+
+═══════════════════════════════════════════════════════════
+STRICT MODE (opt-in): runtime gate makes EVID/WT_CLEAN/e2e_verified ENFORCEABLE.
+═══════════════════════════════════════════════════════════
+By default the engine's three discipline flags (EVID, WT_CLEAN, e2e_verified) are aspirational —
+the builder self-attests in the readiness doc and the orchestrator trusts the attestation. This is
+the second most common failure mode in fleet runs (after reviewer hallucination, addressed by
+schema-verified findings): SELF-ATTESTED COMPLETION. The worker claims done because it intends to
+be done, not because verifiable evidence exists on disk.
+
+Strict mode closes that loop. Operators install
+`skills/autonomous-fleet-core/assets/hooks/stop-verify.sh` as a Claude Code Stop hook. Before any
+worker session can end, the hook scans for evidence (EVID=true / WT_CLEAN=true in a ledger touched
+in window; e2e_verified or status:done in a readiness doc in window; a passing verify-findings
+summary from `scripts/verify_findings.py`; test-runner artifacts; Playwright screenshots). If none
+match, the hook emits `{decision:"block", reason:"..."}` and Claude Code REFUSES to terminate the
+session. Three discipline levels:
+- **Loose** (no hook installed, default): self-attested, trust-based.
+- **Strict** (`hooks.json` installed, defaults): ≥1 evidence kind in 30min window.
+- **Paranoid** (`STOP_VERIFY_STRICT_PROGRESS=1`, `STOP_VERIFY_MIN_KINDS=3`): both progress flags
+  AND three distinct kinds.
+
+Install and configuration: see `references/strict-mode.md`. Lineage: claude-code-orchestra's
+stop-verify.sh (mtime-window scan) + multi-llm-plugin-cc's stop-review-gate-hook.mjs (the
+{decision:"block"} JSON contract), composed for the fleet's progress.md/readiness.md ledger format.
+Fail-open by design: any internal hook error allows session end with a stderr warning — a broken
+hook trapping a worker is a worse failure than a missed gate. The gate is one more layer ON TOP OF
+existing disciplines, not a replacement. See `audit-work/borrowable-patterns-report.md` #2.
+
+═══════════════════════════════════════════════════════════
+ARCHIVE_ENABLED: every run leaves a manifest-audited file trail under `.fleet/runs/<run_id>/`.
+═══════════════════════════════════════════════════════════
+STRICT MODE detects evidence; ARCHIVE_ENABLED is what PRODUCES the evidence in a known location
+with a known shape. Without an archive, EVID flips on transient files that get garbage-collected
+between runs; the verifier-summary the stop-verify hook scans for is impossible to find on the
+NEXT run (the run-archive scheme is the ONLY thing that lets INFLATION POST-MORTEM cite specific
+claims back to the file that proved them). With an archive, every artifact a run produced — the
+findings JSON, the verifier summary, the reviewer blind-fix files, the readiness doc, the prompts
+the coordinator used, the final diffs — lives at a deterministic path under one directory per run,
+with a manifest naming each file and its sha256.
+
+HARD RULE — archive layout. Every run that emits ANY first-class artifact (findings JSON,
+verifier summary, blind-fix file, readiness doc) lands under
+`.fleet/runs/<run_id>/` where `<run_id>` follows the deterministic format:
+
+  YYYYMMDDTHHMMSSZ-<mission>-<short-hash>
+
+A UTC timestamp (sortable), the mission slug (greppable), a 6-char hash of (timestamp+mission+pid)
+for uniqueness under concurrent runs. Example: `20260623T141522Z-adversarial-review-and-fix-3a9c2f`.
+This shape is the ONLY one the run-archive validator accepts; freeform run-ids (operator pet
+names, branch names, etc.) are rejected because they break sort-by-time auditability.
+
+HARD RULE — manifest. Each archive directory MUST contain `manifest.json` listing every file
+the run produced. The manifest is the AUDIT TRAIL — without it, the directory is a collection of
+files with no provenance and the post-hoc replay machinery (INFLATION POST-MORTEM, T-FINAL's
+"recommend next missions") has nothing to chain against. Each entry carries: `path` (relative to
+the archive dir), `kind` (one of: `findings`, `verify_summary`, `blind_fix`, `prompt`,
+`response`, `diff`, `readiness`, `progress`, `other`), `sha256`, `mtime_utc`, `producer`
+(the worker/reviewer slug that wrote it), `bytes`. The schema is shipped at
+`skills/autonomous-fleet-core/assets/fleet-run-manifest.schema.json`.
+
+HARD RULE — mtime ordering invariants. The validator enforces causal ordering between certain
+kinds, because these orderings ARE the disciplines from Commits 1–3:
+
+- A `blind_fix` MUST have mtime BEFORE every `findings` file from the same reviewer in the same
+  run (Commit 3 ANTI-ANCHORING protocol — the reviewer must commit its blind fix before
+  reading the candidate diff).
+- A `verify_summary` MUST have mtime AFTER the `findings` file it audits (Commit 1's verifier
+  runs AGAINST a findings doc; a summary older than the findings is a stale audit from a
+  previous run, mis-archived).
+- A `readiness` doc MUST have the LATEST mtime in the archive — it's the final artifact T-FINAL
+  emits, and any artifact mtime-after it means a later edit was made outside the run boundary.
+
+A manifest whose listed files don't satisfy these orderings FAILS validation, even when every
+checksum matches. The discipline is not "files exist"; it's "files exist in the order the
+discipline demands".
+
+HARD RULE — `archive_enabled: true` is a precondition for `status: done` in any mission that
+emitted first-class artifacts. T-FINAL writes the manifest as its final step and sets
+`archive_enabled: true` in the fleet-outcome. A mission that shipped findings but no manifest
+ships as `status: partial`, not `done` — the run is not auditable, the discipline is not satisfied.
+Missions that emit no first-class artifacts (a pure documentation-update mission, say) OMIT the
+field — the field is gated on artifact production, not on mission existence.
+
+Retention. The fleet does not garbage-collect run-archives. Operators decide retention via
+`scripts/prune-run-archives.sh --older-than <days>` (out-of-band, never invoked by the engine
+loop). The archive is auditable for as long as it sits on disk. A run that prunes a still-cited
+archive (a readiness doc references a manifest entry that no longer exists) is recorded as a
+broken provenance link by `validate-all.sh` but does NOT fail the build — old runs degrade
+gracefully into "we know it ran, we no longer have the trail".
+
+Lineage: composed for the fleet from the run-archive pattern observed across multi-vendor
+agent frameworks (claude-code-orchestra's per-session output dirs, multi-llm-plugin-cc's
+plugin-run logs, GodModeSkill's verifier corpus index). The manifest+mtime-ordering+kind
+taxonomy is the fleet's specific contribution — none of the upstream patterns enforce all three.
+See `audit-work/borrowable-patterns-report.md` #8.
 
 ═══════════════════════════════════════════════════════════
 INFLATION POST-MORTEM: break the "we already shipped that" trap on re-runs.

@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-fleet.dev/schemas/fleet-run-manifest.schema.json",
+  "title": "Autonomous Fleet — run-archive manifest",
+  "description": "Manifest for a single run-archive directory (.fleet/runs/<run_id>/manifest.json). One entry per first-class artifact the run produced (findings JSONs, verifier summaries, blind-fix files, prompts, responses, diffs, readiness doc, progress doc). The manifest is the audit trail: post-hoc, the entire run can be reconstructed from the listed files + their checksums. See engine.md ARCHIVE_ENABLED HARD RULES (layout, manifest, mtime ordering, archive_enabled precondition).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "mission",
+    "created_utc",
+    "files"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Pinned to 1.0 for this release. The lib's drift-detection test asserts the lib and schema agree on this version. Bumps require synchronous lib + verifier + doc updates."
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[a-z][a-z0-9-]*[a-z0-9]-[0-9a-f]{6}$",
+      "description": "Deterministic run-id: YYYYMMDDTHHMMSSZ-<mission>-<6-hex>. UTC timestamp gives sort-by-time auditability; mission slug gives greppability; 6-hex hash disambiguates concurrent runs. Freeform run-ids (operator pet names, branch names) are REJECTED — the regex is intentionally strict because the post-hoc replay machinery indexes runs by this format."
+    },
+    "mission": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Mission slug. MUST match the slug embedded in run_id. The lib validator asserts this cross-reference."
+    },
+    "coordinator": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional. The coordinator slug that orchestrated the run (e.g. 'codex', 'claude-code'). Used by INFLATION POST-MORTEM to chain coordinator-specific failure patterns across runs."
+    },
+    "base_branch": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional. The branch the run was based on. Useful for replay and for chasing 'why did this run produce different output' divergences."
+    },
+    "created_utc": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$",
+      "description": "ISO 8601 UTC creation timestamp. MUST be earlier than the mtime of any file listed in `files` — manifest is created at the start of the run, files accrete during it, and the validator pins this ordering."
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Every first-class artifact the run produced. Empty arrays are forbidden: a run that produced zero artifacts has no archive, hence no manifest. The `engine.md` archive_enabled precondition is gated on `len(files) > 0`.",
+      "items": { "$ref": "#/$defs/file_entry" }
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional freeform operator note. NOT used by the validator; for human readers only. Keep short — the manifest is machine-first."
+    }
+  },
+  "$defs": {
+    "file_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "kind", "sha256", "mtime_utc", "producer", "bytes"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path RELATIVE to the archive directory. MUST NOT contain `..` segments or absolute paths — the manifest indexes a directory, not the wider filesystem. The lib validator rejects path-escape attempts."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "findings",
+            "verify_summary",
+            "blind_fix",
+            "prompt",
+            "response",
+            "diff",
+            "readiness",
+            "progress",
+            "other"
+          ],
+          "description": "Categorical kind. Drives the mtime-ordering invariants (see engine.md ARCHIVE_ENABLED): blind_fix < findings, verify_summary > findings, readiness has the latest mtime. `other` exists as an escape hatch but does NOT participate in ordering checks — a kind=other file with mtime claims is a smell."
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "Hex sha256 of the file's on-disk contents at archive time. The validator re-hashes and rejects mismatches — without this, the manifest is a list of file names with no integrity property."
+        },
+        "mtime_utc": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$",
+          "description": "ISO 8601 UTC mtime AT THE MOMENT the manifest was written. Used for the kind-ordering invariants. Operators who touch files after manifest emission break the audit trail — the validator detects (file mtime != manifest mtime) and reports it as drift."
+        },
+        "producer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Worker/reviewer slug that produced this file (e.g. 'p0-reviewer-claude', 'skeptic-pass-gpt5', 'fix-builder-codex'). Used by anti-anchoring's blind-fix-per-reviewer audit (Commit 3) — the validator pairs blind_fix and findings entries by producer to enforce mtime ordering per reviewer, not globally."
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "File size in bytes at archive time. Cheap drift signal: a manifest entry whose on-disk size doesn't match `bytes` is corruption or mid-flight write. Validator checks size before sha256 (cheap fail-fast)."
+        }
+      }
+    }
+  }
+}

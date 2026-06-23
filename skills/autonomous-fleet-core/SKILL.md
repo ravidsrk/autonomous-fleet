@@ -45,6 +45,13 @@ for native `/goal` / `update_goal` binding. Per-repo defaults: `setup-autonomous
 Mission chains and conditional DAGs use `fleet-program` — not a second mission loaded alongside
 the first.
 
+For review missions emitting structured findings (`adversarial-review-and-fix` and any future
+reviewer phase), see [references/review-findings.md](references/review-findings.md): the
+JSON schema, the source-verification CLI, the fix-strategy/confidence gating rules. For RUNTIME
+enforcement of the engine's EVID/WT_CLEAN/e2e_verified disciplines via a Claude Code Stop hook,
+see [references/strict-mode.md](references/strict-mode.md): opt-in install of the stop-verify
+gate that refuses session termination without verifiable evidence on disk.
+
 ## Primitives (summary)
 
 The active adapter must implement: `PLACE`, `SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`,

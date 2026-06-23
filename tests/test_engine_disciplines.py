@@ -287,3 +287,245 @@ def test_secret_scrub_is_gated_on_human_confirmed_rotation() -> None:
     assert "PROCEEDS to scrub history immediately" not in hygiene
     assert "scrub anyway" not in hygiene
     assert_no_contradiction_markers(hygiene)
+
+
+def test_strict_mode_doctrine_block_wires_stop_verify_hook_and_lineage() -> None:
+    """Commit 2 of the 2026-06-22 competitor-audit follow-ups: the engine
+    must carry a STRICT MODE block that names the stop-verify hook, the
+    install path, the three discipline levels, the lineage citation, and
+    the fail-open guarantee. A future edit that softens any of these
+    properties should fail this test."""
+    text = read_engine()
+    sm = section(
+        text,
+        "STRICT MODE (opt-in): runtime gate",
+        "INFLATION POST-MORTEM",
+    )
+    sm_flat = squash(sm)
+
+    # The asset path operators install — pin so it can't drift without breaking
+    # the strict-mode.md install instructions in lock-step.
+    assert "skills/autonomous-fleet-core/assets/hooks/stop-verify.sh" in sm
+    # The doctrine doc is linked, not duplicated.
+    assert "references/strict-mode.md" in sm
+    # All three discipline levels named.
+    assert "Loose" in sm
+    assert "Strict" in sm
+    assert "Paranoid" in sm
+    # The CC contract is named: this is what closes the loop.
+    assert '{decision:"block"' in sm or "decision:\"block\"" in sm
+    # The named failure mode (self-attested completion) is called out so the
+    # gate's PURPOSE survives prose edits.
+    assert "SELF-ATTESTED COMPLETION" in sm
+    # Fail-open is non-negotiable — a paranoid future edit that tries to make
+    # this fail-closed must be caught.
+    assert "Fail-open by design" in sm_flat or "fail-open by design" in sm_flat.lower()
+    # Lineage citation — keeps the audit trail intact.
+    assert "claude-code-orchestra" in sm
+    assert "multi-llm-plugin-cc" in sm
+    assert "borrowable-patterns-report.md" in sm
+    # The gate is one more layer ON TOP OF existing disciplines, NOT a
+    # replacement. This is the most-mis-read property of the doctrine.
+    assert "not a replacement" in sm_flat
+    assert_no_contradiction_markers(sm)
+
+
+def test_strict_mode_block_anchors_after_result_state_termination_gate() -> None:
+    """The two sections are conceptually paired: RESULT-STATE says "green
+    isn't enough", STRICT MODE gives the mechanical enforcement. They MUST
+    sit next to each other so a reader gets the disciplinary motivation
+    before the mechanism."""
+    text = read_engine()
+    rs_idx = text.index("RESULT-STATE TERMINATION GATE")
+    sm_idx = text.index("STRICT MODE (opt-in): runtime gate")
+    inflation_idx = text.index("INFLATION POST-MORTEM")
+    assert rs_idx < sm_idx < inflation_idx, (
+        "STRICT MODE must sit between RESULT-STATE TERMINATION GATE and "
+        "INFLATION POST-MORTEM to preserve the result-state -> enforcement "
+        "narrative"
+    )
+
+def test_root_cause_depth_doctrine_block_present_with_hard_rule_and_schema_hook() -> None:
+    """Commit 3 of the 2026-06-22 competitor-audit follow-ups: the engine
+    must carry a ROOT_CAUSE_DEPTH block that defines the HARD RULE in
+    SWE-Review's verbatim language, names the schema-enforcement (cascade_impact
+    REQUIRED when category=root_cause_depth), and cites the source. A future
+    edit that softens the HARD RULE to a suggestion must fail this test."""
+    text = read_engine()
+    rcd = section(
+        text,
+        "ROOT_CAUSE_DEPTH: a fix at the wrong call-stack depth",
+        "ANTI-ANCHORING:",
+    )
+    rcd_flat = squash(rcd)
+
+    # The defining contrast with the existing EVID and e2e_verified disciplines.
+    # ROOT_CAUSE_DEPTH is the UPSTREAM check; pin so the doctrine doesn't
+    # collapse into a redundant restatement of either.
+    assert "EVID" in rcd
+    assert "e2e_verified" in rcd
+    assert "call-stack depth" in rcd or "call stack depth" in rcd
+
+    # The HARD RULE language is verbatim from SWE-Review. Pin all four bullets so
+    # future paraphrasing cannot weaken the discipline.
+    assert "HARD RULE" in rcd
+    assert "EVEN WHEN TESTS PASS" in rcd or "even when tests pass" in rcd.lower()
+    assert "different/shallower location" in rcd_flat
+    assert "doesn't fix the root cause but it prevents the crash" in rcd_flat
+    assert "point of USE instead of fixing the point of CREATION" in rcd_flat
+    assert "fixes ONE manifestation but the root cause can trigger the same issue via other paths" in rcd_flat
+
+    # The schema-enforcement hook — this is what makes the discipline
+    # MECHANICAL rather than aspirational. Without this, ROOT_CAUSE_DEPTH is
+    # just prose; with it, the verifier rejects miscategorised symptom-fixes.
+    assert "cascade_impact" in rcd
+    assert "REQUIRED" in rcd or "required" in rcd
+    assert "category: root_cause_depth" in rcd or "`category: root_cause_depth`" in rcd
+
+    # Lineage citation. Keeps the audit trail intact for future contributors.
+    assert "SWE-Review" in rcd
+    assert "Wang" in rcd  # primary citation
+    assert "borrowable-patterns-report.md" in rcd
+    assert_no_contradiction_markers(rcd)
+
+
+def test_anti_anchoring_doctrine_block_defines_blind_fix_protocol() -> None:
+    """The blind-fix protocol is procedural: the order of operations IS the
+    discipline. Pin the file-path convention, the mtime-ordering audit
+    property, and the three required contents of the blind-fix file."""
+    text = read_engine()
+    aa = section(
+        text,
+        "ANTI-ANCHORING:",
+        "RESULT-STATE TERMINATION GATE",
+    )
+    aa_flat = squash(aa)
+
+    # The mechanical heart: blind fix BEFORE candidate diff.
+    assert "BEFORE" in aa
+    assert "blind fix" in aa.lower() or "blind-fix" in aa.lower()
+    # Path convention — operators install hook scripts that look for this path.
+    assert ".fleet/runs/" in aa
+    assert "reviewer-blind-fix" in aa
+    # The three required fields in the blind-fix file. Pin so future edits
+    # can't reduce the discipline to "just write a paragraph somewhere".
+    assert "POINT OF CREATION" in aa or "point of creation" in aa.lower()
+    assert "confidence" in aa.lower()
+    # The audit-trail property: mtime ordering. Without this, the protocol is
+    # unverifiable — a reviewer could write the blind fix AFTER reading the
+    # diff and the orchestrator would never know.
+    assert "mtime" in aa.lower()
+    assert "AFTER" in aa or "after" in aa.lower()
+
+    # Names build-blindness as the existing rule it COMPLEMENTS (not replaces).
+    # The three reviewer-discipline rules must be distinguishable in prose.
+    assert "build-blind" in aa.lower() or "build conversation" in aa.lower()
+
+    # Lineage citation.
+    assert "SWE-Review" in aa
+    assert "borrowable-patterns-report.md" in aa
+    assert_no_contradiction_markers(aa)
+
+
+def test_new_disciplines_anchor_before_result_state_termination_gate() -> None:
+    """ROOT_CAUSE_DEPTH and ANTI-ANCHORING are UPSTREAM defenses (prevent the
+    symptom-fix from happening) whereas RESULT-STATE TERMINATION GATE is the
+    post-hoc check (the fix may have passed CI but didn't fix reality). The
+    upstream-then-downstream narrative ordering MUST be preserved."""
+    text = read_engine()
+    rcd_idx = text.index("ROOT_CAUSE_DEPTH: a fix at the wrong call-stack depth")
+    aa_idx = text.index("ANTI-ANCHORING: reviewer commits its own fix")
+    rs_idx = text.index("RESULT-STATE TERMINATION GATE")
+    sm_idx = text.index("STRICT MODE (opt-in): runtime gate")
+    inflation_idx = text.index("INFLATION POST-MORTEM")
+    # All five blocks live in this exact order.
+    assert rcd_idx < aa_idx < rs_idx < sm_idx < inflation_idx, (
+        "ROOT_CAUSE_DEPTH and ANTI-ANCHORING must sit before RESULT-STATE "
+        "TERMINATION GATE so the reader gets upstream-defense -> "
+        "post-hoc-gate -> runtime-enforcement in that order"
+    )
+
+
+# ───────────────────────────────────────────────────────────────────────
+# Commit 4 — ARCHIVE_ENABLED doctrine block
+# ───────────────────────────────────────────────────────────────────────
+
+
+def test_archive_enabled_doctrine_block_present_with_all_four_hard_rules() -> None:
+    """The engine must carry an ARCHIVE_ENABLED block defining four HARD RULES
+    (layout, manifest, mtime-ordering, archive_enabled precondition), the
+    deterministic run_id format, and a retention policy. Pin all four rules
+    so a future edit that drops one (especially the mtime-ordering rules,
+    which encode Commits 1-3 disciplines) fails this test."""
+    text = read_engine()
+    # End-anchor uses the FULL next-section heading text (not just
+    # "INFLATION POST-MORTEM") because that phrase appears multiple times
+    # IN-PROSE inside the ARCHIVE_ENABLED block (referencing the next-run
+    # chaining machinery). The section() helper cuts at the FIRST occurrence,
+    # which would slice mid-paragraph. The full heading text is unique.
+    arch = section(
+        text,
+        "ARCHIVE_ENABLED: every run leaves a manifest-audited file trail",
+        'INFLATION POST-MORTEM: break the "we already shipped that" trap on re-runs.',
+    )
+    arch_flat = squash(arch)
+
+    # The block names BOTH neighboring disciplines (STRICT MODE which detects,
+    # INFLATION POST-MORTEM which chains). Without this composition, the
+    # archive is just storage — with it, the archive is the substrate that
+    # makes the other commits enforceable.
+    assert "STRICT MODE" in arch
+    assert "INFLATION POST-MORTEM" in arch
+
+    # The deterministic run_id format. Pin to prevent freeform run-ids from
+    # creeping back in via a "let's just use the branch name" PR.
+    assert "YYYYMMDDTHHMMSSZ-<mission>-<short-hash>" in arch
+    assert ".fleet/runs/" in arch
+
+    # All four HARD RULES present. Word-pin each so a paraphrase that
+    # weakens any of them fails the test.
+    assert "HARD RULE — archive layout" in arch
+    assert "HARD RULE — manifest" in arch
+    assert "HARD RULE — mtime ordering invariants" in arch
+    assert "HARD RULE — `archive_enabled: true` is a precondition" in arch
+
+    # Mtime-ordering invariants are where Commits 1-3 disciplines become
+    # auditable. Pin each invariant. Without these, the archive is files
+    # in a folder; with these, the archive is a discipline-enforcement
+    # mechanism.
+    assert "blind_fix" in arch and "BEFORE every `findings`" in arch
+    assert "verify_summary" in arch and "AFTER the `findings`" in arch
+    assert "readiness" in arch and "LATEST mtime" in arch
+
+    # archive_enabled precondition for status=done. Pin so a future loosening
+    # to "soft warning" fails.
+    assert "precondition for `status: done`" in arch
+    assert "status: partial" in arch
+
+    # Manifest schema location. Pin so the schema file can't be moved without
+    # also updating the doctrine.
+    assert "fleet-run-manifest.schema.json" in arch
+
+    # Retention policy explicit. Without this, operators won't know whether
+    # the engine garbage-collects archives.
+    assert "does not garbage-collect" in arch_flat or "Retention" in arch
+    assert "scripts/prune-run-archives.sh" in arch
+
+    # Lineage citation.
+    assert "borrowable-patterns-report.md" in arch
+    assert_no_contradiction_markers(arch)
+
+
+def test_archive_enabled_block_anchors_between_strict_mode_and_inflation() -> None:
+    """ARCHIVE_ENABLED sits BETWEEN STRICT MODE (which detects archive files)
+    and INFLATION POST-MORTEM (which chains across archives). The ordering
+    encodes the narrative: detection → substrate → cross-run chaining.
+    Reordering breaks the reader's path through the doctrine."""
+    text = read_engine()
+    sm_idx = text.index("STRICT MODE (opt-in): runtime gate")
+    arch_idx = text.index("ARCHIVE_ENABLED: every run leaves")
+    inflation_idx = text.index("INFLATION POST-MORTEM")
+    assert sm_idx < arch_idx < inflation_idx, (
+        "ARCHIVE_ENABLED must sit between STRICT MODE and INFLATION "
+        "POST-MORTEM to preserve detection -> substrate -> chaining narrative"
+    )

@@ -135,6 +135,67 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
                     f"{prefix}: {rkey} must be a non-negative int, got {rval!r}"
                 )
 
+    # Run-archive discipline telemetry (optional, cross-cutting): when a mission
+    # has emitted ANY first-class artifact under .fleet/runs/<run_id>/, T-FINAL
+    # records archive_enabled at the outcome level. true = manifest.json exists
+    # and validate_run_archive.py passes (Commit 4 ARCHIVE_ENABLED HARD RULE).
+    # Missions that emit no first-class artifacts (pure doc updates with no
+    # findings/blind-fix/verifier outputs) OMIT the field. Lives at the top
+    # level (not in metrics) because it's a discipline assertion, not a count
+    # — mirrors the shape of `root_cause_audited`.
+    if "archive_enabled" in outcome:
+        ae = outcome["archive_enabled"]
+        if not isinstance(ae, bool):
+            errors.append(
+                f"{prefix}: archive_enabled must be bool, "
+                f"got {type(ae).__name__}"
+            )
+        # Hard precondition for status=done: a mission can't ship done with
+        # archive_enabled=false — the audit trail is the discipline. This is
+        # the only cross-cutting field that gates status=done from the
+        # validator (root_cause_audited explicitly DOES NOT, by design — that
+        # one lives in the SKILL prose because its semantics depend on whether
+        # any RCD findings were filed). archive_enabled is unambiguous: if you
+        # asserted it false, you're not done.
+        elif ae is False and outcome.get("status") == "done":
+            errors.append(
+                f"{prefix}: cannot be done with archive_enabled=false: the "
+                "run-archive manifest is the audit trail (engine.md "
+                "ARCHIVE_ENABLED); a status=done without a passing archive "
+                "is not auditable. Set status=partial instead, or fix the "
+                "manifest so archive_enabled=true."
+            )
+
+    # Run-archive run_id reference (optional, cross-cutting). When the mission
+    # produced a run-archive, T-FINAL records its run_id so post-hoc tools
+    # (INFLATION POST-MORTEM, dashboards) can jump straight to the archive.
+    # Validated via the same regex as fleet_run.RUN_ID_PATTERN; we don't import
+    # that lib here to keep fleet_outcome standalone, so the regex is inlined.
+    if "run_id" in outcome:
+        rid = outcome["run_id"]
+        if not isinstance(rid, str) or not re.match(
+            r"^[0-9]{8}T[0-9]{6}Z-[a-z][a-z0-9-]*[a-z0-9]-[0-9a-f]{6}$", rid
+        ):
+            errors.append(
+                f"{prefix}: run_id must match "
+                "YYYYMMDDTHHMMSSZ-<mission>-<6-hex>, got {rid!r}".format(rid=rid)
+            )
+
+    # Root-cause-depth audit telemetry (optional, cross-cutting): when a review
+    # mission has reckoned with the ROOT_CAUSE_DEPTH discipline (engine.md), it
+    # records the result at the outcome level. true = every root_cause_depth
+    # finding had its cascade_impact paths re-EVIDed; false = at least one cascade
+    # path was deferred. Optional so non-review missions don't need to assert it.
+    # Lives at the top level (not in metrics) because it's a discipline assertion,
+    # not a count — mirrors the shape of `sources_logged`.
+    if "root_cause_audited" in outcome:
+        rca = outcome["root_cause_audited"]
+        if not isinstance(rca, bool):
+            errors.append(
+                f"{prefix}: root_cause_audited must be bool, "
+                f"got {type(rca).__name__}"
+            )
+
     # Cost routing telemetry (optional, cross-cutting): running spend estimate for
     # the run. May be fractional. See engine.md MODEL & COST ROUTING.
     if "cost_estimate" in outcome:
