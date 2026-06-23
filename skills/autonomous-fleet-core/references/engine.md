@@ -440,10 +440,12 @@ existing readers render it, not by building a GUI.
 - Schema is versioned (`schema_version: "1.0"`) and breaking changes require a NEW `$id`; consumers
   pin to the version they understand. Adding a primitive, role, or status to the enum is a breaking
   change for the same reason — closed enums are part of the contract.
-- The trace `primitive`/`role` enums are a SUPERSET of the 13 coordinator PRIMITIVES: they also name
-  ledger state-transition verbs the trace records but the coordinator does not dispatch (`SYNC`,
-  `MERGE`, `FREEZE`, `T-FINAL`, `COMMIT`, `ABORT`) plus the `FIXER` role (the blind-fix author).
-  These are trace vocabulary, NOT new engine primitives — the primitive list above is unchanged.
+- The trace `primitive`/`role` enums are trace-specific vocabulary — overlapping with, but NOT
+  identical to, the 13 coordinator PRIMITIVES. The trace records ledger state-transition verbs the
+  coordinator does not dispatch (`SYNC`, `MERGE`, `FREEZE`, `T-FINAL`, `COMMIT`, `ABORT`) and a
+  `FIXER` role (the blind-fix author), and omits coordinator-only primitives the trace never emits
+  (e.g. `PLACE`, `WORKER_DONE`, `OPEN_PR`, `CLEANUP`, `LOOP_POLL`). Neither list is a subset of the
+  other; the 13-primitive coordinator list above is unchanged.
 - Failure to emit a trace event is NOT a hard error. The run continues with degraded telemetry; the
   coordinator records `trace_emission_degraded: true` in `fleet-outcome.yaml` so the post-hoc audit
   knows the stream is incomplete. Hard-failing on a telemetry I/O error would let the dashboard veto

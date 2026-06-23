@@ -37,6 +37,7 @@ values; drift is caught at test time, not runtime.
 
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import json
 import os
@@ -495,17 +496,33 @@ def _validate_ordering(files: list[dict[str, Any]], where: str) -> list[str]:
 MAX_ARCHIVE_BYTES = 5 * 1024 * 1024  # 5 MB cap; see references/run-archive.md
 
 
+def _lfs_patterns(ga_text: str) -> list[str]:
+    """Path globs tracked by git-lfs, parsed from a .gitattributes body."""
+    patterns: list[str] = []
+    for line in ga_text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "filter=lfs" not in stripped:
+            continue
+        patterns.append(stripped.split()[0])
+    return patterns
+
+
+def _matches_lfs(path: str, patterns: list[str]) -> bool:
+    base = path.rsplit("/", 1)[-1]
+    return any(fnmatch.fnmatch(path, p) or fnmatch.fnmatch(base, p) for p in patterns)
+
+
 def _validate_size_cap(
     files: list[dict[str, Any]], archive_root: Path | None, where: str
 ) -> list[str]:
     """Enforce the 5 MB run-archive cap (references/run-archive.md). Over-cap is
-    allowed only when the archive tracks its large artifacts with git-lfs."""
+    allowed only when the bytes NOT tracked by git-lfs stay under the cap — an
+    LFS rule that doesn't match the oversized files does NOT exempt the archive."""
+    sized = [e for e in files if isinstance(e, dict)]
     total = sum(
         e["bytes"]
-        for e in files
-        if isinstance(e, dict)
-        and isinstance(e.get("bytes"), int)
-        and not isinstance(e["bytes"], bool)
+        for e in sized
+        if isinstance(e.get("bytes"), int) and not isinstance(e["bytes"], bool)
     )
     if total <= MAX_ARCHIVE_BYTES:
         return []
@@ -514,11 +531,20 @@ def _validate_size_cap(
             ga_text = (archive_root / ".gitattributes").read_text(encoding="utf-8")
         except OSError:
             ga_text = ""
-        if "filter=lfs" in ga_text:
-            return []
+        patterns = _lfs_patterns(ga_text)
+        if patterns:
+            non_lfs = sum(
+                e["bytes"]
+                for e in sized
+                if isinstance(e.get("bytes"), int)
+                and not isinstance(e["bytes"], bool)
+                and not _matches_lfs(str(e.get("path", "")), patterns)
+            )
+            if non_lfs <= MAX_ARCHIVE_BYTES:
+                return []
     return [
-        f"{where}: archive is {total} bytes, over the {MAX_ARCHIVE_BYTES}-byte cap; "
-        f"track large artifacts with git lfs (see references/run-archive.md)"
+        f"{where}: non-LFS archive bytes exceed the {MAX_ARCHIVE_BYTES}-byte cap; "
+        f"track the large artifacts with git lfs (see references/run-archive.md)"
     ]
 
 

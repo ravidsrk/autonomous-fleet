@@ -916,13 +916,28 @@ def test_size_cap_over_with_root_no_lfs(tmp_path):
 
 
 def test_size_cap_lfs_escape(tmp_path):
-    (tmp_path / ".gitattributes").write_text("*.response filter=lfs diff=lfs merge=lfs\n")
+    # The LFS rule that tracks the oversized file exempts the archive; the
+    # comment / blank / non-lfs lines exercise the .gitattributes parser.
+    (tmp_path / ".gitattributes").write_text(
+        "# lfs config\n\n*.txt text\np0-review-findings.json filter=lfs diff=lfs\n"
+    )
     errs = validate_manifest_payload(
         _cap_manifest(MAX_ARCHIVE_BYTES + 1),
         archive_root=tmp_path,
         check_files_on_disk=False,
     )
     assert not any("cap" in e for e in errs)
+
+
+def test_size_cap_unrelated_lfs_pattern_still_fails(tmp_path):
+    # An LFS rule that does NOT match the oversized file must not exempt it.
+    (tmp_path / ".gitattributes").write_text("*.response filter=lfs\n")
+    errs = validate_manifest_payload(
+        _cap_manifest(MAX_ARCHIVE_BYTES + 1),
+        archive_root=tmp_path,
+        check_files_on_disk=False,
+    )
+    assert any("cap" in e for e in errs)
 
 
 def test_size_cap_gitattributes_unreadable(tmp_path):
