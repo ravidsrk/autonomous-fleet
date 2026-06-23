@@ -46,6 +46,8 @@ This topology came out of the **Aula run** — the framework's defining Stage-9 
 
 **Single-vendor hosts are honest about the trade-off.** If you only have one model family available (e.g. running everything on Claude Code), the framework still enforces **terminal separation** — the reviewer gets a fresh session with no context inheritance — but it loses the cross-vendor blind-spot diversity. Every run's `fleet-outcome` records which mode it ran in, so it's never silent.
 
+> **A note on the `prompts.md` citations.** Throughout this repo you'll see provenance markers like `<!-- Corpus: prompts.md L… -->` and references to `prompts.md` / `directives.md` "in the source corpus." That corpus — the raw multi-stage run logs and directives this framework was distilled from — is private upstream and **not shipped here**; the distilled, public record *is* this repo. The citations trace provenance (which run a rule came from), not files you can open in the tree. See [CONTRIBUTING.md](CONTRIBUTING.md)'s Distillation Discipline.
+
 ---
 
 # What you can ask it to do

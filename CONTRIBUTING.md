@@ -50,6 +50,11 @@ Corpus citations look like:
 - `prompts.md:L3013` (Stage 9 Aula run)
 - `docs/test-coverage-progress.md` "SIGNAL RECONCILIATION (a real catch)"
 
+`prompts.md` and `directives.md` are the **private upstream source corpus** (raw
+run logs + directives) this repo is distilled from; they are not shipped in the
+tree. Those citations record provenance — which run a rule came from — not links
+you can open here. `docs/*` citations, by contrast, do resolve in-repo.
+
 Research citations look like:
 - `arXiv 2601.15195` (MSR 2026 AIDev dataset, 33,596 PRs) — this is
   legitimate and is the only research citation in `engine.md`.
