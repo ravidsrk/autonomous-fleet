@@ -109,7 +109,7 @@ drift across CC versions):
 | `STOP_VERIFY_MIN_KINDS` | `1` | Minimum distinct evidence kinds required to allow. |
 | `STOP_VERIFY_STRICT_PROGRESS` | unset | When set (any value), require BOTH `EVID=true` AND `WT_CLEAN=true` in a ledger file (in addition to base threshold). |
 | `STOP_VERIFY_EXPLAIN` | unset | When set, print human-readable verdict to stderr (visible in CC's hook log). |
-| `STOP_VERIFY_DISABLED` | unset | Operator kill switch. When set to `1`/`true`/`yes`, hook returns ALLOW immediately. Use for adapter test harnesses that need to drive sessions without artifact requirements. |
+| `FLEET_DISABLE_STOP_VERIFY` | unset | Operator kill switch. When set to a truthy value (`1`/`true`/`yes`/`on`, case-insensitive), hook returns ALLOW immediately. Use for adapter test harnesses that need to drive sessions without artifact requirements. See `references/substrate-disable-knobs.md` for the substrate-wide convention. |
 
 ## Discipline levels
 
@@ -149,7 +149,7 @@ To unblock:
     --summary-out.
 
 If this is a no-edit turn (status/diagnostic only), set
-STOP_VERIFY_DISABLED=1 in the worker env or remove the Stop hook for
+FLEET_DISABLE_STOP_VERIFY=1 in the worker env or remove the Stop hook for
 that adapter.
 ```
 
@@ -190,7 +190,7 @@ replacement for any of them.
 
 Two ways, in order of preference:
 
-1. `STOP_VERIFY_DISABLED=1` in the worker env — explicit, audit-trail.
+1. `FLEET_DISABLE_STOP_VERIFY=1` in the worker env — explicit, audit-trail.
 2. Move `.claude/settings.json` aside for the session — heavy-handed
    but ensures no hook runs.
 

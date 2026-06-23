@@ -1,24 +1,17 @@
+# secure-ship: ARCHIVED.
+#
+# This campaign was archived on 2026-06-23 (Commit D) because the
+# `deps` node referenced `dependency-update`, which moved to
+# docs/exploratory/missions/dependency-update/ — it has no progress +
+# readiness + external archive triple.
+#
+# Re-promote `dependency-update` per docs/exploratory/missions/README.md,
+# then restore the campaign DAG from git history (commit immediately
+# preceding the Commit-D demotion) — the audit-gated edge structure
+# (`if: findings_open == 0`) is the load-bearing part to preserve.
+#
+# Until then this campaign is intentionally empty so the autoplan / edge
+# linter does not bind to undefined missions.
+# exploratory: dependency-update skipped until promoted
 campaign: secure-ship
-repo: single
-base: fleet/secure-ship-base
-start: audit
-nodes:
-  audit: { mission: adversarial-review-and-fix }
-  deps: { mission: dependency-update }
-  docs: { mission: doc-sync }
-edges:
-  # Gate on the audit's OWN findings, not `if: always`. Only proceed to dependency bumps once the
-  # security audit is CLEAN (findings_open == 0). An audit that cannot close its P0/P1 findings sets
-  # status: blocked, which run-campaign.sh now HALTS on (no silent "Campaign complete") — so an
-  # unresolved security finding stops the ship rather than flowing through.
-  audit:
-    - { to: deps, if: findings_open == 0 }
-  # After dependency bumps, RE-AUDIT the changed surface when a major was deferred (a dependency
-  # pinned to an old version is residual risk the security pass must review + record, not ship
-  # blind), then doc-sync. A dependency advisory that cannot be closed surfaces as dependency-update
-  # status: blocked (halt). The re-audit back-edge is bounded by run-campaign's per-node revisit
-  # budget, so it converges or stops rather than looping forever.
-  deps:
-    - { to: audit, if: majors_deferred > 0 }
-    - { to: docs, if: always }
-  docs: []
+status: archived-pending-exploratory-promotion

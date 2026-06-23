@@ -5,8 +5,13 @@ start: docs
 nodes:
   docs: { mission: doc-sync }
   tests: { mission: test-coverage }
-  tidy: { mission: cleanup }
+# exploratory: cleanup skipped until promoted (was tidy → cleanup)
+# See docs/exploratory/missions/cleanup/ and docs/exploratory/missions/README.md
+# for the promotion criteria. Restore the tidy node + edges below when cleanup
+# earns a progress + readiness + external archive triple.
+#  tidy: { mission: cleanup }
 edges:
   docs: [{ to: tests, if: always }]
-  tests: [{ to: tidy, if: always }]
-  tidy: []
+  tests: []
+#  tests: [{ to: tidy, if: always }]
+#  tidy: []

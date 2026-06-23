@@ -3,31 +3,48 @@
 Empirical tiers from arXiv 2601.15195 (MSR 2026 AIDev dataset, 33,596 agent-authored PRs;
 cross-agent merge rates). Start Tier 1 unattended; review frozen artifacts for Tier 2–3.
 
-## Tier 1 — safe unattended (~62–84% cross-agent merge)
+## Shipped missions (real-run evidence required)
+
+A mission stays in `skills/` only when it has BOTH `docs/<mission>-progress.md` and
+`docs/<mission>-readiness.md` from a real run AND at least one external-repo run-archive.
+Demoted on 2026-06-23 (Commit D): everything else now lives under
+[`docs/exploratory/missions/`](../../../docs/exploratory/missions/) and is not active
+in this surface.
+
+### Tier 1 — safe unattended (~62–84% cross-agent merge)
 
 | Skill | Use when |
 |-------|----------|
 | `doc-sync` | Docs drifted from code; README/setup/API docs wrong |
 | `test-coverage` | Undertested modules; lock behaviour before refactor |
-| `dependency-update` | Stale deps; security advisories; routine bumps |
-| `cleanup` | Dead code, duplication, smells — not a full rebuild |
 
-## Tier 2 — full review gate (~64–79% cross-agent merge; no direct category for UI/migration)
+### Tier 2 — full review gate (~64–79% cross-agent merge)
 
 | Skill | Use when |
 |-------|----------|
-| `bug-batch` | Bug list/backlog — **reproduce-first** (failing test before fix) |
 | `adversarial-review-and-fix` | Code-grounded audit → frozen findings → fix loop |
-| `targeted-migration` | One-axis migration (framework, library, ORM, API) |
-| `design-integration` | Whole-app design adoption (may need `/design-login` for MCP) |
-| `landing-page-convergence` | Single page fidelity vs design export |
 
-## Tier 3 — high blast radius (no direct category in the study; expect rework)
+## Exploratory missions (NOT active until promoted)
 
-| Skill | Use when |
-|-------|----------|
-| `legacy-rebuild` | Modernize legacy app; preserve behaviour floor |
-| `take-product-to-completion` | Stalled product → shippable; frozen IN/ROADMAP/FIX boundary |
+Documented but lacking the progress + readiness + external archive triple. See
+[`docs/exploratory/missions/README.md`](../../../docs/exploratory/missions/README.md)
+for the promotion criteria.
+
+| Tier | Skill | Where it lives now |
+|------|-------|--------------------|
+| 1 | `dependency-update` | `docs/exploratory/missions/dependency-update/` |
+| 1 | `cleanup` | `docs/exploratory/missions/cleanup/` |
+| 2 | `bug-batch` | `docs/exploratory/missions/bug-batch/` |
+| 2 | `targeted-migration` | `docs/exploratory/missions/targeted-migration/` |
+| 2 | `design-integration` | `docs/exploratory/missions/design-integration/` |
+| 2 | `landing-page-convergence` | `docs/exploratory/missions/landing-page-convergence/` |
+| 2 | `inference-cost` | `docs/exploratory/missions/inference-cost/` |
+| 3 | `legacy-rebuild` | `docs/exploratory/missions/legacy-rebuild/` |
+| 3 | `take-product-to-completion` | `docs/exploratory/missions/take-product-to-completion/` |
+
+These SKILLs do not load via the umbrella. To run one, promote it first (see the
+exploratory README) or invoke it manually as a one-off operator action with the
+understanding that it has no field hours.
 
 ## Adapters
 
@@ -52,16 +69,17 @@ cross-agent merge rates). Start Tier 1 unattended; review frozen artifacts for T
 | `fleet-program` | Mission chains and conditional campaign DAGs on one repo |
 
 Presets: `skills/fleet-program/references/programs.md` (linear),
-`skills/fleet-program/references/campaigns.md` (if-outcome). Headless presets also under
-`scripts/campaigns/` (`repo-health`, `ship-with-proof`, `align-then-ship`, `quality-gate`).
-One mission at a time per repo; `fleet-outcome` YAML on every readiness doc.
+`skills/fleet-program/references/campaigns.md` (if-outcome). Headless presets also
+under `scripts/campaigns/` — only `repo-health`, `ship-with-proof`, and `quality-gate`
+remain populated; the others (`secure-ship`, `align-then-ship`, `handoff-to-product`)
+referenced demoted missions and are now archived in-place pending promotion.
 
 The earlier `handoff-to-product` campaign depended on three missions
 (`scaffold-align`, `contract-first-build`, `agents-layer`) that lacked real-run
 evidence and moved to `docs/exploratory/missions/` on 2026-06-22. The campaign
 YAML is archived (`scripts/campaigns/handoff-to-product.yaml`); restore it on
 first real run that promotes those missions back to `skills/`. See
-`docs/exploratory/README.md`.
+`docs/exploratory/missions/README.md`.
 
 Third-party skills (gstack, agent-skills, mattpocock): attach via Optional/Worker slots only —
 see `skills/autonomous-fleet-core/references/community-skills.md` and

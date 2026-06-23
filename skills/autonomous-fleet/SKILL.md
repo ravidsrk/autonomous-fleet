@@ -25,14 +25,19 @@ skills to load next.
 
 ## What this framework is
 
-A **skill package** of 21 installable skills (this one + core + adapters + missions + programs + setup).
-Each single-mission run composes three layers:
+A **skill package** of installable skills (this one + core + adapters + 3 proven mission
+skills + `fleet-program` + setup). Each single-mission run composes three layers:
 
 | Layer | Skill(s) | Role |
 |-------|----------|------|
 | **Engine** | `autonomous-fleet-core` | Tool-agnostic coordinator method |
 | **Adapter** | `autonomous-fleet-adapter-{orca,claude-code,grok,codex}` | Maps primitives to your runtime |
-| **Mission** | `doc-sync`, `bug-batch`, … | Defines the job |
+| **Mission** | `doc-sync`, `test-coverage`, `adversarial-review-and-fix` | Defines the job |
+
+> Exploratory missions (not yet shipped end-to-end): see
+> [`docs/exploratory/missions/`](../../docs/exploratory/missions/). These are
+> documented but lack a real-run progress + readiness + external archive
+> triple and so are not active in the shipped surface.
 
 ## Install (if skills are not already loaded)
 
@@ -69,19 +74,20 @@ Default adapter on Grok Build: `autonomous-fleet-adapter-grok`.
 |-----------|---------|
 | sync docs, README stale, onboarding wrong | `doc-sync` |
 | add tests, raise coverage | `test-coverage` |
-| bump deps, security advisories | `dependency-update` |
-| dead code, dedupe, tidy (not rewrite) | `cleanup` |
-| fix bugs, bug backlog | `bug-batch` |
 | audit and fix, harden before prod | `adversarial-review-and-fix` |
-| migrate framework/library/ORM | `targeted-migration` |
-| adopt design across whole app | `design-integration` |
-| landing page match mockup | `landing-page-convergence` |
-| rebuild legacy app | `legacy-rebuild` |
-| finish stalled product | `take-product-to-completion` |
 | docs then tests, repo health, mission chain, if-outcome campaign | `fleet-program` |
 | ship safely, harden before PR | `fleet-program` preset `ship-with-proof` |
-| finish stalled product, shippable end-to-end | `fleet-program` preset `align-then-ship` |
 | production ready, quality gate | `fleet-program` preset `quality-gate` |
+
+Other intents that previously routed to a dedicated mission
+(`bug-batch`, `cleanup`, `dependency-update`, `design-integration`,
+`inference-cost`, `landing-page-convergence`, `legacy-rebuild`,
+`take-product-to-completion`, `targeted-migration`) are exploratory at
+the moment — see `docs/exploratory/missions/`. Until they are promoted
+back to `skills/`, route those intents to `adversarial-review-and-fix`
+(which can file the work as a deferred mission in its outcome) or fall
+back to a manual operator pass. Re-route directly once a mission is
+promoted.
 
 Full tier notes and merge-rate guidance: [references/missions.md](references/missions.md).
 Community skill bundles: `autonomous-fleet-core` → `references/community-skills.md`.

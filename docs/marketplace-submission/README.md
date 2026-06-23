@@ -24,10 +24,47 @@ https://claude.ai/admin-settings/directory/submissions/plugins/new
 
 Both feed the same review pipeline. Use the Console form unless you already have a Team org with directory management access.
 
+# What's new since the last submission
+
+The submission packet was last refreshed at SHA `2a0f7b9664fac8c19f192bac26809ee9f7360fd4`.
+Since then (PRs #37, #38, and the `roadmap/post-substrate-impl` branch), the
+following substrate work has shipped and is reflected in the updated packet
+description:
+
+🟢 **4-layer verification substrate** — schema-checked review findings (Layer 1),
+opt-in evidence-gating Stop hook (Layer 2), blind-fix anti-anchoring guard with
+mtime-ordering invariant (Layer 3), manifest-audited run archive with
+sha256 + mtime ordering (Layer 4). All four layers have Python verifiers,
+100%-coverage tests, and substrate-specific mutations in the standing gate
+(15+ mutations caught).
+
+🟢 **Mission demotion** — 9 unproven missions moved to
+`docs/exploratory/missions/` pending real-run promotion evidence. The packet
+description now lists only the 3 shipped missions plus the `fleet-program`
+shell. Promotion criteria documented; no missions deleted.
+
+🟢 **Versioned trace contract** — `fleet-trace.schema.json` v1.0 emits one
+JSONL line per state transition into `.fleet/runs/<run_id>/trace.jsonl`.
+vibe-kanban, Claude Code Agent View, and custom dashboards are interchangeable
+consumers. Closes landscape Gap 8 without building UI.
+
+🟢 **Write-lock discipline** — construction + request locks under
+`.fleet/runs/<run_id>/locks/` with confirmed-dead-only steal mechanism.
+Engine block in `engine.md` § WRITE-LOCK DISCIPLINE.
+
+🟢 **Seat-analysis primitive** — `scripts/analyze_seat.py` computes per-run and
+aggregate findings/cost/wallclock metrics across all archives, surfacing the
+"earns its seat" signal across model/role pairs.
+
+🟡 **Adversarial bench (results pending operator runs)** — scaffolding for a
+substrate-off vs substrate-on comparator across 5 OSS targets. Methodology
+shipped at `docs/external-dogfood/adversarial-bench-2026-06.md`. Numbers will
+be cited in the next packet refresh once operator runs land.
+
 # Pre-submission checklist (already done ✅)
 
 - ✅ Both repos have `.claude-plugin/plugin.json` at the root
-  - autonomous-fleet: `2a0f7b9664fac8c19f192bac26809ee9f7360fd4`
+  - autonomous-fleet: SHA bumped to the latest `roadmap/post-substrate-impl` commit (re-pin at PR merge)
   - agent-skills: `813d097d0fe9fba2c30287a116034ef5ebdf3595`
 - ✅ Both have `SKILL.md` files following the agentskills.io spec
 - ✅ Both have full READMEs with banners + install instructions
@@ -38,13 +75,13 @@ Both feed the same review pipeline. Use the Console form unless you already have
 # Submission packet for `autonomous-fleet`
 
 **Repository:** https://github.com/ravidsrk/autonomous-fleet
-**Pinned SHA:** `2a0f7b9664fac8c19f192bac26809ee9f7360fd4` (or whatever `main` is at submission time)
+**Pinned SHA:** `2a0f7b9664fac8c19f192bac26809ee9f7360fd4` (the actual submission SHA bumps to the Commit-G merge commit; the four prior commits A–F precede it).
 **Category:** development
-**One-line pitch:** Multi-agent engineering framework for fully-autonomous coding runs. One portable engine. 4 runtime adapters. 21 skills (4 infrastructure + 5 adapters + 12 missions).
+**One-line pitch:** Multi-agent engineering framework for fully-autonomous coding runs. One portable engine. 4 runtime adapters. **3 shipped missions** + `fleet-program` campaign shell + a 4-layer verification substrate (schema-checked review findings, evidence-gating Stop hook, blind-fix anti-anchoring, manifest-audited run archive).
 
 **Description** (paste into form):
 
-> Portable multi-agent engineering framework for fully-autonomous coding runs. One tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and 12 mission skills (doc-sync, test-coverage, dependency-update, cleanup, bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, inference-cost) that compose into multi-step engineering campaigns via fleet-program DAGs. A verification substrate (schema-checked review findings, an opt-in evidence-gating Stop hook, blind-fix anti-anchoring, and a manifest-audited run archive) moves "done" from self-attestation toward on-disk evidence.
+> Portable multi-agent engineering framework for fully-autonomous coding runs. One tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and three shipped mission skills (`doc-sync`, `test-coverage`, `adversarial-review-and-fix`) composable into multi-step engineering campaigns via the `fleet-program` shell. A four-layer verification substrate (Layer 1 schema-checked review findings + reviewer source verifier; Layer 2 opt-in evidence-gating Stop hook; Layer 3 blind-fix anti-anchoring guard; Layer 4 manifest-audited run archive with sha256 + mtime ordering) moves "done" from self-attestation toward on-disk evidence. Nine additional missions ship as exploratory documentation (`docs/exploratory/missions/`) and re-promote on first real-run progress + readiness + external archive triple.
 
 **Marketplace entry** (ready-to-paste JSON): see [`autonomous-fleet.marketplace-entry.json`](./autonomous-fleet.marketplace-entry.json)
 

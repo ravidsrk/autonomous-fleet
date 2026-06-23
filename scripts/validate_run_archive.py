@@ -42,6 +42,12 @@ def collect_archives(root: Path) -> list[Path]:
 
 
 def main() -> int:
+    # SUBSTRATE KILL-SWITCH — see scripts/lib/substrate_disable.py.
+    from lib.substrate_disable import announce_disabled, is_disabled
+
+    if is_disabled("FLEET_DISABLE_RUN_ARCHIVE"):
+        return announce_disabled("validate-run-archive", "FLEET_DISABLE_RUN_ARCHIVE")
+
     p = argparse.ArgumentParser(
         description="Validate run-archive directories (.fleet/runs/<run_id>/)."
     )

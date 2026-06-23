@@ -1,0 +1,79 @@
+# Adversarial benchmark target list.
+#
+# Each target is run TWICE: once with the 4-layer substrate ON, once with
+# substrate OFF (FLEET_DISABLE_STOP_VERIFY=1 etc). The DELTA between the
+# two modes is the falsifiable claim the substrate must defend.
+#
+# Targets are sized to fit a single batch (5 repos) and to cover a range
+# of issue surfaces (mature CLI, used-in-prod schema lib, CVE corpus,
+# SWE-Bench instance, prior-dogfood comparison baseline).
+#
+# Lineage: docs/plans/way-ahead-2026-06-23.md §3 Commit C.
+
+schema_version: "1.0"
+mission: adversarial-review-and-fix
+comparator: substrate-off-vs-on
+operator_required: true
+
+targets:
+  - name: pallets/click
+    clone_url: https://github.com/pallets/click.git
+    why_chosen: |
+      Mature, widely-imported Python CLI library. Expected to surface
+      type-narrowness findings and edge cases in error paths.
+    known_issue_surface:
+      - type narrowness
+      - error paths
+      - deprecated API edges
+    expected_findings_band: 4-12
+
+  - name: python-jsonschema/jsonschema
+    clone_url: https://github.com/python-jsonschema/jsonschema.git
+    why_chosen: |
+      We depend on it. A finding here is dogfood-grade and we have
+      strong priors on its hot paths.
+    known_issue_surface:
+      - performance hot paths
+      - draft-version coverage edges
+    expected_findings_band: 2-8
+
+  - name: pycqa-bandit-corpus
+    clone_url: https://github.com/PyCQA/bandit.git
+    why_chosen: |
+      The bandit project ships a corpus of intentionally-vulnerable
+      Python under examples/. We bench the mission against this corpus
+      to test whether the substrate's grounded-finding gate catches the
+      planted vulnerabilities (and ignores the planted decoys).
+    known_issue_surface:
+      - crypto misuse (planted)
+      - command injection (planted)
+      - secrets in code (planted)
+    expected_findings_band: 8-25
+    notes: |
+      Subdir is examples/. Pin to bandit @ a known-stable SHA so the
+      corpus doesn't drift between runs.
+
+  - name: swe-bench-lite-instance
+    clone_url: https://github.com/princeton-nlp/SWE-bench.git
+    why_chosen: |
+      A single SWE-Bench Lite instance gives us externally-validated
+      correctness: we can compare close-rate to the SWE-Bench leaderboard.
+    known_issue_surface:
+      - one reproducible defect per instance
+    expected_findings_band: 1-3
+    notes: |
+      Pick a specific instance per the harness docs; operator selects
+      at run time so the bench targets the same defect across runs.
+
+  - name: github/gemoji
+    clone_url: https://github.com/github/gemoji.git
+    why_chosen: |
+      Already in our dogfood (docs/external-dogfood/repo-health-gemoji.md).
+      Comparison baseline: we already have findings + readiness docs from
+      a substrate-naive run, so the substrate-on archive's delta vs the
+      historical record is the cleanest available comparator.
+    known_issue_surface:
+      - doc drift
+      - license edge cases
+      - Ruby idiom anti-patterns
+    expected_findings_band: 3-10

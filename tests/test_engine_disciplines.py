@@ -529,3 +529,170 @@ def test_archive_enabled_block_anchors_between_strict_mode_and_inflation() -> No
         "ARCHIVE_ENABLED must sit between STRICT MODE and INFLATION "
         "POST-MORTEM to preserve detection -> substrate -> chaining narrative"
     )
+
+def test_trace_emission_doctrine_block_present_with_dashboard_contract() -> None:
+    """The engine must carry a TRACE EMISSION block that names the dashboard
+    contract, the "emit-before-ledger-commit" invariant, the schema-version
+    pin, and the degraded-telemetry escape hatch. Pin every clause so a
+    future edit that drops any of them (especially the ordering rule)
+    fails this test.
+
+    Pairs with `tests/test_emit_trace.py::test_doctrine_emit_before_ledger_write`
+    which enforces the same ordering at runtime.
+    """
+    text = read_engine()
+    trace = section(
+        text,
+        "TRACE EMISSION",
+        "CONTEXT HANDOFF",
+    )
+
+    # Dashboard-contract framing. vibe-kanban, Agent View, and custom
+    # dashboards are interchangeable consumers — pin so the doctrine
+    # doesn't drift into "the trace is for vibe-kanban".
+    assert "vibe-kanban" in trace
+    assert "Agent View" in trace
+    assert "custom dashboards" in trace
+    assert "interchangeable consumers" in trace
+
+    # The core invariant. The whole point of the doctrine.
+    trace_flat = squash(trace)
+    assert "MUST emit a trace event BEFORE the ledger write" in trace
+    assert "Trace first, ledger second" in trace_flat
+
+    # Schema is the contract: pinned at 1.0, breaking changes need a new id.
+    assert 'schema_version: "1.0"' in trace
+    assert "NEW `$id`" in trace
+    assert "fleet-trace.schema.json" in trace
+
+    # Degraded-telemetry escape hatch.
+    assert "NOT a hard error" in trace
+    assert "trace_emission_degraded: true" in trace
+    assert "fleet-outcome.yaml" in trace
+
+    # Landscape gap closure.
+    assert "Gap 8" in trace
+
+    assert_no_contradiction_markers(trace)
+
+
+def test_trace_emission_block_anchors_after_signal_reconciliation() -> None:
+    """TRACE EMISSION sits AFTER SIGNAL RECONCILIATION and BEFORE CONTEXT
+    HANDOFF. The ordering encodes the narrative: reconciled state ->
+    emit the transition -> survive context limits."""
+    text = read_engine()
+    sig_idx = text.index("SIGNAL RECONCILIATION")
+    trace_idx = text.index("TRACE EMISSION")
+    handoff_idx = text.index("CONTEXT HANDOFF")
+    assert sig_idx < trace_idx < handoff_idx, (
+        "TRACE EMISSION must sit between SIGNAL RECONCILIATION and "
+        "CONTEXT HANDOFF to preserve reconcile -> emit -> survive narrative"
+    )
+
+
+def test_write_lock_discipline_block_present_with_two_lock_kinds() -> None:
+    """The engine must carry a WRITE-LOCK DISCIPLINE block that names
+    both lock kinds, the steal preconditions, and the implementation
+    pointer. Pair with tests/test_locks.py which enforces the runtime
+    behaviour.
+    """
+    text = read_engine()
+    block = section(
+        text,
+        "WRITE-LOCK DISCIPLINE",
+        "CONTEXT HANDOFF",
+    )
+
+    # Both lock kinds are named with their lifetimes.
+    assert "CONSTRUCTION LOCK" in block
+    assert "REQUEST LOCK" in block
+    assert "Long-held" in block
+    assert "Short-held" in block
+
+    # The asymmetry rule: construction MAY hold request, not vice versa.
+    flat = squash(block)
+    assert "construction lock MAY hold a request lock" in flat
+    assert "long-held request lock) is forbidden" in flat
+
+    # Steal preconditions: confirmed-dead signal from SIGNAL RECONCILIATION.
+    assert "SIGNAL RECONCILIATION" in block
+    assert "dead-worker detection" in block
+    assert "Stealing without a confirmed-dead signal is a protocol violation" in block
+
+    # Implementation pointer so engine readers can find the code.
+    assert "scripts/lib/locks.py" in block
+    assert ".fleet/runs/<run_id>/locks/" in block
+
+    assert_no_contradiction_markers(block)
+
+
+def test_write_lock_discipline_block_anchors_after_trace_emission() -> None:
+    """WRITE-LOCK DISCIPLINE sits AFTER TRACE EMISSION and BEFORE
+    CONTEXT HANDOFF. The ordering encodes the narrative: emit the
+    transition -> serialize the mutation -> survive context limits.
+    """
+    text = read_engine()
+    trace_idx = text.index("TRACE EMISSION")
+    lock_idx = text.index("WRITE-LOCK DISCIPLINE")
+    handoff_idx = text.index("CONTEXT HANDOFF")
+    assert trace_idx < lock_idx < handoff_idx, (
+        "WRITE-LOCK DISCIPLINE must sit between TRACE EMISSION and "
+        "CONTEXT HANDOFF to preserve emit -> serialize -> survive narrative"
+    )
+
+def test_substrate_kill_switch_block_present_and_complete() -> None:
+    """SUBSTRATE KILL-SWITCH CONVENTION block must list all 4 layers
+    with their env-var names, the Layer 2 legacy alias, the truthy
+    semantics, the implementation pointer, and the doctrine reference.
+    Drift here means the bench can't measure what it claims."""
+    text = read_engine()
+    block = section(
+        text,
+        "SUBSTRATE KILL-SWITCH CONVENTION",
+        "CONTEXT HANDOFF",
+    )
+
+    # All 4 layer env vars.
+    for var in (
+        "FLEET_DISABLE_VERIFY_FINDINGS",
+        "FLEET_DISABLE_STOP_VERIFY",
+        "FLEET_DISABLE_BLIND_FIX",
+        "FLEET_DISABLE_RUN_ARCHIVE",
+    ):
+        assert var in block, f"engine.md kill-switch block missing {var}"
+
+    # One knob per layer — no legacy aliases. Pin it: if someone
+    # re-adds STOP_VERIFY_DISABLED to the doctrine block, this fails.
+    assert "STOP_VERIFY_DISABLED" not in block
+    assert "back-compat" not in block
+    assert "legacy alias" not in block
+
+    # Truthy semantics and the strict-allow-list intent.
+    flat = squash(block)
+    assert "case-insensitive" in flat
+    assert "1`/`true`/`yes`/`on`" in flat or "1/true/yes/on" in flat
+
+    # Disable contract semantics.
+    assert "treat the layer's verdict as PASS" in block
+    assert "BEFORE arg parsing" in block
+
+    # Bench tie-in (this is why the convention exists at all).
+    assert "bench-adversarial.sh" in block
+    assert "falsifiable comparator" in block
+
+    # Implementation + doctrine pointers.
+    assert "scripts/lib/substrate_disable.py" in block
+    assert "references/substrate-disable-knobs.md" in block
+
+    assert_no_contradiction_markers(block)
+
+
+def test_substrate_kill_switch_block_anchors_after_write_lock() -> None:
+    """SUBSTRATE KILL-SWITCH sits AFTER WRITE-LOCK DISCIPLINE and BEFORE
+    CONTEXT HANDOFF. Ordering encodes: serialize -> escape-hatch ->
+    survive."""
+    text = read_engine()
+    lock_idx = text.index("WRITE-LOCK DISCIPLINE")
+    kill_idx = text.index("SUBSTRATE KILL-SWITCH CONVENTION")
+    handoff_idx = text.index("CONTEXT HANDOFF")
+    assert lock_idx < kill_idx < handoff_idx

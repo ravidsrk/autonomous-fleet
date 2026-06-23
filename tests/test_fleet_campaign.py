@@ -359,21 +359,20 @@ def test_pick_next_node_skips_malformed_non_dict_edges():
     assert pick_next_node(campaign, "docs", DOC_SYNC_OUTCOME) == "tests"
 
 
-def test_secure_ship_audit_gates_on_findings_not_always():
-    """secure-ship wires adversarial-review-and-fix as a real GATE: proceed to deps only on a clean
-    audit (findings_open == 0), re-audit when a major dep is deferred, then doc-sync."""
+def test_secure_ship_campaign_archived_pending_exploratory_promotion():
+    """secure-ship was archived in Commit D (2026-06-23) because its `deps` node referenced
+    `dependency-update`, which moved to docs/exploratory/missions/. The YAML must now
+    declare its archived status and ship NO mission nodes so the edge linter cannot bind
+    to undefined missions. When `dependency-update` is promoted back, restore the audit-
+    gated DAG (`audit -> deps if findings_open == 0`, `deps -> audit if majors_deferred > 0`,
+    `deps -> docs if always`) from git history and re-pin the gate test."""
     import yaml
 
     camp = yaml.safe_load((ROOT / "scripts" / "campaigns" / "secure-ship.yaml").read_text())
-    # The audit edge must gate on findings_open, not be an unconditional `always`.
-    audit_edges = camp["edges"]["audit"]
-    assert all(e.get("if") != "always" for e in audit_edges), "audit must not be `if: always`"
-    assert any("findings_open" in str(e.get("if", "")) for e in audit_edges)
-    # Clean audit -> deps.
-    assert pick_next_node(camp, "audit", {"findings_open": 0, "p0_open": 0, "p1_open": 0, "ops_queue_count": 0}) == "deps"
-    # Deferred major -> re-audit (the back-edge); clean deps -> docs.
-    assert pick_next_node(camp, "deps", {"advisories_open": 0, "majors_deferred": 1}) == "audit"
-    assert pick_next_node(camp, "deps", {"advisories_open": 0, "majors_deferred": 0}) == "docs"
+    assert camp.get("status") == "archived-pending-exploratory-promotion"
+    # An archived campaign declares no edges or nodes so nothing binds.
+    assert "edges" not in camp
+    assert "nodes" not in camp
 
 
 def test_pick_next_node_matched_edge_missing_to_raises():

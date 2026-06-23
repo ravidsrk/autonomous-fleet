@@ -114,7 +114,7 @@ def test_evaluate_disabled_via_config_returns_allow(tmp_path: Path):
 
 
 def test_evaluate_disabled_via_env_returns_allow(tmp_path: Path, monkeypatch):
-    monkeypatch.setenv("STOP_VERIFY_DISABLED", "1")
+    monkeypatch.setenv("FLEET_DISABLE_STOP_VERIFY", "1")
     v = evaluate(StopVerifyConfig(repo_root=tmp_path))
     assert v.allow is True
     assert "disabled" in v.reason
@@ -122,16 +122,16 @@ def test_evaluate_disabled_via_env_returns_allow(tmp_path: Path, monkeypatch):
 
 @pytest.mark.parametrize("val", ["1", "true", "yes", "TRUE", "Yes"])
 def test_env_disable_accepts_truthy_synonyms(tmp_path: Path, monkeypatch, val):
-    monkeypatch.setenv("STOP_VERIFY_DISABLED", val)
+    monkeypatch.setenv("FLEET_DISABLE_STOP_VERIFY", val)
     assert evaluate(StopVerifyConfig(repo_root=tmp_path)).allow is True
 
 
 @pytest.mark.parametrize("val", ["0", "false", "no", "", "  "])
 def test_env_disable_rejects_falsy_synonyms(tmp_path: Path, monkeypatch, val):
-    monkeypatch.setenv("STOP_VERIFY_DISABLED", val)
+    monkeypatch.setenv("FLEET_DISABLE_STOP_VERIFY", val)
     v = evaluate(StopVerifyConfig(repo_root=tmp_path))
     # No evidence in tmp_path -> BLOCK. Pin the contract: a non-truthy
-    # STOP_VERIFY_DISABLED MUST NOT silently disable the gate.
+    # FLEET_DISABLE_STOP_VERIFY MUST NOT silently disable the gate.
     assert v.allow is False
 
 
@@ -450,7 +450,7 @@ def test_evaluate_blocks_on_empty_repo(tmp_path: Path):
     # The reason must include the actionable remediation list — vague
     # blocks cause retry loops. Pin the keywords.
     assert "To unblock" in v.reason
-    assert "STOP_VERIFY_DISABLED=1" in v.reason
+    assert "FLEET_DISABLE_STOP_VERIFY=1" in v.reason
 
 
 def test_evaluate_allows_when_any_single_evidence_kind_matches(tmp_path: Path):
@@ -647,7 +647,7 @@ def test_cli_explain_writes_human_readable_to_stderr(tmp_path: Path):
 
 
 def test_cli_disabled_via_env_emits_silent_allow(tmp_path: Path, monkeypatch):
-    monkeypatch.setenv("STOP_VERIFY_DISABLED", "1")
+    monkeypatch.setenv("FLEET_DISABLE_STOP_VERIFY", "1")
     rc, out, _err = _run_cli(["--repo", str(tmp_path)])
     assert rc == 0
     assert out.strip() == ""
@@ -655,10 +655,10 @@ def test_cli_disabled_via_env_emits_silent_allow(tmp_path: Path, monkeypatch):
 
 def test_cli_kill_switch_short_circuits_bad_repo(tmp_path: Path, monkeypatch):
     """The kill switch MUST win over a bad --repo. An operator who set
-    STOP_VERIFY_DISABLED=1 to silence the hook should see clean silence,
+    FLEET_DISABLE_STOP_VERIFY=1 to silence the hook should see clean silence,
     not "repo not found" warnings, regardless of whether hooks.json has a
     stale --repo path baked in. Pin the ordering."""
-    monkeypatch.setenv("STOP_VERIFY_DISABLED", "1")
+    monkeypatch.setenv("FLEET_DISABLE_STOP_VERIFY", "1")
     rc, out, err = _run_cli(["--repo", "/this/does/not/exist"])
     assert rc == 0
     assert out.strip() == ""  # silent allow
