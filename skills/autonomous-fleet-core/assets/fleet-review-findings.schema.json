@@ -108,7 +108,7 @@
             "file_path": {
               "type": "string",
               "minLength": 1,
-              "description": "Path relative to repo root (forward slashes), or an absolute path. The verifier resolves relative paths against the repo root."
+              "description": "Path relative to the repo root (forward slashes). The verifier resolves it against the repo root and rejects paths that escape it (absolute paths or ../ traversal are not honoured outside the repo)."
             },
             "line_number": {
               "type": "integer",

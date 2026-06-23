@@ -817,19 +817,19 @@ def test_vf_fix_alternative_description_blank_rejected():
 # --- verify_finding_against_source: OSError read branch ---
 
 def test_vf_verify_unreadable_source_downgrades(tmp_path, monkeypatch):
-    """Lines 309-312: OSError raised by target.read_text must be caught and
-    convert the finding to verified=False with 'unreadable:' reason."""
+    """OSError raised while reading the cited file must be caught and convert
+    the finding to verified=False with an 'unreadable:' reason."""
     src = tmp_path / "src" / "main.py"
     src.parent.mkdir(parents=True)
     src.write_text("contents")
-    real_read_text = Path.read_text
+    real_open = Path.open
 
     def boom(self, *a, **kw):
         if self.name == "main.py":
             raise OSError("synthetic permission denied")
-        return real_read_text(self, *a, **kw)
+        return real_open(self, *a, **kw)
 
-    monkeypatch.setattr(Path, "read_text", boom)
+    monkeypatch.setattr(Path, "open", boom)
     finding = _vf_min_finding(
         evidence={"file_path": "src/main.py", "quoted_line": "contents"}
     )
@@ -957,6 +957,31 @@ def test_sv_detect_e2e_artifact_deduplicates_by_parent_dir(tmp_path):
     # Exactly ONE hit because the second is deduplicated by parent dir.
     e2e_hits = [h for h in hits if h.kind == "e2e_artifact"]
     assert len(e2e_hits) == 1, [h.path for h in hits]
+
+
+def test_sv_read_capped_skips_oversized_ledger(tmp_path):
+    """_read_capped over-cap branch: a progress ledger larger than
+    MAX_LEDGER_BYTES is treated as no-evidence rather than OOM-read."""
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    big = docs / "x-progress.md"
+    big.write_bytes(b"EVID=true\n" + b"x" * (_sv.MAX_LEDGER_BYTES + 1))
+    cfg = _sv.StopVerifyConfig(repo_root=tmp_path).normalised()
+    import time as _t
+    assert _sv.detect_progress_flag_evidence(cfg, _t.time()) == []
+
+
+def test_sv_read_capped_skips_oversized_verify_summary(tmp_path):
+    """Verify-summary detector skips an oversized summary JSON (raw is None)."""
+    run = tmp_path / ".fleet" / "runs" / "20260101T000000Z-doc-sync-abc123"
+    run.mkdir(parents=True)
+    summary = run / "verify-summary.json"
+    summary.write_bytes(
+        b'{"unverified_findings": 0}\n' + b" " * (_sv.MAX_SUMMARY_BYTES + 1)
+    )
+    cfg = _sv.StopVerifyConfig(repo_root=tmp_path).normalised()
+    import time as _t
+    assert _sv.detect_verify_summary_evidence(cfg, _t.time()) == []
 
 
 # ─────────────────────────────────────────────────────────────────────
