@@ -80,6 +80,13 @@ def test_generator_runs_end_to_end(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     assert findings.get("schema_version") == "1.0"
     assert len(findings.get("findings", [])) >= 1
 
+    # The built manifest's sha256 + sizes must match the files on disk — this
+    # catches a generator that writes wrong hashes/sizes into the manifest.
+    from lib.fleet_run import load_and_validate_manifest
+
+    _payload, errors = load_and_validate_manifest(fixture_dir)
+    assert errors == [], errors
+
 
 def test_generator_helpers() -> None:
     """Cover the small pure helpers at module level."""

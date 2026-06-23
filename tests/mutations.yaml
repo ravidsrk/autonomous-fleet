@@ -205,3 +205,22 @@ mutations:
     find: 'if _pid_alive(current_holder_pid):'
     replace: 'if False:'
     guards: [tests/test_locks_review_fixes.py, tests/test_review_fixes_2.py]
+
+  # --- gaps surfaced by re-review: cap + analyze_seat + example fixture ---
+  - id: archive-size-cap-off
+    file: scripts/lib/fleet_run.py
+    find: 'if total <= MAX_ARCHIVE_BYTES:'
+    replace: 'if total <= MAX_ARCHIVE_BYTES * 99999:'
+    guards: [tests/test_run_archive.py]
+
+  - id: analyze-seat-value-per-dollar-off
+    file: scripts/lib/analyze_seat.py
+    find: 'value_per_dollar = findings_closed / max(cost_estimate, COST_EPSILON)'
+    replace: 'value_per_dollar = findings_closed * max(cost_estimate, COST_EPSILON)'
+    guards: [tests/test_analyze_seat.py]
+
+  - id: example-fixture-sha-off
+    file: scripts/_build_example_fixture.py
+    find: 'return hashlib.sha256(b).hexdigest()'
+    replace: 'return "0" * 64'
+    guards: [tests/test_build_example_fixture.py]
