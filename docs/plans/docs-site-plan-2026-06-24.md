@@ -4,6 +4,11 @@ Author: planning session with Mogra agent, 2026-06-24.
 
 Status: **PROPOSAL** — to be reviewed, amended, and accepted before implementation.
 
+Amended 2026-06-24: refreshed against `main` after PR #41. The four e2553ac audit
+findings are FIXED (not open); §7 rewritten, mutation count 29→32, docs count
+~45→~33, `self.md` reference corrected. The campaign count (3 active presets) was
+verified correct and left unchanged.
+
 This plan covers **what to write**, **how it's organised**, **how users navigate
 it**, and **what's deferred**. Implementation is broken into three independently
 shippable batches; each batch is its own PR with its own readiness doc.
@@ -22,12 +27,13 @@ A new user landing on `github.com/ravidsrk/autonomous-fleet` today gets:
 - **`CONTRIBUTING.md` (~90 lines)** — distillation discipline. Contributor docs.
 - **12 × `skills/*/README.md`** — every one is the **same 33-line stub**
   ("see SKILL.md"). Zero user-facing value.
-- **`docs/` (~45 markdown files)** — almost entirely internal artefacts:
+- **`docs/` (~33 markdown files)** — almost entirely internal artefacts:
   `*-readiness.md`, `*-progress.md`, audits, plans, research notes. Useful as
   evidence trail; opaque to a new user.
 - **`docs/external-dogfood/vibe-kanban-integration.md`** — the lone outward
-  integration doc, and per the e2553ac audit it **overpromises** (claims one
-  trace event per ledger transition; today only one `T-FINAL` event is wired).
+  integration doc; its scope was corrected in PR #41 to describe the trace
+  CONTRACT plus a rollout-in-progress (in production only one `T-FINAL` event is
+  wired today).
 
 After the README pitch, the user falls off a cliff. There is no "the book" — no
 concepts page, no run-archive walkthrough, no troubleshooting, no glossary, no
@@ -287,8 +293,8 @@ what's out), and **dependencies** (what the reader needs to have read first).
   The file-based ledger. The coordinator/adapter split. Signal reconciliation.
   Anti-flap. Evidence-hash. The plan/DAG validation gate. Why nothing is
   auto-emitted (vs explicitly called). Why "trace first, ledger second" is
-  the doctrine (and the one place we don't yet enforce it — link to
-  `docs/plans/docs-site-plan-2026-06-24.md`'s known-issues section).
+  the doctrine, now enforced at the reference integration in `write_manifest`
+  (emit precedes the manifest write, PR #41).
 - **Out of scope:** The substrate (4-layer verification) — that's chapter 07
 - **Depends on:** Chapter 04
 - **Anchors:**
@@ -317,7 +323,7 @@ what's out), and **dependencies** (what the reader needs to have read first).
   1. Layer 1 — findings schema (`fleet-review-findings.schema.json`)
   2. Layer 2 — stop-verify hook (Claude Code adapter)
   3. Layer 3 — blind-fix mechanical guard (mtime ordering via manifest)
-  4. Layer 4 — mutation gate (`tests/mutations.yaml`, 29 mutations today)
+  4. Layer 4 — mutation gate (`tests/mutations.yaml`, 32 mutations today)
   5. How layers compose (a finding caught at L1 never reaches L2; L3 only
      fires after L2 passes; L4 catches regressions across all three)
   6. Kill switches (`substrate-disable-knobs.md` reference)
@@ -472,16 +478,16 @@ what's out), and **dependencies** (what the reader needs to have read first).
 - **In scope:** The full schema (`fleet-trace.schema.json`). Every field,
   every constraint. The 11 primitives with what each one means. The 6
   roles. The 5 statuses. The `details` free-form contract. The "no secrets
-  / no host-absolute paths" rule (and the known-gap that this isn't yet
-  validator-enforced). What's emitted today (`T-FINAL` only) vs the
-  roadmap. The `$id` versioning policy.
+  / no host-absolute paths" rule, now enforced by `validate_event` + `emit()`
+  (PR #41). What's emitted today (`T-FINAL` only) vs the roadmap. The `$id`
+  versioning policy.
 - **Out of scope:** Building a dashboard renderer
 - **Depends on:** Chapter 06
 - **Anchors:**
   1. Schema reference (field-by-field)
   2. Primitive reference (one section per primitive)
   3. Role + status enums
-  4. `details` contract + the prose-only rule (link to fix-tracker)
+  4. `details` contract + the redaction rule (validator-enforced, PR #41)
   5. What's auto-emitted today vs aspirational
   6. Versioning + `$id` policy
   7. Consumer guide — how to read the stream
@@ -677,60 +683,50 @@ Preconditions. e.g. "doc-sync assumes you have a `README.md`" or
   blockquotes (`>`) so the docs render in any markdown context.
 - Code samples are always copy-pasteable and complete (no `…` ellipses in
   the middle of a snippet unless explicitly marked `# (other config…)`).
-- Every claim has provenance: "the engine emits T-FINAL after the manifest
-  write (see [the known issue](14-troubleshooting.md#known-issue-trace-ordering)
-  and the audit doc)".
-- No em-dashes in body text. (Repo convention from `self.md`.)
+- Every claim has provenance: "the engine emits T-FINAL before the manifest
+  write (see the [Trace schema](16-trace-schema.md) reference)".
+- No em-dashes in body text. (Repo convention from `AGENTS.md` / `CONTRIBUTING.md`.)
 - 100-character soft wrap.
 
 ---
 
-# 7. Honest documentation — known issues we surface
+# 7. Honest documentation — current limitations we surface
 
-This is the part most docs sites get wrong. We document **what's broken
-today** alongside what works, with cross-references to the fix-trackers. The
-guide is not a sales pitch.
+This is the part most docs sites get wrong. We document what is actually true
+today alongside what works, with provenance. The guide is not a sales pitch.
 
-Concretely, the following items from the e2553ac post-merge audit MUST appear
-in the guide:
+PROVENANCE NOTE (read first). The e2553ac post-merge audit raised four issues:
+trace ordering inversion, prose-only `details` redaction, a coverage-hack test,
+and a lock second-liveness mutation gap. ALL FOUR were FIXED in PR #41 (merged to
+`main`). They are NOT known issues any more. The engine and substrate chapters
+may cite them as worked examples of the review discipline (the framework found
+and closed its own bugs), but the guide must not list them as open. The
+known-issues list MUST be re-derived against current `main` at authoring time,
+not copied from a superseded audit — copying a stale audit is its own dishonesty.
 
-1. **Chapter 06 (The engine) — "Trace ordering" section.**
-   `write_manifest` emits the `T-FINAL` event *after* the manifest write,
-   not before. This violates the doctrine in `engine.md:414-416` ("trace
-   first, ledger second"). The doctrine remains the target; the
-   implementation lags. Link to the fix-tracker issue.
+What REMAINS genuinely limited today (re-derived against `main`, MUST appear):
 
-2. **Chapter 16 (Trace schema) — "What's emitted today" section.**
-   Exactly one trace event is emitted in production code today: `T-FINAL`
-   from `fleet_run.write_manifest`. The schema covers 11 primitives, but
-   the stream is sparse. The vibe-kanban integration doc
-   (`docs/external-dogfood/vibe-kanban-integration.md`) describes the
-   target state; this chapter describes today.
+1. Chapter 16 (Trace schema) — "What's emitted today" section.
+   Exactly one trace event is wired in production code today: `T-FINAL` from
+   `fleet_run.write_manifest` (now correctly emitted BEFORE the manifest write,
+   per the doctrine). The schema covers 11 primitives; the stream is
+   intentionally sparse while per-transition emission rolls out — the
+   coordinator and adapters emit the rest per the engine TRACE EMISSION doctrine.
+   The vibe-kanban integration doc was corrected in PR #41 to describe the
+   contract plus a rollout-in-progress, not a shipped full stream.
 
-3. **Chapter 16 (Trace schema) — "details rule (prose-only today)" section.**
-   The "no secrets, no host-absolute paths" rule in `details` is prose-only.
-   `validate_event` does not scan `details` values. Consumers MUST treat
-   `details` as potentially-PII until validator enforcement lands.
+2. Chapter 12 (Safety and secrets) — "Headless mode caveat" subsection.
+   The campaign scripts (`run-campaign.sh`) drive each runtime's CLI in headless
+   mode, which requires that CLI to be authenticated on the host and is not yet
+   fully validated end-to-end. The interactive path (chat / `/goal`) is the
+   supported flow today.
 
-4. **Chapter 12 (Safety and secrets) — "Headless mode caveat" subsection.**
-   The campaign scripts (`run-campaign.sh`) drive each runtime's CLI in
-   headless mode, which requires that CLI to be authenticated on the host
-   and **is not yet fully validated end-to-end**. The interactive path
-   (chat / `/goal`) is the supported flow today.
+Each entry states the current state, why it is limited, and a link to a tracking
+issue WHERE ONE EXISTS — never invent a GitHub issue for already-fixed work.
 
-5. **Chapter 14 (Troubleshooting) — "Known issues" section at the bottom.**
-   Mirrors the audit findings as a single inventory:
-   - Trace ordering inversion (severity: doctrine drift)
-   - Trace `details` rule prose-only (severity: external-publication risk)
-   - Lock second-liveness mutation gap (severity: regression-detection gap)
-   - `test_validate_all_existing_coverage_edges` coverage-hack (severity:
-     low — false coverage signal)
-
-Each entry has: what's wrong, severity, impact on the user, link to the
-GitHub issue tracking the fix.
-
-This is doctrine. **Documentation that hides known issues is worse than
-no documentation.**
+This is doctrine. Documentation that hides current limitations is worse than no
+documentation; documentation that invents stale limitations from a superseded
+audit is just as dishonest.
 
 ---
 
