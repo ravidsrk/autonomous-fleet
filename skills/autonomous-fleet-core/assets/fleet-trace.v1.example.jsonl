@@ -1,5 +1,11 @@
-{"schema_version":"1.0","ts":"2026-06-23T12:00:00Z","run_id":"20260623T120000Z-doc-sync-a1b2c3","mission":"doc-sync","primitive":"DISPATCH","role":"COORDINATOR","status":"started","task_id":"T1","details":{"target":"docs sync"}}
-{"schema_version":"1.0","ts":"2026-06-23T12:00:05Z","run_id":"20260623T120000Z-doc-sync-a1b2c3","mission":"doc-sync","primitive":"SPAWN_WORKER","role":"BUILDER","status":"started","task_id":"T1","parent_event":"11111111-2222-3333-4444-555555555555","details":{"worktree":"worker-doc-sync"}}
-{"schema_version":"1.0","ts":"2026-06-23T12:01:00Z","run_id":"20260623T120000Z-doc-sync-a1b2c3","mission":"doc-sync","primitive":"WAIT","role":"COORDINATOR","status":"started","task_id":"T1"}
-{"schema_version":"1.0","ts":"2026-06-23T12:04:30Z","run_id":"20260623T120000Z-doc-sync-a1b2c3","mission":"doc-sync","primitive":"WAIT","role":"COORDINATOR","status":"succeeded","task_id":"T1","cost_delta":0.02}
-{"schema_version":"1.0","ts":"2026-06-23T12:05:00Z","run_id":"20260623T120000Z-doc-sync-a1b2c3","mission":"doc-sync","primitive":"T-FINAL","role":"INTEGRATOR","status":"succeeded","evidence_hash":"0000000000000000000000000000000000000000000000000000000000000000","details":{"manifest":"manifest.json","files":3}}
+{"mission": "doc-sync", "primitive": "SPAWN_WORKER", "role": "COORDINATOR", "run_id": "20260623T000000Z-doc-sync-abc123", "schema_version": "1.0", "status": "started", "ts": "2026-06-23T00:00:00Z"}
+{"mission": "doc-sync", "primitive": "DISPATCH", "role": "BUILDER", "run_id": "20260623T000000Z-doc-sync-abc123", "schema_version": "1.0", "status": "succeeded", "ts": "2026-06-23T00:01:00Z"}
+{"mission": "doc-sync", "primitive": "WAIT", "role": "REVIEWER", "run_id": "20260623T000000Z-doc-sync-abc123", "schema_version": "1.0", "status": "failed", "ts": "2026-06-23T00:02:00Z"}
+{"mission": "doc-sync", "primitive": "INSPECT", "role": "INTEGRATOR", "run_id": "20260623T000000Z-doc-sync-abc123", "schema_version": "1.0", "status": "blocked", "ts": "2026-06-23T00:03:00Z"}
+{"mission": "doc-sync", "primitive": "SYNC", "role": "FIXER", "run_id": "20260623T000000Z-doc-sync-abc123", "schema_version": "1.0", "status": "skipped", "ts": "2026-06-23T00:04:00Z"}
+{"mission": "doc-sync", "primitive": "MERGE", "role": "OTHER", "run_id": "20260623T000000Z-doc-sync-abc123", "schema_version": "1.0", "status": "started", "ts": "2026-06-23T00:05:00Z"}
+{"mission": "doc-sync", "primitive": "FREEZE", "role": "COORDINATOR", "run_id": "20260623T000000Z-doc-sync-abc123", "schema_version": "1.0", "status": "succeeded", "ts": "2026-06-23T00:06:00Z"}
+{"mission": "doc-sync", "primitive": "T-FINAL", "role": "BUILDER", "run_id": "20260623T000000Z-doc-sync-abc123", "schema_version": "1.0", "status": "failed", "ts": "2026-06-23T00:07:00Z"}
+{"mission": "doc-sync", "primitive": "GOAL_BLOCKED", "role": "REVIEWER", "run_id": "20260623T000000Z-doc-sync-abc123", "schema_version": "1.0", "status": "blocked", "ts": "2026-06-23T00:08:00Z"}
+{"mission": "doc-sync", "primitive": "COMMIT", "role": "INTEGRATOR", "run_id": "20260623T000000Z-doc-sync-abc123", "schema_version": "1.0", "status": "skipped", "ts": "2026-06-23T00:09:00Z"}
+{"mission": "doc-sync", "primitive": "ABORT", "role": "FIXER", "run_id": "20260623T000000Z-doc-sync-abc123", "schema_version": "1.0", "status": "started", "ts": "2026-06-23T00:10:00Z"}
