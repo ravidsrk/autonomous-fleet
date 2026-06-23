@@ -204,7 +204,7 @@ And one adapter per supported runtime:
 
 # What every run is built to do
 
-These are the disciplines the engine builds into every run — you don't have to remember to ask. Most are prompt-level disciplines the run follows; the evidence-based ones can additionally be **enforced at runtime** by opting into strict mode (Claude Code today — see `references/strict-mode.md`).
+These are the disciplines the engine builds into every run — you don't have to remember to ask. Most are prompt-level disciplines the run follows; the evidence-based ones can additionally be **enforced at runtime** by opting into strict mode (Claude Code today — see `skills/autonomous-fleet-core/references/strict-mode.md`).
 
 ### 🔒 The work won't go sideways
 

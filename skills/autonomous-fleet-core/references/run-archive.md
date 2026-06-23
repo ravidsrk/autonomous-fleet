@@ -134,8 +134,8 @@ fleet-outcome:
 ## Retention
 
 The fleet does NOT garbage-collect run-archives. Operators decide retention
-via `scripts/prune-run-archives.sh --older-than <days>` (out-of-band, never
-invoked by the engine loop). Old runs degrade gracefully: a pruned archive
+out-of-band (e.g. delete `.fleet/runs/` directories older than N days); the
+engine loop never prunes. Old runs degrade gracefully: a pruned archive
 referenced by a later readiness doc is recorded by `validate-all.sh` as a
 broken provenance link but does not fail the build.
 

@@ -350,9 +350,8 @@ ships as `status: partial`, not `done` — the run is not auditable, the discipl
 Missions that emit no first-class artifacts (a pure documentation-update mission, say) OMIT the
 field — the field is gated on artifact production, not on mission existence.
 
-Retention. The fleet does not garbage-collect run-archives. Operators decide retention via
-`scripts/prune-run-archives.sh --older-than <days>` (out-of-band, never invoked by the engine
-loop). The archive is auditable for as long as it sits on disk. A run that prunes a still-cited
+Retention. The fleet does not garbage-collect run-archives. Operators decide retention out-of-band
+(e.g. delete `.fleet/runs/` directories older than N days); the engine loop never prunes. The archive is auditable for as long as it sits on disk. A run that prunes a still-cited
 archive (a readiness doc references a manifest entry that no longer exists) is recorded as a
 broken provenance link by `validate-all.sh` but does NOT fail the build — old runs degrade
 gracefully into "we know it ran, we no longer have the trail".
