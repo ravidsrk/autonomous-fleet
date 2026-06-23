@@ -157,6 +157,7 @@ _rm_target_is_catastrophic() {
   # Strip a trailing slash (but keep a bare "/").
   norm="${target%/}"
   [[ -z "$norm" ]] && norm="/"
+  # shellcheck disable=SC2016  # match the LITERAL token a user typed (e.g. rm -rf '$HOME')
   case "$norm" in
     '~'|'$HOME'|'${HOME}') return 0 ;;
   esac
@@ -557,7 +558,7 @@ filtered=()
 for kv in "${preserved[@]}"; do
   name="${kv%%=*}"
   case "$name" in
-    AWS_*|*_TOKEN|*_KEY|*_SECRET|*_PASSWORD|GH_TOKEN|GITHUB_TOKEN|XAI_API_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY)
+    GH_TOKEN|GITHUB_TOKEN|XAI_API_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY|AWS_*|*_TOKEN|*_KEY|*_SECRET|*_PASSWORD)
       continue
       ;;
   esac
