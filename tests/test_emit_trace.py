@@ -42,6 +42,7 @@ from lib.emit_trace import (  # noqa: E402
     SCHEMA_VERSION,
     STATUSES,
     TraceEmitter,
+    _ALLOWED_FIELDS,
     _EVIDENCE_HASH_RE,
     _REQUIRED_FIELDS,
     _RUN_ID_RE,
@@ -542,6 +543,9 @@ def test_schema_drift_against_assets() -> None:
     )
     assert schema["properties"]["mission"]["minLength"] == 1
     assert schema["properties"]["cost_delta"]["minimum"] == 0
+    assert schema["properties"]["task_id"]["minLength"] == 1
+    assert set(schema["properties"].keys()) == set(_ALLOWED_FIELDS)
+    assert schema["$id"].endswith("fleet-trace.schema.json")
     assert schema["additionalProperties"] is False
 
 
@@ -558,3 +562,15 @@ def test_example_trace_asset_validates_clean() -> None:
     for line_no, line in enumerate(lines, start=1):
         event = json.loads(line)
         assert validate_event(event) == [], f"line {line_no}: {event}"
+
+
+def test_example_trace_covers_all_enums() -> None:
+    """The shipped example must exercise every primitive/role/status enum value, so a future
+    enum drop is caught here too (belt-and-suspenders with the schema-drift test)."""
+    path = (
+        REPO_ROOT / "skills" / "autonomous-fleet-core" / "assets" / "fleet-trace.v1.example.jsonl"
+    )
+    events = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    assert {e["primitive"] for e in events} == set(PRIMITIVES)
+    assert {e["role"] for e in events} == set(ROLES)
+    assert {e["status"] for e in events} == set(STATUSES)

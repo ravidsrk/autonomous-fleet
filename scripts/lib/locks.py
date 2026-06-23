@@ -136,22 +136,24 @@ class FileLock:
             tmp = self.lock_path.with_name(
                 f".{self.lock_path.name}.{os.getpid()}.{time.monotonic_ns()}.tmp"
             )
-            tmp.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
             try:
-                os.link(tmp, self.lock_path)
-            except FileExistsError:
+                tmp.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+                try:
+                    os.link(tmp, self.lock_path)
+                except FileExistsError:
+                    if time.monotonic() >= deadline:
+                        raise LockTimeoutError(
+                            f"acquire timed out after {self.timeout_s}s: {self.lock_path}"
+                        )
+                    time.sleep(delay)
+                    delay = min(delay * 2, self.max_poll_interval_s)
+                    continue
+                self._held = True
+                return self
+            finally:
+                # Always clean the staging file: success (lock is a separate hardlink),
+                # retry, timeout, or a mid-write ENOSPC all leave no tmp behind.
                 tmp.unlink(missing_ok=True)
-                if time.monotonic() >= deadline:
-                    raise LockTimeoutError(
-                        f"acquire timed out after {self.timeout_s}s: {self.lock_path}"
-                    )
-                time.sleep(delay)
-                delay = min(delay * 2, self.max_poll_interval_s)
-                continue
-
-            tmp.unlink(missing_ok=True)
-            self._held = True
-            return self
 
     def release(self) -> None:
         """Release the lock. Raises LockOwnershipError if not held by us."""
@@ -216,9 +218,14 @@ class FileLock:
         tmp = lock.lock_path.with_name(
             f".{lock.lock_path.name}.{os.getpid()}.{time.monotonic_ns()}.tmp"
         )
-        tmp.write_text(json.dumps(new_payload, sort_keys=True), encoding="utf-8")
         try:
-            current_text, current_payload = _read_steal_payload(lock.lock_path)
+            tmp.write_text(json.dumps(new_payload, sort_keys=True), encoding="utf-8")
+            try:
+                current_text, current_payload = _read_steal_payload(lock.lock_path)
+            except FileNotFoundError as exc:
+                raise LockStealError(
+                    f"lock vanished during steal: {lock.lock_path}"
+                ) from exc
             if current_text != text:
                 raise LockStealError(f"lock changed before steal: {lock.lock_path}")
             current_holder_pid = current_payload.get("pid")

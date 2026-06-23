@@ -98,6 +98,39 @@ def _utc_now_iso() -> str:
     return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+_SECRET_RE = re.compile(
+    r"sk-[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}"
+    r"|xai-[A-Za-z0-9-]{16,}|-----BEGIN[A-Z ]*PRIVATE KEY-----"
+)
+_HOST_PATH_RE = re.compile(r"(?:^|[\s\"'=:])/(?:home|Users|root)/|/\.(?:ssh|aws|gnupg)/")
+
+
+def _scan_details(details: dict) -> list[str]:
+    """Flag secrets / host-absolute paths in a free-form details payload.
+
+    The trace stream is published to external dashboards, so engine.md TRACE EMISSION
+    forbids secrets and host-absolute paths in details. This makes that rule enforced
+    (validate_event + emit both call it), not prose.
+    """
+    out: list[str] = []
+
+    def walk(value: Any, path: str) -> None:
+        if isinstance(value, str):
+            if _SECRET_RE.search(value):
+                out.append(f"details{path} looks like a secret; reference by evidence_hash")
+            elif _HOST_PATH_RE.search(value):
+                out.append(f"details{path} leaks a host-absolute path; use a repo-relative path")
+        elif isinstance(value, dict):
+            for k, v in value.items():
+                walk(v, f"{path}.{k}")
+        elif isinstance(value, list):
+            for i, v in enumerate(value):
+                walk(v, f"{path}[{i}]")
+
+    walk(details, "")
+    return out
+
+
 def validate_event(event: Any) -> list[str]:
     """Return a list of structural error messages for a candidate event.
 
@@ -187,8 +220,11 @@ def validate_event(event: Any) -> list[str]:
                 f"parent_event must be UUID-shaped, got {parent_event!r}"
             )
 
-    if "details" in event and not isinstance(event["details"], dict):
-        errors.append("details must be an object when set")
+    if "details" in event:
+        if not isinstance(event["details"], dict):
+            errors.append("details must be an object when set")
+        else:
+            errors.extend(_scan_details(event["details"]))
 
     return errors
 
@@ -278,6 +314,10 @@ class TraceEmitter:
         if details is not None:
             event["details"] = details
 
+        if details is not None:
+            violations = _scan_details(details)
+            if violations:
+                raise ValueError("; ".join(violations))
         line = json.dumps(event, sort_keys=True) + "\n"
         self._fh.write(line)
         self._fh.flush()
