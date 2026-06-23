@@ -58,7 +58,7 @@ references/run-archive.md). Optional and cross-cutting: when present it must be 
 a mission that emitted any first-class artifact (findings JSON, verifier summary, blind-fix file,
 etc.) records `archive_enabled: true` ONLY AFTER `scripts/validate_run_archive.py
 .fleet/runs/<run_id>/` exits 0. The validator enforces schema shape, on-disk integrity (sha256 +
-size), AND the cross-cutting mtime-ordering invariants from Commits 1-3 (blind_fix < findings,
+size), AND the cross-cutting mtime-ordering invariants from Layers 1-3 (blind_fix < findings,
 verify_summary > findings, readiness with the latest mtime). Unlike `root_cause_audited`,
 `archive_enabled` is HARD-GATED in the validator: a fleet-outcome with `status: done` AND
 `archive_enabled: false` is rejected (the audit trail IS the discipline; you cannot ship done with

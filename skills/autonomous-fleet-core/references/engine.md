@@ -230,7 +230,7 @@ correct one. SWE-Review's empirical result: reviewers given the same patch in tw
 first vs root-cause-first — produce systematically different decisions on the same case.
 
 The mechanical countermeasure: BEFORE the reviewer opens the candidate diff, it writes its
-INDEPENDENT proposed fix to `.fleet/runs/<run_id>/reviewer-blind-fix-<reviewer>.md` (one file
+INDEPENDENT proposed fix to `.fleet/runs/<run_id>/reviewer-blind-fix-<finding-id>.md` (one file
 per reviewer in multi-reviewer setups). The blind fix names:
 
 - The POINT OF CREATION (file:function:line — same call-stack-depth language as ROOT_CAUSE_DEPTH).
@@ -312,8 +312,9 @@ verifier summary, blind-fix file, readiness doc) lands under
 
   YYYYMMDDTHHMMSSZ-<mission>-<short-hash>
 
-A UTC timestamp (sortable), the mission slug (greppable), a 6-char hash of (timestamp+mission+pid)
-for uniqueness under concurrent runs. Example: `20260623T141522Z-adversarial-review-and-fix-3a9c2f`.
+A UTC timestamp (sortable), the mission slug (greppable), and a 6-char random hex suffix
+(`secrets.token_hex`) for collision avoidance — two runs on the same coordinator-pid in the same
+second still get distinct ids. Example: `20260623T141522Z-adversarial-review-and-fix-3a9c2f`.
 This shape is the ONLY one the run-archive validator accepts; freeform run-ids (operator pet
 names, branch names, etc.) are rejected because they break sort-by-time auditability.
 
@@ -327,12 +328,12 @@ the archive dir), `kind` (one of: `findings`, `verify_summary`, `blind_fix`, `pr
 `skills/autonomous-fleet-core/assets/fleet-run-manifest.schema.json`.
 
 HARD RULE — mtime ordering invariants. The validator enforces causal ordering between certain
-kinds, because these orderings ARE the disciplines from Commits 1–3:
+kinds, because these orderings ARE the disciplines from Layers 1–3:
 
 - A `blind_fix` MUST have mtime BEFORE every `findings` file from the same reviewer in the same
-  run (Commit 3 ANTI-ANCHORING protocol — the reviewer must commit its blind fix before
+  run (Layer 3 ANTI-ANCHORING protocol — the reviewer must commit its blind fix before
   reading the candidate diff).
-- A `verify_summary` MUST have mtime AFTER the `findings` file it audits (Commit 1's verifier
+- A `verify_summary` MUST have mtime AFTER the `findings` file it audits (Layer 1's verifier
   runs AGAINST a findings doc; a summary older than the findings is a stale audit from a
   previous run, mis-archived).
 - A `readiness` doc MUST have the LATEST mtime in the archive — it's the final artifact T-FINAL

@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "run_id": "20260623T141522Z-adversarial-review-and-fix-3a9c2f",
+  "mission": "adversarial-review-and-fix",
+  "created_utc": "2026-06-23T14:18:40Z",
+  "files": [
+    {
+      "path": "reviewer-blind-fix-F-001.md",
+      "kind": "blind_fix",
+      "sha256": "b1946ac92492d2347c6235b4d2611184b1946ac92492d2347c6235b4d2611184",
+      "mtime_utc": "2026-06-23T14:17:50Z",
+      "producer": "p0-reviewer-claude",
+      "bytes": 612
+    },
+    {
+      "path": "p0-review-findings.json",
+      "kind": "findings",
+      "sha256": "60303ae22b998861bce3b28f33eec1be60303ae22b998861bce3b28f33eec1be",
+      "mtime_utc": "2026-06-23T14:18:33Z",
+      "producer": "p0-reviewer-claude",
+      "bytes": 4321
+    }
+  ]
+}
