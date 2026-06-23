@@ -26,7 +26,7 @@ Decision contract: see `Verdict` below. The CLI maps:
   Verdict.allow=False -> exit 0, JSON {decision:"block", reason:<text>}
                         (Claude Code refuses to terminate the session)
 
-Lineage cites: /workspace/audit-work/borrowable-patterns-report.md #2.
+Lineage: docs/competitor-audit-2026-06-22.md #2.
 """
 
 from __future__ import annotations
@@ -192,16 +192,37 @@ class StopVerifyConfig:
 # ───────────────────────────────────────────────────────────────────────
 
 
+# Cap evidence-file reads so a pathological/hostile repo (a multi-GB ledger, a
+# symlink to /dev/zero) can't OOM the hook when it scans for evidence.
+MAX_LEDGER_BYTES = 2_000_000
+MAX_SUMMARY_BYTES = 256_000
+
+
+def _read_capped(path: Path, cap: int) -> str | None:
+    """Read up to `cap` bytes and decode. Returns None on read error OR if the
+    file exceeds the cap — the hook treats an unreadable/oversized file as 'no
+    evidence' rather than crashing or exhausting memory."""
+    try:
+        with path.open("rb") as fh:
+            raw = fh.read(cap + 1)
+    except OSError:
+        return None
+    if len(raw) > cap:
+        return None
+    return raw.decode("utf-8", errors="replace")
+
+
 def _iter_glob_safe(root: Path, pattern: str):
     """Path.glob can raise PermissionError or follow symlinks into infinite
     loops on weird trees. Wrap so the hook never crashes on a hostile FS
     layout — a crash here is a worse failure than a missed evidence hit."""
     try:
         yield from root.glob(pattern)
-    except (OSError, ValueError):
-        # ValueError covers Path.glob's "Non-relative patterns are unsupported"
-        # when an operator types an absolute glob. We swallow and move on
-        # because a malformed config should not break the gate.
+    except (OSError, ValueError, NotImplementedError):
+        # ValueError / NotImplementedError cover Path.glob's "Non-relative
+        # patterns are unsupported" when an operator types an absolute glob
+        # (the exception type varies by Python version). We swallow and move
+        # on because a malformed config should not break the gate.
         return
 
 
@@ -222,9 +243,8 @@ def detect_progress_flag_evidence(cfg: StopVerifyConfig, now: float) -> list[Evi
         age = _mtime_age(path, now)
         if age is None or age > cfg.window_sec:
             continue
-        try:
-            text = path.read_text(encoding="utf-8", errors="replace")
-        except OSError:
+        text = _read_capped(path, MAX_LEDGER_BYTES)
+        if text is None:
             continue
         # We count each ledger doc that contains EVID=true as ONE evidence
         # hit. We don't try to count per-row EVIDs — that's the readiness
@@ -260,9 +280,8 @@ def detect_readiness_evidence(cfg: StopVerifyConfig, now: float) -> list[Evidenc
         age = _mtime_age(path, now)
         if age is None or age > cfg.window_sec:
             continue
-        try:
-            text = path.read_text(encoding="utf-8", errors="replace")
-        except OSError:
+        text = _read_capped(path, MAX_LEDGER_BYTES)
+        if text is None:
             continue
         if E2E_VERIFIED_PATTERN.search(text):
             hits.append(
@@ -301,9 +320,12 @@ def detect_verify_summary_evidence(cfg: StopVerifyConfig, now: float) -> list[Ev
             age = _mtime_age(path, now)
             if age is None or age > cfg.window_sec:
                 continue
+            raw = _read_capped(path, MAX_SUMMARY_BYTES)
+            if raw is None:
+                continue
             try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
-            except (OSError, ValueError):
+                payload = json.loads(raw)
+            except ValueError:
                 continue
             if not isinstance(payload, dict):
                 continue

@@ -57,7 +57,7 @@ For every request:
 
 # Imagery & Banners
 
-The repo is anchored by **1 hero banner + 3 tier banners + 24 per-skill banners**. Every image has its prompt checked in alongside it — reproducer artifacts are first-class.
+The repo is anchored by **1 hero banner + 3 tier banners + 21 per-skill banners**. Every image has its prompt checked in alongside it — reproducer artifacts are first-class.
 
 **Design language (keep new skills consistent):**
 

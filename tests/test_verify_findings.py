@@ -312,20 +312,67 @@ def test_verify_clears_stale_verify_reason_on_pass(tmp_path: Path):
     assert "verify_reason" not in f
 
 
-def test_verify_handles_absolute_evidence_path(tmp_path: Path):
-    """Absolute paths in evidence.file_path must be honoured as-is, not
-    re-rooted under --repo. This matters for adapters that emit absolute
-    paths from worktrees."""
+def test_verify_rejects_absolute_path_outside_repo(tmp_path: Path):
+    """A finding is reviewer-produced (suspect) data. An absolute path that
+    escapes the repo root must be REJECTED — the verifier is not a
+    read-anything primitive."""
     src = tmp_path / "absolute.py"
     src.write_text("CONST = 42\n")
     f = _minimal_finding(
         evidence={"file_path": str(src), "quoted_line": "CONST = 42"}
     )
-    # Pass a *different* repo_root to prove the absolute path isn't re-rooted
     other = tmp_path / "other"
     other.mkdir()
     verify_finding_against_source(f, repo_root=other)
-    assert f["verified"] is True
+    assert f["verified"] is False
+    assert "escapes repo root" in f["verify_reason"]
+
+
+def test_verify_rejects_path_traversal(tmp_path: Path):
+    """A ../ traversal that escapes the repo root is rejected."""
+    secret = tmp_path / "secret.txt"
+    secret.write_text("TOPSECRET\n")
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    f = _minimal_finding(
+        evidence={"file_path": "../secret.txt", "quoted_line": "TOPSECRET"}
+    )
+    verify_finding_against_source(f, repo_root=repo)
+    assert f["verified"] is False
+    assert "escapes repo root" in f["verify_reason"]
+
+
+def test_verify_rejects_oversized_file(tmp_path: Path):
+    """A cited file larger than the read cap is treated as unverified rather
+    than OOM-ing the verifier."""
+    from lib.verify_findings import MAX_SOURCE_BYTES
+
+    big = tmp_path / "big.py"
+    big.write_bytes(b"x" * (MAX_SOURCE_BYTES + 1))
+    f = _minimal_finding(
+        evidence={"file_path": "big.py", "quoted_line": "x"}
+    )
+    verify_finding_against_source(f, repo_root=tmp_path)
+    assert f["verified"] is False
+    assert "read cap" in f["verify_reason"]
+
+
+def test_verify_doc_counts_reconcile_with_non_dict_entries(tmp_path: Path):
+    """total = verified + unverified + skipped_non_dict, even when the findings
+    list contains non-dict junk."""
+    src = tmp_path / "a.py"
+    src.write_text("HELLO\n")
+    good = _minimal_finding(evidence={"file_path": "a.py", "quoted_line": "HELLO"})
+    doc = {"findings": ["junk", good]}
+    summary = verify_findings_doc(doc, repo_root=tmp_path)
+    assert summary["total_findings"] == 2
+    assert summary["skipped_non_dict"] == 1
+    assert (
+        summary["verified_findings"]
+        + summary["unverified_findings"]
+        + summary["skipped_non_dict"]
+        == summary["total_findings"]
+    )
 
 
 # ───────────────────────────────────────────────────────────────────────
