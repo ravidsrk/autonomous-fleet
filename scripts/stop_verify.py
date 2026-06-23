@@ -179,12 +179,22 @@ def main(argv: list[str] | None = None) -> int:
     try:
         hook_input = _read_hook_input()
 
-        # Kill switch is checked FIRST — operators expect STOP_VERIFY_DISABLED=1
+        # Kill switch is checked FIRST — operators expect a disable env
         # to short-circuit the whole hook regardless of any other config error
         # (e.g. a stale --repo path baked into hooks.json from a previous repo
         # layout). If we waited until evaluate() this short-circuit would be
         # suppressed by a bad-repo warning, defeating the escape hatch.
-        if os.environ.get("STOP_VERIFY_DISABLED", "").strip().lower() in {"1", "true", "yes"}:
+        #
+        # Two env vars are honored:
+        #   STOP_VERIFY_DISABLED       — legacy name (kept for back-compat)
+        #   FLEET_DISABLE_STOP_VERIFY  — Substrate-wide convention. See
+        #                                scripts/lib/substrate_disable.py.
+        # Setting either to 1/true/yes/on (case-insensitive) flips the gate
+        # to an unconditional ALLOW with a decision-log entry. Both are
+        # tested by the substrate-disable suite.
+        from lib.substrate_disable import stop_verify_legacy_disabled
+
+        if stop_verify_legacy_disabled():
             _emit_decision(
                 Verdict(allow=True, reason="stop-verify disabled"),
                 force_json=args.json_out,

@@ -443,6 +443,22 @@ it's safe to invoke. Lock files live under `.fleet/runs/<run_id>/locks/` with co
 `{owner, acquired_at, pid}` for diagnostics. Implementation: `scripts/lib/locks.py`.
 
 ═══════════════════════════════════════════════════════════
+SUBSTRATE KILL-SWITCH CONVENTION — operator escape hatch + bench comparator.
+═══════════════════════════════════════════════════════════
+Each verification-substrate layer honors a `FLEET_DISABLE_*` env var. When set truthy
+(case-insensitive `1`/`true`/`yes`/`on`), the layer's CLI exits 0 with a `<layer>: DISABLED via
+<NAME>=1 (no-op exit 0)` stderr notice, BEFORE arg parsing. Registry:
+- Layer 1 (review-findings) → `FLEET_DISABLE_VERIFY_FINDINGS`
+- Layer 2 (stop-verify)     → `FLEET_DISABLE_STOP_VERIFY` (also `STOP_VERIFY_DISABLED` for back-compat)
+- Layer 3 (blind-fix)       → `FLEET_DISABLE_BLIND_FIX`
+- Layer 4 (run-archive)     → `FLEET_DISABLE_RUN_ARCHIVE`
+"Disabled" means "treat the layer's verdict as PASS for this run" — explicit operator contract.
+Strict truthy allow-list prevents typos from silent-disabling. Used by
+`scripts/bench-adversarial.sh` to flip substrate off/on for the falsifiable comparator that defends
+the substrate's value claim. Implementation: `scripts/lib/substrate_disable.py`. Full doctrine:
+`references/substrate-disable-knobs.md`.
+
+═══════════════════════════════════════════════════════════
 CONTEXT HANDOFF — survive your own context limit.
 ═══════════════════════════════════════════════════════════
 Compaction alone is NOT sufficient and will eventually drop your loop state. The ledger file is

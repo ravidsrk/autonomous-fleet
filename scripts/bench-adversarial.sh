@@ -129,10 +129,29 @@ run_one_mode() {
     (cd "$clone_dir" && git fetch --depth 50 origin && git reset --hard origin/HEAD)
   fi
 
-  # Set substrate-off env if requested.
-  local env_prefix=""
+  # Set substrate-off env if requested. These env vars are honored by
+  # the substrate verifiers (scripts/{verify_findings,stop_verify,
+  # verify_blind_fix,validate_run_archive}.py) and produce an early
+  # exit 0 with a "DISABLED via FLEET_DISABLE_X=1" stderr notice. See
+  # scripts/lib/substrate_disable.py for the convention.
+  #
+  # We export the vars into THIS shell's environment so any child
+  # process the operator launches inside this terminal (the adapter
+  # session, the post-run validators, the analyze_seat run) inherits
+  # the disabled state. On mode=on we explicitly UNSET them so a stale
+  # value from a prior off-run doesn't leak into the on-run.
   if [[ "$mode" == "off" ]]; then
-    env_prefix="FLEET_DISABLE_STOP_VERIFY=1 FLEET_DISABLE_VERIFY_FINDINGS=1 FLEET_DISABLE_BLIND_FIX=1 FLEET_DISABLE_RUN_ARCHIVE=1"
+    export FLEET_DISABLE_VERIFY_FINDINGS=1
+    export FLEET_DISABLE_STOP_VERIFY=1
+    export FLEET_DISABLE_BLIND_FIX=1
+    export FLEET_DISABLE_RUN_ARCHIVE=1
+    local env_label="FLEET_DISABLE_VERIFY_FINDINGS=1 FLEET_DISABLE_STOP_VERIFY=1 FLEET_DISABLE_BLIND_FIX=1 FLEET_DISABLE_RUN_ARCHIVE=1"
+  else
+    unset FLEET_DISABLE_VERIFY_FINDINGS
+    unset FLEET_DISABLE_STOP_VERIFY
+    unset FLEET_DISABLE_BLIND_FIX
+    unset FLEET_DISABLE_RUN_ARCHIVE
+    local env_label="(substrate on — no disable env vars set)"
   fi
 
   # Dispatch the adversarial-review-and-fix mission via the adapter.
@@ -141,12 +160,13 @@ run_one_mode() {
   echo "  dispatching $ADAPTER on $clone_dir (mode=$mode)"
   echo "  (operator: run \`fleet run adversarial-review-and-fix --adapter $ADAPTER\` in $clone_dir)"
   echo "  expected archive: $archive_dir"
-  echo "  env: $env_prefix"
+  echo "  env: $env_label"
 
   # Stub: the scaffolding does not invoke an adapter here. Operators run
   # the dispatch by hand against the adapter SKILL. The driver's value
-  # add is the per-target loop, the substrate-on/off env management, and
-  # the post-run validation pass.
+  # add is the per-target loop, the substrate-on/off env management
+  # (real export above, not just an echo), and the post-run validation
+  # pass.
 }
 
 echo "[]" > /tmp/bench-run-summary.json

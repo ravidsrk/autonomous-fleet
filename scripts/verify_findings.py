@@ -43,6 +43,15 @@ from lib.verify_findings import (
 
 
 def main() -> int:
+    # SUBSTRATE KILL-SWITCH — see scripts/lib/substrate_disable.py.
+    # Checked BEFORE arg parsing so a disabled layer never inspects user
+    # input, never touches disk, and never reports errors that would
+    # confuse a bench operator into thinking the substrate ran.
+    from lib.substrate_disable import announce_disabled, is_disabled
+
+    if is_disabled("FLEET_DISABLE_VERIFY_FINDINGS"):
+        return announce_disabled("verify-findings", "FLEET_DISABLE_VERIFY_FINDINGS")
+
     p = argparse.ArgumentParser(
         description="Validate and source-verify a fleet reviewer findings JSON document.",
     )

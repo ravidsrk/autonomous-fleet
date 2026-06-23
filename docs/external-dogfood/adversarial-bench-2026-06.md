@@ -12,6 +12,12 @@ adversarial-review-and-fix runs. The bench tests this directly:
 > (FLEET_DISABLE_STOP_VERIFY=1 etc), once with substrate ON. The
 > headline metric is the DELTA.
 
+The four `FLEET_DISABLE_*` env vars are honored by the substrate
+verifiers themselves — they early-exit 0 with a documented stderr
+notice when set truthy. See
+`skills/autonomous-fleet-core/references/substrate-disable-knobs.md`
+for the full convention, env-var registry, and library helper.
+
 If the delta is small or negative across multiple targets, that's
 the substrate's fault, not the methodology's. We learn either way.
 
