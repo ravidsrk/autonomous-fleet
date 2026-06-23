@@ -32,6 +32,12 @@ from lib.verify_blind_fix import verify_blind_fix_doc  # noqa: E402
 
 
 def main() -> int:
+    # SUBSTRATE KILL-SWITCH — see scripts/lib/substrate_disable.py.
+    from lib.substrate_disable import announce_disabled, is_disabled
+
+    if is_disabled("FLEET_DISABLE_BLIND_FIX"):
+        return announce_disabled("verify-blind-fix", "FLEET_DISABLE_BLIND_FIX")
+
     p = argparse.ArgumentParser(
         description="Layer 3 (blind-fix) verifier for a fleet run archive.",
     )

@@ -639,3 +639,58 @@ def test_write_lock_discipline_block_anchors_after_trace_emission() -> None:
         "WRITE-LOCK DISCIPLINE must sit between TRACE EMISSION and "
         "CONTEXT HANDOFF to preserve emit -> serialize -> survive narrative"
     )
+
+def test_substrate_kill_switch_block_present_and_complete() -> None:
+    """SUBSTRATE KILL-SWITCH CONVENTION block must list all 4 layers
+    with their env-var names, the Layer 2 legacy alias, the truthy
+    semantics, the implementation pointer, and the doctrine reference.
+    Drift here means the bench can't measure what it claims."""
+    text = read_engine()
+    block = section(
+        text,
+        "SUBSTRATE KILL-SWITCH CONVENTION",
+        "CONTEXT HANDOFF",
+    )
+
+    # All 4 layer env vars.
+    for var in (
+        "FLEET_DISABLE_VERIFY_FINDINGS",
+        "FLEET_DISABLE_STOP_VERIFY",
+        "FLEET_DISABLE_BLIND_FIX",
+        "FLEET_DISABLE_RUN_ARCHIVE",
+    ):
+        assert var in block, f"engine.md kill-switch block missing {var}"
+
+    # Layer 2 legacy alias preserved.
+    assert "STOP_VERIFY_DISABLED" in block
+    assert "back-compat" in block
+
+    # Truthy semantics and the strict-allow-list intent.
+    flat = squash(block)
+    assert "case-insensitive" in flat
+    assert "1`/`true`/`yes`/`on`" in flat or "1/true/yes/on" in flat
+
+    # Disable contract semantics.
+    assert "treat the layer's verdict as PASS" in block
+    assert "BEFORE arg parsing" in block
+
+    # Bench tie-in (this is why the convention exists at all).
+    assert "bench-adversarial.sh" in block
+    assert "falsifiable comparator" in block
+
+    # Implementation + doctrine pointers.
+    assert "scripts/lib/substrate_disable.py" in block
+    assert "references/substrate-disable-knobs.md" in block
+
+    assert_no_contradiction_markers(block)
+
+
+def test_substrate_kill_switch_block_anchors_after_write_lock() -> None:
+    """SUBSTRATE KILL-SWITCH sits AFTER WRITE-LOCK DISCIPLINE and BEFORE
+    CONTEXT HANDOFF. Ordering encodes: serialize -> escape-hatch ->
+    survive."""
+    text = read_engine()
+    lock_idx = text.index("WRITE-LOCK DISCIPLINE")
+    kill_idx = text.index("SUBSTRATE KILL-SWITCH CONVENTION")
+    handoff_idx = text.index("CONTEXT HANDOFF")
+    assert lock_idx < kill_idx < handoff_idx

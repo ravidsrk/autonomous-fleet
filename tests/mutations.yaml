@@ -150,3 +150,28 @@ mutations:
     find: "isinstance(holder_pid, int) and _pid_alive(holder_pid)"
     replace: "False"
     guards: [tests/test_locks.py]
+
+  # --- substrate kill-switch convention (follow-up to Commit C) ---
+  - id: kill-switch-truthy-relaxed
+    file: scripts/lib/substrate_disable.py
+    find: "value.strip().lower() in _TRUTHY"
+    replace: "True"
+    guards: [tests/test_substrate_disable.py]
+
+  - id: kill-switch-truthy-strict
+    file: scripts/lib/substrate_disable.py
+    find: "value.strip().lower() in _TRUTHY"
+    replace: "False"
+    guards: [tests/test_substrate_disable.py]
+
+  - id: kill-switch-legacy-alias-dropped
+    file: scripts/lib/substrate_disable.py
+    find: "is_truthy(os.environ.get(\"STOP_VERIFY_DISABLED\")) or is_disabled("
+    replace: "False or is_disabled("
+    guards: [tests/test_substrate_disable.py]
+
+  - id: kill-switch-fleet-disable-stop-verify-dropped
+    file: scripts/lib/substrate_disable.py
+    find: "is_truthy(os.environ.get(\"STOP_VERIFY_DISABLED\")) or is_disabled(\n        \"FLEET_DISABLE_STOP_VERIFY\"\n    )"
+    replace: "is_truthy(os.environ.get(\"STOP_VERIFY_DISABLED\"))"
+    guards: [tests/test_substrate_disable.py]
