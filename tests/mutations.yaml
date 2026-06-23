@@ -101,3 +101,89 @@ mutations:
     find: 'if blind_mt >= findings_mt:'
     replace: 'if blind_mt >= findings_mt and False:'
     guards: [tests/test_run_archive.py]
+
+  - id: blind-fix-mtime-ordering-off
+    file: scripts/lib/verify_blind_fix.py
+    find: 'findings_mtime is not None and mtime is not None and mtime > findings_mtime'
+    replace: 'False'
+    guards: [tests/test_verify_blind_fix.py]
+
+  - id: blind-fix-stub-detector-off
+    file: scripts/lib/verify_blind_fix.py
+    find: 'if _has_stub(body):'
+    replace: 'if False:'
+    guards: [tests/test_verify_blind_fix.py]
+
+  - id: blind-fix-diff-marker-detector-off
+    file: scripts/lib/verify_blind_fix.py
+    find: 'if _has_diff_marker(text):'
+    replace: 'if False:'
+    guards: [tests/test_verify_blind_fix.py]
+
+  - id: blind-fix-path-containment-off
+    file: scripts/lib/verify_blind_fix.py
+    find: 'candidate.relative_to(run_dir_resolved)'
+    replace: 'run_dir_resolved'
+    guards: [tests/test_verify_blind_fix.py]
+
+  # --- trace emission (Commit E) ---
+  - id: trace-event-validation-off
+    file: scripts/lib/emit_trace.py
+    find: 'primitive not in PRIMITIVES'
+    replace: 'False'
+    guards: [tests/test_emit_trace.py]
+
+  - id: trace-emit-atomicity-off
+    file: scripts/lib/emit_trace.py
+    find: 'self._fh.flush()'
+    replace: 'pass'
+    guards: [tests/test_emit_trace.py]
+
+  - id: lock-ownership-check-off
+    file: scripts/lib/locks.py
+    find: "payload.get(\"owner\") != self.owner"
+    replace: "False"
+    guards: [tests/test_locks.py]
+
+  - id: lock-steal-liveness-check-off
+    file: scripts/lib/locks.py
+    find: "isinstance(holder_pid, int) and _pid_alive(holder_pid)"
+    replace: "False"
+    guards: [tests/test_locks.py]
+
+  # --- substrate kill-switch convention (follow-up to Commit C) ---
+  - id: kill-switch-truthy-relaxed
+    file: scripts/lib/substrate_disable.py
+    find: "value.strip().lower() in _TRUTHY"
+    replace: "True"
+    guards: [tests/test_substrate_disable.py]
+
+  - id: kill-switch-truthy-strict
+    file: scripts/lib/substrate_disable.py
+    find: "value.strip().lower() in _TRUTHY"
+    replace: "False"
+    guards: [tests/test_substrate_disable.py]
+
+  - id: kill-switch-layer2-lib-disable-off
+    file: scripts/lib/stop_verify.py
+    find: "return is_disabled(\"FLEET_DISABLE_STOP_VERIFY\")"
+    replace: "return False"
+    guards: [tests/test_stop_verify.py]
+  # --- PR #39 review fixes (each mutation must be caught) ---
+  - id: blind-fix-ignores-manifest-ordering
+    file: scripts/lib/verify_blind_fix.py
+    find: 'if not manifest_path.is_file():'
+    replace: 'if not manifest_path.is_file() or True:'
+    guards: [tests/test_verify_blind_fix.py]
+
+  - id: lock-steal-allows-live-holder
+    file: scripts/lib/locks.py
+    find: 'if isinstance(holder_pid, int) and _pid_alive(holder_pid):'
+    replace: 'if isinstance(holder_pid, int) and False:'
+    guards: [tests/test_locks_review_fixes.py]
+
+  - id: write-manifest-trace-emit-off
+    file: scripts/lib/fleet_run.py
+    find: 'if emitter is not None:'
+    replace: 'if False and emitter is not None:'
+    guards: [tests/test_emit_trace.py]

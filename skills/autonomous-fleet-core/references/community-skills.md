@@ -45,9 +45,9 @@ Install **per bundle** — not all three repos unless you need them.
 
 | Bundle | Fleet entry | Community install |
 |--------|-------------|-------------------|
-| Fix my repo | `fleet-program` preset `repo-health` | None required |
+| Fix my repo | `fleet-program` preset `repo-health` (now `doc-sync → test-coverage`; `cleanup` exploratory) | None required |
 | Ship safely | preset `ship-with-proof` | gstack (`ship`, `qa`) optional |
-| Finish product | preset `align-then-ship` | mattpocock `grill-with-docs` or gstack `office-hours` |
+| Finish product | preset `align-then-ship` (ARCHIVED until `take-product-to-completion` is promoted) | mattpocock `grill-with-docs` or gstack `office-hours` |
 | Production readiness | preset `quality-gate` | gstack `qa-only`, `health` optional |
 | Greenfield feature | Human `/spec` + `/plan`, then one mission | agent-skills plugin |
 
@@ -66,7 +66,7 @@ Headless:
 | Skill | Source | When |
 |-------|--------|------|
 | `grill-with-docs` / `grill-me` | mattpocock | Tier 3 mission; boundary or intent unclear |
-| `office-hours` | gstack | Product framing before `take-product-to-completion` |
+| `office-hours` | gstack | Product framing before `take-product-to-completion` (exploratory until promoted) |
 | `autoplan` | gstack | Plan review gauntlet only — save plan, defer implement to fleet mission |
 
 Invoke explicitly; record output path in `docs/fleet-program-progress.md` **Handoff notes**.
@@ -75,7 +75,7 @@ Invoke explicitly; record output path in `docs/fleet-program-progress.md` **Hand
 
 | Skill | Source | Mission(s) | Trigger |
 |-------|--------|------------|---------|
-| `office-hours` | gstack | `take-product-to-completion` | T3 boundary ambiguous |
+| `office-hours` | gstack | `take-product-to-completion` (exploratory) | T3 boundary ambiguous |
 | `cso` | gstack | `adversarial-review-and-fix` | Security-heavy audit |
 | `health` | gstack | `doc-sync`, `quality-gate` tail | User wants composite score |
 
@@ -83,13 +83,13 @@ Invoke explicitly; record output path in `docs/fleet-program-progress.md` **Hand
 
 | Skill | Source | Mission(s) | Role |
 |-------|--------|------------|------|
-| `test-driven-development` | agent-skills | `bug-batch`, `test-coverage` | @builder |
+| `test-driven-development` | agent-skills | `test-coverage` (and `bug-batch` once promoted) | @builder |
 | `incremental-implementation` | agent-skills | build-heavy missions | @builder |
 | `security-and-hardening` | agent-skills | `adversarial-review-and-fix` | @reviewer |
-| `frontend-ui-engineering` | agent-skills | `design-integration`, `landing-page-convergence` | @builder |
-| `domain-modeling` | mattpocock | `doc-sync`, `take-product-to-completion` | @planner |
-| `qa` | gstack | UI missions | @builder (fix loop) |
-| `qa-only` | gstack | UI missions | @reviewer (report only) |
+| `frontend-ui-engineering` | agent-skills | `design-integration`, `landing-page-convergence` (both exploratory; attach when those missions are promoted) | @builder |
+| `domain-modeling` | mattpocock | `doc-sync` (and `take-product-to-completion` once promoted) | @planner |
+| `qa` | gstack | UI missions (exploratory until promoted) | @builder (fix loop) |
+| `qa-only` | gstack | UI missions (exploratory until promoted) | @reviewer (report only) |
 
 Copy the chosen rows into the mission `## Worker skills` table when authoring; coordinator
 pastes into engine WORKER SKILLS block on DISPATCH.
@@ -156,8 +156,8 @@ Additional ids referenced by mission Optional/Worker tables:
 | Id | Source | Description |
 |----|--------|-------------|
 | `skill-creator` | github.com/anthropics/skills | Anthropic's official skill authoring scaffold; used when missions need to draft or extend a skill. |
-| `code-simplification` | agent-skills (community/optional) | Reuse / simplify / efficiency cleanup pass on a diff; pairs with `bug-batch` and `cleanup` missions. |
-| `swiftui-liquid-glass` | community/optional | SwiftUI "Liquid Glass" design language helper; optional worker for `design-integration` on Apple-platform UI work. |
+| `code-simplification` | agent-skills (community/optional) | Reuse / simplify / efficiency cleanup pass on a diff; pairs with `bug-batch` and `cleanup` missions (both exploratory; reattach on promotion). |
+| `swiftui-liquid-glass` | community/optional | SwiftUI "Liquid Glass" design language helper; optional worker for `design-integration` on Apple-platform UI work (`design-integration` exploratory until promoted). |
 
 ---
 

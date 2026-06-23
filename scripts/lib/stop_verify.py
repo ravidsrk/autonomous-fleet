@@ -157,7 +157,7 @@ class StopVerifyConfig:
     `min_evidence_kinds` — how many DISTINCT evidence kinds must match. Default
         1 (any one is enough; matches upstream patterns). Operators can raise
         this to 2 or 3 for paranoid modes.
-    `disabled` — kill switch via env var STOP_VERIFY_DISABLED=1 or config.
+    `disabled` — kill switch via env var FLEET_DISABLE_STOP_VERIFY=1 or config.
         Returns allow=True with reason="disabled" so the hook is inert.
     """
 
@@ -405,15 +405,23 @@ def detect_e2e_artifact_evidence(cfg: StopVerifyConfig, now: float) -> list[Evid
 
 
 def _env_disabled() -> bool:
-    """Operator escape hatch: STOP_VERIFY_DISABLED=1 turns the gate into a
-    no-op. Required for adapter test harnesses that need to drive Claude
-    Code sessions without artifact requirements (e.g. the headless campaign
-    runner during dry-runs). The env var is checked at the entrypoint, not
-    deep in a detector, so the kill switch is easy to audit."""
-    # Case-insensitive so operators don't get bitten by STOP_VERIFY_DISABLED=TRUE
-    # vs ...=true. The strip() handles trailing newlines from shell-sourced
-    # env files.
-    return os.environ.get("STOP_VERIFY_DISABLED", "").strip().lower() in {"1", "true", "yes"}
+    """Operator escape hatch: FLEET_DISABLE_STOP_VERIFY=1 turns the gate
+    into a no-op. Required for adapter test harnesses that need to drive
+    Claude Code sessions without artifact requirements (e.g. the headless
+    campaign runner during dry-runs). The env var is checked at the
+    entrypoint, not deep in a detector, so the kill switch is easy to
+    audit.
+
+    Truthy semantics are delegated to substrate_disable.is_disabled so
+    every layer's kill switch obeys the SAME rule (case-insensitive
+    "1"/"true"/"yes"/"on"). Drift between layers is a bench-correctness
+    bug, not a feature.
+    """
+    # Local import to keep this module importable in environments where
+    # scripts/lib isn't on sys.path yet (e.g. fresh hook subprocess).
+    from .substrate_disable import is_disabled
+
+    return is_disabled("FLEET_DISABLE_STOP_VERIFY")
 
 
 def _format_block_reason(
@@ -442,7 +450,7 @@ def _format_block_reason(
         "mission requires it).",
         "  - Or, for verified review missions, run scripts/verify_findings.py --summary-out.",
         "",
-        "If this is a no-edit turn (status/diagnostic only), set STOP_VERIFY_DISABLED=1 in "
+        "If this is a no-edit turn (status/diagnostic only), set FLEET_DISABLE_STOP_VERIFY=1 in "
         "the worker env or remove the Stop hook for that adapter.",
     ]
     return "\n".join(lines)
@@ -452,8 +460,8 @@ def evaluate(cfg: StopVerifyConfig | None = None) -> Verdict:
     """The library entry point. Runs every detector, composes a verdict.
 
     Caller responsibility: pass a config or accept defaults. Library does NOT
-    read env vars beyond STOP_VERIFY_DISABLED (the kill switch); everything
-    else flows through the config so tests can pin behavior."""
+    read env vars beyond FLEET_DISABLE_STOP_VERIFY (the kill switch);
+    everything else flows through the config so tests can pin behavior."""
     cfg = (cfg or StopVerifyConfig()).normalised()
 
     if cfg.disabled or _env_disabled():

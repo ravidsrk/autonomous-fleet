@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-fleet.dev/schemas/fleet-trace.schema.json",
+  "title": "Autonomous Fleet — trace event",
+  "description": "One JSONL line per state transition in the run ledger. The trace stream is the dashboard contract: vibe-kanban, Claude Code Agent View, and custom dashboards are interchangeable consumers. See engine.md TRACE EMISSION doctrine and references/run-archive.md for the archive layout. Schema is pinned at 1.0; breaking changes require a new $id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "ts",
+    "run_id",
+    "mission",
+    "primitive",
+    "role",
+    "status"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Pinned to 1.0 for this release. Breaking changes require a new $id and a synchronous lib + consumer update."
+    },
+    "ts": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]+)?Z$",
+      "description": "ISO 8601 UTC timestamp with the trailing Z. Local times are REJECTED so dashboards can sort across runs without timezone arithmetic."
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{6}Z-[a-z][a-z0-9-]*-[0-9a-f]{6}$",
+      "description": "Run id from the archive layout (YYYYMMDDTHHMMSSZ-<mission>-<6-hex>). Must match the parent run-archive directory."
+    },
+    "mission": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Mission slug. MUST match the slug embedded in run_id."
+    },
+    "primitive": {
+      "type": "string",
+      "enum": [
+        "SPAWN_WORKER",
+        "DISPATCH",
+        "WAIT",
+        "INSPECT",
+        "SYNC",
+        "MERGE",
+        "FREEZE",
+        "T-FINAL",
+        "GOAL_BLOCKED",
+        "COMMIT",
+        "ABORT"
+      ],
+      "description": "The engine primitive whose state transition this event marks. Enum is closed: new primitives require a doctrine update first."
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "COORDINATOR",
+        "BUILDER",
+        "REVIEWER",
+        "INTEGRATOR",
+        "FIXER",
+        "OTHER"
+      ],
+      "description": "The role acting at the transition. OTHER is the escape hatch for orchestrator-only events with no human-shaped role."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "started",
+        "succeeded",
+        "failed",
+        "blocked",
+        "skipped"
+      ],
+      "description": "Lifecycle status of the primitive at this transition."
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional task identifier from the frozen DAG."
+    },
+    "evidence_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Optional SHA-256 hex digest of the evidence backing this transition (e.g. ledger row + external fact)."
+    },
+    "cost_delta": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Optional non-negative cost delta in the run's currency (USD by convention). Total run cost is the sum across events."
+    },
+    "parent_event": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+      "description": "Optional UUID-shaped pointer to a prior event (e.g. SPAWN_WORKER for which this is the COMMIT)."
+    },
+    "details": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Free-form per-primitive payload. Consumers MUST NOT depend on any specific shape here; for typed fields, promote to a top-level property in a new schema $id."
+    }
+  }
+}

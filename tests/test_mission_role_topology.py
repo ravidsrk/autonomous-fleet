@@ -24,9 +24,12 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from lib.mission_registry import MISSION_DOCS  # noqa: E402
+from lib.mission_registry import SHIPPED_MISSIONS  # noqa: E402
 
-MISSIONS = sorted(MISSION_DOCS)
+# Iterate ONLY shipped missions (`skills/<mission>/`); demoted exploratory
+# missions live under `docs/exploratory/missions/` and are not enforced by
+# this guard until they earn promotion back to skills/.
+MISSIONS = sorted(SHIPPED_MISSIONS)
 
 # A handle DIRECTLY assigned a code-build action: "@codex builds", "@codex (per bug) writes",
 # "@grok rebuilds". Actor-adjacency avoids false hits on negations ("the reviewer @claude never

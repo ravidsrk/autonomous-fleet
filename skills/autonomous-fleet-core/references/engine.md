@@ -402,6 +402,70 @@ declare a task stuck on the FIRST read that disagrees.
   circuit-breaker, a confirmed worker exit, or the DETECTING timeout — never on a single poll.
 
 ═══════════════════════════════════════════════════════════
+TRACE EMISSION — the dashboard contract (vibe-kanban, Agent View, custom).
+═══════════════════════════════════════════════════════════
+The trace stream is ONE JSONL line per state transition in the ledger, written to
+`.fleet/runs/<run_id>/trace.jsonl`. The schema (`assets/fleet-trace.schema.json`, pinned at
+`schema_version: "1.0"`) is the CONTRACT: vibe-kanban, Claude Code Agent View, and custom dashboards
+are interchangeable consumers — owning the format, not the renderer, is what keeps live observability
+free of UI debt. Landscape Gap 8 ("no live dashboard") is closed by emitting the stream and letting
+existing readers render it, not by building a GUI.
+- Every state transition that writes to the ledger MUST emit a trace event BEFORE the ledger write
+  commits. The trace is the source of truth for "what happened"; the ledger is derived state. Trace
+  first, ledger second — never the reverse, or a crashed coordinator leaves a row with no
+  externally-visible cause.
+- The mechanism is the `emit_trace.TraceEmitter` library, which the coordinator and each adapter call
+  at every transition; `fleet_run.write_manifest(..., emitter=...)` is the reference in-code
+  integration (it emits the `T-FINAL` archive transition, test + mutation covered). Enforcement is the
+  schema + `emit_trace.validate_event` + the schema-drift test + the trace mutations, NOT auto-wiring,
+  because the file ledger is coordinator-driven.
+- The `details` object is free-form but MUST NOT carry secrets or host-absolute paths; reference
+  sensitive evidence by `evidence_hash`. The stream is meant for publication to external dashboards.
+- Schema is versioned (`schema_version: "1.0"`) and breaking changes require a NEW `$id`; consumers
+  pin to the version they understand. Adding a primitive, role, or status to the enum is a breaking
+  change for the same reason — closed enums are part of the contract.
+- Failure to emit a trace event is NOT a hard error. The run continues with degraded telemetry; the
+  coordinator records `trace_emission_degraded: true` in `fleet-outcome.yaml` so the post-hoc audit
+  knows the stream is incomplete. Hard-failing on a telemetry I/O error would let the dashboard veto
+  real work, which inverts the dependency.
+
+═══════════════════════════════════════════════════════════
+WRITE-LOCK DISCIPLINE — construction vs request locks.
+═══════════════════════════════════════════════════════════
+A worker that mutates shared state (the run-archive, a worktree branch, an external API) MUST
+acquire the correct lock before the mutation and release it after. Two locks, two lifetimes:
+- CONSTRUCTION LOCK: acquired before a worker starts BUILDING artifacts in its task slot
+  (worktree, branch, attestation file). Released only on COMMIT or ABORT. Long-held. Prevents
+  two workers racing to write the same artifact path under `.fleet/runs/<run_id>/`.
+- REQUEST LOCK: acquired before a worker calls an external write API (`gh pr merge`,
+  `terraform apply`, `fly deploy`, `git push`). Released immediately after the call returns.
+  Short-held. Prevents a runaway worker from issuing duplicate side-effectful API calls.
+A worker holding a construction lock MAY hold a request lock briefly; the reverse (long-held
+request lock) is forbidden — request locks are taken just-in-time, never preemptively.
+A lock whose holder process is dead (PID gone, ledger heartbeat stale) MAY be stolen by another
+worker — but ONLY after the SIGNAL RECONCILIATION § dead-worker detection discipline has
+confirmed the holder is gone. Stealing without a confirmed-dead signal is a protocol violation;
+the lock library exposes the steal mechanism but the coordinator's circuit-breaker decides when
+it's safe to invoke. Lock files live under `.fleet/runs/<run_id>/locks/` with contents
+`{owner, acquired_at, pid}` for diagnostics. Implementation: `scripts/lib/locks.py`.
+
+═══════════════════════════════════════════════════════════
+SUBSTRATE KILL-SWITCH CONVENTION — operator escape hatch + bench comparator.
+═══════════════════════════════════════════════════════════
+Each verification-substrate layer honors a `FLEET_DISABLE_*` env var. When set truthy
+(case-insensitive `1`/`true`/`yes`/`on`), the layer's CLI exits 0 with a `<layer>: DISABLED via
+<NAME>=1 (no-op exit 0)` stderr notice, BEFORE arg parsing. Registry:
+- Layer 1 (review-findings) → `FLEET_DISABLE_VERIFY_FINDINGS`
+- Layer 2 (stop-verify)     → `FLEET_DISABLE_STOP_VERIFY`
+- Layer 3 (blind-fix)       → `FLEET_DISABLE_BLIND_FIX`
+- Layer 4 (run-archive)     → `FLEET_DISABLE_RUN_ARCHIVE`
+"Disabled" means "treat the layer's verdict as PASS for this run" — explicit operator contract.
+Strict truthy allow-list prevents typos from silent-disabling. Used by
+`scripts/bench-adversarial.sh` to flip substrate off/on for the falsifiable comparator that defends
+the substrate's value claim. Implementation: `scripts/lib/substrate_disable.py`. Full doctrine:
+`references/substrate-disable-knobs.md`.
+
+═══════════════════════════════════════════════════════════
 CONTEXT HANDOFF — survive your own context limit.
 ═══════════════════════════════════════════════════════════
 Compaction alone is NOT sufficient and will eventually drop your loop state. The ledger file is

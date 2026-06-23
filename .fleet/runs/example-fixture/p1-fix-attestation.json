@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "mission": "adversarial-review-and-fix",
+  "run_id": "20260623T000000Z-adversarial-review-and-fix-000001",
+  "finding_id": "F-001",
+  "fix_landed": true,
+  "blind_fix_chain": {
+    "blind_fix_path": "reviewer-blind-fix-F-001.md",
+    "reviewer_quote_sha": "abc1234",
+    "fixer_draft_sha": "def5678",
+    "integration_sha": "0123abc"
+  },
+  "attested_by": "fixer-codex",
+  "attested_at": "2026-06-23T00:07:00Z"
+}
