@@ -20,6 +20,10 @@ import re
 from pathlib import Path
 from typing import Any
 
+# Cap source-file reads so a hostile or pathological repo can't OOM the verifier
+# when a finding cites a multi-GB file (or a symlink to one).
+MAX_SOURCE_BYTES = 8_000_000
+
 # Schema fields the verifier touches. Full schema is the JSON Schema file; this
 # duplicates only what the verifier needs to function without pulling jsonschema
 # into runtime dependencies. Keep in sync with fleet-review-findings.schema.json.
@@ -290,26 +294,43 @@ def verify_finding_against_source(
         finding["verify_reason"] = "evidence.file_path or quoted_line missing/empty"
         return finding
 
-    target = Path(file_path)
-    if not target.is_absolute():
-        target = repo_root / target
+    # Containment: a finding is reviewer-produced (suspect) data. Constrain the
+    # cited path to the repo so a malicious/hallucinated finding can't turn the
+    # verifier into a read-anything primitive via an absolute path or ../ traversal.
+    candidate = Path(file_path)
+    if not candidate.is_absolute():
+        candidate = repo_root / candidate
+    try:
+        target = candidate.resolve()
+        target.relative_to(repo_root.resolve())
+    except (OSError, ValueError):
+        finding["verified"] = False
+        finding["verify_reason"] = "file_path escapes repo root"
+        return finding
 
     if not target.exists():
         finding["verified"] = False
-        finding["verify_reason"] = f"file not found: {target}"
+        finding["verify_reason"] = "file not found"
         return finding
 
     if not target.is_file():
         finding["verified"] = False
-        finding["verify_reason"] = f"path is not a regular file: {target}"
+        finding["verify_reason"] = "path is not a regular file"
         return finding
 
+    # Cap the read so a giant file can't OOM the verifier.
     try:
-        source = target.read_text(encoding="utf-8", errors="replace")
+        with target.open("rb") as fh:
+            raw = fh.read(MAX_SOURCE_BYTES + 1)
     except OSError as exc:
         finding["verified"] = False
         finding["verify_reason"] = f"unreadable: {exc}"
         return finding
+    if len(raw) > MAX_SOURCE_BYTES:
+        finding["verified"] = False
+        finding["verify_reason"] = f"file exceeds {MAX_SOURCE_BYTES}-byte read cap"
+        return finding
+    source = raw.decode("utf-8", errors="replace")
 
     quoted_norm = _normalize_whitespace(quoted)
     source_norm = _normalize_whitespace(source)
@@ -350,9 +371,11 @@ def verify_findings_doc(
     human_gated = 0
     unverified_ids: list[str] = []
     verified_count = 0
+    skipped = 0
 
     for finding in findings:
         if not isinstance(finding, dict):
+            skipped += 1
             continue
         verify_finding_against_source(finding, repo_root)
         if finding.get("verified") is True:
@@ -374,10 +397,12 @@ def verify_findings_doc(
             human_gated += 1
 
     return {
+        # total = verified + unverified + skipped_non_dict (the counts reconcile).
         "total_findings": len(findings),
         "verified_findings": verified_count,
         "unverified_findings": len(unverified_ids),
         "unverified_ids": unverified_ids,
         "auto_applicable_findings": auto_applicable,
         "human_gated_findings": human_gated,
+        "skipped_non_dict": skipped,
     }
