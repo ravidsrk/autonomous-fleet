@@ -17,7 +17,11 @@ metadata:
   version: "1.0.0"
   tier: "3"
   fleet-component: "mission"
+status: exploratory
 ---
+
+> **Status: exploratory.** This mission is documented but has not yet been run end-to-end on an external repo with an archived run-archive. It is preserved for future promotion (see `docs/exploratory/missions/README.md` § Promotion criteria). Do not invoke this skill in a production fleet until it has been promoted.
+
 
 <!-- Corpus: prompts.md L2963 (Stage 8 Tier 3 grouping — high blast radius). Builder choice per Stage-9 final form (prompts.md L3013): @codex. -->
 

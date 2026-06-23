@@ -1,10 +1,10 @@
 {
-  "name": "autonomous-fleet",
-  "description": "Portable multi-agent engineering framework for fully-autonomous coding runs. One tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and 12 mission skills (doc-sync, test-coverage, dependency-update, cleanup, bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, inference-cost) that compose into multi-step engineering campaigns via fleet-program DAGs.",
-  "source": {
-    "source": "url",
-    "url": "https://github.com/ravidsrk/autonomous-fleet.git",
-    "sha": "2a0f7b9664fac8c19f192bac26809ee9f7360fd4"
-  },
-  "homepage": "https://github.com/ravidsrk/autonomous-fleet"
+"name": "autonomous-fleet",
+"description": "Portable multi-agent engineering framework for fully-autonomous coding runs. One tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and three shipped mission skills (doc-sync, test-coverage, adversarial-review-and-fix) composable into multi-step engineering campaigns via the fleet-program shell. A four-layer verification substrate (Layer 1 schema-checked review findings + reviewer source verifier; Layer 2 opt-in evidence-gating Stop hook; Layer 3 blind-fix anti-anchoring guard; Layer 4 manifest-audited run archive with sha256 + mtime ordering) moves \"done\" from self-attestation to on-disk evidence. Nine additional missions ship as exploratory docs (docs/exploratory/missions/) pending real-run promotion evidence.",
+"source": {
+"source": "url",
+"url": "https://github.com/ravidsrk/autonomous-fleet.git",
+"sha": "2a0f7b9664fac8c19f192bac26809ee9f7360fd4"
+},
+"homepage": "https://github.com/ravidsrk/autonomous-fleet"
 }

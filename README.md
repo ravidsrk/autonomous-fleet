@@ -58,11 +58,14 @@ Say this in your coding agent's chat, after installation:
 |---|---|
 | *"The docs are out of date, fix them"* | One PR per stale doc file. A summary doc listing what was out of sync. |
 | *"Raise test coverage on the payments module"* | One PR per file being tested (typically 3–8 PRs). Coverage report in each PR description. |
-| *"Reproduce and fix these 12 bugs"* | One reproducer per bug → one fix PR per area of the code. Bugs that can't be reproduced get flagged, not faked. |
 | *"Red-team this API and patch what you find"* | A review report opened as a GitHub issue, then one PR per finding it patches. |
-| *"Get this ready to ship"* | A multi-step campaign: review the surface → close findings → raise test coverage → sync the docs → check end-to-end works. Stops if any step fails. |
+| *"Get this ready to ship"* | A multi-step campaign: review the surface → raise test coverage → sync the docs → check end-to-end works. Stops if any step fails. |
 
 Each run takes minutes to hours depending on scope. You get GitHub notifications when PRs are ready to review.
+
+> More missions in [`docs/exploratory/missions/`](docs/exploratory/missions/)
+> (exploratory — documented but not yet shipped end-to-end on an external
+> repo with a run-archive).
 
 ---
 
@@ -132,7 +135,12 @@ That's it. The rest of this README is for going deeper.
 
 # The full menu
 
-> 21 skills total. Install the ones you need with `--skill <name>`, or grab everything with `--skill '*'`.
+> Three proven missions today (`doc-sync`, `test-coverage`,
+> `adversarial-review-and-fix`) plus the `fleet-program` shell for chaining
+> them. Nine more missions are documented but exploratory — see
+> [`docs/exploratory/missions/`](docs/exploratory/missions/). Install the
+> ones you need with `--skill <name>`, or grab everything with
+> `--skill '*'`.
 
 ### Daily housekeeping
 
@@ -140,37 +148,37 @@ That's it. The rest of this README is for going deeper.
 |---|---|
 | [`doc-sync`](skills/doc-sync/) | Sync README, CI files, and build scripts to match the code |
 | [`test-coverage`](skills/test-coverage/) | Raise coverage on a specific module or file |
-| [`dependency-update`](skills/dependency-update/) | Bump deps, one PR per package, with per-package rollback |
-| [`cleanup`](skills/cleanup/) | Remove dead code, unused imports, lint debt — one sweep per axis |
 
 > 💡 Why start with `doc-sync`? It has the **highest merge-success rate** of any AI-agent PR category in the AIDev dataset (~33k PRs across major repos). [arXiv:2601.15195](https://arxiv.org/abs/2601.15195), Ehsani et al., MSR 2026.
 
-### Multi-step jobs
+### Audit-and-fix
 
 | Skill | Ask it to… |
 |---|---|
-| [`bug-batch`](skills/bug-batch/) | Reproduce a list of bugs first, then fix them batched by surface |
 | [`adversarial-review-and-fix`](skills/adversarial-review-and-fix/) | Red-team a surface, write a review, then patch the findings |
-| [`targeted-migration`](skills/targeted-migration/) | Run a scoped migration (library swap, syntax shift, framework bump) |
-| [`design-integration`](skills/design-integration/) | Integrate a design system into the existing UI |
-| [`landing-page-convergence`](skills/landing-page-convergence/) | Converge a landing page on a target spec or metric |
-| [`inference-cost`](skills/inference-cost/) | Reduce LLM cost with measurement-first, sanctioned levers only |
 
-### Ship a product
+### Exploratory (not yet shipped end-to-end)
 
-| Skill | Ask it to… |
-|---|---|
-| [`legacy-rebuild`](skills/legacy-rebuild/) | Gradually rebuild a legacy module behind a feature seam |
-| [`take-product-to-completion`](skills/take-product-to-completion/) | Multi-week ship to launch — only finishes when end-to-end works |
+`bug-batch`, `cleanup`, `dependency-update`, `design-integration`,
+`inference-cost`, `landing-page-convergence`, `legacy-rebuild`,
+`take-product-to-completion`, and `targeted-migration` live under
+[`docs/exploratory/missions/`](docs/exploratory/missions/). They're
+documented in full but lack the progress + readiness + external-archive
+triple required to ship — see the promotion criteria in the exploratory
+README.
 
 ### Run a campaign (chain skills together)
 
 ```bash
-./scripts/run-campaign.sh claude --preset repo-health      # doc-sync → test-coverage → cleanup
+./scripts/run-campaign.sh claude --preset repo-health      # doc-sync → test-coverage
 ./scripts/run-campaign.sh claude --preset ship-with-proof  # review-fix → test-coverage → doc-sync
 ./scripts/run-campaign.sh claude --preset quality-gate     # review-fix → test-coverage
-./scripts/run-campaign.sh claude --preset align-then-ship  # take-product-to-completion (gated)
 ```
+
+> The `secure-ship`, `align-then-ship`, and `handoff-to-product` presets
+> are archived in `scripts/campaigns/` pending promotion of the missions
+> they reference (`dependency-update`, `take-product-to-completion`, and
+> the three early-exploratory scaffolders respectively).
 
 > ⚠️ **Headless note.** The campaign scripts drive each runtime's CLI in headless mode, which needs that CLI authenticated on the host (e.g. `grok login`) and isn't yet fully validated end-to-end. If a run can't authenticate, drive the same missions interactively from your agent's chat / `/goal` instead.
 
@@ -247,7 +255,9 @@ The framework has four component layers (distinct from the verification substrat
 │  adapter-{claude-code, grok, codex, orca, template}          │
 │  ↑ maps the engine to one runtime's real commands            │
 ├──────────────────────────────────────────────────────────────┤
-│  missions × 12                                               │
+│  missions × 3 (doc-sync, test-coverage,                      │
+│                adversarial-review-and-fix)                   │
+│  + 9 exploratory under docs/exploratory/missions/            │
 │  Tier 1 (recurring) → Tier 2 (campaign) → Tier 3 (ship)      │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -389,9 +399,10 @@ autonomous-fleet/
 │   │       └── fleet-trace.schema.json             # Telemetry: structured trace stream contract
 │   ├── autonomous-fleet-adapter-{orca,claude-code,grok,codex,template}/
 │   │       └── (claude-code) assets/hooks/         # Layer 2 stop-verify hook + hooks.json (opt-in)
-│   └── (12 mission skills)
+│   └── doc-sync/, test-coverage/, adversarial-review-and-fix/  # 3 shipped missions (Commit D, 2026-06-23)
 ├── docs/
 │   ├── README.md                        # docs/ index — load-bearing files warning
+│   ├── exploratory/missions/            # demoted skills awaiting promotion (Commit D)
 │   ├── external-dogfood/                # gemoji repo-health + ship-with-proof evidence
 │   ├── research-community-skills.md
 │   └── doc-sync-audit.md                # latest drift index
