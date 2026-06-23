@@ -11,8 +11,8 @@ The engine.md disciplines are aspirational by default. A worker that
 declares `status: done` in a readiness doc is trusted on its word that
 `e2e_verified: true` actually corresponds to a production-grade
 end-to-end run. In practice, the second most common failure mode in
-fleet runs (after reviewer hallucination, addressed by Commit 1's
-schema-verified findings) is **self-attested completion** — the worker
+fleet runs (after reviewer hallucination, addressed by the
+schema-verified findings layer) is **self-attested completion** — the worker
 claims done because it INTENDS to be done, not because verifiable
 evidence exists.
 
@@ -23,7 +23,7 @@ session, a Stop hook fires and scans the repo for evidence:
 - **WT_CLEAN=true** in a progress ledger touched in the last 30min
 - **e2e_verified: true** in a readiness doc touched in the last 30min
 - **status: done** in a readiness doc touched in the last 30min
-- **A passing verify-summary** from `scripts/verify_findings.py` (Commit 1)
+- **A passing verify-summary** from `scripts/verify_findings.py` (the findings layer)
 - **Test-runner artifacts** (`.pytest_cache`, `coverage/`, junit XMLs)
   touched in the last 30min
 - **End-to-end artifacts** (Playwright PNGs, trace screenshots) touched
@@ -49,8 +49,7 @@ The two upstream patterns:
 
 Composed for autonomous-fleet's specific disciplines because we have a
 ledger format (progress.md + readiness.md frontmatter) the upstream
-patterns don't have. See
-`/workspace/audit-work/borrowable-patterns-report.md` #2 for the audit.
+patterns don't have. See `docs/competitor-audit-2026-06-22.md` #2 for the audit.
 
 ## Install
 
@@ -72,20 +71,28 @@ wrapper is symlinked).
 
 ### Per-repo install
 
+The registered Stop command runs the wrapper **from the autonomous-fleet
+checkout** (resolved via `AUTONOMOUS_FLEET_HOME`), so you only register the
+hook — there is no need to copy `stop-verify.sh` into the repo.
+
 In any repo a worker will run in:
 
 ```bash
-mkdir -p .claude/hooks
-cp "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-core/assets/hooks/stop-verify.sh" \
-   .claude/hooks/stop-verify.sh
-
-# Register the hook in .claude/settings.json. If settings.json doesn't
-# exist yet, copy the template wholesale:
-cp "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-core/assets/hooks/hooks.json" \
+mkdir -p .claude
+# If .claude/settings.json doesn't exist yet, copy the template wholesale:
+cp "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/hooks.json" \
    .claude/settings.json
 
-# If settings.json already exists, merge the `hooks.Stop` array. The
-# template ships a single Stop entry calling stop-verify.sh.
+# If it already exists, merge the Stop entry into the existing hooks block:
+jq '.hooks.Stop += input.hooks.Stop' .claude/settings.json \
+   "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/hooks.json" \
+   > .claude/settings.json.tmp && mv .claude/settings.json.tmp .claude/settings.json
+```
+
+Verify it's wired up (prints an `ALLOW` line on stderr, no error):
+
+```bash
+echo '{}' | "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh"
 ```
 
 That's it. The next Claude Code session in this repo will run the gate.
@@ -168,7 +175,7 @@ with a warning, not a deadlock.
   conformance of `fleet-outcome` YAML is still that validator's job.
   The hook only checks "did a readiness doc with `status: done`
   appear in window" — it does NOT validate the YAML inside.
-- **Does not replace** Commit 1's verify-findings. Schema-verified
+- **Does not replace** Layer 1's verify-findings. Schema-verified
   reviewer findings are still mandatory for review missions. The hook
   CONSUMES a passing verify-summary as evidence, but it doesn't replace
   the verifier itself.
@@ -187,5 +194,10 @@ Two ways, in order of preference:
 2. Move `.claude/settings.json` aside for the session — heavy-handed
    but ensures no hook runs.
 
-Do NOT silently `rm .claude/hooks/stop-verify.sh` — the next operator
-won't know strict mode was ever installed.
+## Uninstall
+
+Remove the `Stop` entry from `.claude/settings.json` (or delete the file
+if the fleet hook was its only content). Because the wrapper runs from the
+autonomous-fleet checkout, nothing else needs cleaning up in the repo.
+Announce the removal so the next operator knows strict mode was dropped —
+don't remove it silently.

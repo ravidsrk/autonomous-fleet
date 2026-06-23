@@ -11,11 +11,11 @@ Every run that emits ANY first-class artifact lands under a single directory:
 ```
 .fleet/runs/<run_id>/
 ├── manifest.json                       # the audit trail
-├── p0-review-findings.json             # Commit 1 schema-verified findings
-├── p0-verify-summary.json              # Commit 1 verifier output
-├── p0-skeptic-findings.json            # Commit 1 second-pass findings
+├── p0-review-findings.json             # Layer 1 schema-verified findings
+├── p0-verify-summary.json              # Layer 1 verifier output
+├── p0-skeptic-findings.json            # Layer 1 second-pass findings
 ├── p0-skeptic-verify-summary.json
-├── reviewer-blind-fix-F-001.md         # Commit 3 anti-anchoring blind fix
+├── reviewer-blind-fix-F-001.md         # Layer 3 anti-anchoring blind fix
 ├── reviewer-blind-fix-F-002.md
 ├── docs-arch-build-readiness.md        # T-FINAL output (also lives in docs/)
 └── docs-arch-build-progress.md         # progress ledger snapshot
@@ -25,9 +25,9 @@ First-class artifacts:
 
 | Kind | Producer | Notes |
 |---|---|---|
-| `findings` | reviewer | Commit 1 schema-verified findings JSON |
-| `verify_summary` | verifier | Commit 1's `verify_findings.py --summary-out` |
-| `blind_fix` | reviewer | Commit 3 anti-anchoring blind-fix file, mtime BEFORE findings |
+| `findings` | reviewer | Layer 1 schema-verified findings JSON |
+| `verify_summary` | verifier | Layer 1's `verify_findings.py --summary-out` |
+| `blind_fix` | reviewer | Layer 3 anti-anchoring blind-fix file, mtime BEFORE findings |
 | `prompt` | coordinator | The exact prompt sent to a worker/reviewer (text or JSON) |
 | `response` | worker/reviewer | The raw response from a worker/reviewer |
 | `diff` | builder | Patch or PR diff that was applied |
@@ -79,13 +79,13 @@ Notes:
 ## Mtime ordering invariants (the discipline)
 
 Schema-clean is NECESSARY but NOT SUFFICIENT. The validator also enforces
-the cross-cutting orderings that encode Commits 1-3 disciplines:
+the cross-cutting orderings that encode the Layers 1-3 disciplines:
 
-1. **`blind_fix` mtime < `findings` mtime (per producer)** — Commit 3
+1. **`blind_fix` mtime < `findings` mtime (per producer)** — Layer 3
    ANTI-ANCHORING. The reviewer's blind fix MUST exist on disk before it
    opened the candidate diff and wrote findings.
 
-2. **`verify_summary` mtime > `findings` mtime (per producer)** — Commit 1.
+2. **`verify_summary` mtime > `findings` mtime (per producer)** — Layer 1.
    The verifier runs AGAINST a findings doc. A summary older than the
    findings is a stale audit from a previous run, mis-archived.
 
@@ -134,8 +134,8 @@ fleet-outcome:
 ## Retention
 
 The fleet does NOT garbage-collect run-archives. Operators decide retention
-via `scripts/prune-run-archives.sh --older-than <days>` (out-of-band, never
-invoked by the engine loop). Old runs degrade gracefully: a pruned archive
+out-of-band (e.g. delete `.fleet/runs/` directories older than N days); the
+engine loop never prunes. Old runs degrade gracefully: a pruned archive
 referenced by a later readiness doc is recorded by `validate-all.sh` as a
 broken provenance link but does not fail the build.
 
@@ -143,13 +143,13 @@ broken provenance link but does not fail the build.
 
 - EVID / WT_CLEAN: the archive PRESERVES the artifacts they're set against;
   it doesn't replace the disciplines themselves.
-- The stop-verify hook (Commit 2): scans the archive for `verify_summary`
+- The stop-verify hook (Layer 2): scans the archive for `verify_summary`
   files in window. ARCHIVE_ENABLED is what makes those files exist in a
   deterministic place; without the archive, the hook has nothing to find.
-- Schema-verified findings (Commit 1): the findings JSON lives IN the
+- Schema-verified findings (Layer 1): the findings JSON lives IN the
   archive; the schema and verifier are separate from the archive scheme.
-- Anti-anchoring (Commit 3): the blind-fix file lives IN the archive; the
+- Anti-anchoring (Layer 3): the blind-fix file lives IN the archive; the
   mtime-ordering invariant in the archive validator is what makes the
-  protocol unforgeable.
+  protocol tamper-evident.
 
-The archive is the substrate every Commit-1-through-3 discipline sits on.
+The archive is the substrate every Layer 1-3 discipline sits on.

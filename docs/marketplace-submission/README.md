@@ -44,7 +44,7 @@ Both feed the same review pipeline. Use the Console form unless you already have
 
 **Description** (paste into form):
 
-> Portable multi-agent engineering framework for fully-autonomous coding runs. One tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and 12 mission skills (doc-sync, test-coverage, dependency-update, cleanup, bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, inference-cost) that compose into multi-step engineering campaigns via fleet-program DAGs.
+> Portable multi-agent engineering framework for fully-autonomous coding runs. One tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and 12 mission skills (doc-sync, test-coverage, dependency-update, cleanup, bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, inference-cost) that compose into multi-step engineering campaigns via fleet-program DAGs. A verification substrate (schema-checked review findings, an opt-in evidence-gating Stop hook, blind-fix anti-anchoring, and a manifest-audited run archive) moves "done" from self-attestation toward on-disk evidence.
 
 **Marketplace entry** (ready-to-paste JSON): see [`autonomous-fleet.marketplace-entry.json`](./autonomous-fleet.marketplace-entry.json)
 

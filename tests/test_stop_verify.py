@@ -719,7 +719,7 @@ def test_shipped_hook_wrapper_exists_and_is_executable():
     wrapper = (
         ROOT
         / "skills"
-        / "autonomous-fleet-core"
+        / "autonomous-fleet-adapter-claude-code"
         / "assets"
         / "hooks"
         / "stop-verify.sh"
@@ -735,7 +735,7 @@ def test_shipped_hooks_json_is_valid_json_with_stop_entry():
     hooks_json = (
         ROOT
         / "skills"
-        / "autonomous-fleet-core"
+        / "autonomous-fleet-adapter-claude-code"
         / "assets"
         / "hooks"
         / "hooks.json"
