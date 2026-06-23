@@ -211,11 +211,18 @@ def test_diff_marker_means_post_anchoring(tmp_path: Path) -> None:
 
 
 def test_stub_content_fails(tmp_path: Path) -> None:
+    """Body satisfies every OTHER invariant (length, POC, confidence, no
+    diff) — the ONLY thing wrong is the stub line. Mutation-gate
+    strength: with the stub detector off, this body would pass, so the
+    test must fail when the detector is removed."""
     findings_path = _write_findings(tmp_path, ["BF-400"])
-    # Long enough to pass length but contains a stub line.
     stub_body = (
-        "# Blind fix\n\nFile: scripts/lib/fleet_run.py:func:42\n\n"
-        "TODO\n\nConfidence: 50/100"
+        "# Blind fix\n\nPoint of creation scripts/lib/fleet_run.py:func:42. "
+        + "Real reviewer content describing the candidate root cause and "
+        "the shape of the proposed change at the named site, in enough "
+        "detail to clearly pass the length gate and not look like a stub "
+        "on its own. The reviewer believes the patch should defer the read. "
+        + "\n\nTODO\n\nConfidence: 50/100"
     )
     bf = _bf_path(tmp_path, "BF-400", stub_body)
     _set_mtime(bf, findings_path.stat().st_mtime - 5)
@@ -226,7 +233,12 @@ def test_stub_content_fails(tmp_path: Path) -> None:
         findings_path=findings_path,
     )
     reasons = summary["results"][0]["reasons"]
+    # ONLY a stub reason — no length, POC, or confidence complaints.
     assert any("stub" in r for r in reasons)
+    assert not any("too short" in r for r in reasons)
+    assert not any("point-of-creation" in r for r in reasons)
+    assert not any("confidence" in r for r in reasons)
+    assert summary["unverified_blind_fix"] == 1
 
 
 def test_too_short(tmp_path: Path) -> None:
@@ -332,9 +344,19 @@ def test_explicit_chain_path_escapes_run_dir(tmp_path: Path) -> None:
 
 
 def test_explicit_chain_absolute_path_rejected(tmp_path: Path) -> None:
+    """Absolute paths in blind_fix_chain.path must be rejected. Mutation-gate
+    strength: place a real valid blind-fix file at the canonical location
+    so the ONLY thing the test catches is the absolute-path rejection. If
+    the containment check is removed, _resolve_explicit returns a path
+    INSIDE run_dir (the absolute is converted via run_dir/'/abs' which
+    collapses to '/abs') and the test must NOT silently fall back."""
     findings_path = _write_findings(tmp_path, ["BF-820"])
     doc = json.loads(findings_path.read_text())
-    doc["findings"][0]["blind_fix_chain"] = {"path": "/etc/passwd"}
+    # Use an absolute path that exists outside the run dir but has valid content shape.
+    outside = tmp_path.parent / f"outside-bf-{tmp_path.name}.md"
+    outside.write_text(GOOD_BLIND_FIX, encoding="utf-8")
+    _set_mtime(outside, findings_path.stat().st_mtime - 5)
+    doc["findings"][0]["blind_fix_chain"] = {"path": str(outside)}
     findings_path.write_text(json.dumps(doc), encoding="utf-8")
 
     summary = verify_blind_fix_doc(
@@ -342,7 +364,13 @@ def test_explicit_chain_absolute_path_rejected(tmp_path: Path) -> None:
         run_dir=tmp_path,
         findings_path=findings_path,
     )
+    # The absolute path must be REJECTED before any content check runs.
+    # Therefore: 1 unverified, and the reason names the absolute-path block.
     assert summary["unverified_blind_fix"] == 1
+    assert any(
+        "escapes run_dir" in r or "absolute" in r
+        for r in summary["results"][0]["reasons"]
+    )
 
 
 def test_missing_findings_path_skips_mtime(tmp_path: Path) -> None:
