@@ -529,3 +529,62 @@ def test_archive_enabled_block_anchors_between_strict_mode_and_inflation() -> No
         "ARCHIVE_ENABLED must sit between STRICT MODE and INFLATION "
         "POST-MORTEM to preserve detection -> substrate -> chaining narrative"
     )
+
+def test_trace_emission_doctrine_block_present_with_dashboard_contract() -> None:
+    """The engine must carry a TRACE EMISSION block that names the dashboard
+    contract, the "emit-before-ledger-commit" invariant, the schema-version
+    pin, and the degraded-telemetry escape hatch. Pin every clause so a
+    future edit that drops any of them (especially the ordering rule)
+    fails this test.
+
+    Pairs with `tests/test_emit_trace.py::test_doctrine_emit_before_ledger_write`
+    which enforces the same ordering at runtime.
+    """
+    text = read_engine()
+    trace = section(
+        text,
+        "TRACE EMISSION",
+        "CONTEXT HANDOFF",
+    )
+
+    # Dashboard-contract framing. vibe-kanban, Agent View, and custom
+    # dashboards are interchangeable consumers — pin so the doctrine
+    # doesn't drift into "the trace is for vibe-kanban".
+    assert "vibe-kanban" in trace
+    assert "Agent View" in trace
+    assert "custom dashboards" in trace
+    assert "interchangeable consumers" in trace
+
+    # The core invariant. The whole point of the doctrine.
+    trace_flat = squash(trace)
+    assert "MUST emit a trace event BEFORE the ledger write" in trace
+    assert "Trace first, ledger second" in trace_flat
+
+    # Schema is the contract: pinned at 1.0, breaking changes need a new id.
+    assert 'schema_version: "1.0"' in trace
+    assert "NEW `$id`" in trace
+    assert "fleet-trace.schema.json" in trace
+
+    # Degraded-telemetry escape hatch.
+    assert "NOT a hard error" in trace
+    assert "trace_emission_degraded: true" in trace
+    assert "fleet-outcome.yaml" in trace
+
+    # Landscape gap closure.
+    assert "Gap 8" in trace
+
+    assert_no_contradiction_markers(trace)
+
+
+def test_trace_emission_block_anchors_after_signal_reconciliation() -> None:
+    """TRACE EMISSION sits AFTER SIGNAL RECONCILIATION and BEFORE CONTEXT
+    HANDOFF. The ordering encodes the narrative: reconciled state ->
+    emit the transition -> survive context limits."""
+    text = read_engine()
+    sig_idx = text.index("SIGNAL RECONCILIATION")
+    trace_idx = text.index("TRACE EMISSION")
+    handoff_idx = text.index("CONTEXT HANDOFF")
+    assert sig_idx < trace_idx < handoff_idx, (
+        "TRACE EMISSION must sit between SIGNAL RECONCILIATION and "
+        "CONTEXT HANDOFF to preserve reconcile -> emit -> survive narrative"
+    )

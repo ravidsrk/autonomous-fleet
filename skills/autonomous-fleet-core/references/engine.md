@@ -402,6 +402,27 @@ declare a task stuck on the FIRST read that disagrees.
   circuit-breaker, a confirmed worker exit, or the DETECTING timeout — never on a single poll.
 
 ═══════════════════════════════════════════════════════════
+TRACE EMISSION — the dashboard contract (vibe-kanban, Agent View, custom).
+═══════════════════════════════════════════════════════════
+The trace stream is ONE JSONL line per state transition in the ledger, written to
+`.fleet/runs/<run_id>/trace.jsonl`. The schema (`assets/fleet-trace.schema.json`, pinned at
+`schema_version: "1.0"`) is the CONTRACT: vibe-kanban, Claude Code Agent View, and custom dashboards
+are interchangeable consumers — owning the format, not the renderer, is what keeps live observability
+free of UI debt. Landscape Gap 8 ("no live dashboard") is closed by emitting the stream and letting
+existing readers render it, not by building a GUI.
+- Every state transition that writes to the ledger MUST emit a trace event BEFORE the ledger write
+  commits. The trace is the source of truth for "what happened"; the ledger is derived state. Trace
+  first, ledger second — never the reverse, or a crashed coordinator leaves a row with no
+  externally-visible cause.
+- Schema is versioned (`schema_version: "1.0"`) and breaking changes require a NEW `$id`; consumers
+  pin to the version they understand. Adding a primitive, role, or status to the enum is a breaking
+  change for the same reason — closed enums are part of the contract.
+- Failure to emit a trace event is NOT a hard error. The run continues with degraded telemetry; the
+  coordinator records `trace_emission_degraded: true` in `fleet-outcome.yaml` so the post-hoc audit
+  knows the stream is incomplete. Hard-failing on a telemetry I/O error would let the dashboard veto
+  real work, which inverts the dependency.
+
+═══════════════════════════════════════════════════════════
 CONTEXT HANDOFF — survive your own context limit.
 ═══════════════════════════════════════════════════════════
 Compaction alone is NOT sufficient and will eventually drop your loop state. The ledger file is
