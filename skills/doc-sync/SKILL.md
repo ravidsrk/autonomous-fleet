@@ -50,7 +50,8 @@ Inject per role on DISPATCH (workers load these; coordinator does not):
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude (audit, fix, integrator) | — | Repo README + manifests only |
+| @codex (write doc fixes) | — | Repo README + manifests only |
+| @claude (audit, fresh review, integrator) | — | Repo README + manifests only |
 
 ## Deferred missions
 

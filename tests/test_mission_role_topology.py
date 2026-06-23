@@ -74,3 +74,46 @@ def test_builder_is_cross_vendor(mission: str):
         f"{mission}: @claude is both builder and reviewer — same-vendor self-review "
         f"(violates engine.md cross-vendor rule)"
     )
+
+
+# The `## Worker skills` table is INJECTED into each worker on DISPATCH, so a stale vendor here
+# launches a worker in the wrong role even when ROLE PIPELINE is correct. Guard it too.
+BUILD_WORD = re.compile(
+    r"\b(build|builds|code|codes|write|writes|fix|fixes|bump|bumps|implement|implements|rebuild|rebuilds|migrate|migrates|clean)\b",
+    re.I,
+)
+REVIEW_WORD = re.compile(r"\breview", re.I)
+ROW_CELL = re.compile(r"^\|\s*([^|]+?)\s*\|", re.M)  # first column of each table row
+HANDLE = re.compile(r"@(codex|claude|grok)\b", re.I)
+
+
+def _worker_skills(mission: str) -> str:
+    text = (ROOT / "skills" / mission / "SKILL.md").read_text(encoding="utf-8")
+    m = re.search(r"^## Worker skills\b(.*?)(?=^## )", text, re.S | re.M)
+    assert m, f"{mission}: no '## Worker skills' section"
+    return m.group(1)
+
+
+@pytest.mark.parametrize("mission", MISSIONS)
+def test_worker_skills_roles_are_cross_vendor(mission: str):
+    block = _worker_skills(mission)
+    builders: set[str] = set()
+    reviewers: set[str] = set()
+    for cell in ROW_CELL.findall(block):
+        handles = {h.lower() for h in HANDLE.findall(cell)}
+        if not handles:
+            continue  # header / separator row
+        if REVIEW_WORD.search(cell):  # a reviewer row is not a builder (handles "build-blind reviewer")
+            reviewers |= handles
+        elif BUILD_WORD.search(cell):
+            builders |= handles
+    assert builders <= {"codex", "grok"}, (
+        f"{mission}: Worker-skills builder(s) {builders} — must be @codex (or @grok for design)"
+    )
+    assert reviewers <= {"claude"}, (
+        f"{mission}: Worker-skills reviewer(s) {reviewers} — must be @claude"
+    )
+    assert not (builders & reviewers), (
+        f"{mission}: Worker-skills assigns build and review to the same vendor "
+        f"{builders & reviewers} — same-vendor self-review"
+    )

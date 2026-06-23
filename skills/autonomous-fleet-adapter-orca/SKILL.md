@@ -45,10 +45,11 @@ branch at current HEAD if absent).
 - DEPENDENT:
   `orca terminal create --worktree active --title <slug> --command "<cli>" --json`
   → `orca terminal wait --terminal <handle> --for tui-idle --timeout-ms 60000 --json`
-- Agent CLI per role: builder `grok`, reviewer `codex exec` (the headless subcommand; bare `codex
-  --full-auto` is rejected by current codex — `--full-auto` is not a valid top-level flag), integrator
-  `claude` (apply each CLI's auto/skip-permissions + max-effort flag, e.g. codex
-  `--dangerously-bypass-approvals-and-sandbox` or `--sandbox workspace-write`; log in DECISIONS.md).
+- Agent CLI per role (cross-vendor): builder `codex exec` (the headless subcommand; bare `codex
+  --full-auto` is rejected by current codex — `--full-auto` is not a valid top-level flag), a fresh
+  build-blind reviewer `claude`, integrator `claude`; `grok` builds design missions. Apply each CLI's
+  auto/skip-permissions + max-effort flag (e.g. codex
+  `--dangerously-bypass-approvals-and-sandbox` or `--sandbox workspace-write`); log in DECISIONS.md.
   If an older CLI rejects `--agent`, create the worktree then `orca terminal create --command "<cli>"`.
 - "Ready" = `tui-idle`. NEVER DISPATCH before tui-idle (an inject on a non-idle terminal is lost).
 

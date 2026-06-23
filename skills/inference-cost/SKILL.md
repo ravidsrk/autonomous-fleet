@@ -44,8 +44,8 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude (baseline, implement, integrator) | Provider SDK/docs skill if present | Repo harness conventions + official provider docs |
-| @codex (review) | - | Mission review gate only |
+| @codex (implement scoped changes) | Provider SDK/docs skill if present | Repo harness conventions + official provider docs |
+| @claude (baseline, review, integrator) | — | Mission review gate only |
 
 ## Deferred missions
 

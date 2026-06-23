@@ -43,7 +43,8 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude (map, write tests, integrator) | — | Match repo test framework from T-MAP |
+| @codex (write tests) | — | Match repo test framework from T-MAP |
+| @claude (map, review, integrator) | — | Match repo test framework from T-MAP |
 
 ## Deferred missions
 

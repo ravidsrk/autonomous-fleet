@@ -39,7 +39,7 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
-| `qa-only` | Production/staging URL; report-only before final section PR | Screenshot + @codex review only |
+| `qa-only` | Production/staging URL; report-only before final section PR | Screenshot + @claude review only |
 | `browse` | Coordinator spot-checks live page between sections | Screenshot + manual diff |
 
 Community catalog: `autonomous-fleet-core` → `references/community-skills.md`.
@@ -48,9 +48,9 @@ Community catalog: `autonomous-fleet-core` → `references/community-skills.md`.
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude / @grok (build sections) | `frontend-design`, `frontend-ui-engineering` | Design extract values exactly |
+| @grok (build sections) | `frontend-design`, `frontend-ui-engineering` | Design extract values exactly |
 | @grok (section QA) | `qa` when URL available and fix-verify loop requested | Fidelity gate per section |
-| @codex (review) | - | Mission fidelity gate |
+| @claude (extract/diff, fresh review, integrator) | — | Mission fidelity gate |
 
 ## Deferred missions
 
