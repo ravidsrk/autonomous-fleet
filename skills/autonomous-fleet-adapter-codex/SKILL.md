@@ -49,22 +49,10 @@ There is no persistent external task daemon, so:
 - `dependent` → current checkout/branch (fresh subagent or sub-session; no new worktree).
 
 ### PLACE(independent) via container-use (optional: isolated container + branch + sandbox)
-When the container-use MCP is configured (`codex mcp add container-use -- container-use stdio`),
-PLACE(independent) MAY use a container-use ENVIRONMENT instead of a host `git worktree`, closing the
-OS-sandbox gap (the worker runs in an isolated Linux container, not the host) and the isolation gap
-(each environment is its own git branch) together. VERIFIED WORKING on a live host: a `codex exec`
-worker with this MCP called `environment_create` and produced an isolated `ubuntu` container on its
-own branch `container-use/<env>`.
-- SPAWN_WORKER(independent): launch the codex worker with the container-use MCP available; it does
-  ALL file/shell work through the environment (`environment_create` -> env id + branch
-  `container-use/<env>`, then `environment_file_write` / `environment_run_cmd`). One env per unit.
-- INSPECT(): `container-use list` / `log <env>` / `diff <env>` (non-destructive).
-- OPEN_PR / SHIP (preferred): `container-use checkout <env>` (local branch from
-  `container-use/<env>`), push, `gh pr create --base BASE` — keeps the SHA-pin + conflict-aware
-  review gate. NOTE: `container-use merge <env>` merges into the CURRENT branch (no `--base`) and
-  bypasses the PR gate; use it only after `git checkout BASE`, not as the default.
-- CLEANUP: `container-use delete <env>` (or `--all`) instead of `git worktree remove`.
-- FALLBACK: no container-use MCP -> the plain `git worktree` path above. See docs/adopt-container-use.md.
+Register: `codex mcp add container-use -- container-use stdio` (needs Docker). PLACE(independent) MAY
+then use a container-use ENVIRONMENT instead of a host `git worktree` — the canonical loop is in
+`engine.md` → CONTAINER-USE-PLACEMENT. VERIFIED on a live host: a `codex exec` worker created an
+isolated `ubuntu` container on its own branch `container-use/<env>`.
 
 ### SPAWN_WORKER(role, placement)
 - Subagent path: launch via Codex subagent spawn with role-scoped prompt (builder / reviewer /
