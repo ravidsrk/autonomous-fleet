@@ -27,7 +27,7 @@ Both feed the same review pipeline. Use the Console form unless you already have
 # Pre-submission checklist (already done ✅)
 
 - ✅ Both repos have `.claude-plugin/plugin.json` at the root
-  - autonomous-fleet: `2a0f7b9664fac8c19f192bac26809ee9f7360fd4`
+  - autonomous-fleet: `2a0f7b9664fac8c19f192bac26809ee9f7360fd4` (re-pin to the Commit G merge SHA at submission time)
   - agent-skills: `813d097d0fe9fba2c30287a116034ef5ebdf3595`
 - ✅ Both have `SKILL.md` files following the agentskills.io spec
 - ✅ Both have full READMEs with banners + install instructions
@@ -38,13 +38,13 @@ Both feed the same review pipeline. Use the Console form unless you already have
 # Submission packet for `autonomous-fleet`
 
 **Repository:** https://github.com/ravidsrk/autonomous-fleet
-**Pinned SHA:** `2a0f7b9664fac8c19f192bac26809ee9f7360fd4` (or whatever `main` is at submission time)
+**Pinned SHA:** `2a0f7b9664fac8c19f192bac26809ee9f7360fd4` (the actual submission SHA bumps to the Commit-G merge commit; the four prior commits A–F precede it).
 **Category:** development
-**One-line pitch:** Multi-agent engineering framework for fully-autonomous coding runs. One portable engine. 4 runtime adapters. 21 skills (4 infrastructure + 5 adapters + 12 missions).
+**One-line pitch:** Multi-agent engineering framework for fully-autonomous coding runs. One portable engine. 4 runtime adapters. **3 shipped missions** + `fleet-program` campaign shell + a 4-layer verification substrate (schema-checked review findings, evidence-gating Stop hook, blind-fix anti-anchoring, manifest-audited run archive).
 
 **Description** (paste into form):
 
-> Portable multi-agent engineering framework for fully-autonomous coding runs. One tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and 12 mission skills (doc-sync, test-coverage, dependency-update, cleanup, bug-batch, adversarial-review-and-fix, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, inference-cost) that compose into multi-step engineering campaigns via fleet-program DAGs. A verification substrate (schema-checked review findings, an opt-in evidence-gating Stop hook, blind-fix anti-anchoring, and a manifest-audited run archive) moves "done" from self-attestation toward on-disk evidence.
+> Portable multi-agent engineering framework for fully-autonomous coding runs. One tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and three shipped mission skills (`doc-sync`, `test-coverage`, `adversarial-review-and-fix`) composable into multi-step engineering campaigns via the `fleet-program` shell. A four-layer verification substrate (Layer 1 schema-checked review findings + reviewer source verifier; Layer 2 opt-in evidence-gating Stop hook; Layer 3 blind-fix anti-anchoring guard; Layer 4 manifest-audited run archive with sha256 + mtime ordering) moves "done" from self-attestation toward on-disk evidence. Nine additional missions ship as exploratory documentation (`docs/exploratory/missions/`) and re-promote on first real-run progress + readiness + external archive triple.
 
 **Marketplace entry** (ready-to-paste JSON): see [`autonomous-fleet.marketplace-entry.json`](./autonomous-fleet.marketplace-entry.json)
 

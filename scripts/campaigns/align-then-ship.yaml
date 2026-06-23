@@ -1,13 +1,16 @@
+# align-then-ship: ARCHIVED.
+#
+# This campaign was archived on 2026-06-23 (Commit D) because its single
+# mission node, `take-product-to-completion`, moved to
+# docs/exploratory/missions/take-product-to-completion/ — it has no
+# progress + readiness + external archive triple.
+#
+# Re-promote take-product-to-completion per
+# docs/exploratory/missions/README.md, then restore the campaign DAG from
+# git history (commit immediately preceding the Commit-D demotion).
+#
+# Until then this campaign is intentionally empty so the autoplan / edge
+# linter does not bind to undefined missions.
+# exploratory: take-product-to-completion skipped until promoted
 campaign: align-then-ship
-repo: single
-base: fleet/align-then-ship-base
-start: complete
-pre_gates:
-  - grill-with-docs
-  - office-hours
-nodes:
-  complete: { mission: take-product-to-completion }
-post_gates:
-  - qa
-edges:
-  complete: []
+status: archived-pending-exploratory-promotion

@@ -20,7 +20,11 @@ metadata:
   version: "1.0.0"
   tier: "3"
   fleet-component: "mission"
+status: exploratory
 ---
+
+> **Status: exploratory.** This mission is documented but has not yet been run end-to-end on an external repo with an archived run-archive. It is preserved for future promotion (see `docs/exploratory/missions/README.md` § Promotion criteria). Do not invoke this skill in a production fleet until it has been promoted.
+
 
 <!-- Corpus: prompts.md L2963 (Stage 8 Tier 3 grouping) + Stages 4-5 (prompts 9-12 at L788-L1488: ship-v1, product-completion, handoff triad, autonomy enforcement) + Stage-9 prompt 24 "Aula Completion-for-Real" at prompts.md L3011-L3013 (final-form role topology). -->
 

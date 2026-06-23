@@ -76,22 +76,25 @@ Then markdown body: human summary, indexes, **Recommended next missions** table 
 
 ## Mission-specific metrics
 
-Add under `fleet-outcome.metrics`:
+Add under `fleet-outcome.metrics`. Shipped missions are validated by the
+`MISSION_METRICS` table in `scripts/lib/fleet_outcome.py`; exploratory
+missions retain their `fleet-outcome` shape (the schema validator still
+knows them) so a promotion run can land without schema churn.
 
 | Mission | Readiness doc | Metrics |
 |---------|---------------|---------|
-| `doc-sync` | `docs/doc-sync-readiness.md` | `drift_open: 0`, `code_bug_findings: <n>` |
-| `test-coverage` | `docs/test-coverage-readiness.md` | `gaps_open: 0`, `coverage_regressed: false` |
-| `dependency-update` | `docs/dependency-update-readiness.md` | `advisories_open: 0`, `majors_deferred: <n>` |
-| `cleanup` | `docs/cleanup-readiness.md` | `cleanup_items_open: 0` |
-| `bug-batch` | `docs/bug-batch-readiness.md` | `bugs_open: 0`, `bugs_skipped: <n>` |
-| `adversarial-review-and-fix` | `docs/arch-build-readiness.md` | `p0_open: 0`, `p1_open: <n>`, `findings_open: 0`, `ops_queue_count: <n>` |
-| `targeted-migration` | `docs/migration-readiness.md` | `migration_items_open: 0`, `old_axis_removed: true` |
-| `design-integration` | `docs/parity-readiness.md` | `parity_items_open: 0`, `regressions: 0` |
-| `landing-page-convergence` | `docs/landing-readiness.md` | `divergences_open: 0` |
-| `legacy-rebuild` | `docs/rebuild-readiness.md` | `units_open: 0`, `floor_preserved: true`, `e2e_verified: true` |
-| `take-product-to-completion` | `docs/completion-readiness.md` | `in_items_open: 0`, `roadmap_count: <n>`, `stubs_remaining: 0`, `e2e_verified: true` |
-| `inference-cost` | `docs/inference-cost-readiness.md` | `cost_regressed: false`, `quality_regressed: false`, `levers_open: 0` |
+| `doc-sync` (shipped) | `docs/doc-sync-readiness.md` | `drift_open: 0`, `code_bug_findings: <n>` |
+| `test-coverage` (shipped) | `docs/test-coverage-readiness.md` | `gaps_open: 0`, `coverage_regressed: false` |
+| `adversarial-review-and-fix` (shipped) | `docs/arch-build-readiness.md` | `p0_open: 0`, `p1_open: <n>`, `findings_open: 0`, `ops_queue_count: <n>` |
+| `dependency-update` (exploratory) | `docs/dependency-update-readiness.md` | `advisories_open: 0`, `majors_deferred: <n>` |
+| `cleanup` (exploratory) | `docs/cleanup-readiness.md` | `cleanup_items_open: 0` |
+| `bug-batch` (exploratory) | `docs/bug-batch-readiness.md` | `bugs_open: 0`, `bugs_skipped: <n>` |
+| `targeted-migration` (exploratory) | `docs/migration-readiness.md` | `migration_items_open: 0`, `old_axis_removed: true` |
+| `design-integration` (exploratory) | `docs/parity-readiness.md` | `parity_items_open: 0`, `regressions: 0` |
+| `landing-page-convergence` (exploratory) | `docs/landing-readiness.md` | `divergences_open: 0` |
+| `legacy-rebuild` (exploratory) | `docs/rebuild-readiness.md` | `units_open: 0`, `floor_preserved: true`, `e2e_verified: true` |
+| `take-product-to-completion` (exploratory) | `docs/completion-readiness.md` | `in_items_open: 0`, `roadmap_count: <n>`, `stubs_remaining: 0`, `e2e_verified: true` |
+| `inference-cost` (exploratory) | `docs/inference-cost-readiness.md` | `cost_regressed: false`, `quality_regressed: false`, `levers_open: 0` |
 
 ## Schema-verified review findings (optional, cross-cutting)
 

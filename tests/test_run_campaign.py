@@ -23,7 +23,10 @@ def test_repo_health_dry_run():
     assert r.returncode == 0, r.stderr
     assert "doc-sync" in r.stdout
     assert "test-coverage" in r.stdout
-    assert "cleanup" in r.stdout
+    # `cleanup` was demoted to docs/exploratory/missions/cleanup/ in Commit D
+    # (2026-06-23). The repo-health preset no longer wires it. If/when cleanup
+    # is promoted back, re-add the node + edge and restore this assertion.
+    assert "cleanup" not in r.stdout
 
 
 def test_unknown_runtime_rejected():
