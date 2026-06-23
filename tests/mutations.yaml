@@ -187,3 +187,9 @@ mutations:
     find: 'if emitter is not None:'
     replace: 'if False and emitter is not None:'
     guards: [tests/test_emit_trace.py]
+
+  - id: analyze-cost-total-sum-off
+    file: scripts/lib/analyze_cost.py
+    find: 'total_cost += cost_float'
+    replace: 'total_cost += 0.0'
+    guards: [tests/test_analyze_cost.py]
