@@ -334,6 +334,7 @@ python scripts/stop_verify.py                      # Layer 2: stop-verify hook (
 python scripts/verify_blind_fix.py .fleet/runs/<run_id>/  # Layer 3: blind-fix anti-anchoring guard
 python scripts/emit_trace.py validate \
        .fleet/runs/<run_id>/trace.jsonl              # Telemetry: structured trace stream (vibe-kanban / Agent View contract)
+python scripts/analyze_seat.py per-run             # Telemetry: seat analysis across all archives
 
 # CI-only gate (mirrors .github/workflows/ci.yml)
 ./scripts/mutation-check.sh                        # assert every manifest mutation is caught by guard tests
@@ -414,13 +415,14 @@ autonomous-fleet/
 │   ├── stop_verify.py                   # Layer 2 stop-verify hook entrypoint
 │   ├── verify_blind_fix.py              # Layer 3 anti-anchoring (blind-fix) verifier
 │   ├── emit_trace.py                    # Telemetry: structured trace stream (vibe-kanban / Agent View contract)
+│   ├── analyze_seat.py                  # Telemetry: seat analysis ("earns its seat") across archives
 │   ├── mutation-check.sh                # standing mutation gate (CI: assert tests catch known bugs)
 │   ├── eval-campaign-edge.{sh,py}
 │   ├── coupling-graph.py                # import/symbol graph for coupling-aware decomposition
 │   ├── render-dashboard.py              # ledger → attention-zone HTML dashboard
 │   ├── run-{campaign,mission-headless,sandboxed}.sh
 │   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate, secure-ship, handoff-to-product
-│   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, emit_trace, stop_verify, mission_registry, venv-bootstrap
+│   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, emit_trace, analyze_seat, locks, stop_verify, mission_registry, venv-bootstrap
 │   └── install-skills.sh
 ├── tests/                               # 27 test files; validators + engine doctrine + 4-layer substrate
 ├── .agents/skills/                      # installed skill copies (gitignored)

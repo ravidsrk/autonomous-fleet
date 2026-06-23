@@ -588,3 +588,54 @@ def test_trace_emission_block_anchors_after_signal_reconciliation() -> None:
         "TRACE EMISSION must sit between SIGNAL RECONCILIATION and "
         "CONTEXT HANDOFF to preserve reconcile -> emit -> survive narrative"
     )
+
+
+def test_write_lock_discipline_block_present_with_two_lock_kinds() -> None:
+    """The engine must carry a WRITE-LOCK DISCIPLINE block that names
+    both lock kinds, the steal preconditions, and the implementation
+    pointer. Pair with tests/test_locks.py which enforces the runtime
+    behaviour.
+    """
+    text = read_engine()
+    block = section(
+        text,
+        "WRITE-LOCK DISCIPLINE",
+        "CONTEXT HANDOFF",
+    )
+
+    # Both lock kinds are named with their lifetimes.
+    assert "CONSTRUCTION LOCK" in block
+    assert "REQUEST LOCK" in block
+    assert "Long-held" in block
+    assert "Short-held" in block
+
+    # The asymmetry rule: construction MAY hold request, not vice versa.
+    flat = squash(block)
+    assert "construction lock MAY hold a request lock" in flat
+    assert "long-held request lock) is forbidden" in flat
+
+    # Steal preconditions: confirmed-dead signal from SIGNAL RECONCILIATION.
+    assert "SIGNAL RECONCILIATION" in block
+    assert "dead-worker detection" in block
+    assert "Stealing without a confirmed-dead signal is a protocol violation" in block
+
+    # Implementation pointer so engine readers can find the code.
+    assert "scripts/lib/locks.py" in block
+    assert ".fleet/runs/<run_id>/locks/" in block
+
+    assert_no_contradiction_markers(block)
+
+
+def test_write_lock_discipline_block_anchors_after_trace_emission() -> None:
+    """WRITE-LOCK DISCIPLINE sits AFTER TRACE EMISSION and BEFORE
+    CONTEXT HANDOFF. The ordering encodes the narrative: emit the
+    transition -> serialize the mutation -> survive context limits.
+    """
+    text = read_engine()
+    trace_idx = text.index("TRACE EMISSION")
+    lock_idx = text.index("WRITE-LOCK DISCIPLINE")
+    handoff_idx = text.index("CONTEXT HANDOFF")
+    assert trace_idx < lock_idx < handoff_idx, (
+        "WRITE-LOCK DISCIPLINE must sit between TRACE EMISSION and "
+        "CONTEXT HANDOFF to preserve emit -> serialize -> survive narrative"
+    )

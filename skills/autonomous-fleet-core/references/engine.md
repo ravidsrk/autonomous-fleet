@@ -423,6 +423,26 @@ existing readers render it, not by building a GUI.
   real work, which inverts the dependency.
 
 ═══════════════════════════════════════════════════════════
+WRITE-LOCK DISCIPLINE — construction vs request locks.
+═══════════════════════════════════════════════════════════
+A worker that mutates shared state (the run-archive, a worktree branch, an external API) MUST
+acquire the correct lock before the mutation and release it after. Two locks, two lifetimes:
+- CONSTRUCTION LOCK: acquired before a worker starts BUILDING artifacts in its task slot
+  (worktree, branch, attestation file). Released only on COMMIT or ABORT. Long-held. Prevents
+  two workers racing to write the same artifact path under `.fleet/runs/<run_id>/`.
+- REQUEST LOCK: acquired before a worker calls an external write API (`gh pr merge`,
+  `terraform apply`, `fly deploy`, `git push`). Released immediately after the call returns.
+  Short-held. Prevents a runaway worker from issuing duplicate side-effectful API calls.
+A worker holding a construction lock MAY hold a request lock briefly; the reverse (long-held
+request lock) is forbidden — request locks are taken just-in-time, never preemptively.
+A lock whose holder process is dead (PID gone, ledger heartbeat stale) MAY be stolen by another
+worker — but ONLY after the SIGNAL RECONCILIATION § dead-worker detection discipline has
+confirmed the holder is gone. Stealing without a confirmed-dead signal is a protocol violation;
+the lock library exposes the steal mechanism but the coordinator's circuit-breaker decides when
+it's safe to invoke. Lock files live under `.fleet/runs/<run_id>/locks/` with contents
+`{owner, acquired_at, pid}` for diagnostics. Implementation: `scripts/lib/locks.py`.
+
+═══════════════════════════════════════════════════════════
 CONTEXT HANDOFF — survive your own context limit.
 ═══════════════════════════════════════════════════════════
 Compaction alone is NOT sufficient and will eventually drop your loop state. The ledger file is

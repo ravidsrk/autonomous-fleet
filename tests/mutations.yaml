@@ -138,3 +138,15 @@ mutations:
     find: 'self._fh.flush()'
     replace: 'pass'
     guards: [tests/test_emit_trace.py]
+
+  - id: lock-ownership-check-off
+    file: scripts/lib/locks.py
+    find: "payload.get(\"owner\") != self.owner"
+    replace: "False"
+    guards: [tests/test_locks.py]
+
+  - id: lock-steal-liveness-check-off
+    file: scripts/lib/locks.py
+    find: "isinstance(holder_pid, int) and _pid_alive(holder_pid)"
+    replace: "False"
+    guards: [tests/test_locks.py]
