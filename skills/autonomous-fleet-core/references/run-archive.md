@@ -176,6 +176,7 @@ Operators who need to archive a run larger than 5 MB should:
 2. Commit the `.gitattributes` change along with the archive.
 3. Confirm `git lfs ls-files` lists every oversized file before pushing.
 
-The validator does not yet hard-enforce the cap (it is operator-policy
-today); a future commit will add a `du -sb` precondition to
-`validate-all.sh` if drift becomes a problem.
+The run-archive validator **hard-enforces** the cap: a manifest whose listed
+`bytes` sum exceeds 5 MB fails validation unless the archive tracks its large
+artifacts with git-lfs (a `.gitattributes` carrying `filter=lfs` in the archive
+dir). `validate_run_archive.py` (run by `validate-all.sh`) reports the overage.

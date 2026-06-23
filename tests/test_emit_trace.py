@@ -574,3 +574,33 @@ def test_example_trace_covers_all_enums() -> None:
     assert {e["primitive"] for e in events} == set(PRIMITIVES)
     assert {e["role"] for e in events} == set(ROLES)
     assert {e["status"] for e in events} == set(STATUSES)
+
+
+def test_run_id_pattern_matches_fleet_run():
+    """emit_trace._RUN_ID_RE MUST stay identical to fleet_run.RUN_ID_PATTERN
+    (kept as a literal to avoid a circular import; pinned here instead)."""
+    assert _RUN_ID_RE.pattern == fleet_run.RUN_ID_PATTERN.pattern
+
+
+@pytest.mark.parametrize(
+    "secret",
+    [
+        "gho_" + "a" * 36,
+        "xoxb-" + "1" * 20,
+        "sk_live_" + "a" * 20,
+        "AIza" + "b" * 35,
+        "eyJ" + "a" * 12 + "." + "b" * 12 + "." + "c" * 12,
+        "Bearer " + "x" * 24,
+    ],
+)
+def test_scan_flags_broadened_secret_shapes(secret):
+    from lib.emit_trace import _scan_details
+
+    assert _scan_details({"k": secret})
+
+
+@pytest.mark.parametrize("hostpath", ["/etc/passwd", "/var/log/app.log"])
+def test_scan_flags_more_host_paths(hostpath):
+    from lib.emit_trace import _scan_details
+
+    assert _scan_details({"k": hostpath})

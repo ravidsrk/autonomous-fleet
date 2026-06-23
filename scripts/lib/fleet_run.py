@@ -492,6 +492,36 @@ def _validate_ordering(files: list[dict[str, Any]], where: str) -> list[str]:
     return errors
 
 
+MAX_ARCHIVE_BYTES = 5 * 1024 * 1024  # 5 MB cap; see references/run-archive.md
+
+
+def _validate_size_cap(
+    files: list[dict[str, Any]], archive_root: Path | None, where: str
+) -> list[str]:
+    """Enforce the 5 MB run-archive cap (references/run-archive.md). Over-cap is
+    allowed only when the archive tracks its large artifacts with git-lfs."""
+    total = sum(
+        e["bytes"]
+        for e in files
+        if isinstance(e, dict)
+        and isinstance(e.get("bytes"), int)
+        and not isinstance(e["bytes"], bool)
+    )
+    if total <= MAX_ARCHIVE_BYTES:
+        return []
+    if archive_root is not None:
+        try:
+            ga_text = (archive_root / ".gitattributes").read_text(encoding="utf-8")
+        except OSError:
+            ga_text = ""
+        if "filter=lfs" in ga_text:
+            return []
+    return [
+        f"{where}: archive is {total} bytes, over the {MAX_ARCHIVE_BYTES}-byte cap; "
+        f"track large artifacts with git lfs (see references/run-archive.md)"
+    ]
+
+
 def _validate_files_on_disk(
     archive_root: Path, files: list[dict[str, Any]], where: str
 ) -> list[str]:
@@ -567,6 +597,7 @@ def validate_manifest_payload(
     files = manifest.get("files")
     if isinstance(files, list) and files:
         errors.extend(_validate_ordering(files, label))
+        errors.extend(_validate_size_cap(files, archive_root, label))
         if check_files_on_disk and archive_root is not None:
             errors.extend(_validate_files_on_disk(archive_root, files, label))
     return errors
