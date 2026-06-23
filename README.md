@@ -322,6 +322,8 @@ python scripts/verify_findings.py \
   --repo .                                         # Layer 1: re-quote every reviewer-cited line
 python scripts/stop_verify.py                      # Layer 2: stop-verify hook (returns decision:block / allow)
 python scripts/verify_blind_fix.py .fleet/runs/<run_id>/  # Layer 3: blind-fix anti-anchoring guard
+python scripts/emit_trace.py validate \
+       .fleet/runs/<run_id>/trace.jsonl              # Telemetry: structured trace stream (vibe-kanban / Agent View contract)
 
 # CI-only gate (mirrors .github/workflows/ci.yml)
 ./scripts/mutation-check.sh                        # assert every manifest mutation is caught by guard tests
@@ -383,7 +385,8 @@ autonomous-fleet/
 │   │   └── assets/
 │   │       ├── fleet-review-findings.schema.json   # Layer 1 schema
 │   │       ├── fleet-review-findings.example.json
-│   │       └── fleet-run-manifest.schema.json      # Layer 4 manifest schema
+│   │       ├── fleet-run-manifest.schema.json      # Layer 4 manifest schema
+│   │       └── fleet-trace.schema.json             # Telemetry: structured trace stream contract
 │   ├── autonomous-fleet-adapter-{orca,claude-code,grok,codex,template}/
 │   │       └── (claude-code) assets/hooks/         # Layer 2 stop-verify hook + hooks.json (opt-in)
 │   └── (12 mission skills)
@@ -393,19 +396,20 @@ autonomous-fleet/
 │   ├── research-community-skills.md
 │   └── doc-sync-audit.md                # latest drift index
 ├── scripts/
-│   ├── validate-all.sh                  # umbrella: skills + fleet-outcome + goals + run-archive + blind-fix + pytest
+│   ├── validate-all.sh                  # umbrella: skills + fleet-outcome + goals + run-archive + blind-fix + trace + pytest
 │   ├── validate-{skills,fleet-outcome,goal-condition}.sh
 │   ├── validate_run_archive.py          # Layer 4 manifest + on-disk integrity validator
 │   ├── verify_findings.py               # Layer 1 reviewer-findings source verifier
 │   ├── stop_verify.py                   # Layer 2 stop-verify hook entrypoint
 │   ├── verify_blind_fix.py              # Layer 3 anti-anchoring (blind-fix) verifier
+│   ├── emit_trace.py                    # Telemetry: structured trace stream (vibe-kanban / Agent View contract)
 │   ├── mutation-check.sh                # standing mutation gate (CI: assert tests catch known bugs)
 │   ├── eval-campaign-edge.{sh,py}
 │   ├── coupling-graph.py                # import/symbol graph for coupling-aware decomposition
 │   ├── render-dashboard.py              # ledger → attention-zone HTML dashboard
 │   ├── run-{campaign,mission-headless,sandboxed}.sh
 │   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate, secure-ship, handoff-to-product
-│   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, stop_verify, mission_registry, venv-bootstrap
+│   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, emit_trace, stop_verify, mission_registry, venv-bootstrap
 │   └── install-skills.sh
 ├── tests/                               # 27 test files; validators + engine doctrine + 4-layer substrate
 ├── .agents/skills/                      # installed skill copies (gitignored)

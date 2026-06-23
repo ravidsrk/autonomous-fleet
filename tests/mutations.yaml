@@ -125,3 +125,16 @@ mutations:
     find: 'candidate.relative_to(run_dir_resolved)'
     replace: 'run_dir_resolved'
     guards: [tests/test_verify_blind_fix.py]
+
+  # --- trace emission (Commit E) ---
+  - id: trace-event-validation-off
+    file: scripts/lib/emit_trace.py
+    find: 'primitive not in PRIMITIVES'
+    replace: 'False'
+    guards: [tests/test_emit_trace.py]
+
+  - id: trace-emit-atomicity-off
+    file: scripts/lib/emit_trace.py
+    find: 'self._fh.flush()'
+    replace: 'pass'
+    guards: [tests/test_emit_trace.py]

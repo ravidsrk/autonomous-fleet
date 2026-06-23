@@ -49,6 +49,25 @@ if (( bf_status != 0 )); then
 fi
 
 echo ""
+echo "== validate-trace (telemetry contract) =="
+# Trace stream (engine.md TRACE EMISSION). One JSONL line per state
+# transition; the schema is the dashboard contract (vibe-kanban, Agent View,
+# custom). Empty/missing = exit 0 (the discipline is gated on artifact
+# production, not on a directory existing).
+shopt -s nullglob
+tr_status=0
+for trace_file in .fleet/runs/*/trace.jsonl; do
+  if ! "$VENV_PYTHON" scripts/emit_trace.py validate "$trace_file"; then
+    tr_status=1
+  fi
+done
+shopt -u nullglob
+if (( tr_status != 0 )); then
+  echo "validate-trace: at least one archive failed schema validation" >&2
+  exit 1
+fi
+
+echo ""
 echo "== pytest + coverage (100% gate) =="
 "$VENV_PYTHON" -m coverage run --source=scripts -m pytest tests/ -q
 "$VENV_PYTHON" -m coverage report --fail-under=100
