@@ -257,7 +257,7 @@ while [[ -n "$CURRENT" ]]; do
       # parse_readiness takes a Path, not a str (it calls .read_text). Passing a str raised an
       # AttributeError that the old `2>/dev/null || true` SILENTLY swallowed, so this halt never
       # fired. Pass Path(...) and let errors surface (validate already parsed the doc above).
-      NODE_STATUS="$("$VENV_PYTHON" -c "import sys; from pathlib import Path; sys.path.insert(0, '$ROOT/scripts'); from lib.fleet_outcome import parse_readiness; print(parse_readiness(Path('$READINESS_ABS')).get('status', ''))" || true)"
+      NODE_STATUS="$("$VENV_PYTHON" -c 'import sys; from pathlib import Path; sys.path.insert(0, sys.argv[1]+"/scripts"); from lib.fleet_outcome import parse_readiness; print(parse_readiness(Path(sys.argv[2])).get("status", ""))' "$ROOT" "$READINESS_ABS" || true)"
       if [[ "$NODE_STATUS" == "blocked" ]]; then
         echo "" >&2
         echo "Campaign BLOCKED at node $CURRENT (fleet-outcome.status: blocked). Halting; this is a human gate, not a completed campaign." >&2
