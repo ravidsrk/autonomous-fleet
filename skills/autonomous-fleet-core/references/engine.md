@@ -217,8 +217,7 @@ reported path does not satisfy the finding.
 Lineage: SWE-Review (Wang et al., 2026) `prompts/agentic_review.md` HARD RULE, the most-cited
 reviewer rubric in the academic literature. Composed for the fleet via the `cascade_impact`
 required-field gate so the discipline is schema-enforced rather than prose-aspirational. See
-`audit-work/borrowable-patterns-report.md` #3 and `audit-work/competitor-deepdive/swe-review.md`
-section 4.1.
+`docs/competitor-audit-2026-06-22.md` #3.
 
 ═══════════════════════════════════════════════════════════
 ANTI-ANCHORING: reviewer commits its own fix BEFORE reading the candidate patch.
@@ -252,7 +251,7 @@ filesystem must reflect that order.
 Lineage: SWE-Review's "Step 3: Write YOUR Proposed Fix (BEFORE reading the patch)" prompt step
 (`prompts/agentic_review.md` Step 3). The committed-in-writing-first technique is the
 proven anti-anchoring scaffold from the academic literature. See
-`audit-work/borrowable-patterns-report.md` #4.
+`docs/competitor-audit-2026-06-22.md` #4.
 
 ═══════════════════════════════════════════════════════════
 RESULT-STATE TERMINATION GATE: green checks are not enough.
@@ -264,7 +263,7 @@ rebuild, and build missions gate on `fleet-outcome.metrics.e2e_verified == true`
 a validated gate can be inert; see `docs/secure-ship-e2e.md`.
 
 ═══════════════════════════════════════════════════════════
-STRICT MODE (opt-in): runtime gate makes EVID/WT_CLEAN/e2e_verified ENFORCEABLE.
+RUNTIME ENFORCEMENT GATE (optional, adapter-provided): make EVID/WT_CLEAN/e2e_verified enforceable.
 ═══════════════════════════════════════════════════════════
 By default the engine's three discipline flags (EVID, WT_CLEAN, e2e_verified) are aspirational —
 the builder self-attests in the readiness doc and the orchestrator trusts the attestation. This is
@@ -272,24 +271,28 @@ the second most common failure mode in fleet runs (after reviewer hallucination,
 schema-verified findings): SELF-ATTESTED COMPLETION. The worker claims done because it intends to
 be done, not because verifiable evidence exists on disk.
 
-Strict mode closes that loop. Operators install
-`skills/autonomous-fleet-core/assets/hooks/stop-verify.sh` as a Claude Code Stop hook. Before any
-worker session can end, the hook scans for evidence (EVID=true / WT_CLEAN=true in a ledger touched
-in window; e2e_verified or status:done in a readiness doc in window; a passing verify-findings
-summary from `scripts/verify_findings.py`; test-runner artifacts; Playwright screenshots). If none
-match, the hook emits `{decision:"block", reason:"..."}` and Claude Code REFUSES to terminate the
-session. Three discipline levels:
-- **Loose** (no hook installed, default): self-attested, trust-based.
-- **Strict** (`hooks.json` installed, defaults): ≥1 evidence kind in 30min window.
+An adapter MAY close that loop with a runtime gate that refuses to end a worker session until
+verifiable evidence exists on disk (EVID=true / WT_CLEAN=true in a ledger touched in window;
+e2e_verified or status:done in a readiness doc in window; a passing verify-findings summary from
+`scripts/verify_findings.py`; test-runner artifacts; Playwright screenshots). This is OPTIONAL,
+opt-in, and adapter-specific — the tool-agnostic core defines the discipline; each runtime supplies
+its own enforcement mechanism. Three discipline levels (generic):
+- **Loose** (no gate installed, default): self-attested, trust-based.
+- **Strict** (gate installed, defaults): ≥1 evidence kind in a freshness window (default 30min).
 - **Paranoid** (`STOP_VERIFY_STRICT_PROGRESS=1`, `STOP_VERIFY_MIN_KINDS=3`): both progress flags
   AND three distinct kinds.
 
-Install and configuration: see `references/strict-mode.md`. Lineage: claude-code-orchestra's
-stop-verify.sh (mtime-window scan) + multi-llm-plugin-cc's stop-review-gate-hook.mjs (the
-{decision:"block"} JSON contract), composed for the fleet's progress.md/readiness.md ledger format.
-Fail-open by design: any internal hook error allows session end with a stderr warning — a broken
-hook trapping a worker is a worse failure than a missed gate. The gate is one more layer ON TOP OF
-existing disciplines, not a replacement. See `audit-work/borrowable-patterns-report.md` #2.
+Reference implementation: the Claude Code adapter ships a Stop hook
+(`skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh`) that emits
+`{decision:"block", reason:"..."}` so Claude Code refuses to terminate. Install + configuration:
+see `references/strict-mode.md` and the claude-code adapter. Other runtimes can wire the same
+discipline to their own mechanism (Codex automations, a Grok scheduler, an Orca gate). Lineage:
+claude-code-orchestra's stop-verify.sh (mtime-window scan) + multi-llm-plugin-cc's
+stop-review-gate-hook.mjs (the {decision:"block"} JSON contract), composed for the fleet's
+progress.md/readiness.md ledger format (see `docs/competitor-audit-2026-06-22.md` #2). Fail-open by
+design: any internal gate error allows session end with a stderr warning — a broken gate trapping a
+worker is a worse failure than a missed gate. The gate is one more layer ON TOP OF existing
+disciplines, not a replacement.
 
 ═══════════════════════════════════════════════════════════
 ARCHIVE_ENABLED: every run leaves a manifest-audited file trail under `.fleet/runs/<run_id>/`.
@@ -357,7 +360,7 @@ Lineage: composed for the fleet from the run-archive pattern observed across mul
 agent frameworks (claude-code-orchestra's per-session output dirs, multi-llm-plugin-cc's
 plugin-run logs, GodModeSkill's verifier corpus index). The manifest+mtime-ordering+kind
 taxonomy is the fleet's specific contribution — none of the upstream patterns enforce all three.
-See `audit-work/borrowable-patterns-report.md` #8.
+See `docs/competitor-audit-2026-06-22.md` #8.
 
 ═══════════════════════════════════════════════════════════
 INFLATION POST-MORTEM: break the "we already shipped that" trap on re-runs.

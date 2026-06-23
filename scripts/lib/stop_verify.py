@@ -26,7 +26,7 @@ Decision contract: see `Verdict` below. The CLI maps:
   Verdict.allow=False -> exit 0, JSON {decision:"block", reason:<text>}
                         (Claude Code refuses to terminate the session)
 
-Lineage cites: /workspace/audit-work/borrowable-patterns-report.md #2.
+Lineage: docs/competitor-audit-2026-06-22.md #2.
 """
 
 from __future__ import annotations

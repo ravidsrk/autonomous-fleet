@@ -7,7 +7,7 @@
 #   - agents-layer         → docs/exploratory/missions/agents-layer
 #
 # Those missions are not on the Stage 8 distillation list
-# (audit-work/prompts.md L2960-2964) and have no real-run progress or
+# (prompts.md L2960-2964 in the source corpus) and have no real-run progress or
 # readiness doc backing them.
 #
 # Re-promote the missions to skills/ (per docs/exploratory/README.md) on

@@ -298,14 +298,14 @@ def test_strict_mode_doctrine_block_wires_stop_verify_hook_and_lineage() -> None
     text = read_engine()
     sm = section(
         text,
-        "STRICT MODE (opt-in): runtime gate",
+        "RUNTIME ENFORCEMENT GATE",
         "INFLATION POST-MORTEM",
     )
     sm_flat = squash(sm)
 
     # The asset path operators install — pin so it can't drift without breaking
     # the strict-mode.md install instructions in lock-step.
-    assert "skills/autonomous-fleet-core/assets/hooks/stop-verify.sh" in sm
+    assert "skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh" in sm
     # The doctrine doc is linked, not duplicated.
     assert "references/strict-mode.md" in sm
     # All three discipline levels named.
@@ -323,7 +323,7 @@ def test_strict_mode_doctrine_block_wires_stop_verify_hook_and_lineage() -> None
     # Lineage citation — keeps the audit trail intact.
     assert "claude-code-orchestra" in sm
     assert "multi-llm-plugin-cc" in sm
-    assert "borrowable-patterns-report.md" in sm
+    assert "competitor-audit-2026-06-22.md" in sm
     # The gate is one more layer ON TOP OF existing disciplines, NOT a
     # replacement. This is the most-mis-read property of the doctrine.
     assert "not a replacement" in sm_flat
@@ -337,7 +337,7 @@ def test_strict_mode_block_anchors_after_result_state_termination_gate() -> None
     before the mechanism."""
     text = read_engine()
     rs_idx = text.index("RESULT-STATE TERMINATION GATE")
-    sm_idx = text.index("STRICT MODE (opt-in): runtime gate")
+    sm_idx = text.index("RUNTIME ENFORCEMENT GATE")
     inflation_idx = text.index("INFLATION POST-MORTEM")
     assert rs_idx < sm_idx < inflation_idx, (
         "STRICT MODE must sit between RESULT-STATE TERMINATION GATE and "
@@ -385,7 +385,7 @@ def test_root_cause_depth_doctrine_block_present_with_hard_rule_and_schema_hook(
     # Lineage citation. Keeps the audit trail intact for future contributors.
     assert "SWE-Review" in rcd
     assert "Wang" in rcd  # primary citation
-    assert "borrowable-patterns-report.md" in rcd
+    assert "competitor-audit-2026-06-22.md" in rcd
     assert_no_contradiction_markers(rcd)
 
 
@@ -423,7 +423,7 @@ def test_anti_anchoring_doctrine_block_defines_blind_fix_protocol() -> None:
 
     # Lineage citation.
     assert "SWE-Review" in aa
-    assert "borrowable-patterns-report.md" in aa
+    assert "competitor-audit-2026-06-22.md" in aa
     assert_no_contradiction_markers(aa)
 
 
@@ -436,7 +436,7 @@ def test_new_disciplines_anchor_before_result_state_termination_gate() -> None:
     rcd_idx = text.index("ROOT_CAUSE_DEPTH: a fix at the wrong call-stack depth")
     aa_idx = text.index("ANTI-ANCHORING: reviewer commits its own fix")
     rs_idx = text.index("RESULT-STATE TERMINATION GATE")
-    sm_idx = text.index("STRICT MODE (opt-in): runtime gate")
+    sm_idx = text.index("RUNTIME ENFORCEMENT GATE")
     inflation_idx = text.index("INFLATION POST-MORTEM")
     # All five blocks live in this exact order.
     assert rcd_idx < aa_idx < rs_idx < sm_idx < inflation_idx, (
@@ -512,7 +512,7 @@ def test_archive_enabled_doctrine_block_present_with_all_four_hard_rules() -> No
     assert "scripts/prune-run-archives.sh" in arch
 
     # Lineage citation.
-    assert "borrowable-patterns-report.md" in arch
+    assert "competitor-audit-2026-06-22.md" in arch
     assert_no_contradiction_markers(arch)
 
 
@@ -522,7 +522,7 @@ def test_archive_enabled_block_anchors_between_strict_mode_and_inflation() -> No
     encodes the narrative: detection → substrate → cross-run chaining.
     Reordering breaks the reader's path through the doctrine."""
     text = read_engine()
-    sm_idx = text.index("STRICT MODE (opt-in): runtime gate")
+    sm_idx = text.index("RUNTIME ENFORCEMENT GATE")
     arch_idx = text.index("ARCHIVE_ENABLED: every run leaves")
     inflation_idx = text.index("INFLATION POST-MORTEM")
     assert sm_idx < arch_idx < inflation_idx, (
