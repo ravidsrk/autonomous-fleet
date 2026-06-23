@@ -16,16 +16,18 @@ This exists for two reasons:
 
 # Env-var registry
 
-| Layer | Script | Env var | Legacy alias |
-|---|---|---|---|
-| 1 — review-findings | `scripts/verify_findings.py` | `FLEET_DISABLE_VERIFY_FINDINGS` | — |
-| 2 — stop-verify | `scripts/stop_verify.py` | `FLEET_DISABLE_STOP_VERIFY` | `STOP_VERIFY_DISABLED` |
-| 3 — blind-fix | `scripts/verify_blind_fix.py` | `FLEET_DISABLE_BLIND_FIX` | — |
-| 4 — run-archive | `scripts/validate_run_archive.py` | `FLEET_DISABLE_RUN_ARCHIVE` | — |
+| Layer | Script | Env var |
+|---|---|---|
+| 1 — review-findings | `scripts/verify_findings.py` | `FLEET_DISABLE_VERIFY_FINDINGS` |
+| 2 — stop-verify | `scripts/stop_verify.py` | `FLEET_DISABLE_STOP_VERIFY` |
+| 3 — blind-fix | `scripts/verify_blind_fix.py` | `FLEET_DISABLE_BLIND_FIX` |
+| 4 — run-archive | `scripts/validate_run_archive.py` | `FLEET_DISABLE_RUN_ARCHIVE` |
 
-Layer 2's legacy `STOP_VERIFY_DISABLED` is kept indefinitely —
-operator runbooks reference it by name. Either env var triggers the
-disable; we OR them inside `stop_verify_legacy_disabled()`.
+There is exactly ONE env var per layer. No legacy aliases, no
+fallbacks. The substrate has no installed-user base yet — shipping a
+back-compat surface now would lock us into immediate technical debt.
+If you find any other name in the codebase (e.g. `STOP_VERIFY_DISABLED`)
+it's stale; delete on sight.
 
 # Truthy semantics
 
@@ -103,10 +105,6 @@ In `tests/mutations.yaml`:
   breaks falsy-value tests.
 - `kill-switch-truthy-strict` — flipping truthy check to always-false
   breaks short-circuit tests.
-- `kill-switch-legacy-alias-dropped` — dropping the
-  `STOP_VERIFY_DISABLED` arm breaks the legacy-alias test.
-- `kill-switch-fleet-disable-stop-verify-dropped` — dropping the
-  `FLEET_DISABLE_STOP_VERIFY` arm breaks the back-compat test.
 
 # Lineage
 

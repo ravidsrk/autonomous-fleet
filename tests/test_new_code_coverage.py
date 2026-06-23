@@ -1025,7 +1025,7 @@ def test_sv_cli_explain_prints_counts_and_evidence(tmp_path, monkeypatch, capsys
     runs end-to-end."""
     docs = tmp_path / "docs"; docs.mkdir()
     (docs / "x-progress.md").write_text("PHASE: BUILD\nEVID=true\nWT_CLEAN=true\n")
-    monkeypatch.delenv("STOP_VERIFY_DISABLED", raising=False)
+    monkeypatch.delenv("FLEET_DISABLE_STOP_VERIFY", raising=False)
     monkeypatch.delenv("CLAUDE_PROJECT_DIR", raising=False)
     monkeypatch.setattr(sys, "argv", [
         "sv", "--repo", str(tmp_path),

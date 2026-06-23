@@ -164,14 +164,8 @@ mutations:
     replace: "False"
     guards: [tests/test_substrate_disable.py]
 
-  - id: kill-switch-legacy-alias-dropped
-    file: scripts/lib/substrate_disable.py
-    find: "is_truthy(os.environ.get(\"STOP_VERIFY_DISABLED\")) or is_disabled("
-    replace: "False or is_disabled("
-    guards: [tests/test_substrate_disable.py]
-
-  - id: kill-switch-fleet-disable-stop-verify-dropped
-    file: scripts/lib/substrate_disable.py
-    find: "is_truthy(os.environ.get(\"STOP_VERIFY_DISABLED\")) or is_disabled(\n        \"FLEET_DISABLE_STOP_VERIFY\"\n    )"
-    replace: "is_truthy(os.environ.get(\"STOP_VERIFY_DISABLED\"))"
-    guards: [tests/test_substrate_disable.py]
+  - id: kill-switch-layer2-lib-disable-off
+    file: scripts/lib/stop_verify.py
+    find: "return is_disabled(\"FLEET_DISABLE_STOP_VERIFY\")"
+    replace: "return False"
+    guards: [tests/test_stop_verify.py]

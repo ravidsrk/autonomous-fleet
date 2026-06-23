@@ -661,9 +661,11 @@ def test_substrate_kill_switch_block_present_and_complete() -> None:
     ):
         assert var in block, f"engine.md kill-switch block missing {var}"
 
-    # Layer 2 legacy alias preserved.
-    assert "STOP_VERIFY_DISABLED" in block
-    assert "back-compat" in block
+    # One knob per layer — no legacy aliases. Pin it: if someone
+    # re-adds STOP_VERIFY_DISABLED to the doctrine block, this fails.
+    assert "STOP_VERIFY_DISABLED" not in block
+    assert "back-compat" not in block
+    assert "legacy alias" not in block
 
     # Truthy semantics and the strict-allow-list intent.
     flat = squash(block)

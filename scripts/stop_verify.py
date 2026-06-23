@@ -21,7 +21,7 @@ CLI flags:
                          CC sees a {continue:true} payload)
 
 Operator escape hatch (no flag — env-only so it survives subprocessing):
-  STOP_VERIFY_DISABLED=1   Hook returns ALLOW immediately.
+  FLEET_DISABLE_STOP_VERIFY=1   Hook returns ALLOW immediately.
 
 Exit codes (for harness use, NOT for CC):
   0  Verdict produced (allow OR block — semantics in the JSON decision)
@@ -179,22 +179,18 @@ def main(argv: list[str] | None = None) -> int:
     try:
         hook_input = _read_hook_input()
 
-        # Kill switch is checked FIRST — operators expect a disable env
+        # Kill switch is checked FIRST — operators expect FLEET_DISABLE_STOP_VERIFY=1
         # to short-circuit the whole hook regardless of any other config error
         # (e.g. a stale --repo path baked into hooks.json from a previous repo
         # layout). If we waited until evaluate() this short-circuit would be
         # suppressed by a bad-repo warning, defeating the escape hatch.
         #
-        # Two env vars are honored:
-        #   STOP_VERIFY_DISABLED       — legacy name (kept for back-compat)
-        #   FLEET_DISABLE_STOP_VERIFY  — Substrate-wide convention. See
-        #                                scripts/lib/substrate_disable.py.
-        # Setting either to 1/true/yes/on (case-insensitive) flips the gate
-        # to an unconditional ALLOW with a decision-log entry. Both are
-        # tested by the substrate-disable suite.
-        from lib.substrate_disable import stop_verify_legacy_disabled
+        # The convention is substrate-wide — every layer uses the same
+        # is_disabled() helper so truthy semantics never drift between
+        # layers. See scripts/lib/substrate_disable.py.
+        from lib.substrate_disable import is_disabled
 
-        if stop_verify_legacy_disabled():
+        if is_disabled("FLEET_DISABLE_STOP_VERIFY"):
             _emit_decision(
                 Verdict(allow=True, reason="stop-verify disabled"),
                 force_json=args.json_out,

@@ -10,7 +10,6 @@ Env var → layer mapping:
 
   FLEET_DISABLE_VERIFY_FINDINGS  → scripts/verify_findings.py     (Layer 1)
   FLEET_DISABLE_STOP_VERIFY      → scripts/stop_verify.py         (Layer 2)
-                                   (legacy alias: STOP_VERIFY_DISABLED)
   FLEET_DISABLE_BLIND_FIX        → scripts/verify_blind_fix.py    (Layer 3)
   FLEET_DISABLE_RUN_ARCHIVE      → scripts/validate_run_archive.py (Layer 4)
 
@@ -38,6 +37,14 @@ Why a convention rather than a config file:
   cleanly with `FLEET_DISABLE_*=1 fleet run ...` and don't leave
   persistent state behind. A config-file knob would require careful
   cleanup and would invite "I forgot to flip it back" footguns.
+
+One knob per layer:
+
+  There is exactly ONE env var per layer. No legacy aliases, no
+  fallbacks. The substrate has no installed-user base yet, so we
+  refuse to ship a back-compat surface that would immediately become
+  technical debt. If you find docs/code referencing any other name
+  (e.g. STOP_VERIFY_DISABLED), it's stale — delete on sight.
 
 Reference: docs/external-dogfood/adversarial-bench-2026-06.md
 methodology section; engine.md SUBSTRATE KILL-SWITCH CONVENTION block.
@@ -70,15 +77,6 @@ def is_disabled(env_var: str) -> bool:
     return is_truthy(os.environ.get(env_var))
 
 
-def stop_verify_legacy_disabled() -> bool:
-    """Layer 2 honors a legacy env var STOP_VERIFY_DISABLED in addition
-    to FLEET_DISABLE_STOP_VERIFY. We keep both so existing operators'
-    runbooks don't break when they re-pull the substrate."""
-    return is_truthy(os.environ.get("STOP_VERIFY_DISABLED")) or is_disabled(
-        "FLEET_DISABLE_STOP_VERIFY"
-    )
-
-
 def announce_disabled(layer_label: str, env_var: str) -> int:
     """Print the standardized disable notice and return exit code 0.
 
@@ -105,5 +103,4 @@ __all__ = [
     "announce_disabled",
     "is_disabled",
     "is_truthy",
-    "stop_verify_legacy_disabled",
 ]
