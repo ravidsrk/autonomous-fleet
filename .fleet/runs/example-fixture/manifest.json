@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "run_id": "20260623T000000Z-adversarial-review-and-fix-000001",
+  "mission": "adversarial-review-and-fix",
+  "coordinator": "example-coordinator",
+  "base_branch": "roadmap/post-substrate-impl",
+  "created_utc": "2026-06-23T00:00:00Z",
+  "files": [
+    {
+      "path": "reviewer-blind-fix-F-001.md",
+      "kind": "blind_fix",
+      "sha256": "72515941c67914824420ac2e9b0824cb617448ec63db07b27f055734a93db1b2",
+      "mtime_utc": "2026-06-23T00:01:00Z",
+      "producer": "p0-reviewer-claude",
+      "bytes": 576
+    },
+    {
+      "path": "reviewer-blind-fix-F-002.md",
+      "kind": "blind_fix",
+      "sha256": "3321c69ce51caa87c9128f42b068e386311b53f99b68ae279339d3f061e52b83",
+      "mtime_utc": "2026-06-23T00:01:30Z",
+      "producer": "p0-reviewer-claude",
+      "bytes": 483
+    },
+    {
+      "path": "p0-review-findings.json",
+      "kind": "findings",
+      "sha256": "91a7ca0885bd414613bbf11c2d02d9eb1bab48e66a0ceefca0d006b3cbbabf06",
+      "mtime_utc": "2026-06-23T00:05:00Z",
+      "producer": "p0-reviewer-claude",
+      "bytes": 2570
+    },
+    {
+      "path": "p0-verify-summary.json",
+      "kind": "verify_summary",
+      "sha256": "47b367504911b7714d1a3250e52e0262042a35a04082afdadbeec7a8018f1799",
+      "mtime_utc": "2026-06-23T00:06:00Z",
+      "producer": "verifier",
+      "bytes": 257
+    },
+    {
+      "path": "stop-verify-decisions.log",
+      "kind": "other",
+      "sha256": "a5c3737cc663dcde1761b0fd956e8535310f328c3d398e71fb89bfdf0d451551",
+      "mtime_utc": "2026-06-23T00:06:00Z",
+      "producer": "stop-verify-hook",
+      "bytes": 242
+    },
+    {
+      "path": "p1-fix-attestation.json",
+      "kind": "other",
+      "sha256": "53baf5a39d69120ad91b3c60d39f41395d777e2ba55304d902dc72a79a41c504",
+      "mtime_utc": "2026-06-23T00:07:00Z",
+      "producer": "fixer-codex",
+      "bytes": 444
+    },
+    {
+      "path": "trace.jsonl",
+      "kind": "other",
+      "sha256": "0a2da9a9a74d745c356a3c85e84b4c83e794aeb3419a47d746031dd40ee15eaa",
+      "mtime_utc": "2026-06-23T00:08:00Z",
+      "producer": "coordinator",
+      "bytes": 1000
+    },
+    {
+      "path": "fleet-outcome.yaml",
+      "kind": "readiness",
+      "sha256": "4a683fbf18245d223129e5708e084ab195eaca92daebe3ebeeb495ae9e3fff83",
+      "mtime_utc": "2026-06-23T00:10:00Z",
+      "producer": "t-final",
+      "bytes": 803
+    },
+    {
+      "path": "README.md",
+      "kind": "other",
+      "sha256": "f1355cb95b3d51367a644bfb8e2b6d77080bf1a0e3be2daf3dbbfd95c9324e13",
+      "mtime_utc": "2026-06-23T00:09:00Z",
+      "producer": "human",
+      "bytes": 2637
+    }
+  ],
+  "notes": "Canonical example fixture \u2014 exercises every validator in validate-all.sh."
+}

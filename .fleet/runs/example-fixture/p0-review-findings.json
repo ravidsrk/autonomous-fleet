@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "mission": "adversarial-review-and-fix",
+  "review_id": "example-fixture-r1-claude",
+  "reviewer": {
+    "vendor": "anthropic",
+    "model": "claude-opus-4.5",
+    "role": "build-blind-reviewer"
+  },
+  "round": 1,
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "medium",
+      "category": "bug",
+      "claim": "ImportFrom with explicit relative level is dropped from the coupling graph; level==0 absolute-only check skips PEP-328 relative imports entirely on the first pass.",
+      "evidence": {
+        "file_path": "scripts/coupling-graph.py",
+        "line_number": 107,
+        "quoted_line": "            if node.level == 0:"
+      },
+      "fix_alternatives": [
+        {
+          "label": "A",
+          "description": "Drop the level==0 gate; reconstruct the relative dotted name in the same branch and feed it to the suffix index.",
+          "effort": "minimal",
+          "recommended": true
+        },
+        {
+          "label": "B",
+          "description": "Add an `else` branch that defers to the existing PEP-328 reconstruction path.",
+          "effort": "moderate"
+        }
+      ],
+      "confidence": 88,
+      "fix_strategy": "auto",
+      "trigger": "Repos that use `from .x import y` heavily.",
+      "verified": true,
+      "blind_fix_chain": {
+        "path": "reviewer-blind-fix-F-001.md",
+        "reviewer_quote_sha": "abc1234",
+        "fixer_draft_sha": "def5678"
+      }
+    },
+    {
+      "id": "F-002",
+      "severity": "low",
+      "category": "style",
+      "claim": "Simulated hallucination: the quoted_line below is NOT in the cited file. Used to exercise verify_findings's hallucination downgrade path on the fixture.",
+      "evidence": {
+        "file_path": "scripts/coupling-graph.py",
+        "line_number": 9999,
+        "quoted_line": "    raise NotImplementedError('this is not in the file')"
+      },
+      "fix_alternatives": [
+        {
+          "label": "A",
+          "description": "Drop the finding; it's a hallucination.",
+          "effort": "minimal",
+          "recommended": true
+        }
+      ],
+      "confidence": 35,
+      "fix_strategy": "ask",
+      "verified": false,
+      "verify_reason": "quoted_line not found in cited file \u2014 simulated hallucination for fixture coverage of the Layer 1 downgrade path."
+    }
+  ],
+  "verdict": {
+    "decision": "request_changes",
+    "reasoning": "One verified finding (F-001) with a real defect; one simulated hallucination (F-002) marked verified=false. Fixture exercises the substrate end-to-end."
+  }
+}
