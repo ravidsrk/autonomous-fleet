@@ -122,6 +122,6 @@ mutations:
 
   - id: blind-fix-path-containment-off
     file: scripts/lib/verify_blind_fix.py
-    find: 'if os.path.isabs(declared):'
-    replace: 'if False:'
+    find: 'candidate.relative_to(run_dir_resolved)'
+    replace: 'run_dir_resolved'
     guards: [tests/test_verify_blind_fix.py]
