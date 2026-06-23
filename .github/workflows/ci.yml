@@ -16,7 +16,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: ShellCheck
-        run: shellcheck scripts/*.sh scripts/lib/*.sh
+        # -S warning: fail on warnings + errors (genuine bugs); advisory info-level checks vary by
+        # shellcheck version across runners, so don't gate CI on them.
+        run: shellcheck -S warning scripts/*.sh scripts/lib/*.sh
 
       - uses: actions/setup-node@v4
         with:
