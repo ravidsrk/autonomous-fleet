@@ -45,7 +45,8 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude (scan, clean, integrator) | — | Repo linters + characterization tests |
+| @codex (clean) | — | Repo linters + characterization tests |
+| @claude (scan, fresh review, integrator) | — | Repo linters + characterization tests |
 
 ## Deferred missions
 
@@ -69,8 +70,9 @@ system, no sweeping structural redesign (if that's needed, this is the wrong mis
 and point to legacy-rebuild). Every change is behaviour-preserving and proven so by tests.
 
 ## ROLE PIPELINE
-- @claude identifies cleanup targets and performs the changes.
-- @codex REVIEWS each PR (fresh, build-blind): behaviour-preserving (tests prove it), genuinely
+- @claude identifies cleanup targets (the frozen CLEANUP INDEX).
+- @codex performs the changes.
+- A fresh build-blind @claude REVIEWS each PR: behaviour-preserving (tests prove it), genuinely
   cleaner, scoped (no creeping rewrite), no functionality removed that was actually used.
 - @claude is the INTEGRATOR: opens PR, merges (conflict-aware), cleans worktree.
 
@@ -85,9 +87,9 @@ with location, `OPEN | DONE via PR#n`.
   structural/naming issues. Confirm what's truly unused (don't delete something reachable via
   reflection/dynamic import without checking). Output `docs/cleanup-scan.md` with a CLEANUP
   INDEX. Freeze, then clean.
-- **T-CLEAN… [per item/area, loop]** — each coherent cleanup is one PR. @claude makes the
+- **T-CLEAN… [per item/area, loop]** — each coherent cleanup is one PR. @codex makes the
   behaviour-preserving change, ensures existing tests still pass (add a characterization test
-  first if the area is untested and risky) → @codex reviews (cleaner + behaviour intact + scoped)
+  first if the area is untested and risky) → fresh build-blind @claude reviews (cleaner + behaviour intact + scoped)
   → @claude merges. Parallelize non-overlapping files; serialize same-file. Update the CLEANUP
   INDEX.
 - **T-FINAL [@claude]** — build green, full suite green, no behaviour change, the targeted smells

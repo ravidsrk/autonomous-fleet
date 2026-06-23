@@ -91,10 +91,10 @@ produces materially better visual fidelity on landing-page and design-parity
 runs than @codex. Stage-9's general retirement of @grok (prompts.md L3013)
 does not apply to design/landing missions.
 
-- @claude IMPORTS the design + PROBES the existing product + builds the PARITY MAP + thin per-area
+- @claude IMPORTS the design + PROBES the existing product + compiles the PARITY MAP + thin per-area
   specs.
 - @grok CODES each area to full depth (visual match + feature).
-- @codex REVIEWS each PR (fresh, build-blind): design-faithful AND no lost functionality, all
+- A fresh build-blind @claude REVIEWS each PR: design-faithful AND no lost functionality, all
   states, real tests, no placeholders/half-migrated screens.
 - @claude SHIPS: opens PR, conflict-aware merge, worktree cleanup.
 
@@ -130,7 +130,7 @@ exists and passes.
 - **T-FOUNDATION [relay]** - implement the design SYSTEM (tokens/theme/typography/spacing/shared
   components) wired in, with tests. Gates the screens.
 - **T-ITEMS… [per matrix item, loop]** - @claude thin-plans → @grok builds to full parity (visual
-  + feature, all states, responsive, tests) → @codex reviews (fidelity + no lost functionality +
+  + feature, all states, responsive, tests) → fresh build-blind @claude reviews (fidelity + no lost functionality +
   tests) → @claude ships. Parallelize non-overlapping screens; serialize overlapping.
 - **T-FINAL [@claude]** - build green, lint clean, full suite green. Every matrix item DONE; the
   product matches the design everywhere; every product-probe capability still works (zero

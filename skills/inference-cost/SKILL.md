@@ -80,9 +80,9 @@ missing, record the blocker and stop the live-call portion of the mission.
 
 ## ROLE PIPELINE
 
-- @claude builds the baseline harness, selects sanctioned levers, implements scoped changes, and
-  produces the readiness table.
-- @codex REVIEWS each PR (fresh, build-blind): harness is real, costs are measured from the same
+- @claude establishes the baseline harness, selects sanctioned levers, and produces the readiness table.
+- @codex implements the scoped optimization changes.
+- A fresh build-blind @claude REVIEWS each PR: harness is real, costs are measured from the same
   sample, quality thresholds did not regress, and no forbidden credential/subscription hack exists.
 - @claude is the INTEGRATOR: opens PR, merges (conflict-aware), cleans worktree.
 
@@ -104,7 +104,7 @@ candidate lever, `OPEN | SHIPPED via PR#n | REJECTED (quality/cost reason) | DEF
   model routing, prompt caching, batch/flex-tier pricing for async work, a provider-abstraction
   layer that preserves semantics, and token hygiene. Define acceptance thresholds: expected cost
   delta, max latency impact, and the exact quality gate. Freeze the CALL-CLASS INDEX.
-- **T-OPTIMIZE... [per call class or lever, loop]** - implement one coherent optimization per PR.
+- **T-OPTIMIZE... [per call class or lever, loop]** - @codex implements one coherent optimization per PR; a fresh build-blind @claude reviews each PR before @claude merges.
   Run the baseline harness and candidate harness against the same frozen sample. If a cheaper
   model, shorter prompt, cache behavior, batch mode, or provider route degrades any required sample
   or violates the rubric, reject it for that call class and do not ship it. Keep only changes with

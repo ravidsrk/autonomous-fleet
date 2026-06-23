@@ -70,8 +70,9 @@ security advisories. Group related non-major deps so each PR is coherent and rev
 MAJOR bumps under the maximal posture below. Never leave the build red or tests failing.
 
 ## ROLE PIPELINE
-- @claude plans the update groups, performs the bumps, and fixes resulting breakages.
-- @codex REVIEWS each PR (fresh, build-blind): correct target versions, breakages properly fixed
+- @claude plans the update groups (the frozen UPDATE INDEX).
+- @codex performs the bumps and fixes resulting breakages.
+- A fresh build-blind @claude REVIEWS each PR: correct target versions, breakages properly fixed
   (not papered over), suite green, no behaviour drift introduced by the upgrade.
 - @claude is the INTEGRATOR: opens PR, merges (conflict-aware), cleans worktree.
 
@@ -87,8 +88,8 @@ flag, `OPEN | DONE via PR#n`.
   floor (runtime/toolchain first, then dependents). Output `docs/dependency-update-audit.md`.
   Freeze, then update.
 - **T-UPDATE… [per group, loop]** — each non-major group is one PR; each MAJOR bump is one PR.
-  @claude bumps + updates lockfile + fixes breakages, runs build + full suite green → @codex
-  reviews (right versions, breakages truly fixed, suite green) → @claude merges. Treat
+  @codex bumps + updates lockfile + fixes breakages, runs build + full suite green → fresh
+  build-blind @claude reviews (right versions, breakages truly fixed, suite green) → @claude merges. Treat
   manifest+lockfile pairs as the universal hot file: serialize manifest-mutating tasks, and
   parallelize only independent ecosystems. Security fixes first. Update the UPDATE INDEX.
 - **T-FINAL [@claude]** — build green, full suite green, no remaining known-vulnerable versions
