@@ -202,9 +202,9 @@ And one adapter per supported runtime:
 
 ---
 
-# What every run guarantees
+# What every run is built to do
 
-These are the disciplines baked into the engine, so you don't have to remember to ask for them:
+These are the disciplines the engine builds into every run — you don't have to remember to ask. Most are prompt-level disciplines the run follows; the evidence-based ones can additionally be **enforced at runtime** by opting into strict mode (Claude Code today — see `references/strict-mode.md`).
 
 ### 🔒 The work won't go sideways
 
@@ -217,10 +217,10 @@ These are the disciplines baked into the engine, so you don't have to remember t
 ### 🧪 The work is verified, not just attempted
 
 - External facts get verified against real sources (logged to `docs/research-notes.md`)
-- A run can't complete with `unverified_assumptions > 0`
-- Every run reports `cost_estimate` (model + USD) in its outcome
+- Runs don't complete with `unverified_assumptions > 0` (strict mode can enforce this on disk)
+- Every run reports `cost_estimate` (USD) in its outcome
 - Shell commands go through a sandboxed wrapper that scrubs env vars
-- Optional `container-use` placement gives each worker an isolated VM
+- Optional `container-use` placement gives each worker an isolated container
 
 ### 🎯 "Done" means actually done
 
@@ -234,7 +234,7 @@ These are the disciplines baked into the engine, so you don't have to remember t
 <details>
 <summary><b>Under the hood — the architecture</b></summary>
 
-The framework has four layers. You only interact with the top layer; the rest happens automatically.
+The framework has four component layers (distinct from the verification substrate's numbered layers below). You only interact with the top layer; the rest happens automatically.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -278,21 +278,18 @@ Every run emits a readiness document with this YAML block at the top. Campaign e
 ```yaml
 fleet-outcome:
   mission: test-coverage
-  status: green                  # green | red | partial
-  e2e_verified: true             # real end-to-end state, not exit codes
-  unverified_assumptions: 0      # required to be 0 before progression
-  wt_clean: true                 # worktree cleanup tracked
-  coverage:
-    before: 41.2
-    after: 78.6
-    target_surface: src/payments
-  prs:
-    - 4821
-    - 4822
-  cost_estimate:
-    usd: 1.84
-    model: grok-4-fast
-  next_mission_hint: doc-sync    # optional campaign hint
+  status: done                   # done | partial | blocked
+  repo: /path/to/your/repo       # absolute path
+  base_branch: main
+  prs_merged: 2
+  unverified_assumptions: 0      # research-discipline gate; must be 0 to progress
+  archive_enabled: true          # run left a validated .fleet/runs/<run_id>/ trail
+  run_id: 20260623T141522Z-test-coverage-3a9c2f
+  cost_estimate: 1.84            # running spend estimate (USD)
+  metrics:                       # mission-specific (under fleet-outcome.metrics)
+    e2e_verified: true           # real end-to-end state, not exit codes
+    gaps_open: 0
+    coverage_regressed: false
 ```
 
 Full spec: [`skills/autonomous-fleet-core/references/fleet-outcome.md`](skills/autonomous-fleet-core/references/fleet-outcome.md)
@@ -316,7 +313,7 @@ Individual validators:
 ./scripts/validate-skills.sh                       # SKILL.md packages (agentskills.io)
 ./scripts/validate-fleet-outcome.sh                # readiness doc fleet-outcome YAML
 ./scripts/validate-goal-condition.sh --scan-docs   # /goal binding
-python scripts/validate_run_archive.py             # Layer 4: .fleet/runs/<run_id>/ manifest + sha256 + mtime ordering
+python scripts/validate_run_archive.py             # Layers 3 & 4: manifest + sha256 + mtime ordering (the blind-fix anti-anchoring ordering IS Layer 3)
 pytest tests/                                      # full suite (27 files, 100% coverage gate)
 
 # Operator gates (run on a specific run-id)
@@ -379,7 +376,7 @@ autonomous-fleet/
 │   │   │   ├── community-skills.md      # gstack / agent-skills / mattpocock hooks
 │   │   │   ├── fleet-outcome.md         # readiness YAML spec
 │   │   │   ├── runtime-goals.md         # /goal + ledger binding
-│   │   │   ├── review-findings.md       # Layer 1: JSON Schema for reviewer findings + verifier CLI
+│   │   │   ├── review-findings.md       # Layers 1 & 3: findings schema + verifier (L1) and blind-fix/anti-anchoring protocol (L3)
 │   │   │   ├── strict-mode.md           # Layer 2: stop-verify Claude Code hook (opt-in)
 │   │   │   └── run-archive.md           # Layer 4: .fleet/runs/<run_id>/ manifest scheme
 │   │   └── assets/

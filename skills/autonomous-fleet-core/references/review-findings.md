@@ -75,7 +75,7 @@ Fix phase consumes ONLY:
 
 `cascade_impact` is REQUIRED for `category: root_cause_depth` (root-cause-depth
 findings without a cascade are usually symptom-fix findings in disguise — see
-the ROOT_CAUSE_DEPTH discipline, planned for Commit 3).
+the ROOT_CAUSE_DEPTH discipline in engine.md).
 
 ## Required verdict
 
@@ -155,7 +155,7 @@ Reviewers anchor on the candidate patch they see. The fleet's countermeasure
 is procedural: before opening any candidate diff, the reviewer commits its
 own independent proposed fix to disk.
 
-Path convention: `.fleet/runs/<run_id>/reviewer-blind-fix-<reviewer-or-finding-id>.md`,
+Path convention: `.fleet/runs/<run_id>/reviewer-blind-fix-<finding-id>.md`,
 one per reviewer in multi-reviewer setups, or one per finding in
 fix-loop-phase reviews. Contents:
 

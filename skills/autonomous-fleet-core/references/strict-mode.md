@@ -174,7 +174,7 @@ with a warning, not a deadlock.
   conformance of `fleet-outcome` YAML is still that validator's job.
   The hook only checks "did a readiness doc with `status: done`
   appear in window" — it does NOT validate the YAML inside.
-- **Does not replace** Commit 1's verify-findings. Schema-verified
+- **Does not replace** Layer 1's verify-findings. Schema-verified
   reviewer findings are still mandatory for review missions. The hook
   CONSUMES a passing verify-summary as evidence, but it doesn't replace
   the verifier itself.

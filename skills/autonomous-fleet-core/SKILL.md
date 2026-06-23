@@ -52,6 +52,11 @@ enforcement of the engine's EVID/WT_CLEAN/e2e_verified disciplines via a Claude 
 see [references/strict-mode.md](references/strict-mode.md): opt-in install of the stop-verify
 gate that refuses session termination without verifiable evidence on disk.
 
+Every run that emits first-class artifacts (findings, blind-fix files, verifier summaries) leaves a
+manifest-audited trail under `.fleet/runs/<run_id>/`. See
+[references/run-archive.md](references/run-archive.md) for the manifest scheme and the
+`archive_enabled` gate (a `status: done` outcome is rejected if its archive doesn't validate).
+
 ## Primitives (summary)
 
 The active adapter must implement: `PLACE`, `SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`,
