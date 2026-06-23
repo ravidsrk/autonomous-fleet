@@ -25,7 +25,7 @@ skills to load next.
 
 ## What this framework is
 
-A **skill package** of 20 installable skills (this one + core + adapters + missions + programs + setup).
+A **skill package** of 21 installable skills (this one + core + adapters + missions + programs + setup).
 Each single-mission run composes three layers:
 
 | Layer | Skill(s) | Role |

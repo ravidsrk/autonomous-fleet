@@ -28,7 +28,7 @@ metadata:
 
 Before executing, activate these skills and read their full instructions:
 
-1. `autonomous-fleet-core` - read `references/engine.md` and `references/composition.md` when coordinating
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
 2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
@@ -40,8 +40,8 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
 | `claude_design` MCP | DESIGN SOURCE uses MCP connector | User must `/design-login` - HARD EXTERNAL DEPENDENCY |
-| `design-review` | After a parity wave; coordinator wants visual QA sampling | Rely on @codex review gate only |
-| `qa-only` | Staging/preview URL exists; report-only fidelity check | Screenshot + @codex review only |
+| `design-review` | After a parity wave; coordinator wants visual QA sampling | Rely on @claude review gate only |
+| `qa-only` | Staging/preview URL exists; report-only fidelity check | Screenshot + @claude review only |
 
 Community catalog: `autonomous-fleet-core` → `references/community-skills.md`. At most 2 optional
 skills active (including MCP row).
@@ -52,7 +52,7 @@ skills active (including MCP row).
 |------|--------|----------------|
 | @grok (build items) | `frontend-design`, `frontend-ui-engineering`; iOS → `swiftui-liquid-glass` | Design extract + parity spec |
 | @grok (QA fix loop) | `qa` when staging URL and user wants fix-verify loop | Mission fidelity gate only |
-| @claude (extract, map, ship) | `domain-modeling` when new product terms surface | claude_design MCP / export per DESIGN SOURCE |
+| @claude (extract, map, fresh review, ship) | `domain-modeling` when new product terms surface | claude_design MCP / export per DESIGN SOURCE |
 
 ## Deferred missions
 
@@ -91,10 +91,10 @@ produces materially better visual fidelity on landing-page and design-parity
 runs than @codex. Stage-9's general retirement of @grok (prompts.md L3013)
 does not apply to design/landing missions.
 
-- @claude IMPORTS the design + PROBES the existing product + builds the PARITY MAP + thin per-area
+- @claude IMPORTS the design + PROBES the existing product + compiles the PARITY MAP + thin per-area
   specs.
 - @grok CODES each area to full depth (visual match + feature).
-- @codex REVIEWS each PR (fresh, build-blind): design-faithful AND no lost functionality, all
+- A fresh build-blind @claude REVIEWS each PR: design-faithful AND no lost functionality, all
   states, real tests, no placeholders/half-migrated screens.
 - @claude SHIPS: opens PR, conflict-aware merge, worktree cleanup.
 
@@ -130,7 +130,7 @@ exists and passes.
 - **T-FOUNDATION [relay]** - implement the design SYSTEM (tokens/theme/typography/spacing/shared
   components) wired in, with tests. Gates the screens.
 - **T-ITEMS… [per matrix item, loop]** - @claude thin-plans → @grok builds to full parity (visual
-  + feature, all states, responsive, tests) → @codex reviews (fidelity + no lost functionality +
+  + feature, all states, responsive, tests) → fresh build-blind @claude reviews (fidelity + no lost functionality +
   tests) → @claude ships. Parallelize non-overlapping screens; serialize overlapping.
 - **T-FINAL [@claude]** - build green, lint clean, full suite green. Every matrix item DONE; the
   product matches the design everywhere; every product-probe capability still works (zero

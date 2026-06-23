@@ -57,7 +57,7 @@ extract_ledger_condition() {
     echo "FAIL ledger file not found: $file" >&2
     return 1
   fi
-  python3 - "$file" <<'PY'
+  "${VENV_PYTHON:-python3}" - "$file" <<'PY'
 import sys
 from pathlib import Path
 

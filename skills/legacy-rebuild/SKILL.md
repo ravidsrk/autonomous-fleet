@@ -80,7 +80,7 @@ behaviour, data, and external contracts. Each rebuilt unit lands working and tes
 
 - @claude AUDITS + captures the FLOOR + RESEARCHES + freezes the architecture + per-unit specs.
 - @codex CODES each unit on the modern architecture.
-- @codex REVIEWS each PR (fresh, build-blind): conforms to target architecture, preserves the
+- A fresh build-blind @claude REVIEWS each PR: conforms to target architecture, preserves the
   unit's floor behaviour, real green tests, no legacy anti-pattern reintroduced.
 - @claude SHIPS: opens PR, conflict-aware merge, worktree cleanup.
 
@@ -112,7 +112,7 @@ via PR#n`).
   project structure, dependency upgrades to current versions, base tooling + test harness). Gates
   dependent units.
 - **T-UNITS… [per unit, loop]** — @codex rebuilds the unit on the modern architecture preserving
-  its floor behaviour (tests) → @codex reviews (architecture conformance + feature parity + real
+  its floor behaviour (tests) → fresh build-blind @claude reviews (architecture conformance + feature parity + real
   green tests) → @claude ships. Independent units parallel; file-overlapping/dependent serialized.
 - **T-FINAL [@claude]** — build green (on the NEW build system), lint clean, full suite green. The
   app is fully on the target architecture (no flagged anti-patterns remain); EVERY behaviour in

@@ -344,6 +344,26 @@ WORKER PLACEMENT — the DECISION LOGIC (tool-agnostic). The adapter maps it to 
 - Always wait for the worker to be ready before DISPATCH (the adapter defines "ready"). Keep
   dependency chains ≤3–4 deep. Retire each isolated checkout the moment its PR merges; no
   speculative/duplicate workers. Log placement + concurrency per task.
+
+CONTAINER-USE-PLACEMENT — the optional sandboxed variant of PLACE(independent) (tool-agnostic; each
+adapter supplies its own `<tool> mcp add container-use -- container-use stdio` registration command,
+needs Docker). When the container-use MCP is configured, PLACE(independent) MAY use a container-use
+ENVIRONMENT instead of a host `git worktree`, closing the OS-sandbox gap (the worker runs in an
+isolated Linux container, not the host) and the isolation gap (each environment is its own git
+branch) in one move. The loop is identical across adapters:
+- SPAWN_WORKER(independent): give the worker the container-use MCP tools and instruct it to do ALL
+  file/shell work through the environment (`environment_create` → env id + branch
+  `container-use/<env>`, then `environment_file_write` / `environment_run_cmd`). One env per task
+  unit; never touch `.git` directly.
+- INSPECT(): `container-use list` / `log <env>` / `diff <env>` (non-destructive).
+- OPEN_PR / SHIP (preferred): `container-use checkout <env>` (local branch from
+  `container-use/<env>`), push, `gh pr create --base BASE` — keeps the SHA-pin + conflict-aware
+  review gate. NOTE: `container-use merge <env>` merges into the CURRENT branch (no `--base`) and
+  BYPASSES the PR/review gate, so use it only after an explicit `git checkout BASE`, never as the
+  default ship path.
+- CLEANUP: `container-use delete <env>` (or `--all` at run end) instead of `git worktree remove`.
+- FALLBACK: no container-use MCP → the plain `git worktree` PLACE(independent) above (host-level
+  isolation, no sandbox). Adoption details: docs/adopt-container-use.md.
 - COUPLING-AWARE PARTITIONING (run at decomposition, UPSTREAM of the hot-file rule below):
   before splitting work, build a static import/symbol graph of the touched files. Then: (a) CLUSTER
   tightly-coupled files (a file and the symbols it imports/defines that the change spans) into ONE

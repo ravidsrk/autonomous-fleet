@@ -28,7 +28,7 @@ metadata:
 
 Before executing, activate these skills and read their full instructions:
 
-1. `autonomous-fleet-core` - read `references/engine.md` and `references/composition.md` when coordinating
+1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md` when coordinating
 2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`, `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
 Follow the core and your adapter in full, then apply the mission parameters below.
@@ -39,7 +39,7 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
-| `qa-only` | Production/staging URL; report-only before final section PR | Screenshot + @codex review only |
+| `qa-only` | Production/staging URL; report-only before final section PR | Screenshot + @claude review only |
 | `browse` | Coordinator spot-checks live page between sections | Screenshot + manual diff |
 
 Community catalog: `autonomous-fleet-core` → `references/community-skills.md`.
@@ -48,9 +48,9 @@ Community catalog: `autonomous-fleet-core` → `references/community-skills.md`.
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude / @grok (build sections) | `frontend-design`, `frontend-ui-engineering` | Design extract values exactly |
+| @grok (build sections) | `frontend-design`, `frontend-ui-engineering` | Design extract values exactly |
 | @grok (section QA) | `qa` when URL available and fix-verify loop requested | Fidelity gate per section |
-| @codex (review) | - | Mission fidelity gate |
+| @claude (extract/diff, fresh review, integrator) | — | Mission fidelity gate |
 
 ## Deferred missions
 
@@ -92,8 +92,9 @@ produces materially better visual fidelity on landing-page and design-parity
 runs than @codex. Stage-9's general retirement of @grok (prompts.md L3013)
 does not apply to design/landing missions.
 
-- @claude EXTRACTS the design + DIFFS production + rebuilds each section.
-- @codex REVIEWS each PR (fresh, build-blind): matches the design export
+- @claude EXTRACTS the design + DIFFS production (the frozen DIVERGENCE CHECKLIST).
+- @grok rebuilds each section.
+- A fresh build-blind @claude REVIEWS each PR: matches the design export
   (tokens/spacing/type/layout), the claimed D-item is actually closed, responsive, no
   placeholders.
 - @claude is the INTEGRATOR: opens PR, conflict-aware merge, worktree cleanup.
@@ -121,9 +122,9 @@ covered D-item stays `OPEN` until a replayable baseline exists and passes.
   production files responsible; surface any additional divergences (add as D-items). Output
   docs/landing-diff.md. Record VISUAL BASELINE capture commands/queries and write the full
   checklist to the ledger.
-- **T-CONVERGE… [per section/D-item, loop]** - each is one PR. @claude rebuilds that section to
+- **T-CONVERGE… [per section/D-item, loop]** - each is one PR. @grok rebuilds that section to
   MATCH the design exactly (correct tokens, spacing, type, layout, component treatment), closing
-  its D-item(s), responsive, real content → @codex reviews (fidelity + D-item closed + responsive)
+  its D-item(s), responsive, real content → fresh build-blind @claude reviews (fidelity + D-item closed + responsive)
   → @claude merges. Do global-craft items (tokens/type scale/spacing rhythm/eyebrow labels) FIRST
   as a foundation pass so per-section fixes inherit them. Parallelize non-overlapping sections;
   serialize same-file. Update D-item close-status.

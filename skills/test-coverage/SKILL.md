@@ -43,7 +43,8 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude (map, write tests, integrator) | — | Match repo test framework from T-MAP |
+| @codex (write tests) | — | Match repo test framework from T-MAP |
+| @claude (map, review, integrator) | — | Match repo test framework from T-MAP |
 
 ## Deferred missions
 
@@ -68,8 +69,9 @@ percentage with trivial assertions; do NOT change application logic to make test
 (record any such need as a finding). Coverage must rise on real tests and never regress.
 
 ## ROLE PIPELINE
-- @claude identifies coverage gaps and WRITES the tests.
-- @codex REVIEWS each PR (fresh, build-blind): tests assert real behaviour, would FAIL if the
+- @claude identifies coverage gaps (the frozen GAP INDEX).
+- @codex WRITES the tests.
+- A fresh build-blind @claude REVIEWS each PR: tests assert real behaviour, would FAIL if the
   code broke (not tautological), cover meaningful paths, no coverage-padding, no logic changed.
 - @claude is the INTEGRATOR: opens PR, merges (conflict-aware), cleans worktree.
 
@@ -83,8 +85,8 @@ with before/after coverage where the tooling reports it.
   importance (core logic and regression-prone paths first, trivial getters last). Identify the
   test framework + conventions already in the repo (match them). Output
   `docs/test-coverage-map.md`. Freeze, then fill.
-- **T-COVER… [per area, loop]** — each area is one PR. @claude writes behaviour-exercising tests
-  for that area (verify they FAIL against intentionally-broken code, then pass) → @codex reviews
+- **T-COVER… [per area, loop]** — each area is one PR. @codex writes behaviour-exercising tests
+  for that area (verify they FAIL against intentionally-broken code, then pass) → fresh build-blind @claude reviews
   (real assertions, meaningful paths, no padding) → @claude merges. Parallelize across
   non-overlapping test files; serialize same-file. Update the GAP INDEX + coverage deltas.
 - **T-FINAL [@claude]** — full suite green; coverage rose on the mapped areas and did not

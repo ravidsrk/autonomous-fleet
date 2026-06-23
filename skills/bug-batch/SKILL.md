@@ -45,8 +45,8 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude (repro test, fix, integrator) | — | Repo test conventions |
-| @codex (review) | — | Mission review gate only |
+| @codex (repro test, fix) | — | Repo test conventions |
+| @claude (review, integrator) | — | Mission review gate only |
 
 ## Deferred missions
 
@@ -72,8 +72,9 @@ regression elsewhere. One PR per bug. No feature work — if a "bug" is actually
 record it and skip.
 
 ## ROLE PIPELINE
-- @claude triages the batch and (per bug) writes the reproducing test + the fix.
-- @codex REVIEWS each PR (fresh, build-blind): the test genuinely reproduces the bug (fails
+- @claude triages the batch into a frozen BUG INDEX.
+- @codex (per bug) writes the reproducing test + the fix.
+- A fresh build-blind @claude REVIEWS each PR: the test genuinely reproduces the bug (fails
   WITHOUT the fix), the fix addresses root cause (not a symptom mask), no regression, scoped.
 - @claude is the INTEGRATOR: opens PR, merges (conflict-aware), cleans worktree.
 
@@ -93,8 +94,8 @@ SKIPPED (reason)`.
      guess-fix an unreproduced bug.
   2. **FIX**: fix the root cause so the test goes green; run the full suite (no regression). Set
      FIXED.
-  3. @codex reviews the PR — independently confirms the test fails without the fix and passes
-     with it, the fix is root-cause not symptom, no regression → @claude merges.
+  3. A fresh build-blind @claude reviews the PR — independently confirms the test fails without the
+     fix and passes with it, the fix is root-cause not symptom, no regression → @claude merges.
   Parallelize bugs in non-overlapping files; serialize same-file (hot-file rule). Update the BUG
   INDEX.
 - **T-FINAL [@claude]** — full suite green incl. every new reproducing test; walk the BUG INDEX,

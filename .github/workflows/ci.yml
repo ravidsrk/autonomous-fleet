@@ -4,7 +4,10 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   validate:
@@ -12,16 +15,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: ShellCheck
+        # -S warning: fail on warnings + errors (genuine bugs); advisory info-level checks vary by
+        # shellcheck version across runners, so don't gate CI on them.
+        run: shellcheck -S warning scripts/*.sh scripts/lib/*.sh
+
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
 
+      # No package-lock.json to key on, so cache ~/.npm by the pinned skills CLI version.
+      # Bump the key when SKILLS_CLI in scripts/install-skills.sh changes.
+      - name: Cache npx skills CLI
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npx-skills-1.5.12
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
 
       - name: Install skill-creator
-        run: npx skills add https://github.com/anthropics/skills --skill skill-creator -y -p
+        run: npx skills@1.5.12 add https://github.com/anthropics/skills --skill skill-creator -y -p
 
       - name: Install Python test deps
         run: |

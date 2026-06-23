@@ -50,7 +50,8 @@ Inject per role on DISPATCH (workers load these; coordinator does not):
 
 | Role | Skills | If unavailable |
 |------|--------|----------------|
-| @claude (audit, fix, integrator) | — | Repo README + manifests only |
+| @codex (write doc fixes) | — | Repo README + manifests only |
+| @claude (audit, fresh review, integrator) | — | Repo README + manifests only |
 
 ## Deferred missions
 
@@ -77,8 +78,9 @@ APIs, or tests' meaning. If a doc reveals an actual code bug, do NOT fix the cod
 DECISIONS.md as a finding for a separate mission.
 
 ## ROLE PIPELINE
-- @claude AUDITS (finds drift) and WRITES the doc fixes.
-- @codex REVIEWS each PR (fresh, build-blind): confirms the doc now matches the code, examples
+- @claude AUDITS (finds drift) — the frozen DRIFT INDEX.
+- @codex WRITES the doc fixes.
+- A fresh build-blind @claude REVIEWS each PR: confirms the doc now matches the code, examples
   actually run, links resolve, nothing factually wrong remains.
 - @claude is the INTEGRATOR: opens the PR, merges (conflict-aware), cleans the worktree.
 
@@ -93,8 +95,8 @@ CLOSED via PR#n`.
   area (README / setup / API / AGENTS.md / comments / examples). Also flag broken links, dead
   example commands, and instructions that no longer work. Output `docs/doc-sync-audit.md`.
   Independent — this is the only discovery task; freeze it, then fix.
-- **T-FIX… [per doc area, loop]** — each doc area is one PR. @claude rewrites that area to match
-  the code (run any example/command to verify it actually works) → @codex reviews the PR (doc
+- **T-FIX… [per doc area, loop]** — each doc area is one PR. @codex rewrites that area to match
+  the code (run any example/command to verify it actually works) → fresh build-blind @claude reviews the PR (doc
   matches code, examples run, links resolve) → @claude merges. Parallelize across non-overlapping
   doc files; serialize edits to the same file. Update the DRIFT INDEX as items close.
 - **T-FINAL [@claude]** — verify every DRIFT-INDEX item is CLOSED, all example commands run,
