@@ -111,4 +111,4 @@ In `tests/mutations.yaml`:
 - Follow-up commit for `docs/plans/way-ahead-2026-06-23.md` § Commit C.
 - Adversarial review found that Commit C's bench driver referenced
   env vars that didn't exist in any verifier. This doc + the
-  `substrate_disable.py` library + 47 tests close the gap.
+  `substrate_disable.py` library + `tests/test_substrate_disable.py` close the gap.

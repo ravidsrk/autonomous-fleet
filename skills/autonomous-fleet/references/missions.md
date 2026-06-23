@@ -41,6 +41,13 @@ for the promotion criteria.
 | 2 | `inference-cost` | `docs/exploratory/missions/inference-cost/` |
 | 3 | `legacy-rebuild` | `docs/exploratory/missions/legacy-rebuild/` |
 | 3 | `take-product-to-completion` | `docs/exploratory/missions/take-product-to-completion/` |
+| — | `agents-layer` | `docs/exploratory/missions/agents-layer/` |
+| — | `contract-first-build` | `docs/exploratory/missions/contract-first-build/` |
+| — | `scaffold-align` | `docs/exploratory/missions/scaffold-align/` |
+
+The three `—`-tier missions were demoted earlier (2026-06-22) and still carry
+placeholder `@builder`/`@reviewer` role handles; they must adopt canonical
+`@codex`/`@claude` staffing before promotion back to `skills/`.
 
 These SKILLs do not load via the umbrella. To run one, promote it first (see the
 exploratory README) or invoke it manually as a one-off operator action with the

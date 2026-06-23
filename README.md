@@ -137,7 +137,7 @@ That's it. The rest of this README is for going deeper.
 
 > Three proven missions today (`doc-sync`, `test-coverage`,
 > `adversarial-review-and-fix`) plus the `fleet-program` shell for chaining
-> them. Nine more missions are documented but exploratory — see
+> them. Twelve more missions are documented but exploratory — see
 > [`docs/exploratory/missions/`](docs/exploratory/missions/). Install the
 > ones you need with `--skill <name>`, or grab everything with
 > `--skill '*'`.
@@ -159,8 +159,9 @@ That's it. The rest of this README is for going deeper.
 
 ### Exploratory (not yet shipped end-to-end)
 
-`bug-batch`, `cleanup`, `dependency-update`, `design-integration`,
-`inference-cost`, `landing-page-convergence`, `legacy-rebuild`,
+`agents-layer`, `bug-batch`, `cleanup`, `contract-first-build`,
+`dependency-update`, `design-integration`, `inference-cost`,
+`landing-page-convergence`, `legacy-rebuild`, `scaffold-align`,
 `take-product-to-completion`, and `targeted-migration` live under
 [`docs/exploratory/missions/`](docs/exploratory/missions/). They're
 documented in full but lack the progress + readiness + external-archive
@@ -257,7 +258,7 @@ The framework has four component layers (distinct from the verification substrat
 ├──────────────────────────────────────────────────────────────┤
 │  missions × 3 (doc-sync, test-coverage,                      │
 │                adversarial-review-and-fix)                   │
-│  + 9 exploratory under docs/exploratory/missions/            │
+│  + 12 exploratory under docs/exploratory/missions/           │
 │  Tier 1 (recurring) → Tier 2 (campaign) → Tier 3 (ship)      │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -312,7 +313,7 @@ Full spec: [`skills/autonomous-fleet-core/references/fleet-outcome.md`](skills/a
 If you're hacking on the framework itself:
 
 ```bash
-./scripts/validate-all.sh                          # everything: skills + fleet-outcome + goals + run-archive + pytest (100% coverage gate)
+./scripts/validate-all.sh                          # everything: skills + fleet-outcome + goals + run-archive + blind-fix + trace + pytest (100% coverage gate)
 ./scripts/run-campaign.sh grok --preset repo-health --dry-run
 ./scripts/run-mission-headless.sh grok doc-sync --max-turns 50
 ```
@@ -324,17 +325,18 @@ Individual validators:
 ./scripts/validate-fleet-outcome.sh                # readiness doc fleet-outcome YAML
 ./scripts/validate-goal-condition.sh --scan-docs   # /goal binding
 python scripts/validate_run_archive.py             # Layers 3 & 4: manifest + sha256 + mtime ordering (the blind-fix anti-anchoring ordering IS Layer 3)
-pytest tests/                                      # full suite (27 files, 100% coverage gate)
+pytest tests/                                      # full suite (37 files, 100% coverage gate)
 
 # Operator gates (run on a specific run-id)
 python scripts/verify_findings.py \
   .fleet/runs/<run_id>/p0-review-findings.json \
   --repo .                                         # Layer 1: re-quote every reviewer-cited line
-python scripts/stop_verify.py                      # Layer 2: stop-verify hook (returns decision:block / allow)
+echo '{"cwd":"."}' | python scripts/stop_verify.py --explain  # Layer 2: stop-verify CC hook (reads hook JSON on stdin)
 python scripts/verify_blind_fix.py .fleet/runs/<run_id>/  # Layer 3: blind-fix anti-anchoring guard
 python scripts/emit_trace.py validate \
        .fleet/runs/<run_id>/trace.jsonl              # Telemetry: structured trace stream (vibe-kanban / Agent View contract)
 python scripts/analyze_seat.py per-run             # Telemetry: seat analysis across all archives
+python scripts/analyze_cost.py per-run             # Telemetry: per-run + aggregate inference cost
 
 # CI-only gate (mirrors .github/workflows/ci.yml)
 ./scripts/mutation-check.sh                        # assert every manifest mutation is caught by guard tests
@@ -403,7 +405,7 @@ autonomous-fleet/
 │   └── doc-sync/, test-coverage/, adversarial-review-and-fix/  # 3 shipped missions (Commit D, 2026-06-23)
 ├── docs/
 │   ├── README.md                        # docs/ index — load-bearing files warning
-│   ├── exploratory/missions/            # demoted skills awaiting promotion (Commit D)
+│   ├── exploratory/missions/            # 12 demoted missions awaiting promotion
 │   ├── external-dogfood/                # gemoji repo-health + ship-with-proof evidence
 │   ├── research-community-skills.md
 │   └── doc-sync-audit.md                # latest drift index
@@ -416,15 +418,16 @@ autonomous-fleet/
 │   ├── verify_blind_fix.py              # Layer 3 anti-anchoring (blind-fix) verifier
 │   ├── emit_trace.py                    # Telemetry: structured trace stream (vibe-kanban / Agent View contract)
 │   ├── analyze_seat.py                  # Telemetry: seat analysis ("earns its seat") across archives
+│   ├── analyze_cost.py                  # Telemetry: per-run + aggregate inference cost
 │   ├── mutation-check.sh                # standing mutation gate (CI: assert tests catch known bugs)
 │   ├── eval-campaign-edge.{sh,py}
 │   ├── coupling-graph.py                # import/symbol graph for coupling-aware decomposition
 │   ├── render-dashboard.py              # ledger → attention-zone HTML dashboard
 │   ├── run-{campaign,mission-headless,sandboxed}.sh
 │   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate, secure-ship, handoff-to-product
-│   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, emit_trace, analyze_seat, locks, stop_verify, mission_registry, venv-bootstrap
+│   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, emit_trace, analyze_seat, analyze_cost, locks, substrate_disable, stop_verify, mission_registry, venv-bootstrap
 │   └── install-skills.sh
-├── tests/                               # 27 test files; validators + engine doctrine + 4-layer substrate
+├── tests/                               # 37 test files; validators + engine doctrine + 4-layer substrate
 ├── .agents/skills/                      # installed skill copies (gitignored)
 └── skills-lock.json                     # lockfile for npx skills
 ```

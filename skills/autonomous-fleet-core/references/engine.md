@@ -186,6 +186,22 @@ If about to message the user anything but the FINAL report (or a named hard-depe
 stop, re-read this block, read the ledger, take the orchestration action instead.
 
 ═══════════════════════════════════════════════════════════
+VERIFICATION SUBSTRATE (Layers 1-4) — the evidence floor every run sits on.
+═══════════════════════════════════════════════════════════
+The substrate moves "done" from self-attestation toward on-disk evidence. Four layers; each has a
+library, a validator, a `FLEET_DISABLE_*` kill-switch, and a reference doc. This block is the index
+that defines the Layer numbering the rest of the corpus cites; the blocks below specify each:
+- Layer 1 — schema-verified findings: review findings conform to a schema and every cited quote is
+  re-verified against source (`verify_findings.py`; `references/review-findings.md`).
+- Layer 2 — runtime enforcement gate / strict mode: an opt-in, adapter-provided gate refuses to end
+  a session without fresh on-disk evidence (`stop_verify.py`; `references/strict-mode.md`).
+- Layer 3 — anti-anchoring blind-fix: the reviewer commits its own fix before reading the candidate
+  patch (`verify_blind_fix.py`; `references/blind-fix.md`).
+- Layer 4 — run-archive: every run leaves a manifest-audited `.fleet/runs/<run_id>/` trail with
+  sha256 + mtime-ordering invariants (`fleet_run.py` / `validate_run_archive.py`;
+  `references/run-archive.md`).
+
+═══════════════════════════════════════════════════════════
 ROOT_CAUSE_DEPTH: a fix at the wrong call-stack depth is a symptom fix, no matter how green tests are.
 ═══════════════════════════════════════════════════════════
 EVID asks "does the original reproduction stop reproducing?" e2e_verified asks "does the real
@@ -424,6 +440,12 @@ existing readers render it, not by building a GUI.
 - Schema is versioned (`schema_version: "1.0"`) and breaking changes require a NEW `$id`; consumers
   pin to the version they understand. Adding a primitive, role, or status to the enum is a breaking
   change for the same reason — closed enums are part of the contract.
+- The trace `primitive`/`role` enums are trace-specific vocabulary — overlapping with, but NOT
+  identical to, the 13 coordinator PRIMITIVES. The trace records ledger state-transition verbs the
+  coordinator does not dispatch (`SYNC`, `MERGE`, `FREEZE`, `T-FINAL`, `COMMIT`, `ABORT`) and a
+  `FIXER` role (the blind-fix author), and omits coordinator-only primitives the trace never emits
+  (e.g. `PLACE`, `WORKER_DONE`, `OPEN_PR`, `CLEANUP`, `LOOP_POLL`). Neither list is a subset of the
+  other; the 13-primitive coordinator list above is unchanged.
 - Failure to emit a trace event is NOT a hard error. The run continues with degraded telemetry; the
   coordinator records `trace_emission_degraded: true` in `fleet-outcome.yaml` so the post-hoc audit
   knows the stream is incomplete. Hard-failing on a telemetry I/O error would let the dashboard veto
@@ -432,8 +454,11 @@ existing readers render it, not by building a GUI.
 ═══════════════════════════════════════════════════════════
 WRITE-LOCK DISCIPLINE — construction vs request locks.
 ═══════════════════════════════════════════════════════════
-A worker that mutates shared state (the run-archive, a worktree branch, an external API) MUST
-acquire the correct lock before the mutation and release it after. Two locks, two lifetimes:
+A worker that mutates shared state (the run-archive, a worktree branch, an external API) SHOULD
+acquire the correct lock before the mutation and release it after WHEN multiple coordinators or
+workers may write concurrently. (Status: the lock library is available and tested but has no
+single-coordinator call-site today — single-coordinator runs serialize through the file ledger.
+Wire it for parallel-coordinator or shared-archive multi-writer setups.) Two locks, two lifetimes:
 - CONSTRUCTION LOCK: acquired before a worker starts BUILDING artifacts in its task slot
   (worktree, branch, attestation file). Released only on COMMIT or ABORT. Long-held. Prevents
   two workers racing to write the same artifact path under `.fleet/runs/<run_id>/`.
