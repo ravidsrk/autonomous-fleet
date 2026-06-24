@@ -98,6 +98,40 @@ if ! "$VENV_PYTHON" scripts/registry_lint.py .; then
 fi
 
 echo ""
+echo "== verify-reviewer-sandbox =="
+# The reviewer is read-only: its producer slug must not be attributed any
+# diff/commit kind on the candidate branch. No reviewed manifests = exit 0.
+shopt -s nullglob
+rs_status=0
+for run_dir in .fleet/runs/*/; do
+  if ! "$VENV_PYTHON" scripts/verify_reviewer_sandbox.py "$run_dir"; then
+    rs_status=1
+  fi
+done
+shopt -u nullglob
+if (( rs_status != 0 )); then
+  echo "verify-reviewer-sandbox: a reviewer was attributed a write on the candidate" >&2
+  exit 1
+fi
+
+echo ""
+echo "== validate-namespacing =="
+# Every recorded worktree path + branch must carry the run's -<run_short>
+# suffix so parallel runs/checkouts never collide. No archives = exit 0.
+shopt -s nullglob
+ns_status=0
+for run_dir in .fleet/runs/*/; do
+  if ! "$VENV_PYTHON" scripts/validate_namespacing.py "$run_dir"; then
+    ns_status=1
+  fi
+done
+shopt -u nullglob
+if (( ns_status != 0 )); then
+  echo "validate-namespacing: a recorded branch/worktree is not run-namespaced" >&2
+  exit 1
+fi
+
+echo ""
 echo "== validate-trace (telemetry contract) =="
 # Trace stream (engine.md TRACE EMISSION). One JSONL line per state
 # transition; the schema is the dashboard contract (vibe-kanban, Agent View,

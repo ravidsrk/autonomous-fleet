@@ -57,7 +57,7 @@ There is no persistent external task daemon, so:
 ## PRIMITIVE → CODEX MECHANIC
 
 ### PLACE(kind)
-- `independent` → `git worktree add ../<repo>-<slug> -b <BRANCH_PREFIX><slug> BASE`.
+- `independent` → `git worktree add ../<repo>-<slug>-<run_short> -b <BRANCH_PREFIX><slug>-<run_short> BASE`.
 - `dependent` → current checkout/branch (fresh subagent or sub-session; no new worktree).
 
 ### PLACE(independent) via container-use (optional: isolated container + branch + sandbox)
@@ -136,3 +136,17 @@ mission sequencing.
   reviews (build-blind), coordinator or integrator opens/merges PRs.
 - File ledger is sacred — update at every lifecycle change before yielding the turn.
 - One in-flight unit per hot file; parallelize across non-overlapping files.
+
+
+## RESUMABILITY + REVIEWER ISOLATION (Wave 3 contract)
+
+- run_short: every isolated branch and worktree carries the active run's 6-hex suffix
+  (`<BRANCH_PREFIX><slug>-<run_short>`, `../<repo>-<slug>-<run_short>`, run_short = the 6-hex tail of
+  the run_id) so parallel runs/checkouts never collide on a bare slug.
+  `scripts/validate_namespacing.py` enforces this.
+- CONTINUE_WORKER(role, placement, session_handle): resume the worker thread (`codex exec resume <thread>`); else ALIAS to SPAWN_WORKER. Re-attach only for `live`-classified
+  rows (per `recovery_scan.py`); never re-attach a session whose PR merged or branch is gone. When a
+  row's `RESUME_COUNT` hits `MAX_RESUME_ATTEMPTS` (3), escalate instead of continuing.
+- Reviewer isolation: when role==reviewer, launch the worker via
+  `scripts/run-sandboxed.sh --role reviewer -- <reviewer-cli>` so the candidate tree is read-only and
+  only `.fleet/runs/<run_id>/` is writable.
