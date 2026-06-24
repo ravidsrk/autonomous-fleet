@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-fleet.dev/schemas/fleet-sha-pin.schema.json",
+  "title": "Fleet SHA Pin",
+  "description": "Reviewer-emitted machine substrate that records the exact branch SHA inspected at PASS time. Approved records are valid only while the branch HEAD still equals reviewed_sha; a moved branch requires force re-review. Post-merge deleted branches are N/A only when a merged marker is present.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "review_id",
+    "reviewed_sha",
+    "branch",
+    "verdict"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "description": "Schema version. Bump on breaking changes.",
+      "type": "string",
+      "const": "1.0"
+    },
+    "review_id": {
+      "description": "Stable identifier for this review run.",
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9._/-]+$"
+    },
+    "reviewed_sha": {
+      "description": "Exact 40-hex git commit SHA the reviewer inspected.",
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{40}$"
+    },
+    "branch": {
+      "description": "Branch whose HEAD must still equal reviewed_sha while the task is unmerged.",
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9._/-]+$"
+    },
+    "verdict": {
+      "description": "Only approve/PASS records are enforced; non-approving records are schema-valid but skipped.",
+      "type": "string",
+      "enum": [
+        "approve",
+        "PASS",
+        "request_changes",
+        "partial",
+        "fail",
+        "FAIL"
+      ]
+    },
+    "merged": {
+      "description": "Optional post-merge marker. If true and the branch is unknown/deleted, the SHA-pin check is N/A rather than a failure.",
+      "type": "boolean"
+    }
+  }
+}
