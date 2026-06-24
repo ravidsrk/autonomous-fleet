@@ -37,6 +37,18 @@ OPTIONAL: if the container-use MCP is configured (`claude mcp add container-use 
 stdio`, needs Docker), PLACE(independent) can use an isolated container + branch instead of a host
 worktree — see PLACE(independent) via container-use below.
 
+Machine-readable preflight requires-block:
+
+```yaml requires
+bins: [claude, git, gh]
+env: []
+auth:
+  - check: "gh auth status"
+    skip_if_intent: "no_scm"
+intent_gated:
+  scm: "willClaimExistingPR"
+```
+
 ## CONCURRENCY MODEL (important difference from Orca)
 Claude Code parallelism is via SUBAGENTS launched with the Task tool — multiple can run
 concurrently within one coordinator turn. There is no persistent external task daemon, so:

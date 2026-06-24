@@ -9,28 +9,14 @@ from typing import Any
 
 import yaml
 
+from .fleet_registry import MISSIONS
+
 REQUIRED_TOP = frozenset({"mission", "status", "repo", "base_branch", "prs_merged"})
 VALID_STATUSES = frozenset({"done", "partial", "blocked"})
 
 MISSION_METRICS: dict[str, frozenset[str]] = {
-    "doc-sync": frozenset({"drift_open", "code_bug_findings"}),
-    "test-coverage": frozenset({"gaps_open", "coverage_regressed"}),
-    "dependency-update": frozenset({"advisories_open", "majors_deferred"}),
-    "cleanup": frozenset({"cleanup_items_open"}),
-    "bug-batch": frozenset({"bugs_open", "bugs_skipped"}),
-    "adversarial-review-and-fix": frozenset(
-        {"p0_open", "p1_open", "findings_open", "ops_queue_count"}
-    ),
-    "targeted-migration": frozenset({"migration_items_open", "old_axis_removed"}),
-    "design-integration": frozenset({"parity_items_open", "regressions"}),
-    "landing-page-convergence": frozenset({"divergences_open"}),
-    "legacy-rebuild": frozenset({"units_open", "floor_preserved", "e2e_verified"}),
-    "take-product-to-completion": frozenset(
-        {"in_items_open", "roadmap_count", "stubs_remaining", "e2e_verified"}
-    ),
-    "inference-cost": frozenset(
-        {"cost_regressed", "quality_regressed", "levers_open"}
-    ),
+    mission_id: frozenset(str(metric) for metric in row["metrics"])
+    for mission_id, row in MISSIONS.items()
 }
 E2E_VERIFIED_MISSIONS = frozenset(
     {"take-product-to-completion", "legacy-rebuild"}

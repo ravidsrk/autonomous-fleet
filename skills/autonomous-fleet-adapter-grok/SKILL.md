@@ -35,6 +35,18 @@ branch at current HEAD if absent). The coordinator confirms these with Shell at 
 container-use MCP (`grok mcp add container-use -- container-use stdio`, needs Docker) for sandboxed
 container placement, see PLACE(independent) via container-use below.
 
+Machine-readable preflight requires-block:
+
+```yaml requires
+bins: [grok, git, gh]
+env: []
+auth:
+  - check: "gh auth status"
+    skip_if_intent: "no_scm"
+intent_gated:
+  scm: "willClaimExistingPR"
+```
+
 ## CONCURRENCY MODEL (important difference from Orca)
 Grok parallelism is via SUBAGENTS launched with the Task tool — multiple can run concurrently.
 There is no persistent external task daemon, so:
