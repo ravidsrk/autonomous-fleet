@@ -38,7 +38,7 @@ Two honest limitations are surfaced where they live, not hidden:
 
 > The trace stream emits exactly one event in production today, `T-FINAL`, written by
 > `scripts/lib/fleet_run.py` (before the manifest, per the engine doctrine). The schema covers
-> 11 primitives; per-transition emission is rolling out. See [Trace schema](16-trace-schema.md).
+> its 11-value trace primitive enum; per-transition emission is rolling out. See [Trace schema](16-trace-schema.md).
 
 > Headless campaign mode (`run-campaign.sh`) is not yet validated end-to-end. The interactive
 > path (your agent's chat, `/goal`) is the supported flow today. See
