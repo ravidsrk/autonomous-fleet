@@ -7,7 +7,7 @@ Covers:
 - TraceEmitter context-manager close + idempotent ``close()``.
 - validate_event() happy + every failure mode (missing field, wrong type,
   bad enum, bad ts, bad run_id, additional properties, bad evidence_hash,
-  negative cost_delta, bad parent_event uuid, non-dict details, bad
+  negative cost_delta, bad parent_event, non-dict details, bad
   schema_version, non-string mission, non-string task_id).
 - iter_trace_file() tolerates malformed and non-object lines.
 - CLI: validate + summary subcommands (happy and failure paths).
@@ -113,10 +113,10 @@ def _manifest_archive(tmp_path: Path) -> tuple[Path, fleet_run.FileEntry]:
 # --- TraceEmitter -----------------------------------------------------------
 
 
-def test_emit_creates_jsonl_and_returns_event(tmp_path: Path) -> None:
+def test_emit_creates_jsonl_and_returns_event_id(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"
     with TraceEmitter(run_dir, mission=MISSION, run_id=RUN_ID) as emitter:
-        event = emitter.emit(
+        event_id = emitter.emit(
             "DISPATCH",
             "COORDINATOR",
             "started",
@@ -124,35 +124,75 @@ def test_emit_creates_jsonl_and_returns_event(tmp_path: Path) -> None:
             cost_delta=0.25,
             details={"note": "first dispatch"},
         )
-    assert event["primitive"] == "DISPATCH"
-    assert event["task_id"] == "T1"
-    assert event["mission"] == MISSION
-    assert event["run_id"] == RUN_ID
-    assert event["schema_version"] == SCHEMA_VERSION
-    assert event["details"] == {"note": "first dispatch"}
+    assert _UUID_RE.match(event_id)
 
     path = run_dir / "trace.jsonl"
     assert path.is_file()
     lines = path.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 1
     parsed = json.loads(lines[0])
-    assert parsed == event
+    assert parsed["id"] == event_id
+    assert parsed["primitive"] == "DISPATCH"
+    assert parsed["task_id"] == "T1"
+    assert parsed["mission"] == MISSION
+    assert parsed["run_id"] == RUN_ID
+    assert parsed["schema_version"] == SCHEMA_VERSION
+    assert parsed["details"] == {"note": "first dispatch"}
     assert validate_event(parsed) == []
 
 
 def test_emit_accepts_evidence_hash_and_parent_event(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"
     with TraceEmitter(run_dir, mission=MISSION, run_id=RUN_ID) as emitter:
-        event = emitter.emit(
+        event_id = emitter.emit(
             "COMMIT",
             "INTEGRATOR",
             "succeeded",
             evidence_hash="a" * 64,
             parent_event="12345678-1234-1234-1234-1234567890ab",
         )
+    event = json.loads((run_dir / "trace.jsonl").read_text(encoding="utf-8"))
+    assert event["id"] == event_id
     assert event["evidence_hash"] == "a" * 64
     assert event["parent_event"] == "12345678-1234-1234-1234-1234567890ab"
     assert validate_event(event) == []
+
+
+def test_emit_uses_injected_id_factory(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    ids = iter(["evt-0001", "evt-0002"])
+    with TraceEmitter(
+        run_dir,
+        mission=MISSION,
+        run_id=RUN_ID,
+        id_factory=lambda: next(ids),
+    ) as emitter:
+        spawn_id = emitter.emit("SPAWN_WORKER", "COORDINATOR", "started")
+        child_id = emitter.emit(
+            "INSPECT",
+            "BUILDER",
+            "succeeded",
+            parent_event=spawn_id,
+        )
+
+    assert spawn_id == "evt-0001"
+    assert child_id == "evt-0002"
+    events = list(iter_trace_file(run_dir / "trace.jsonl"))
+    assert [event["id"] for event in events] == ["evt-0001", "evt-0002"]
+    assert events[1]["parent_event"] == "evt-0001"
+    assert all(validate_event(event) == [] for event in events)
+
+
+def test_emit_rejects_empty_id_from_factory(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    with TraceEmitter(
+        run_dir,
+        mission=MISSION,
+        run_id=RUN_ID,
+        id_factory=lambda: "",
+    ) as emitter:
+        with pytest.raises(ValueError, match="non-empty string"):
+            emitter.emit("DISPATCH", "COORDINATOR", "started")
 
 
 def test_emit_appends_across_emits(tmp_path: Path) -> None:
@@ -163,8 +203,10 @@ def test_emit_appends_across_emits(tmp_path: Path) -> None:
         emitter.emit("MERGE", "INTEGRATOR", "succeeded")
     lines = (run_dir / "trace.jsonl").read_text(encoding="utf-8").splitlines()
     assert len(lines) == 3
-    primitives = [json.loads(line)["primitive"] for line in lines]
+    events = [json.loads(line) for line in lines]
+    primitives = [event["primitive"] for event in events]
     assert primitives == ["SPAWN_WORKER", "DISPATCH", "MERGE"]
+    assert len({event["id"] for event in events}) == 3
 
 
 def test_emit_atomic_flush_visible_immediately(tmp_path: Path) -> None:
@@ -207,17 +249,19 @@ def test_doctrine_emit_before_ledger_write(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"
     trace_path = run_dir / "trace.jsonl"
 
-    def commit_ledger_row(event: dict) -> None:
+    def commit_ledger_row(event_id: str, primitive: str) -> None:
         # The doctrine says trace MUST be on disk before this commits.
         assert trace_path.is_file(), "trace file missing at ledger-commit time"
         lines = trace_path.read_text(encoding="utf-8").splitlines()
         assert any(
-            json.loads(line)["primitive"] == event["primitive"] for line in lines
+            json.loads(line)["id"] == event_id
+            and json.loads(line)["primitive"] == primitive
+            for line in lines
         ), "trace event not flushed before ledger write"
 
     with TraceEmitter(run_dir, mission=MISSION, run_id=RUN_ID) as emitter:
-        event = emitter.emit("DISPATCH", "COORDINATOR", "started")
-        commit_ledger_row(event)
+        event_id = emitter.emit("DISPATCH", "COORDINATOR", "started")
+        commit_ledger_row(event_id, "DISPATCH")
 
 
 def test_write_manifest_with_emitter_emits_t_final(tmp_path: Path) -> None:
@@ -239,6 +283,7 @@ def test_write_manifest_with_emitter_emits_t_final(tmp_path: Path) -> None:
     event = json.loads(lines[0])
     assert validate_event(event) == []
     assert event["primitive"] == "T-FINAL"
+    assert isinstance(event["id"], str) and event["id"]
     assert event["role"] == "INTEGRATOR"
     assert event["status"] == "succeeded"
     assert event["run_id"] == RUN_ID
@@ -257,6 +302,22 @@ def test_write_manifest_without_emitter_does_not_emit_trace(tmp_path: Path) -> N
 
     assert manifest_path.is_file()
     assert not (archive_root / "trace.jsonl").exists()
+
+
+def test_fleet_run_worker_commit_lifeline_wires_parent(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    with TraceEmitter(run_dir, mission=MISSION, run_id=RUN_ID) as emitter:
+        spawn_id, commit_id = fleet_run.emit_worker_commit_lifeline(
+            emitter,
+            task_id="T1",
+            worker_role="BUILDER",
+        )
+
+    events = list(iter_trace_file(run_dir / "trace.jsonl"))
+    assert [event["primitive"] for event in events] == ["SPAWN_WORKER", "COMMIT"]
+    assert events[0]["id"] == spawn_id
+    assert events[1]["id"] == commit_id
+    assert events[1]["parent_event"] == spawn_id
 
 
 # --- validate_event ---------------------------------------------------------
@@ -345,6 +406,16 @@ def test_validate_task_id_wrong_type() -> None:
     assert "task_id must be a non-empty string when set" in errors
 
 
+def test_validate_id_empty() -> None:
+    errors = validate_event(_valid_event(id=""))
+    assert "id must be a non-empty string when set" in errors
+
+
+def test_validate_id_wrong_type() -> None:
+    errors = validate_event(_valid_event(id=123))
+    assert "id must be a non-empty string when set" in errors
+
+
 def test_validate_bad_evidence_hash() -> None:
     errors = validate_event(_valid_event(evidence_hash="not-a-sha"))
     assert any("evidence_hash must be 64-char hex sha256" in e for e in errors)
@@ -372,13 +443,13 @@ def test_validate_cost_delta_bool_rejected() -> None:
 
 
 def test_validate_bad_parent_event() -> None:
-    errors = validate_event(_valid_event(parent_event="nope"))
-    assert any("parent_event must be UUID-shaped" in e for e in errors)
+    errors = validate_event(_valid_event(parent_event=""))
+    assert "parent_event must be a non-empty string when set" in errors
 
 
 def test_validate_parent_event_wrong_type() -> None:
     errors = validate_event(_valid_event(parent_event=123))
-    assert any("parent_event must be UUID-shaped" in e for e in errors)
+    assert "parent_event must be a non-empty string when set" in errors
 
 
 def test_validate_details_wrong_type() -> None:
@@ -407,6 +478,42 @@ def test_iter_trace_yields_events_and_skips_malformed(tmp_path: Path) -> None:
     events = list(iter_trace_file(path))
     assert [e["primitive"] for e in events] == ["DISPATCH", "MERGE"]
     assert iter_trace_file.last_skipped == 2  # type: ignore[attr-defined]
+
+
+def test_lifeline_parent_points_at_real_spawn(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    with TraceEmitter(run_dir, mission=MISSION, run_id=RUN_ID) as emitter:
+        spawn_id = emitter.emit(
+            "SPAWN_WORKER",
+            "COORDINATOR",
+            "started",
+            task_id="T1",
+        )
+        emitter.emit(
+            "SPAWN_WORKER",
+            "COORDINATOR",
+            "started",
+            task_id="T2",
+        )
+        emitter.emit(
+            "COMMIT",
+            "BUILDER",
+            "succeeded",
+            task_id="T1",
+            parent_event=spawn_id,
+        )
+
+    events = list(iter_trace_file(run_dir / "trace.jsonl"))
+    commit = next(event for event in events if event["primitive"] == "COMMIT")
+    matching_spawns = [
+        event
+        for event in events
+        if event["primitive"] == "SPAWN_WORKER"
+        and event["id"] == commit["parent_event"]
+    ]
+    assert commit["parent_event"] == spawn_id
+    assert len(matching_spawns) == 1
+    assert matching_spawns[0]["task_id"] == "T1"
 
 
 # --- health_rollup ----------------------------------------------------------
@@ -570,12 +677,17 @@ def test_cli_summary_prints_health_last_failure(tmp_path: Path) -> None:
             task_id="T1",
             details={"reason": "a"},
         )
-        event = emitter.emit("FREEZE", "COORDINATOR", "blocked", task_id="T2")
+        freeze_id = emitter.emit("FREEZE", "COORDINATOR", "blocked", task_id="T2")
+    freeze_event = next(
+        event
+        for event in iter_trace_file(run_dir / "trace.jsonl")
+        if event["id"] == freeze_id
+    )
     rc, out, err = _run_cli("summary", str(run_dir))
     assert rc == 0, err
     assert (
         "health: 0 ok / 1 failed / 1 blocked / 0 skipped; "
-        f"last failure FREEZE@COORDINATOR ts={event['ts']}"
+        f"last failure FREEZE@COORDINATOR ts={freeze_event['ts']}"
     ) in out
 
 
@@ -633,7 +745,8 @@ def test_schema_drift_against_assets() -> None:
     assert schema["properties"]["mission"]["minLength"] == 1
     assert schema["properties"]["cost_delta"]["minimum"] == 0
     assert schema["properties"]["task_id"]["minLength"] == 1
-    assert set(schema["properties"].keys()) == set(_ALLOWED_FIELDS)
+    assert "id" not in schema["required"]
+    assert set(schema["properties"].keys()) | {"id"} == set(_ALLOWED_FIELDS)
     assert schema["$id"].endswith("fleet-trace.schema.json")
     assert schema["additionalProperties"] is False
 

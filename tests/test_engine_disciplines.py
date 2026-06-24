@@ -36,6 +36,18 @@ def assert_no_contradiction_markers(text: str) -> None:
         assert marker not in text
 
 
+def test_continue_worker_is_optional_with_spawn_fallback() -> None:
+    """CONTINUE_WORKER must be an OPTIONAL primitive that aliases to SPAWN_WORKER.
+
+    Deleting the alias-fallback clause (so adapters without restore have no
+    documented behaviour) must fail this test.
+    """
+    engine = squash(read_engine())
+    assert "CONTINUE_WORKER" in engine
+    assert "ALIAS it to `SPAWN_WORKER`" in engine
+    assert "OPTIONAL, like" in engine
+
+
 def test_self_orientation_defines_reference_input_as_read_only() -> None:
     text = read_engine()
     orientation = section(

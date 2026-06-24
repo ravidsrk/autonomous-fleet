@@ -51,7 +51,7 @@ intent_gated:
 
 ### SPAWN_WORKER(role, placement) → handle, in auto/max mode
 - INDEPENDENT:
-  `orca worktree create --name <slug> --agent <handle> --repo REPO_ROOT --json`
+  `orca worktree create --name <slug>-<run_short> --agent <handle> --repo REPO_ROOT --json`
   → `orca terminal list --worktree id:<newId> --json` (read the handle)
   → `orca terminal wait --terminal <handle> --for tui-idle --timeout-ms 60000 --json`
 - DEPENDENT:
@@ -101,7 +101,7 @@ Heartbeat likewise (payload `{"taskId","dispatchId","phase"}` OR `--task-id --di
   `gate-create`/`gate-resolve` ONLY for your own DAG decisions, never to answer a worker's ask.
 
 ### OPEN_PR / MERGE_PR(conflict-aware) / CLEANUP
-- OPEN_PR: `gh pr create --base BASE --head <BRANCH_PREFIX><slug> --title "<title>" --body "<body>"`.
+- OPEN_PR: `gh pr create --base BASE --head <BRANCH_PREFIX><slug>-<run_short> --title "<title>" --body "<body>"`.
 - MERGE_PR: check conflicts first (`gh pr view <n> --json mergeable,mergeStateStatus` or a trial
   rebase). If conflicts: `git fetch origin BASE && git rebase origin/BASE`, resolve, re-test green,
   re-review if logic changed, force-push. Then `gh pr merge <n> --merge --delete-branch` (merge
@@ -139,3 +139,17 @@ Orca has no `/goal` API. Primitives 9–12 map to the file ledger only:
 - Group addresses (`@all`, `@idle`, `@claude`, `@codex`, …) are for broadcasts only — never for
   dispatch lifecycle messages.
 - Dependency chains ≤3–4 deep; one in-flight task per hot file; retire each worktree on merge.
+
+
+## RESUMABILITY + REVIEWER ISOLATION (Wave 3 contract)
+
+- run_short: every isolated branch and worktree carries the active run's 6-hex suffix
+  (`<BRANCH_PREFIX><slug>-<run_short>`, `../<repo>-<slug>-<run_short>`, run_short = the 6-hex tail of
+  the run_id) so parallel runs/checkouts never collide on a bare slug.
+  `scripts/validate_namespacing.py` enforces this.
+- CONTINUE_WORKER(role, placement, session_handle): no documented session restore -> ALIAS to SPAWN_WORKER (idempotent relaunch). Re-attach only for `live`-classified
+  rows (per `recovery_scan.py`); never re-attach a session whose PR merged or branch is gone. When a
+  row's `RESUME_COUNT` hits `MAX_RESUME_ATTEMPTS` (3), escalate instead of continuing.
+- Reviewer isolation: when role==reviewer, launch the worker via
+  `scripts/run-sandboxed.sh --role reviewer -- <reviewer-cli>` so the candidate tree is read-only and
+  only `.fleet/runs/<run_id>/` is writable.

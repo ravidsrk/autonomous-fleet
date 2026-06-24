@@ -297,6 +297,37 @@ TRACE_EVENTS = [
     },
 ]
 
+
+def _deterministic_event_id_factory():
+    next_id = 1
+
+    def factory() -> str:
+        nonlocal next_id
+        event_id = f"evt-{next_id:04d}"
+        next_id += 1
+        return event_id
+
+    return factory
+
+
+def _trace_events_with_ids() -> list[dict]:
+    id_factory = _deterministic_event_id_factory()
+    events: list[dict] = []
+    spawn_id_by_task: dict[str, str] = {}
+    for event in TRACE_EVENTS:
+        row = dict(event)
+        row["id"] = id_factory()
+        task_id = row.get("task_id")
+        if row["primitive"] == "SPAWN_WORKER" and isinstance(task_id, str):
+            spawn_id_by_task[task_id] = row["id"]
+        if row["primitive"] == "INSPECT" and isinstance(task_id, str):
+            parent_event = spawn_id_by_task.get(task_id)
+            if parent_event is not None:
+                row["parent_event"] = parent_event
+        events.append(row)
+    return events
+
+
 # ── fleet-outcome.yaml (T-FINAL) ────────────────────────────────────────
 FLEET_OUTCOME_YAML = """---
 fleet-outcome:
@@ -308,6 +339,13 @@ fleet-outcome:
   archive_enabled: true
   run_id: 20260623T000000Z-adversarial-review-and-fix-000001
   cost_estimate: 0
+  tasks:
+    - id: task-example-1
+      built: true
+      pr_open: true
+      reviewed: true
+      merged: true
+      wt_clean: true
   metrics:
     p0_open: 0
     p1_open: 0
@@ -411,7 +449,10 @@ def build_fixture() -> None:
     verify_bytes = (json.dumps(VERIFY_SUMMARY, indent=2) + "\n").encode("utf-8")
     stop_bytes = STOP_VERIFY_LOG.encode("utf-8")
     p1_bytes = (json.dumps(P1_ATTESTATION, indent=2) + "\n").encode("utf-8")
-    trace_bytes = ("\n".join(json.dumps(e, sort_keys=True) for e in TRACE_EVENTS) + "\n").encode("utf-8")
+    trace_bytes = (
+        "\n".join(json.dumps(e, sort_keys=True) for e in _trace_events_with_ids())
+        + "\n"
+    ).encode("utf-8")
     outcome_bytes = FLEET_OUTCOME_YAML.encode("utf-8")
     readme_bytes = README_BODY.encode("utf-8")
 

@@ -35,6 +35,23 @@ loop is sufficient). The adapter documents the exact command for each. If the ad
 primitive in multiple syntaxes across tool versions, it says "try X, fall back to Y." This core
 never hard-codes a tool command — it calls the primitive by name and lets the adapter resolve it.
 
+14. `CONTINUE_WORKER(role, placement, session_handle)` → re-attach an EXISTING resumable agent
+    session for an in-flight task instead of spawning fresh. Adapters whose runtime exposes a
+    restore command (Grok `sessionId`, Codex thread, opencode session) implement it; adapters
+    without one ALIAS it to `SPAWN_WORKER` (the documented idempotent-relaunch fallback).
+    OPTIONAL, like 9–13. Constrained to `live`-classified rows only (per `recovery_scan.py`): never
+    re-attach a session whose PR merged or whose branch is gone. Resume budget is bounded — when a
+    row's `RESUME_COUNT` reaches `MAX_RESUME_ATTEMPTS` (3), the scanner recommends
+    `ESCALATE_TO_DECISIONS` instead of another continue.
+
+TRACKER vs SCM bindings: primitive 7's ship verbs are the SCM binding (`OPEN_PR` against BASE,
+conflict-aware `MERGE_PR`, `CLEANUP`); the issue-facing verbs (read issue, derive branch name, mark
+issue done) are the TRACKER binding. `gh`/GitHub is the DEFAULT binding for both, NOT the contract:
+the contract is "open a PR against BASE and conflict-aware merge it", satisfiable by `gh`, `glab`,
+or a Linear-tracker + GitHub-SCM pairing. An adapter declares its TRACKER and SCM bindings
+independently. This abstraction does NOT relax the conflict-aware, never-squash, or SHA-PIN rules —
+those bind whatever SCM is used.
+
 ═══════════════════════════════════════════════════════════
 SELF-ORIENTATION — run FIRST, before any task. No placeholders; discover the target.
 ═══════════════════════════════════════════════════════════
@@ -61,7 +78,10 @@ path, product, maintainer identity, or scope — figure them out and record in D
    non-alphanumeric → `-`, trailing slash) — e.g. `Jane Doe` → `jane-doe/`. If
    `docs/agents/fleet-config.md` exists (from `setup-autonomous-fleet`), use its `BRANCH_PREFIX`
    and recorded adapter/default-bundle hints. Record the chosen prefix in DECISIONS.md; every
-   adapter uses it for isolated branches (`<prefix><slug>`).
+   adapter uses it for isolated branches and worktrees, each carrying the active run's 6-char
+   suffix — branch `<prefix><slug>-<run_short>`, worktree `../<repo>-<slug>-<run_short>` (run_short =
+   the 6-hex tail of the run_id) — so parallel runs/checkouts never collide on a bare slug.
+   `scripts/validate_namespacing.py` (validate-all) rejects a recorded bare `<prefix><slug>`.
 Everywhere below: REPO_ROOT = resolved path, MAINTAINER = derived author, BRANCH_PREFIX = from
 step 7, BASE = the integration branch the mission specifies (default: a NEW branch off the default
 branch at current HEAD).
@@ -446,6 +466,10 @@ existing readers render it, not by building a GUI.
   integration (it emits the `T-FINAL` archive transition, test + mutation covered). Enforcement is the
   schema + `emit_trace.validate_event` + the schema-drift test + the trace mutations, NOT auto-wiring,
   because the file ledger is coordinator-driven.
+- CAUSAL LINEAGE: `emit()` stamps every event with a unique `id` and RETURNS it; a worker's
+  `COMMIT`/`INSPECT`/`WORKER_DONE` MUST set `parent_event` to that worker's `SPAWN_WORKER` id, so a
+  consumer can reconstruct one worker's lifeline. `fleet_run` wires the reference SPAWN→COMMIT edge;
+  `id` is optional in the schema (non-breaking) but always generated.
 - The `details` object is free-form but MUST NOT carry secrets or host-absolute paths; reference
   sensitive evidence by `evidence_hash`. The stream is meant for publication to external dashboards.
 - Schema is versioned (`schema_version: "1.0"`) and breaking changes require a NEW `$id`; consumers
