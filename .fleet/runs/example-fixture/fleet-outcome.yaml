@@ -8,6 +8,13 @@ fleet-outcome:
   archive_enabled: true
   run_id: 20260623T000000Z-adversarial-review-and-fix-000001
   cost_estimate: 0
+  tasks:
+    - id: task-example-1
+      built: true
+      pr_open: true
+      reviewed: true
+      merged: true
+      wt_clean: true
   metrics:
     p0_open: 0
     p1_open: 0
