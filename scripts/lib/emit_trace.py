@@ -25,12 +25,14 @@ from __future__ import annotations
 
 import json
 import re
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Callable, Iterator
 
-# Schema constants. Keep these in lockstep with fleet-trace.schema.json; the
-# drift test in tests/test_emit_trace.py asserts they agree.
+# Schema constants. Keep required fields and enums in lockstep with
+# fleet-trace.schema.json. The runtime-only optional ``id`` field is generated
+# for causal lifelines without bumping the pinned 1.0 schema.
 SCHEMA_VERSION = "1.0"
 
 PRIMITIVES = (
@@ -75,6 +77,7 @@ _REQUIRED_FIELDS = (
 )
 
 _OPTIONAL_FIELDS = (
+    "id",
     "task_id",
     "evidence_hash",
     "cost_delta",
@@ -98,6 +101,10 @@ def _utc_now_iso() -> str:
     """ISO 8601 UTC timestamp with the trailing Z (millisecond precision)."""
     now = datetime.now(timezone.utc).replace(microsecond=0)
     return now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _default_event_id() -> str:
+    return str(uuid.uuid4())
 
 
 _SECRET_RE = re.compile(
@@ -147,7 +154,7 @@ def validate_event(event: Any) -> list[str]:
     """Return a list of structural error messages for a candidate event.
 
     Empty list = valid. Mirrors fleet-trace.schema.json without depending on
-    jsonschema; the drift test asserts the two stay in sync.
+    jsonschema, with the non-breaking runtime addition of optional event ids.
     """
     errors: list[str] = []
     if not isinstance(event, dict):
@@ -198,6 +205,11 @@ def validate_event(event: Any) -> list[str]:
             f"status must be one of {list(STATUSES)}, got {status!r}"
         )
 
+    if "id" in event:
+        event_id = event["id"]
+        if not isinstance(event_id, str) or not event_id:
+            errors.append("id must be a non-empty string when set")
+
     if "task_id" in event:
         task_id = event["task_id"]
         if not isinstance(task_id, str) or not task_id:
@@ -227,10 +239,8 @@ def validate_event(event: Any) -> list[str]:
 
     if "parent_event" in event:
         parent_event = event["parent_event"]
-        if not isinstance(parent_event, str) or not _UUID_RE.match(parent_event):
-            errors.append(
-                f"parent_event must be UUID-shaped, got {parent_event!r}"
-            )
+        if not isinstance(parent_event, str) or not parent_event:
+            errors.append("parent_event must be a non-empty string when set")
 
     if "details" in event:
         if not isinstance(event["details"], dict):
@@ -303,16 +313,24 @@ class TraceEmitter:
 
     The emitter is opened in append mode so multiple coordinators in the
     same run share one stream without truncation. ``emit()`` writes one
-    line, flushes, and returns the event dict so callers can attach the
-    event to the ledger row.
+    line, flushes, and returns the event id so callers can attach causal
+    children to the ledger row.
     """
 
-    def __init__(self, run_dir: Path, *, mission: str, run_id: str) -> None:
+    def __init__(
+        self,
+        run_dir: Path,
+        *,
+        mission: str,
+        run_id: str,
+        id_factory: Callable[[], str] | None = None,
+    ) -> None:
         self._run_dir = Path(run_dir)
         self._run_dir.mkdir(parents=True, exist_ok=True)
         self._path = self._run_dir / "trace.jsonl"
         self._mission = mission
         self._run_id = run_id
+        self._id_factory = id_factory or _default_event_id
         self._fh = self._path.open("a", encoding="utf-8")
 
     @property
@@ -330,15 +348,19 @@ class TraceEmitter:
         cost_delta: float | None = None,
         details: dict | None = None,
         parent_event: str | None = None,
-    ) -> dict:
-        """Write one event, flush, and return the event dict.
+    ) -> str:
+        """Write one event, flush, and return the event id.
 
         The line is built then written-and-flushed in one call so partial
         lines never reach disk; this is the atomicity invariant guarded by
         the ``trace-emit-atomicity-off`` mutation.
         """
+        event_id = self._id_factory()
+        if not isinstance(event_id, str) or not event_id:
+            raise ValueError("event id factory must return a non-empty string")
         event: dict[str, Any] = {
             "schema_version": SCHEMA_VERSION,
+            "id": event_id,
             "ts": _utc_now_iso(),
             "run_id": self._run_id,
             "mission": self._mission,
@@ -364,7 +386,7 @@ class TraceEmitter:
         line = json.dumps(event, sort_keys=True) + "\n"
         self._fh.write(line)
         self._fh.flush()
-        return event
+        return event_id
 
     def close(self) -> None:
         if not self._fh.closed:
