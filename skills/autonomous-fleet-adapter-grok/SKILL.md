@@ -59,7 +59,7 @@ There is no persistent external task daemon, so:
 ## PRIMITIVE → GROK MECHANIC
 
 ### PLACE(kind)
-- `independent` → `git worktree add ../<repo>-<slug> -b <BRANCH_PREFIX><slug> BASE` (isolated
+- `independent` → `git worktree add ../<repo>-<slug>-<run_short> -b <BRANCH_PREFIX><slug>-<run_short> BASE` (isolated
   checkout on its own branch for a parallel PR).
 - `dependent` → operate in the current checkout/branch (a fresh subagent or sub-session; no new
   worktree).
@@ -110,13 +110,13 @@ BASE` via Shell. None of these consume anything.
   defaults — never escalates to the user.
 
 ### OPEN_PR / MERGE_PR(conflict-aware) / CLEANUP — all via Shell + gh
-- OPEN_PR: `gh pr create --base BASE --head <BRANCH_PREFIX><slug> --title "<title>" --body "<body>"`.
+- OPEN_PR: `gh pr create --base BASE --head <BRANCH_PREFIX><slug>-<run_short> --title "<title>" --body "<body>"`.
 - MERGE_PR: check conflicts (`gh pr view <n> --json mergeable,mergeStateStatus` or trial rebase).
   If conflicts: `git fetch origin BASE && git rebase origin/BASE`, resolve, re-test green,
   re-review (relaunch the reviewer subagent on the rebased diff) if logic changed, force-push.
   Then `gh pr merge <n> --merge --delete-branch` (merge commit, commits preserved, NEVER
   `--squash`).
-- CLEANUP: `git worktree remove ../<repo>-<slug>` for the merged unit; pull BASE.
+- CLEANUP: `git worktree remove ../<repo>-<slug>-<run_short>` for the merged unit; pull BASE.
 
 ### SYNC_TASK_STATE(task, status)
 Update the FILE LEDGER flag for the task. (No external task daemon to sync — the ledger is the
@@ -166,3 +166,17 @@ Background shell: `background: true` on `run_terminal_command`; poll with
   concurrently. Parallelize subagents across non-overlapping files.
 - Default role mapping when a mission does not override: Grok subagent builds, a fresh Grok
   subagent reviews (build-blind), coordinator or integrator subagent opens/merges PRs.
+
+
+## RESUMABILITY + REVIEWER ISOLATION (Wave 3 contract)
+
+- run_short: every isolated branch and worktree carries the active run's 6-hex suffix
+  (`<BRANCH_PREFIX><slug>-<run_short>`, `../<repo>-<slug>-<run_short>`, run_short = the 6-hex tail of
+  the run_id) so parallel runs/checkouts never collide on a bare slug.
+  `scripts/validate_namespacing.py` enforces this.
+- CONTINUE_WORKER(role, placement, session_handle): resume the session by its `sessionId` (grok session re-attach); else ALIAS to SPAWN_WORKER. Re-attach only for `live`-classified
+  rows (per `recovery_scan.py`); never re-attach a session whose PR merged or branch is gone. When a
+  row's `RESUME_COUNT` hits `MAX_RESUME_ATTEMPTS` (3), escalate instead of continuing.
+- Reviewer isolation: when role==reviewer, launch the worker via
+  `scripts/run-sandboxed.sh --role reviewer -- <reviewer-cli>` so the candidate tree is read-only and
+  only `.fleet/runs/<run_id>/` is writable.

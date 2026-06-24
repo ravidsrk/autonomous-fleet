@@ -281,3 +281,30 @@ mutations:
     find: 'if which(binary) is None:'
     replace: 'if False:'
     guards: [tests/test_adapter_preflight.py]
+
+  # --- Wave 3 (AO comparison improvements) ---
+  - id: trace-event-id-constant-collides
+    file: scripts/lib/emit_trace.py
+    find: 'return str(uuid.uuid4())'
+    replace: 'return "00000000-0000-0000-0000-000000000000"'
+    guards: [tests/test_emit_trace.py]
+  - id: resume-attempt-cap-raised
+    file: scripts/lib/recovery_scan.py
+    find: 'resume_count >= MAX_RESUME_ATTEMPTS'
+    replace: 'resume_count >= 99999'
+    guards: [tests/test_recovery_scan.py]
+  - id: reviewer-write-attribution-check-off
+    file: scripts/lib/reviewer_sandbox.py
+    find: 'if kind in WRITE_ATTRIBUTION_KINDS and _on_candidate_branch(entry, branch):'
+    replace: 'if False and kind in WRITE_ATTRIBUTION_KINDS and _on_candidate_branch(entry, branch):'
+    guards: [tests/test_reviewer_sandbox.py]
+  - id: namespace-run-short-suffix-dropped
+    file: scripts/lib/namespace.py
+    find: 'return f"{prefix}{slug}-{derive_run_short(run_id)}"'
+    replace: 'return f"{prefix}{slug}"'
+    guards: [tests/test_namespacing.py]
+  - id: tracker-scm-gh-required-inverted
+    file: skills/autonomous-fleet-core/references/engine.md
+    find: 'DEFAULT binding for both, NOT the contract'
+    replace: 'REQUIRED binding for both, IS the contract'
+    guards: [tests/test_engine_tracker_scm_split.py]
