@@ -6,6 +6,7 @@ import io
 import json
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 from contextlib import redirect_stderr, redirect_stdout
@@ -55,6 +56,38 @@ def _sandbox_env(tmp_path: Path) -> dict[str, str]:
         "HOME": str(tmp_path),
         "TMPDIR": str(tmp_path),
     }
+
+
+def _fallback_only_path(tmp_path: Path) -> str:
+    bin_dir = tmp_path / "fallback-bin"
+    bin_dir.mkdir()
+    for name in (
+        "awk",
+        "bash",
+        "cmp",
+        "diff",
+        "env",
+        "git",
+        "grep",
+        "mkdir",
+        "mktemp",
+        "printf",
+        "rm",
+        "sed",
+        "sh",
+        "shasum",
+        "sha256sum",
+        "sort",
+        "tr",
+        "xargs",
+    ):
+        found = shutil.which(name)
+        if found is None:
+            continue
+        link = bin_dir / name
+        if not link.exists():
+            os.symlink(found, link)
+    return str(bin_dir)
 
 
 def _manifest(*files: dict[str, object], **overrides: object) -> dict[str, object]:
@@ -161,6 +194,35 @@ def test_run_sandboxed_role_reviewer_allows_run_tmp_and_test_output(
     assert (run_dir / "out.txt").read_text(encoding="utf-8") == "run\n"
     assert (run_dir / "tmp" / "tmp.txt").read_text(encoding="utf-8") == "tmp\n"
     assert (run_dir / "test-output" / "out.txt").read_text(encoding="utf-8") == "test\n"
+
+
+def test_run_sandboxed_fallback_detects_untracked_file_write(
+    git_repo: Path, tmp_path: Path
+) -> None:
+    env = {**_sandbox_env(tmp_path), "PATH": _fallback_only_path(tmp_path)}
+
+    result = subprocess.run(
+        [
+            str(SANDBOX),
+            "--role",
+            "reviewer",
+            "--run-id",
+            RUN_ID,
+            "--",
+            "sh",
+            "-c",
+            "printf new > untracked.txt",
+        ],
+        cwd=git_repo,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+
+    assert result.returncode == 4
+    assert "tracked/untracked files outside .fleet/runs" in result.stderr
+    assert (git_repo / "untracked.txt").read_text(encoding="utf-8") == "new"
 
 
 def test_clean_reviewer_manifest_passes() -> None:

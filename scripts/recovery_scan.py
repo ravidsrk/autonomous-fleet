@@ -23,14 +23,47 @@ def _run_stdout(argv: list[str], cwd: Path | None = None) -> str:
 
 
 def _worktree_text(repo: Path) -> str:
-    return _run_stdout(["git", "-C", str(repo), "worktree", "list", "--porcelain"])
+    raw = _run_stdout(["git", "-C", str(repo), "worktree", "list", "--porcelain"])
+    lines: list[str] = []
+    current_worktree: str | None = None
+    has_clean_signal = False
+
+    def append_dirty_signal() -> None:
+        if current_worktree is None or has_clean_signal:
+            return
+        try:
+            status = _run_stdout(
+                ["git", "-C", current_worktree, "status", "--porcelain"],
+                cwd=repo,
+            )
+        except RuntimeError:
+            lines.append("dirty true")
+            return
+        lines.append("dirty true" if status.strip() else "dirty false")
+
+    for line in raw.splitlines():
+        if not line.strip():
+            append_dirty_signal()
+            lines.append(line)
+            current_worktree = None
+            has_clean_signal = False
+            continue
+        key = line.split(" ", 1)[0]
+        if key == "worktree":
+            current_worktree = line.split(" ", 1)[1]
+            has_clean_signal = False
+        elif key in {"dirty", "uncommitted", "clean"}:
+            has_clean_signal = True
+        lines.append(line)
+    append_dirty_signal()
+    return "\n".join(lines) + ("\n" if raw.endswith("\n") else "")
 
 
-def _pr_list_text(base: str | None) -> str:
+def _pr_list_text(base: str | None, repo: Path) -> str:
     argv = ["gh", "pr", "list", "--state", "all", "--json", "number,headRefName,state,mergedAt"]
     if base:
         argv.extend(["--base", base])
-    return _run_stdout(argv)
+    return _run_stdout(argv, cwd=repo)
 
 
 def main() -> int:
@@ -46,7 +79,7 @@ def main() -> int:
     try:
         ledger_text = args.ledger.read_text(encoding="utf-8")
         worktree_text = _worktree_text(args.repo)
-        pr_text = _pr_list_text(args.base)
+        pr_text = _pr_list_text(args.base, args.repo)
         report = scan_recovery(
             ledger_text,
             worktree_text,

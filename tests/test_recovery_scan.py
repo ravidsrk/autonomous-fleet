@@ -159,6 +159,30 @@ def test_orphan_dirty_even_when_merged_escalates() -> None:
     assert row["signals"]["uncommitted_changes"] is True  # type: ignore[index]
 
 
+def test_merged_ledger_row_with_dirty_worktree_escalates_instead_of_cleanup() -> None:
+    ledger = "TASK T1 | BRANCH=fleet/done PR=12 WT=/tmp/done MERGED=true\n"
+    prs = _prs(
+        {
+            "number": 12,
+            "headRefName": "fleet/done",
+            "state": "MERGED",
+            "mergedAt": "2026-06-24T00:00:00Z",
+        }
+    )
+
+    row = _first(
+        rs.scan_recovery(
+            ledger,
+            _wt("fleet/done", "/tmp/done", extra="dirty true"),
+            prs,
+        )
+    )
+
+    assert row["classification"] == rs.CLASS_PARTIAL
+    assert row["action"] == rs.ACTION_ESCALATE
+    assert row["signals"]["uncommitted_changes"] is True  # type: ignore[index]
+
+
 def test_live_rows_continue_and_closed_unmerged_rows_redrive() -> None:
     live = rs.scan_recovery(
         "TASK Live | BRANCH=fleet/live PR=17 MERGED=false\n",
@@ -299,7 +323,7 @@ def test_missing_worktree_and_pr_for_unmerged_row_escalates() -> None:
 def test_cli_success_outputs_json_and_uses_base(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     ledger = tmp_path / "progress.md"
     ledger.write_text("TASK T6 | BRANCH=fleet/cli PR=23 MERGED=false\n", encoding="utf-8")
-    calls: list[list[str]] = []
+    calls: list[tuple[list[str], dict[str, object]]] = []
 
     class Result:
         returncode = 0
@@ -309,9 +333,11 @@ def test_cli_success_outputs_json_and_uses_base(monkeypatch: pytest.MonkeyPatch,
             self.stdout = stdout
 
     def fake_run(argv: list[str], **kwargs: object) -> Result:
-        calls.append(argv)
+        calls.append((argv, kwargs))
         if argv[:3] == ["git", "-C", str(tmp_path)]:
             return Result(_wt("fleet/cli"))
+        if argv[:3] == ["git", "-C", "/tmp/wt"]:
+            return Result("")
         return Result(_prs({"number": 23, "headRefName": "fleet/cli", "state": "OPEN", "mergedAt": None}))
 
     cli = _load_cli()
@@ -325,7 +351,69 @@ def test_cli_success_outputs_json_and_uses_base(monkeypatch: pytest.MonkeyPatch,
     assert rc == 0
     assert err.getvalue() == ""
     assert json.loads(out.getvalue())["rows"][0]["action"] == rs.ACTION_CONTINUE
-    assert calls[1][-2:] == ["--base", "main"]
+    assert calls[2][0][-2:] == ["--base", "main"]
+    assert calls[2][1]["cwd"] == tmp_path
+
+
+def test_cli_worktree_text_marks_status_failures_dirty(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    cli = _load_cli()
+
+    class Result:
+        stderr = ""
+
+        def __init__(self, stdout: str, returncode: int = 0) -> None:
+            self.stdout = stdout
+            self.returncode = returncode
+
+    def fake_run(argv: list[str], **kwargs: object) -> Result:
+        if argv[:3] == ["git", "-C", str(tmp_path)]:
+            return Result(_wt("fleet/cli", "/tmp/wt"))
+        return Result("", returncode=128)
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+
+    text = cli._worktree_text(tmp_path)
+
+    assert "dirty true" in text
+
+
+def test_cli_worktree_text_preserves_existing_clean_signals_and_blank_records(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    cli = _load_cli()
+    raw = (
+        "worktree /tmp/one\n"
+        "branch refs/heads/fleet/one\n"
+        "clean true\n"
+        "\n"
+        "worktree /tmp/two\n"
+        "branch refs/heads/fleet/two\n"
+    )
+    status_calls: list[list[str]] = []
+
+    class Result:
+        returncode = 0
+        stderr = ""
+
+        def __init__(self, stdout: str) -> None:
+            self.stdout = stdout
+
+    def fake_run(argv: list[str], **kwargs: object) -> Result:
+        if argv[:3] == ["git", "-C", str(tmp_path)]:
+            return Result(raw)
+        status_calls.append(argv)
+        return Result(" M touched.py\n")
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+
+    text = cli._worktree_text(tmp_path)
+
+    assert "clean true" in text
+    assert "\n\nworktree /tmp/two" in text
+    assert "dirty true" in text
+    assert status_calls == [["git", "-C", "/tmp/two", "status", "--porcelain"]]
 
 
 def test_cli_reports_input_and_command_errors(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

@@ -195,6 +195,24 @@ def test_emit_rejects_empty_id_from_factory(tmp_path: Path) -> None:
             emitter.emit("DISPATCH", "COORDINATOR", "started")
 
 
+def test_emit_rejects_invalid_primitive_without_writing(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    with TraceEmitter(run_dir, mission=MISSION, run_id=RUN_ID) as emitter:
+        with pytest.raises(ValueError, match="primitive must be one of"):
+            emitter.emit("BOGUS", "COORDINATOR", "started")
+
+    assert (run_dir / "trace.jsonl").read_text(encoding="utf-8") == ""
+
+
+def test_emit_rejects_invalid_cost_delta_without_writing(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    with TraceEmitter(run_dir, mission=MISSION, run_id=RUN_ID) as emitter:
+        with pytest.raises(ValueError, match="cost_delta must be non-negative"):
+            emitter.emit("DISPATCH", "COORDINATOR", "started", cost_delta=-1)
+
+    assert (run_dir / "trace.jsonl").read_text(encoding="utf-8") == ""
+
+
 def test_emit_appends_across_emits(tmp_path: Path) -> None:
     run_dir = tmp_path / "run"
     with TraceEmitter(run_dir, mission=MISSION, run_id=RUN_ID) as emitter:
