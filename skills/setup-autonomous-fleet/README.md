@@ -10,7 +10,7 @@
 > runtime adapter, branch prefix, default campaign bundle, and optional community installs.
 > Run it when you say "setup autonomous fleet", "configure fleet", or on a repo's first fleet run.
 
-🟦 **Tier 1 · Setup** — first-run configuration, run once per repo before any mission.
+🟦 **Tier 1 · Setup**, first-run configuration, run once per repo before any mission.
 
 **On this page:** [When to use it](#when-to-use-it) · [What it produces](#what-it-produces) ·
 [What it expects](#what-it-expects-from-your-repo) · [Failure modes](#common-failure-modes) ·
@@ -28,7 +28,7 @@
 
 This skill is prompt-driven: it explores, confirms each decision with you, then writes. A run leaves:
 
-- `docs/agents/fleet-config.md` — the per-repo config coordinators read during SELF-ORIENTATION.
+- `docs/agents/fleet-config.md`, the per-repo config coordinators read during SELF-ORIENTATION.
 - A `## Autonomous fleet` block in `CLAUDE.md` if present, else `AGENTS.md`, updated in place, never duplicated.
 - A one-line record appended to `DECISIONS.md` with the adapter, prefix, bundle, and date.
 
@@ -60,18 +60,19 @@ npx skills add https://github.com/ravidsrk/autonomous-fleet \
 ```
 
 Then activate it in your agent (Claude Code, Cursor, Grok, Codex, or Orca) and say "setup autonomous fleet".
-Verify with a dry-run once setup writes its config:
+For campaign dry-runs, use one of the campaign CLIs once setup writes its config:
 
 ```bash
-./scripts/run-campaign.sh <adapter-runtime> --preset <bundle> --dry-run
+./scripts/run-campaign.sh <grok|claude|codex> --preset <bundle> --dry-run
 ```
 
 > Headless campaign mode (`run-campaign.sh`) is not yet fully validated end-to-end. The supported
-> path today is the interactive flow: chat with your agent or use `/goal`. The dry-run above is safe.
+> path today is the interactive flow: chat with your agent or use `/goal`. For Orca, campaigns still
+> run through the Grok, Claude, or Codex CLIs; do not pass `orca` to this script.
 
 ## Learn more
 
-- [Guide 02 — Installation](../../docs/guide/02-installation.md) — the depth on setup across all runtimes.
-- [SKILL.md](./SKILL.md) — the agent-facing spec that governs this skill's behavior.
+- [Guide 02, Installation](../../docs/guide/02-installation.md), the depth on setup across all runtimes.
+- [SKILL.md](./SKILL.md), the agent-facing spec that governs this skill's behavior.
 
 ← Prev · [Guide Index](../../docs/guide/README.md) · Next →

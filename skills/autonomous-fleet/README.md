@@ -3,7 +3,7 @@
 # autonomous-fleet
 
 <p align="center">
-  <img src="assets/banner.jpg" alt="autonomous-fleet — autonomous-fleet skill" width="100%">
+  <img src="assets/banner.jpg" alt="autonomous-fleet, autonomous-fleet skill" width="100%">
 </p>
 
 > Entry point for the autonomous-fleet multi-agent engineering framework. Use it whenever you
@@ -12,7 +12,7 @@
 > fleet-program for a chain), loads autonomous-fleet-core plus a runtime adapter, and runs
 > unattended on the current repo.
 
-🟦 **Tier 1 · Umbrella** — routes vague requests to the right mission.
+🟦 **Tier 1 · Umbrella**, routes vague requests to the right mission.
 
 **On this page:** [When to use it](#when-to-use-it) · [What it produces](#what-it-produces) ·
 [What it expects from your repo](#what-it-expects-from-your-repo) ·
@@ -66,9 +66,9 @@ runtime. Install everything with `--skill '*'` instead of the targeted list.
 
 ## Learn more
 
-- [Guide 09 — Mission catalog](../../docs/guide/09-mission-catalog.md) — every shipped mission
+- [Guide 09, Mission catalog](../../docs/guide/09-mission-catalog.md), every shipped mission
   this skill can route to, with input and output contracts.
-- [SKILL.md](./SKILL.md) — the agent-facing spec.
+- [SKILL.md](./SKILL.md), the agent-facing spec.
 
 ---
 

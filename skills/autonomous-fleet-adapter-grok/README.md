@@ -3,7 +3,7 @@
 # autonomous-fleet-adapter-grok
 
 <p align="center">
-  <img src="assets/banner.jpg" alt="autonomous-fleet-adapter-grok — autonomous-fleet skill" width="100%">
+  <img src="assets/banner.jpg" alt="autonomous-fleet-adapter-grok, autonomous-fleet skill" width="100%">
 </p>
 
 > The Grok adapter for autonomous-fleet-core. It maps each engine primitive to Grok Build
@@ -12,7 +12,7 @@
 > to run a mission in Grok. Grok has no separate orchestration daemon, so the coordinator IS the
 > main Grok session and the file ledger is the authority across turns.
 
-🟧 **Tier 2 · Adapter** — the runtime bridge that runs autonomous-fleet on Grok Build.
+🟧 **Tier 2 · Adapter**, the runtime bridge that runs autonomous-fleet on Grok Build.
 
 **On this page:** [When to use it](#when-to-use-it) · [What it produces](#what-it-produces) ·
 [What it expects](#what-it-expects-from-your-repo) · [Failure modes](#common-failure-modes) ·
@@ -74,10 +74,10 @@ name.
 
 ## Learn more
 
-- [Guide 02 — Installation](../../docs/guide/02-installation.md) — per-runtime setup, including Grok
-- [Guide 13 — Extending](../../docs/guide/13-extending.md) — the primitive-by-primitive adapter contract
-- [SKILL.md](./SKILL.md) — the agent-facing spec that governs this adapter's behavior
+- [Guide 02, Installation](../../docs/guide/02-installation.md), per-runtime setup, including Grok
+- [Guide 13, Extending](../../docs/guide/13-extending.md), the primitive-by-primitive adapter contract
+- [SKILL.md](./SKILL.md), the agent-facing spec that governs this adapter's behavior
 
 ---
 
-[📖 Guide Index](README.md)
+[Guide Index](../../docs/guide/README.md)
