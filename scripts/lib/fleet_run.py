@@ -205,6 +205,29 @@ def ensure_archive_dir(
     return d
 
 
+def emit_worker_commit_lifeline(
+    emitter: TraceEmitter,
+    *,
+    task_id: str,
+    worker_role: str,
+) -> tuple[str, str]:
+    """Emit the reference worker causal edge: SPAWN_WORKER -> COMMIT."""
+    spawn_event_id = emitter.emit(
+        "SPAWN_WORKER",
+        "COORDINATOR",
+        "started",
+        task_id=task_id,
+    )
+    commit_event_id = emitter.emit(
+        "COMMIT",
+        worker_role,
+        "succeeded",
+        task_id=task_id,
+        parent_event=spawn_event_id,
+    )
+    return spawn_event_id, commit_event_id
+
+
 # ───────────────────────────────────────────────────────────────────────
 # Manifest writing
 # ───────────────────────────────────────────────────────────────────────
