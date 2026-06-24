@@ -59,6 +59,22 @@ if (( bf_status != 0 )); then
   exit 1
 fi
 
+echo "== verify-sha-pin =="
+# A reviewer PASS is bound to the reviewed SHA. If a sha-pin.json's reviewed_sha has
+# diverged from the branch HEAD, REVIEWED is OUTDATED. No sha-pin.json = exit 0.
+shopt -s nullglob
+sp_status=0
+for run_dir in .fleet/runs/*/; do
+  if ! "$VENV_PYTHON" scripts/verify_sha_pin.py "$run_dir"; then
+    sp_status=1
+  fi
+done
+shopt -u nullglob
+if (( sp_status != 0 )); then
+  echo "verify-sha-pin: at least one reviewed SHA is outdated" >&2
+  exit 1
+fi
+
 echo ""
 echo "== validate-trace (telemetry contract) =="
 # Trace stream (engine.md TRACE EMISSION). One JSONL line per state
