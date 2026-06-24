@@ -19,7 +19,8 @@ already exists on disk.
 [The directory at a glance](#the-directory-at-a-glance) ·
 [The manifest](#the-manifest) · [Manifest schema, field-by-field](#manifest-schema-field-by-field) ·
 [File kinds](#file-kinds) · [The artifact files](#the-artifact-files) ·
-[Integrity gates](#integrity-gates) · [Validating an archive](#validating-an-archive) ·
+[Integrity gates](#integrity-gates) · [The size cap](#the-size-cap) ·
+[Validating an archive](#validating-an-archive) ·
 [The example fixture](#the-example-fixture) · [Quick reference](#quick-reference)
 
 ## Why an archive exists
@@ -289,7 +290,8 @@ must hold the latest mtime in the archive.
 
 ## Integrity gates
 
-The validator runs three classes of check. All three must pass.
+The validator runs four classes of check. All four must pass: shape, mtime ordering, the size cap
+(see [The size cap](#the-size-cap) below), and on-disk verification.
 
 ### 1. Shape
 
@@ -334,7 +336,36 @@ is the gate that catches post-archive tampering: edit a file after the manifest 
 and its sha256 (and usually its size) no longer match.
 
 You can skip the on-disk hash pass with `--no-checksums` for a cheap pre-flight, but the
-full validator (shape + ordering + checksums) must pass before `T-FINAL`.
+full validator (shape + ordering + size cap + checksums) must pass before `T-FINAL`.
+
+## The size cap
+
+Alongside the sha256 and mtime-ordering invariants, the validator enforces a per-archive size cap.
+`_validate_size_cap` sums the `bytes` field of every file entry in the manifest and rejects the
+archive when the total exceeds `MAX_ARCHIVE_BYTES`, which is 5 MB (`5 * 1024 * 1024` in
+`fleet_run.py`). The cap keeps a run-archive committable inline: a directory that balloons past a
+few megabytes does not belong in the repo as ordinary blobs, it belongs in git-lfs.
+
+git-lfs is the overflow path, not an exception that disables the cap. When the total goes over 5 MB,
+the validator reads the archive directory's own `.gitattributes`, parses out the path globs tracked
+by lfs (`_lfs_patterns` picks lines carrying `filter=lfs`), and re-checks the cap against only the
+files NOT matched by those globs (`_matches_lfs` matches both the full relative path and the
+basename). If the non-lfs bytes stay under 5 MB, the archive passes: the large artifacts are tracked
+by lfs and exempt from the in-repo cap, while everything else still has to fit. An lfs rule that does
+not actually match the oversized files does not save the archive, the non-lfs total is still over and
+it fails. With no `.gitattributes` (or no lfs patterns in it), the cap applies to every byte.
+
+The failure line names the cap and points at the fix:
+
+```
+FAIL .fleet/runs/<id>
+  - .../manifest.json: non-LFS archive bytes exceed the 5242880-byte cap; track the large
+    artifacts with git lfs (see references/run-archive.md)
+```
+
+Like the other gates, this runs on the manifest's recorded `bytes`, so it is part of the cheap
+pre-flight too: `--no-checksums` skips the on-disk hash pass but still enforces shape, ordering, and
+the size cap.
 
 ## Validating an archive
 
@@ -445,6 +476,8 @@ kill-switch      FLEET_DISABLE_RUN_ARCHIVE  (scripts/lib/substrate_disable.py)
 ordering invariants
   blind_fix  <  findings  <  verify_summary   (strict, per producer)
   readiness  =  max(all mtimes)
+
+size cap         5 MB total non-LFS bytes (MAX_ARCHIVE_BYTES); LFS-tracked files exempt
 
 validate everything   python scripts/validate_run_archive.py
 validate one          python scripts/validate_run_archive.py .fleet/runs/<id>

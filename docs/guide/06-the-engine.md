@@ -1,4 +1,4 @@
-<!-- title: The engine | description: The 11 primitives, the file-based ledger, the coordinator/adapter split, signal reconciliation, anti-flap, evidence-hash, and the plan/DAG validation gate that make a fleet run deterministic and auditable. | sidebar_order: 6 -->
+<!-- title: The engine | description: The 13 coordinator primitives, the file-based ledger, the coordinator/adapter split, signal reconciliation, anti-flap, evidence-hash, and the plan/DAG validation gate that make a fleet run deterministic and auditable. | sidebar_order: 6 -->
 
 # The engine
 
@@ -18,7 +18,7 @@ the real mechanics. Three things compose every run:
   CORE (the method)        MISSION (the work)           ADAPTER (the mechanics)
   ─────────────────        ──────────────────           ───────────────────────
   tool-agnostic loop       goal, role pipeline,         how THIS tool spawns a
-  + the 11 primitives      phase/task structure,        worker, dispatches a task,
+  + the 13 primitives      phase/task structure,        worker, dispatches a task,
   + all the doctrine       ledger filename + flags,     waits, inspects, places
   blocks in this chapter   done condition, defaults     work, opens/merges a PR
 ```
@@ -26,6 +26,14 @@ the real mechanics. Three things compose every run:
 The CORE only ever calls primitives by name. It never hard-codes a tool command. If a runtime
 offers a primitive in two syntaxes across versions, the adapter says "try X, fall back to Y." That
 separation is what lets the same engine drive four different agent runtimes without a rewrite.
+
+The engine does not float free: it sits on a four-layer verification substrate that turns "done"
+from self-attestation into on-disk evidence. L1 is schema-verified findings (every cited quote
+re-verified against source), L2 is the opt-in strict-mode runtime gate that refuses to end a session
+without fresh evidence, L3 is the anti-anchoring blind-fix (the reviewer commits its own fix before
+reading the candidate patch), and L4 is the manifest-audited run-archive. Each layer has a library,
+a validator, and a `FLEET_DISABLE_*` kill-switch. This chapter references those layers where the
+engine leans on them; [The substrate](07-the-substrate.md) is the layer-by-layer reference.
 
 **On this page:** [Primitives](#primitives) · [The ledger](#the-ledger-a-directory-not-a-database) ·
 [Coordinator vs adapter](#coordinator-vs-adapter) · [Signal reconciliation](#signal-reconciliation) ·
@@ -41,40 +49,34 @@ A primitive is a verb the engine knows how to call but does not know how to perf
 performs it. The engine's job is to sequence primitives and wait; the adapter's job is to make each
 one real for its runtime.
 
-There are two vocabularies you will meet, and it helps to keep them straight from the start:
+There are two vocabularies you will meet, and the single most common confusion about this engine is
+treating them as one list. They are not. Keep them straight from the start:
 
-- The **adapter primitives** in `engine.md` are the full interface an adapter implements:
-  `SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`, `PLACE`, `WORKER_DONE` / `ASK` / `REPLY`,
-  `OPEN_PR` / `MERGE_PR` / `CLEANUP`, `SYNC_TASK_STATE`, and the optional goal/loop family
-  (`SET_GOAL`, `UPDATE_GOAL`, `GOAL_COMPLETE`, `GOAL_BLOCKED`, `LOOP_POLL`).
-- The **trace primitives** are the closed enum the observability stream uses to name a transition.
-  This is the list pinned in code, in `scripts/lib/emit_trace.py`:
+- The **coordinator primitives** in `engine.md` are the full interface the adapter implements, and
+  there are **thirteen** of them: `SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`, `PLACE`,
+  `WORKER_DONE` / `ASK` / `REPLY` (counted as one primitive, #6), `OPEN_PR` / `MERGE_PR` / `CLEANUP`
+  (one primitive, #7), `SYNC_TASK_STATE`, and the optional goal/loop family `SET_GOAL`,
+  `UPDATE_GOAL`, `GOAL_COMPLETE`, `GOAL_BLOCKED`, `LOOP_POLL`. These are the verbs the coordinator
+  sequences and the adapter resolves into real commands. This whole section describes them.
+- The **trace primitives** are a SEPARATE, closed eleven-value enum the observability stream uses to
+  name a ledger transition. That list lives in `scripts/lib/emit_trace.py` and belongs to the
+  [Trace schema](16-trace-schema.md) reference, not here.
 
-```python
-PRIMITIVES = (
-    "SPAWN_WORKER",
-    "DISPATCH",
-    "WAIT",
-    "INSPECT",
-    "SYNC",
-    "MERGE",
-    "FREEZE",
-    "T-FINAL",
-    "GOAL_BLOCKED",
-    "COMMIT",
-    "ABORT",
-)
-```
+The two enums overlap but neither is a subset of the other. The trace records ledger
+state-transition verbs the coordinator never dispatches as primitives (`SYNC`, `MERGE`, `FREEZE`,
+`T-FINAL`, `COMMIT`, `ABORT`) plus a `FIXER` role, and it omits coordinator-only primitives the
+trace never emits (`PLACE`, `WORKER_DONE`, `OPEN_PR`, `CLEANUP`, `LOOP_POLL`). So do not read the
+eleven trace values as "the engine's primitives": the engine has thirteen coordinator primitives;
+the trace enum is its own vocabulary, covered field-by-field in [Trace schema](16-trace-schema.md).
 
-Eleven trace primitives. The [Trace schema](16-trace-schema.md) reference covers each one
-field-by-field; this section gives you the conceptual meaning and, for the adapter-facing ones, what
-an adapter has to implement.
+> Both enums are closed on purpose. For the trace side, adding a value is a breaking change to the
+> dashboard contract (see [Trace first, ledger second](#trace-first-ledger-second)). The mapping
+> between the two: trace `SYNC` corresponds to the coordinator's `SYNC_TASK_STATE`, trace `MERGE` to
+> `MERGE_PR`, and `FREEZE` / `COMMIT` / `ABORT` / `T-FINAL` name coordinator lifecycle transitions
+> with no one-to-one primitive.
 
-> The two lists overlap but are not identical. `SYNC` in the trace stream corresponds to the
-> adapter's `SYNC_TASK_STATE`; `MERGE` corresponds to `MERGE_PR`; `FREEZE`, `COMMIT`, and `ABORT`
-> name coordinator lifecycle transitions that do not have a one-to-one adapter primitive. The enum
-> is closed on purpose: adding a primitive is a breaking change to the dashboard contract (see
-> [Trace first, ledger second](#trace-first-ledger-second)).
+The [Trace schema](16-trace-schema.md) reference covers the trace enum field-by-field; this section
+gives you the conceptual meaning of each coordinator primitive and what an adapter has to implement.
 
 ### SPAWN_WORKER(role, placement)
 
@@ -523,6 +525,11 @@ For the full field-by-field schema, the role and status enums, and the consumer 
 
 ## Write-lock discipline
 
+Status first, because it matters: the lock library (`scripts/lib/locks.py`) exists and is tested,
+but it has NO single-coordinator call-site today. A single-coordinator run serializes through the
+file ledger, so it never needs a lock. The discipline below is for parallel-coordinator or
+shared-archive multi-writer setups, where two writers can race the same path; wire the locks then.
+
 A worker that mutates shared state (the run-archive, a worktree branch, an external API) acquires a
 lock before the mutation and releases it after. Two locks, two lifetimes:
 
@@ -556,7 +563,8 @@ confirmed-dead signal is a protocol violation.
 
 This guide does not hide current limitations, so here is the honest state of the trace stream.
 
-The schema covers all eleven primitives. The stream is intentionally sparse in production today:
+The trace schema covers all eleven of its primitives (the trace enum, not the thirteen coordinator
+primitives above). The stream is intentionally sparse in production today:
 exactly one trace event is wired into production code, the `T-FINAL` archive transition emitted by
 `fleet_run.write_manifest` (shown in [Trace first, ledger second](#trace-first-ledger-second) above,
 test and mutation covered). Per-transition emission for the other primitives is a rollout in
@@ -566,9 +574,9 @@ is already in place, so events emitted today and events emitted after the rollou
 same way.
 
 ```
-  what the SCHEMA defines        what production code emits TODAY
+  what the TRACE SCHEMA defines  what production code emits TODAY
   ───────────────────────        ───────────────────────────────
-  11 primitives                  1 primitive: T-FINAL
+  11 trace primitives            1 primitive: T-FINAL
   6 roles, 5 statuses            from fleet_run.write_manifest
   full details contract          (test + mutation covered)
                                  → the rest is per-transition rollout in progress
