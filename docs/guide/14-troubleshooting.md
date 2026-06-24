@@ -196,7 +196,7 @@ own clone, but the agent's working directory is the `--repo` target.
 What you see:
 
 ```
-error: --yolo against an external --repo auto-approves every tool call, a full RCE surface.
+error: --yolo against an external --repo auto-approves every tool call — a full RCE surface.
        Run under scripts/run-sandboxed.sh, or pass --yolo-untrusted-acknowledged to accept the risk.
 ```
 
@@ -429,6 +429,160 @@ editing the timestamp: the on-disk sha256 check will catch a hand-edited file.
 How to prevent: produce artifacts in the doctrine order: blind-fix first, then findings, then the
 verify-summary, then readiness last. See [archive validation](#archive-validation).
 
+### sha-pin: REVIEWED is OUTDATED
+
+What you see (from `validate-all.sh`, the `verify-sha-pin` block, or
+`scripts/verify_sha_pin.py <run_dir>` directly):
+
+```
+FAIL  <branch> moved <reviewed_sha>..<head>: REVIEWED is OUTDATED, force re-review
+```
+
+or, when the branch HEAD cannot be resolved and there is no merged marker:
+
+```
+FAIL  <branch>: HEAD unknown for reviewed <reviewed_sha> and no merged marker; cannot enforce SHA-pin
+```
+
+What's wrong: a reviewer PASS is pinned to the exact SHA it inspected. The reviewer wrote
+`.fleet/runs/<run_id>/sha-pin.json` with `{reviewed_sha, branch, verdict}`, and the branch HEAD has
+since moved off `reviewed_sha`. The approval no longer covers what is on the branch, so the verifier
+flips the verdict from REVIEWED to OUTDATED. Only `approve`/`PASS` records are enforced; a
+`request_changes` record is schema-valid but skipped. A deleted branch is N/A (not a failure) only
+when a merged marker is present, in the record or in a sibling readiness / fleet-outcome doc.
+
+How to fix: re-review the branch at its new HEAD and write a fresh `sha-pin.json` whose `reviewed_sha`
+equals the current HEAD. Do not hand-edit the old SHA forward: the point of the pin is that the
+approval names the exact commit a human (or the next gate) can reproduce. If the branch legitimately
+merged, record the merged marker so the check reads N/A.
+
+How to prevent: never push to a branch after it is reviewed-and-approved without re-reviewing. If you
+must rebase or amend, treat the prior PASS as void. To silence the check for a run (understand what
+you are turning off first), set `FLEET_DISABLE_SHA_PIN=1`, which exits 0 with a `DISABLED` notice.
+
+### round-budget: a task merged after exhausting its review rounds
+
+What you see (from `validate-all.sh`, the `verify-round-budget` block, or
+`scripts/verify_round_budget.py <run_dir>` directly):
+
+```
+verify-round-budget: <N> tasks checked; <M> violations
+  - <task_id> ran <rounds> review rounds then MERGED without BLOCKED
+```
+
+or, when the task ran over budget but never reached a terminal state:
+
+```
+  - <task_id> ran <rounds> review rounds without terminal BLOCKED
+```
+
+What's wrong: the trace stream is the source of truth for review-round exhaustion. The verifier counts
+failed reviewer events (`role: REVIEWER`, `status: failed`) per task in `trace.jsonl`. Once a task
+crosses `MAX_ROUNDS` (3) failed rounds, it MUST finish as `GOAL_BLOCKED` / `blocked` and must NOT have
+shipped through a successful `MERGE`. A task that merged anyway, or that ran over budget with no
+terminal BLOCKED, is the circuit breaker firing: review never converged and the task should have been
+escalated, not forced through.
+
+How to fix: this is a real doctrine violation in the run, not a verifier bug. The task should have
+been blocked after its third failed review and sent to `DECISIONS.md`. Re-drive it: either the
+builder's fix genuinely closes the findings (in which case the failed rounds were a flapping reviewer,
+worth investigating) or the task is stuck and belongs blocked.
+
+How to prevent: stop a review loop at three failed rounds. To silence the check for a run, set
+`FLEET_DISABLE_ROUND_BUDGET=1`.
+
+### registry-lint: the catalog has drifted from the registry
+
+What you see (from `validate-all.sh`, the `registry-lint` block, or `scripts/registry_lint.py .`):
+
+```
+registry-lint: <mission>: shipped:true points to missing skills/<dir>/SKILL.md
+registry-lint: skills/<dir>/SKILL.md is a mission skill but has no shipped:true registry row
+registry-lint: README.md: missing shipped mission <mission>
+registry-lint: skills-lock.json: missing shipped skill dirs: <dirs>
+registry-lint: skills-lock.json: stale skill dirs not on disk: <dirs>
+```
+
+What's wrong: `scripts/lib/fleet_registry.py`'s `MISSIONS` dict is the single source for the
+mission/adapter catalog, and the lint asserts three things stayed in sync with it: every `shipped:true`
+row has its on-disk `skills/<skill_dir>/SKILL.md` (and every on-disk mission skill has a `shipped:true`
+row), every shipped mission is named in `README.md` and the umbrella `autonomous-fleet/SKILL.md`
+catalog, and the local-source dirs in `skills-lock.json` match the skill dirs on disk. Any of those
+drifting (you shipped a skill but forgot the registry row, renamed a dir, or added a mission to the
+README but not the registry) trips the lint.
+
+How to fix: read the specific line. A `missing skills/<dir>/SKILL.md` means the registry row points at
+a dir that does not exist (fix the `skill_dir`, or add the skill). A mission skill with no
+`shipped:true` row means you added a mission skill without registering it. A `README.md: missing
+shipped mission` means the catalog prose is stale. A `skills-lock.json` mismatch means the lockfile is
+out of date: re-run the installer so the lock matches disk.
+
+How to prevent: when you ship or rename a mission, edit `MISSIONS` in the same change, then run
+`./scripts/validate-all.sh` (or `scripts/registry_lint.py .`) before you push. To silence it for a
+run, set `FLEET_DISABLE_REGISTRY_LINT=1`.
+
+### reviewer-sandbox: a reviewer was attributed a write on the candidate
+
+What you see (from `validate-all.sh`, the `verify-reviewer-sandbox` block, or
+`scripts/verify_reviewer_sandbox.py <run_dir>` directly):
+
+```
+FAIL  <manifest>.files[<i>]: reviewer producer '<slug>' is attributed 'diff' on candidate branch '<branch>'
+```
+
+or, for any other non-review artifact kind:
+
+```
+FAIL  <manifest>.files[<i>]: reviewer producer '<slug>' emitted forbidden kind '<kind>'; allowed reviewer kinds are ['blind_fix', 'findings', 'verify_summary']
+```
+
+What's wrong: the reviewer is read-only. In a run-archive manifest, a producer slug detected as a
+reviewer (or named with `--reviewer-producer`) may only emit `blind_fix`, `findings`, and
+`verify_summary` entries. A reviewer producer attributed a `diff` or `commit` on the candidate branch
+is a hard failure: it means the agent that graded the work also wrote some of it, which breaks
+build-blindness. Live enforcement is `scripts/run-sandboxed.sh --role reviewer` (read-only candidate
+tree, only `.fleet/runs/<run_id>/` writable); this verifier is the audit-side companion that catches a
+violation after the fact in the manifest.
+
+How to fix: this is a topology violation, not a cosmetic one. The reviewer must run in its own
+terminal with no edit rights to the candidate. Re-run the review under
+`run-sandboxed.sh --role reviewer` so the placement is enforced, and make sure the builder, not the
+reviewer, is the producer on any `diff`/`commit` entry. If the manifest mislabeled a builder artifact
+as a reviewer producer, fix the producer attribution.
+
+How to prevent: place the reviewer with `run-sandboxed.sh --role reviewer`. On macOS it uses
+`sandbox-exec`, on Linux `bwrap`, and where neither exists it falls back to a post-exec tracked-file
+hash assertion that exits 4 if the reviewer touched any tracked file outside the run dir. To silence
+the audit check for a run, set `FLEET_DISABLE_REVIEWER_SANDBOX=1`.
+
+### namespacing: a recorded branch/worktree is not run-namespaced
+
+What you see (from `validate-all.sh`, the `validate-namespacing` block, or
+`scripts/validate_namespacing.py <run_dir>` directly):
+
+```
+FAIL .fleet/runs/<run_id>
+  - <ledger>: TASK <task_id> branch '<branch>' must end with '-<run_short>'
+  - <ledger>: TASK <task_id> worktree '<wt_path>' must end with '-<run_short>'
+```
+
+What's wrong: every isolated branch and worktree must carry the run's `-<run_short>` suffix (the 6-hex
+tail of the `run_id`, from `namespace.derive_run_short`), so two concurrent runs or two checkouts of
+the same slug never collide on a branch name or worktree path. The validator reads each archive
+manifest, follows its `progress`-kind ledgers, and fails any task row whose recorded branch or
+worktree does not end with the suffix. A malformed `run_id` (no 6-hex tail) fails too, because the
+suffix cannot be derived.
+
+How to fix: namespace the placement. Branches should be `<prefix><slug>-<run_short>` and worktrees
+`../<repo>-<slug>-<run_short>` (what `namespaced_branch` and `namespaced_worktree` produce). If the
+ledger recorded a bare, un-suffixed branch, the placement step did not namespace it: fix the adapter's
+`PLACE`/`SPAWN_WORKER` to emit the suffix, then re-record. Do not hand-append the suffix to the ledger
+without renaming the actual branch and worktree, or the next git operation will miss them.
+
+How to prevent: use the `namespace.py` helpers (or the adapter's namespaced placement) for every
+isolated branch and worktree. All four adapters and the template already do. To silence the check for
+a run, set `FLEET_DISABLE_NAMESPACING=1`.
+
 ### Trace stream fails schema validation
 
 What you see (from `validate-all.sh`, the `validate-trace` block, or
@@ -627,7 +781,7 @@ it proves the file the manifest describes is the file on disk.
 ## Mutation gate
 
 The mutation gate (Layer 4) asserts every mutation in `tests/mutations.yaml` is caught by its guard
-tests. There are 35 mutations today.
+tests. There are 50 mutations today.
 
 ### A mutation survived
 
@@ -673,7 +827,9 @@ path and update the affected entries in the same change.
 
 ```
 validate-skills ─► validate-fleet-outcome ─► validate-goal-condition ─►
-validate-run-archive ─► verify-blind-fix (L3) ─► validate-trace ─► pytest + coverage (100%)
+validate-run-archive ─► verify-blind-fix (L3) ─► verify-sha-pin ─► verify-round-budget ─►
+registry-lint ─► verify-reviewer-sandbox ─► validate-namespacing ─► validate-trace ─►
+pytest + coverage (100%)
 ```
 
 ### `coverage report --fail-under=100` fails
