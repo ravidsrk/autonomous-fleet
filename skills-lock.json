@@ -41,26 +41,6 @@
       "sourceType": "github",
       "computedHash": "0cce884f6e7f47f2e55838444a3fe3206c5bbe9a6947dfdc011d2121a69addd1"
     },
-    "bug-batch": {
-      "source": "ravidsrk/autonomous-fleet",
-      "sourceType": "github",
-      "computedHash": "520c5df49ca12ae121781c18b5368b1c382766d6e36890f8f1b378baf670d33c"
-    },
-    "cleanup": {
-      "source": "ravidsrk/autonomous-fleet",
-      "sourceType": "github",
-      "computedHash": "672199da71224644318ac967db2e63af3b39d9a09cb55be3561d97295bd84f03"
-    },
-    "dependency-update": {
-      "source": "ravidsrk/autonomous-fleet",
-      "sourceType": "github",
-      "computedHash": "d27eb660e17f4af9ce77e3f7e649881a55cfdf9afcbd1451d8c2172d419ce3ce"
-    },
-    "design-integration": {
-      "source": "ravidsrk/autonomous-fleet",
-      "sourceType": "github",
-      "computedHash": "d60decb7f6af01757d454a49efa49b97e838d044527dd856efcb3550812d3659"
-    },
     "doc-sync": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
@@ -70,16 +50,6 @@
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
       "computedHash": "dd02a4f4befee436dbd1812446cba562e54555d0cde06eb9942ccf415436c287"
-    },
-    "landing-page-convergence": {
-      "source": "ravidsrk/autonomous-fleet",
-      "sourceType": "github",
-      "computedHash": "d6dfe57ea9405e94671a9636b35a7d72aa1f89569db8fe22840b9cfe82a4771e"
-    },
-    "legacy-rebuild": {
-      "source": "ravidsrk/autonomous-fleet",
-      "sourceType": "github",
-      "computedHash": "c32de272675629b92d0e158b95f8c202dc1f903d7aef82edb9ccfd4c37abd481"
     },
     "setup-autonomous-fleet": {
       "source": "ravidsrk/autonomous-fleet",
@@ -91,16 +61,6 @@
       "sourceType": "github",
       "skillPath": "skills/skill-creator/SKILL.md",
       "computedHash": "5ea13a6d9f0d4bb694405d79acd00cadec0d21bb138c4dd10fcf3c500cb835c2"
-    },
-    "take-product-to-completion": {
-      "source": "ravidsrk/autonomous-fleet",
-      "sourceType": "github",
-      "computedHash": "3041f31149220e6c6fc2a6f46a8ece0ef66c62cadec2c21ef27d386a70c4d1b3"
-    },
-    "targeted-migration": {
-      "source": "ravidsrk/autonomous-fleet",
-      "sourceType": "github",
-      "computedHash": "39cfdee8998a9fff5c5394e2a659713d6c132014812dc795a12f29d98c98513e"
     },
     "test-coverage": {
       "source": "ravidsrk/autonomous-fleet",

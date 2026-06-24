@@ -148,6 +148,11 @@ Top failure mode: ENDING YOUR TURN while work remains, or asking the user to con
 instinct is a BUG. Suppress it mechanically:
 - FIRST action EVERY turn: READ the ledger file (the mission names it), then INSPECT() the
   tool state non-destructively. Reconstruct state from the FILE first — never memory.
+  AT RESUME (after compaction or a crash), run `scripts/recovery_scan.py` (ledger + `git
+  worktree list` + `gh pr list`): it classifies each task row live/dead/partial/orphan and
+  recommends CONTINUE / CLEANUP_WORKTREE / RE_DRIVE / ESCALATE / ARCHIVE_ORPHAN. It is ADVISORY:
+  act on a destructive action only via the existing cleanup guard clauses (never the
+  active/unmerged/dirty worktree); ESCALATE ambiguous rows to DECISIONS.md, never guess.
 - BOOLEAN EXIT GATES (file-based): the ledger holds per-task status lines you WRITE/UPDATE with
   the flags the mission defines. A task advances only when its flags read true IN THE FILE — not
   when you "believe" it's done.
@@ -756,7 +761,9 @@ Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
   to FAIL it: real (not coverage-padding) tests, no lost behaviour, no secret leak, adheres to
   repo conventions, scoped/localized. Approve or request-changes with findings. WORKER_DONE
   PASS/FAIL. Set REVIEWED on pass. On FAIL → builder fixes on the SAME branch (dependent placement;
-  more commits; re-push), re-review. Max 3 rounds, then BLOCKED.
+  more commits; re-push), re-review. Max 3 rounds, then BLOCKED. ENFORCED:
+  `scripts/verify_round_budget.py` (validate-all) FAILs a task that ran more than 3 failed
+  review rounds then MERGED without a terminal GOAL_BLOCKED, so the budget is checkable.
   SHA-PIN (from AO code-review-manager.ts): record the exact reviewed SHA (`git rev-parse HEAD` on
   the branch) in the task row alongside REVIEWED. A PASS is bound to THAT SHA, not the branch name.
   If a newer SHA lands on the branch before SHIP (a fix-round push, a rebase, any commit), the prior
@@ -931,7 +938,9 @@ EMPIRICAL RISK TIERS — which missions to trust unattended (cross-agent merge r
   human-gated.
 
 ═══════════════════════════════════════════════════════════
-PRECONDITIONS — confirm at start (the adapter specifies the exact checks for its tool).
+PRECONDITIONS — confirm at start (the adapter specifies the exact checks for its tool). Each
+adapter carries a machine-readable requires-block (bins/env/auth); run `scripts/preflight.sh
+<adapter> [--scm]` before the first SPAWN_WORKER and treat a failure as a hard stop.
 ═══════════════════════════════════════════════════════════
 The orchestration runtime is up and reachable; any required experimental feature is enabled; `gh
 auth status` (if unauthenticated, note in DECISIONS.md and use local merge-commits into BASE —
