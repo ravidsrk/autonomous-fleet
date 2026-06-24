@@ -20,6 +20,47 @@ Added
 
 - User-facing docs site plan (Stage 1 pure-markdown guide, Stage 2 Starlight-ready), refreshed
   against `main` after PR #41.
+- Wave 1 ground-truth gates (PR #48): SHA-pin enforcement (`scripts/verify_sha_pin.py`,
+  `scripts/lib/verify_sha_pin.py`, `assets/fleet-sha-pin.schema.json`) that flips a reviewer's
+  `approve`/`PASS` verdict from REVIEWED to OUTDATED when the branch HEAD moves past the
+  `reviewed_sha` recorded in `.fleet/runs/<run_id>/sha-pin.json` (a deleted-but-merged branch is
+  N/A, not a failure); a foreground `render-dashboard.py --watch` poll loop that re-renders on
+  ledger/trace mtime change (no daemon, socket, or PID); a ledger-contradiction guard in
+  `scripts/lib/fleet_outcome.py` that rejects merged-but-never-built, merged-but-worktree-not-clean,
+  and reviewed-before-PR task rows; and a trace `health_rollup`
+  (`total`/`succeeded`/`failed`/`blocked`/`skipped`/`last_failure`) surfaced in the emit CLI and a
+  separate dashboard panel kept distinct from the ledger zone counts.
+- Wave 2 budget, recovery, and registry layer (PR #49): a round-budget validator
+  (`scripts/verify_round_budget.py`) that BLOCKS any task exceeding `MAX_ROUNDS` (3) failed review
+  rounds instead of letting it MERGE; a resume-time recovery scanner (`scripts/recovery_scan.py`)
+  that classifies each task row `live`/`dead`/`partial`/`orphan` against `git worktree list` plus
+  `gh pr list` and emits advisory CONTINUE / CLEANUP_WORKTREE / RE_DRIVE / ESCALATE_TO_DECISIONS /
+  ARCHIVE_ORPHAN actions without executing them; a mission/adapter registry
+  (`scripts/lib/fleet_registry.py`) as the single source that `mission_registry.py` and the
+  `fleet_outcome.py` mission metrics derive from, linted by `scripts/registry_lint.py`; and a
+  SKILL.md structural linter (`scripts/lib/skill_lint.py`) plus an adapter requires-block
+  (`scripts/lib/adapter_preflight.py`, `scripts/preflight.sh`) with intent-gated SCM/PR checks.
+- Wave 3 causal lineage, resume, isolation, and binding split (PR #50): trace events now carry an
+  optional-but-generated unique `id` that `emit()` returns, with a worker COMMIT stamping its
+  SPAWN_WORKER id as `parent_event` (the id factory is injectable so fixtures stay reproducible);
+  `CONTINUE_WORKER` added as the optional 14th engine primitive that re-attaches a resumable session
+  or ALIASes to `SPAWN_WORKER`, constrained to `live`-classified rows and capped at
+  `MAX_RESUME_ATTEMPTS` (3) before the scanner escalates; a read-only reviewer sandbox
+  (`scripts/run-sandboxed.sh --role reviewer`, `scripts/verify_reviewer_sandbox.py`) using
+  sandbox-exec on macOS, bwrap on Linux, and a post-exec assertion fallback; run hash-namespacing
+  (`scripts/lib/namespace.py`, `scripts/validate_namespacing.py`) that suffixes every isolated
+  branch and worktree with the run short hash; and an explicit TRACKER vs SCM binding split in the
+  engine spec where `gh`/GitHub is the default, not the contract.
+
+Changed
+
+- Wired `verify_sha_pin.py` (PR #48), `verify_round_budget.py`, `registry_lint.py` (PR #49),
+  `verify_reviewer_sandbox.py`, and `validate_namespacing.py` (PR #50) into `validate-all.sh`, and
+  `skill_lint.py` into `validate-skills.sh`, each guarded by a `FLEET_DISABLE_*` kill switch
+  (`FLEET_DISABLE_SHA_PIN`, `FLEET_DISABLE_ROUND_BUDGET`, `FLEET_DISABLE_REGISTRY_LINT`,
+  `FLEET_DISABLE_REVIEWER_SANDBOX`, `FLEET_DISABLE_NAMESPACING`).
+- Updated all four adapters plus the adapter template with `CONTINUE_WORKER` and run-namespacing
+  guidance (PR #50), without relaxing the conflict-aware, never-squash, or SHA-pin rules.
 
 ### 2026-06-23
 

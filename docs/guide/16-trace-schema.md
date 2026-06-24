@@ -3,8 +3,10 @@
 # Trace schema (v1)
 
 **On this page:** [Why a trace stream](#why-a-trace-stream) · [Schema reference](#schema-reference) ·
+[Causal lineage: `id` and `parent_event`](#causal-lineage-id-and-parent_event) ·
 [Primitive reference](#primitive-reference) · [Role and status enums](#role-and-status-enums) ·
 [The `details` contract and the redaction rule](#the-details-contract-and-the-redaction-rule) ·
+[The health roll-up](#the-health-roll-up) ·
 [What is emitted today vs the roadmap](#what-is-emitted-today-vs-the-roadmap) ·
 [Versioning and the `$id` policy](#versioning-and-the-id-policy) ·
 [Consumer guide: how to read the stream](#consumer-guide-how-to-read-the-stream) ·
@@ -56,12 +58,14 @@ secrets, no host-absolute paths) that is enforced in code, not just documented. 
 ## Schema reference
 
 The file is `fleet-trace.schema.json`, a JSON Schema draft 2020-12 document. The root is a single object
-with `additionalProperties: false`, so an event carries exactly the fields below and nothing else. Seven
-fields are required. Five are optional.
+with `additionalProperties: false`. Seven fields are required. Five are optional in the schema, and the
+emitter adds one more runtime-only optional field, `id`, that the validator accepts but the pinned 1.0
+schema does not list (see [Causal lineage](#causal-lineage-id-and-parent_event) for why this stays a
+non-breaking addition).
 
 ```text
 required:  schema_version  ts  run_id  mission  primitive  role  status
-optional:  task_id  evidence_hash  cost_delta  parent_event  details
+optional:  id  task_id  evidence_hash  cost_delta  parent_event  details
 ```
 
 Field by field. The constraint column is the literal constraint from the schema and the matching regex
@@ -77,12 +81,17 @@ mission         yes   string   minLength 1. MUST match the slug embedded in run_
 primitive       yes   string   one of the 11 primitives (closed enum).
 role            yes   string   one of the 6 roles (closed enum).
 status          yes   string   one of the 5 statuses (closed enum).
+id              no*   string   non-empty when present. The event's own unique id. Runtime-only:
+                               emit() always generates it, but it is NOT in the pinned schema.
 task_id         no    string   minLength 1 when present. Task id from the frozen DAG.
 evidence_hash   no    string   ^[0-9a-f]{64}$  (lowercase hex SHA-256).
 cost_delta      no    number   minimum 0. Non-negative cost increment, USD by convention.
-parent_event    no    string   UUID-shaped pointer to a prior event.
+parent_event    no    string   UUID-shaped pointer to a prior event (the event this one descends from).
 details         no    object   free-form; see the redaction rule below.
 ```
+
+(\* `id` is optional in the schema sense, but `TraceEmitter.emit()` always stamps one, so every event the
+emitter writes carries it. A hand-written event without an `id` is still schema-valid.)
 
 A few constraints are worth calling out because dashboards trip over them:
 
@@ -107,6 +116,7 @@ Here is a single well-formed event, every field populated, copy-pasteable:
 ```json
 {
   "schema_version": "1.0",
+  "id": "9b2c1f7a-4e3d-4a8b-9c10-7f6e5d4c3b2a",
   "ts": "2026-06-23T00:07:00Z",
   "run_id": "20260623T000000Z-doc-sync-abc123",
   "mission": "doc-sync",
@@ -124,6 +134,38 @@ Here is a single well-formed event, every field populated, copy-pasteable:
 When serialized to the trace file, keys are sorted and there is no indentation: one event is one line.
 `TraceEmitter.emit()` writes `json.dumps(event, sort_keys=True) + "\n"`, so the on-disk form of the event
 above is a single line with keys in alphabetical order.
+
+## Causal lineage: `id` and `parent_event`
+
+A flat list of events tells you what happened. To draw a worker's lifeline (this `COMMIT` belongs to that
+`SPAWN_WORKER`) a consumer needs edges, not just nodes. Two fields carry those edges: `id` stamps every
+event with its own identity, and `parent_event` points one event at the event it descends from.
+
+`emit()` always generates an `id` and RETURNS it:
+
+```python
+event_id = self._id_factory()
+# ... build and write the event ...
+return event_id
+```
+
+The caller captures that returned id and threads it into the child event as `parent_event`. The reference
+edge wired in `fleet_run` is `SPAWN_WORKER -> COMMIT`: the coordinator captures the id from the worker's
+`SPAWN_WORKER` emit, and when that worker's construction commits, it passes that id as the COMMIT event's
+`parent_event`. A dashboard that wants per-worker lifelines walks `parent_event` back to the spawn.
+
+Three properties keep this honest:
+
+- It is non-breaking. `id` is generated at runtime but is NOT added to the pinned 1.0 schema, so no
+  consumer that validates against `fleet-trace.schema.json` breaks. `validate_event` (the dependency-free
+  validator) accepts it via its own `_ALLOWED_FIELDS`, requiring only that it be a non-empty string.
+- The id factory is injectable. `TraceEmitter(..., id_factory=...)` defaults to `uuid.uuid4`, but a test
+  or fixture can pass a deterministic factory so the generated stream stays reproducible. `emit()` rejects
+  a factory that returns a non-string or empty string (`ValueError`).
+- `parent_event` is validated two ways. The pinned schema constrains it to the UUID shape
+  (`^[0-9a-f]{8}-...-[0-9a-f]{12}$`), matching the default uuid4 id factory; the dependency-free
+  `validate_event` is looser, requiring only a non-empty string so an injected non-UUID id factory still
+  validates against the lib. Both reject an empty `parent_event`.
 
 ## Primitive reference
 
@@ -262,6 +304,39 @@ The same payload, fixed:
 > enforced in code, and the fix wired `_scan_details` into both `validate_event` and `emit()`. The rule
 > is now a code path, not a comment. That is the review discipline working on the framework itself, see
 > [Roles and blindness](08-roles-and-blindness.md).
+
+## The health roll-up
+
+A dashboard does not always want the full timeline. Sometimes it wants one number: is this run healthy,
+and if not, what failed last. `emit_trace.health_rollup(events)` folds a stream of parsed events into that
+summary. It is a pure function over any iterable of events (typically the output of `iter_trace_file`), so
+it works on a complete trace or a partial one from a crashed run.
+
+The shape it returns:
+
+```text
+field         meaning
+───────────── ──────────────────────────────────────────────────────────────────────
+total         count of all events seen
+succeeded     count with status == succeeded
+failed        count with status == failed
+blocked       count with status == blocked
+skipped       count with status == skipped
+last_failure  the most recent failed-or-blocked event, or null if there were none
+```
+
+`total` counts every event, including `started` ones, so the four status counters do not sum to `total`.
+`last_failure` is chosen by latest `ts` across events with status `failed` or `blocked`, and when set it
+carries that event's `ts`, `primitive`, `role`, `task_id`, and `details` (enough to point an operator at
+the thing that broke without re-reading the whole stream). With no failures or blocks it stays `null`.
+
+This roll-up is surfaced in two places. The `summary` subcommand of `scripts/emit_trace.py` prints a
+`health:` line (`N ok / N failed / N blocked / N skipped` plus the last failure) under the per-primitive
+histogram, and `scripts/render-dashboard.py` renders it as a SEPARATE per-run health panel. That panel is
+deliberately kept distinct from the ledger zone counts: the roll-up is "what the trace says happened", the
+ledger zones are "the current shape of the run". They answer different questions and must not be
+conflated, the same trace-is-source-of-truth, ledger-is-derived-state split from
+[Why a trace stream](#why-a-trace-stream).
 
 ## What is emitted today vs the roadmap
 

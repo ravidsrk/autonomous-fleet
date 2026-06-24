@@ -19,6 +19,7 @@ already exists on disk.
 [The directory at a glance](#the-directory-at-a-glance) ·
 [The manifest](#the-manifest) · [Manifest schema, field-by-field](#manifest-schema-field-by-field) ·
 [File kinds](#file-kinds) · [The artifact files](#the-artifact-files) ·
+[The SHA-pin record](#the-sha-pin-record) ·
 [Integrity gates](#integrity-gates) · [The size cap](#the-size-cap) ·
 [Validating an archive](#validating-an-archive) ·
 [The example fixture](#the-example-fixture) · [Quick reference](#quick-reference)
@@ -50,7 +51,8 @@ The enforcement surface is `scripts/lib/fleet_run.py`. The CLI that runs it over
 ## The directory at a glance
 
 A run-archive is flat. Every artifact sits directly under the run-id directory, no
-nesting. Here is the shape, using the canonical example fixture's file set:
+nesting. Here is the shape, using the canonical example fixture's file set (plus the
+`sha-pin.json` a review-and-fix run adds, which the fixture itself does not carry):
 
 ```
 .fleet/runs/<run_id>/
@@ -62,6 +64,7 @@ nesting. Here is the shape, using the canonical example fixture's file set:
 ├── p1-fix-attestation.json    fix-landed attestation (kind: other)
 ├── stop-verify-decisions.log  stop-verify hook decisions (kind: other)
 ├── trace.jsonl                the dashboard contract stream (kind: other)
+├── sha-pin.json               reviewer's pinned branch HEAD at PASS (kind: other; not in fixture)
 ├── fleet-outcome.yaml         the run outcome doc (kind: readiness)
 └── README.md                  human-readable directory note (kind: other)
 ```
@@ -203,8 +206,10 @@ other           Escape hatch. Does NOT participate in ordering. A kind=other fil
 
 Note that the example fixture stores `stop-verify-decisions.log`, `p1-fix-attestation.json`,
 `trace.jsonl`, and even `README.md` as `kind: other`. They are real artifacts, but they do
-not constrain ordering, so `other` is correct. The only `readiness` file in the fixture is
-`fleet-outcome.yaml`, which is why that file carries the latest mtime in the manifest.
+not constrain ordering, so `other` is correct. A real review-and-fix run's `sha-pin.json` is
+`kind: other` for the same reason (the fixture does not carry one). The only `readiness` file
+in the fixture is `fleet-outcome.yaml`, which is why that file carries the latest mtime in the
+manifest.
 
 ## The artifact files
 
@@ -277,6 +282,15 @@ walks `SPAWN_WORKER` (started) to `INSPECT` (succeeded) to `FREEZE` (succeeded) 
 > a full event-per-transition stream in a real run yet. See
 > [Trace schema (v1)](16-trace-schema.md) for the rollout detail.
 
+### SHA-pin record (`sha-pin.json`)
+
+The reviewer's machine substrate that records the exact branch SHA inspected at PASS time.
+It is stored as `kind: other` (it carries no ordering claim) and is the subject of the next
+section, [The SHA-pin record](#the-sha-pin-record). Its job: a REVIEWED verdict is only valid
+while the branch HEAD still equals the SHA the reviewer actually looked at. If the branch
+moves after the reviewer signed off, the pin flips that verdict to OUTDATED and forces a
+force re-review, so a stale approval can never ride a later commit into a merge.
+
 ### Outcome doc (`fleet-outcome.yaml`)
 
 The `readiness` file: the single document that says whether the run is done and what it
@@ -288,6 +302,68 @@ human-readable body. The frontmatter carries `mission`, `status`, `repo`, `base_
 fields from the previous node. The full field reference for this file is
 [fleet-outcome schema](17-fleet-outcome-schema.md). Because it is the `readiness` kind, it
 must hold the latest mtime in the archive.
+
+## The SHA-pin record
+
+`sha-pin.json` is a small reviewer-written artifact that closes a specific cheat: a reviewer
+approves a branch, then the branch gains new commits, and the stale REVIEWED verdict rides
+the new code into a merge unreviewed. The pin makes a PASS verdict valid only while the
+branch HEAD still equals the SHA the reviewer actually inspected.
+
+The schema is `skills/autonomous-fleet-core/assets/fleet-sha-pin.schema.json` (JSON Schema
+draft 2020-12, `$id` `https://autonomous-fleet.dev/schemas/fleet-sha-pin.schema.json`). The
+enforcement lib is `scripts/lib/verify_sha_pin.py`; the CLI that loads records and resolves
+branch heads is `scripts/verify_sha_pin.py`, wired into `validate-all.sh`. The record is a
+single object with `additionalProperties: false`:
+
+```json
+{
+  "schema_version": "1.0",
+  "review_id": "p0-review-001",
+  "reviewed_sha": "0123456789abcdef0123456789abcdef01234567",
+  "branch": "fleet/some-feature-a1b2c3",
+  "verdict": "PASS",
+  "merged": true
+}
+```
+
+Field by field:
+
+```
+field           required  type     constraint
+─────────────── ────────  ───────  ─────────────────────────────────────────────────────
+schema_version  yes       string   const "1.0".
+review_id       yes       string   ^[a-zA-Z0-9._/-]+$. Stable id for this review run.
+reviewed_sha    yes       string   ^[0-9a-fA-F]{40}$. The exact commit SHA the reviewer
+                                    inspected. This is what HEAD must still equal.
+branch          yes       string   ^[a-zA-Z0-9._/-]+$. The branch whose HEAD is pinned
+                                    to reviewed_sha while the task is unmerged.
+verdict         yes       string   enum: approve, PASS, request_changes, partial, fail,
+                                    FAIL. Only approve/PASS are ENFORCED; the others are
+                                    schema-valid but skipped (nothing to enforce).
+merged          no        boolean  Post-merge marker. If true and the branch is gone,
+                                    the check is N/A instead of a failure.
+```
+
+The enforcement logic in `verify_sha_pin.verify_sha_pin` is hermetic: it takes the parsed
+records plus an injected `head_resolver(branch) -> sha | None`, so the pure function does no
+git or filesystem I/O. For each record:
+
+- A non-approving verdict (anything outside `{approve, PASS}`) is skipped. There is nothing
+  to enforce on a request-changes record.
+- An enforced record whose branch HEAD still equals `reviewed_sha` passes. The reviewer
+  looked at exactly what is there.
+- An enforced record whose branch moved (`reviewed_sha != head`) is an error:
+  `<branch> moved <reviewed_sha>..<head>: REVIEWED is OUTDATED, force re-review`. This is the
+  flip from REVIEWED to OUTDATED.
+- An enforced record whose branch is unknown or deleted (`head_resolver` returns `None`) is
+  the careful case. If `merged: true`, the deletion is the expected post-merge cleanup and the
+  check is N/A. If there is no merged marker, it is an error: the pin cannot be enforced and a
+  bare missing branch is not allowed to silently pass.
+
+The whole gate honors the substrate kill-switch `FLEET_DISABLE_SHA_PIN` (see
+`scripts/lib/substrate_disable.py`). As with every other gate, only set it when you know
+precisely why you are turning a safety check off.
 
 ## Integrity gates
 
@@ -473,6 +549,12 @@ manifest schema  skills/autonomous-fleet-core/assets/fleet-run-manifest.schema.j
 lib              scripts/lib/fleet_run.py   (write_manifest, validate_manifest_payload, ...)
 cli              scripts/validate_run_archive.py
 kill-switch      FLEET_DISABLE_RUN_ARCHIVE  (scripts/lib/substrate_disable.py)
+
+sha-pin record   sha-pin.json (kind: other)  reviewer pins reviewed_sha + branch + verdict
+sha-pin schema   skills/autonomous-fleet-core/assets/fleet-sha-pin.schema.json
+sha-pin lib      scripts/lib/verify_sha_pin.py   cli scripts/verify_sha_pin.py (validate-all)
+sha-pin switch   FLEET_DISABLE_SHA_PIN
+  REVIEWED -> OUTDATED when branch HEAD != reviewed_sha; N/A when deleted + merged:true
 
 ordering invariants
   blind_fix  <  findings  <  verify_summary   (strict, per producer)

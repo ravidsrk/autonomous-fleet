@@ -3,6 +3,7 @@
 # Extending autonomous-fleet
 
 **On this page:** [The extension surface](#the-extension-surface) ·
+[The mission registry](#the-mission-registry) ·
 [Adding a mission](#adding-a-mission) · [Adding an adapter](#adding-an-adapter) ·
 [Adding a campaign preset](#adding-a-campaign-preset) ·
 [Adding a mutation](#adding-a-mutation-to-the-gate) ·
@@ -68,6 +69,63 @@ A quick map of what depends on what, so you know how far the blast radius of eac
 That table is the design thesis in one frame: every extension is additive and isolated. You never
 have to read the engine source to add a mission, and you never have to read a mission to add an
 adapter.
+
+## The mission registry
+
+Before you add a mission, know where the framework keeps its list of missions, because your new
+mission has to land in exactly one place and everything else derives from it. That place is
+`MISSIONS` in `scripts/lib/fleet_registry.py`. It is the single source of truth: one row per mission,
+each carrying its `shipped` flag, its `skill_dir`, its progress and readiness doc names, its required
+`metrics` tuple, the `adapters_required` list, and its tier.
+
+Nothing else hand-maintains a parallel list. The two consumers you would otherwise have to keep in
+sync are both derived from `MISSIONS`:
+
+```
+                 scripts/lib/fleet_registry.py
+                          MISSIONS   <-- the one source
+                              |
+              +---------------+----------------+
+              |                                |
+   scripts/lib/mission_registry.py   scripts/lib/fleet_outcome.py
+   SHIPPED_MISSIONS, MISSION_DOCS     MISSION_METRICS, doc paths
+   (which rows are shipped,           (the metrics each mission
+    where each mission's docs live)    must emit; see Chapter 17)
+```
+
+`mission_registry.py` builds `SHIPPED_MISSIONS` (the rows whose `shipped` is `True`) and
+`MISSION_DOCS` (the progress/readiness doc paths) by iterating `MISSIONS`. `fleet_outcome.py` builds
+`MISSION_METRICS` (the [mission metrics](17-fleet-outcome-schema.md#mission-metrics) the outcome
+validator enforces) the same way. So when you add a registry row, the outcome validator learns your
+mission's required metrics and the doc-path helpers learn where its readiness doc lives, with no
+second edit. That is the point of the single source: a mission slug cannot exist in one table and be
+missing from another.
+
+The registry is policed by `scripts/registry_lint.py` (wired into `scripts/validate-all.sh`, and
+short-circuited by `FLEET_DISABLE_REGISTRY_LINT`). It runs three consistency checks, all from
+`scripts/lib/registry_lint.py`:
+
+```
++------------------------------+-------------------------------------------------------------+
+| Check                        | What it asserts                                             |
++------------------------------+-------------------------------------------------------------+
+| lint_shipped_mission_dirs    | every shipped:true row points to a real                     |
+|                              | skills/<dir>/SKILL.md, AND every on-disk SKILL.md whose      |
+|                              | fleet-component is "mission" has a shipped:true row          |
+| lint_catalog_mentions        | every shipped mission id appears in README.md and in        |
+|                              | skills/autonomous-fleet/SKILL.md (the routing catalog)      |
+| lint_skills_lock             | the local skill dirs in skills-lock.json match the dirs on  |
+|                              | disk (externally-sourced skills like skill-creator excluded)|
++------------------------------+-------------------------------------------------------------+
+```
+
+The first check is the one that catches the common drift: it fails BOTH ways. A `shipped: true` row
+with no SKILL.md on disk fails, and a mission SKILL.md on disk with no `shipped: true` row fails. So
+you cannot mark a mission shipped in the registry without the skill present, and you cannot drop a
+mission skill into `skills/` without registering it. The catalog check then forces the shipped mission
+to be mentioned in both the README and the `autonomous-fleet` router, which is why the promotion
+sequence below tells you to update those files. Run it directly with
+`python3 scripts/registry_lint.py .`.
 
 ## Adding a mission
 
@@ -156,8 +214,8 @@ Inject per role on DISPATCH (workers load these; coordinator does not):
 
 | Role                                      | Skills | If unavailable               |
 | ----------------------------------------- | ------ | ---------------------------- |
-| @codex (build)                            |,      | Repo README + manifests only |
-| @claude (audit, fresh review, integrator) |,      | Repo README + manifests only |
+| @codex (build)                            | ,      | Repo README + manifests only |
+| @claude (audit, fresh review, integrator) | ,      | Repo README + manifests only |
 
 ## Deferred missions
 
@@ -235,10 +293,18 @@ A new mission must pass the same skill validation every shipped skill passes:
 ./scripts/validate-all.sh             # the full gate (skills + schemas + mutations + more)
 ```
 
-`validate-skills.sh` runs skill-creator's `quick_validate.py` against each directory under
-`skills/`. If skill-creator is not installed it tells you the install command, or you can set
-`VALIDATE_SKILLS_OPTIONAL=1` to skip it (only do that locally; CI runs it for real). See
-[agentskills.io compliance](#staying-agentskillsio-compliant) below for what the validator checks.
+`validate-skills.sh` runs two checks per skill. First the agentskills.io spec check (skill-creator's
+`quick_validate.py`), which proves the frontmatter and shape are spec-valid. Second the fleet
+structural linter, `scripts/lib/skill_lint.py`, which proves the SKILL.md actually carries the
+sections the orchestration depends on. For a mission, `skill_lint.lint_mission` requires the
+`## Required skills`, `## Optional skills`, `## Worker skills`, `## Deferred missions`, and
+`## ROLE PIPELINE` headings, and a `fleet-outcome` YAML readiness reference somewhere in the body. The
+linter matches headings by a stable token (case-insensitive, substring), not the full heading text, so
+you can revise the wording around a heading without tripping it, but you cannot drop the section. If
+skill-creator is not installed `validate-skills.sh` tells you the install command, or you can set
+`VALIDATE_SKILLS_OPTIONAL=1` to skip the spec check locally (CI runs it for real); the structural
+linter still runs. See [agentskills.io compliance](#staying-agentskillsio-compliant) below for what
+the spec validator checks.
 
 > A new mission directory lives in `skills/` ONLY once it has real-run evidence. Until then it
 > belongs in `docs/exploratory/missions/`. The [promotion criteria](#promotion-criteria) section
@@ -277,6 +343,58 @@ Two decisions you make first, before filling in any primitive, both called out b
    or is the coordinator itself a session (like Claude Code)? That choice decides whether `WAIT()`
    is a real blocking call or ledger-polling, and whether the file ledger is the sole source of
    truth or a daemon also holds state.
+
+### The PRECONDITIONS block and its machine-readable requires-block
+
+Every adapter opens with a `## PRECONDITIONS` section: the host facts that must hold before the
+coordinator spawns anything (a resolvable repo root, `git` and the agent CLI on PATH, the SCM CLI
+authed, BASE existing). The `skill_lint.py` structural linter requires that `## PRECONDITIONS`
+heading on every adapter, so it cannot be omitted.
+
+Inside that section, the adapter carries a fenced `requires` block that a preflight can read without
+parsing prose. It is a YAML mapping with four keys (bins, env, auth, and intent_gated), parsed by `load_requires` in
+`scripts/lib/adapter_preflight.py`. This is the real block from the Claude Code adapter:
+
+```yaml requires
+bins: [claude, git, gh]
+env: []
+auth:
+  - check: "gh auth status"
+    skip_if_intent: "no_scm"
+intent_gated:
+  scm: "willClaimExistingPR"
+```
+
+```
++-------+--------------------------------------------------------------------------+
+| Key   | Meaning                                                                  |
++-------+--------------------------------------------------------------------------+
+| bins  | binaries that must be on PATH (checked with shutil.which)                 |
+| env   | env vars that must be set and non-empty                                   |
+| auth  | command checks: each a {check, skip_if_intent}; run, must exit 0          |
++-------+--------------------------------------------------------------------------+
+```
+
+The load-bearing detail is `skip_if_intent`. An adapter declares which checks are SCM/PR-write checks
+by tagging them `skip_if_intent: "no_scm"`, and the preflight skips them unless the caller passes
+SCM intent. So `gh auth status` is only run when the run actually intends to open or merge a PR; a
+read-only mission (an audit-only pass, a dry run) is not blocked on GitHub auth it will never use.
+`check()` also skips the command's own binary (the `gh` in `bins`) for the same intent, so a no-SCM
+run does not even require `gh` to be installed. The runner is injectable, which is how the tests
+exercise this without touching real host auth.
+
+Run the preflight with `scripts/preflight.sh`:
+
+```bash
+./scripts/preflight.sh claude-code          # no-SCM intent: SCM/PR checks skipped
+./scripts/preflight.sh claude-code --scm     # SCM intent: gh auth status is enforced
+```
+
+It resolves the adapter (by short name, by `skills/...` dir, or by absolute path), loads the
+requires-block, runs `check()` under the chosen intent, and prints `preflight: ok` or one
+`FAIL  <reason>` per failure (`missing required binary: <bin>`, `missing required env var: <name>`,
+`auth check failed (<rc>): <command>`). It is the executable form of the PRECONDITIONS prose: write
+both, and keep them agreeing.
 
 ### The primitive-by-primitive mapping
 
@@ -326,6 +444,30 @@ session) and you record that you are in single-vendor mode. The blindness is str
 instructed: a reviewer that never saw the build is a different process in a different terminal, not
 the same agent told to "pretend you didn't write this."
 
+### Declaring CONTINUE_WORKER support
+
+`CONTINUE_WORKER(role, placement, session_handle)` is the 14th primitive in engine.md's THE
+PRIMITIVES, and it is OPTIONAL like the goal/loop ones (9 to 13). It re-attaches an EXISTING resumable
+agent session for an in-flight task instead of spawning a fresh one. Your adapter declares how it
+implements the primitive, and there are two honest answers:
+
+- If your runtime exposes a restore command (Grok's `sessionId`, a Codex thread, an opencode
+  session), bind `CONTINUE_WORKER` to it: re-attach the live session.
+- If it does not, ALIAS `CONTINUE_WORKER` to `SPAWN_WORKER`. That is the documented idempotent-relaunch
+  fallback the Claude Code adapter uses ("no documented restore command -> ALIAS to SPAWN_WORKER"). It
+  is a real, valid implementation, not a stub.
+
+Either way, the two guard rails are the same and come straight from the engine, so do not weaken them
+in your adapter:
+
+- Re-attach only `live`-classified rows (per `recovery_scan.py`). Never re-attach a session whose PR
+  already merged or whose branch is gone, those are not live.
+- The resume budget is bounded. When a row's `RESUME_COUNT` reaches `MAX_RESUME_ATTEMPTS` (3), do not
+  continue again; the scanner recommends `ESCALATE_TO_DECISIONS` instead.
+
+All four shipped adapters and the template carry a `CONTINUE_WORKER` line, so copy the template's and
+fill in your runtime's restore command or its ALIAS.
+
 ### The non-negotiables you cannot weaken
 
 The template lists the rules that come from the core and that your adapter must NOT relax. These are
@@ -357,9 +499,16 @@ makes progress, so do not leave them implied.
 Same gate as a mission, since an adapter is a skill:
 
 ```bash
-./scripts/validate-skills.sh    # your adapter SKILL.md must pass agentskills.io validation
-./scripts/validate-all.sh       # full gate
+./scripts/validate-skills.sh    # agentskills.io spec check + the fleet structural linter
+./scripts/validate-all.sh       # full gate (also runs registry-lint and your preflight is available)
 ```
+
+For an adapter, `skill_lint.lint_adapter` checks more than a mission's. Its `metadata.fleet-component`
+must be `adapter` (or `adapter-template` for the template), and the SKILL.md must carry the primitive
+sections the core resolves: `## PRECONDITIONS`, and the `###` headings `PLACE(kind)`, `SPAWN_WORKER`,
+`DISPATCH`, `WAIT`, `INSPECT`, `WORKER_DONE`, `ASK / REPLY`, `OPEN_PR`, `SYNC_TASK_STATE`, and a
+`GOAL` heading. The template additionally must carry `## NON-NEGOTIABLES`. So the requires-block and
+the PRECONDITIONS section above are not optional prose, the linter fails the skill without them.
 
 There is no "run every mission against your adapter" automated test in the repo today; the adapter
 is proven the same way a mission is, by a real run that produces an archive (see

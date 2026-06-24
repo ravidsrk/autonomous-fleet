@@ -32,12 +32,12 @@ are flagged at their entries so you do not read more into them than is true on `
 ### primitive
 
 One of the operations the engine calls but never implements itself. The core defines them by name;
-each runtime adapter supplies the real command. There are 13 in `engine.md`: `SPAWN_WORKER`,
-`DISPATCH`, `WAIT`, `INSPECT`, `PLACE`, the `WORKER_DONE` / `ASK` / `REPLY` trio, `OPEN_PR` /
-`MERGE_PR` / `CLEANUP`, `SYNC_TASK_STATE`, and the optional goal/loop set (`SET_GOAL`,
-`UPDATE_GOAL`, `GOAL_COMPLETE`, `GOAL_BLOCKED`, `LOOP_POLL`). The core only ever calls primitives,
-so the same orchestration logic runs on Claude Code, Codex, Grok, or Orca without change.
-See [The engine](06-the-engine.md).
+each runtime adapter supplies the real command. There are 13 core primitives in `engine.md`:
+`SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`, `PLACE`, the `WORKER_DONE` / `ASK` / `REPLY` trio,
+`OPEN_PR` / `MERGE_PR` / `CLEANUP`, `SYNC_TASK_STATE`, and the optional goal/loop set (`SET_GOAL`,
+`UPDATE_GOAL`, `GOAL_COMPLETE`, `GOAL_BLOCKED`, `LOOP_POLL`), plus an optional 14th, `CONTINUE_WORKER`
+(see its own entry). The core only ever calls primitives, so the same orchestration logic runs on
+Claude Code, Codex, Grok, or Orca without change. See [The engine](06-the-engine.md).
 
 > Note: the trace schema's primitive enum is a separate, smaller list of 11 transition labels
 > (the events a dashboard sees), not the same set as the 13 engine primitives. Do not conflate the
@@ -109,6 +109,49 @@ the one trace event wired in production code today (emitted by `fleet_run.write_
 emitted BEFORE the manifest write per the trace-first doctrine). See [The engine](06-the-engine.md),
 [Run-archive anatomy](15-run-archive.md), and [Trace schema](16-trace-schema.md).
 
+### CONTINUE_WORKER
+
+The optional 14th engine primitive (`engine.md`, THE PRIMITIVES). It re-attaches an existing
+resumable agent session for an in-flight task instead of spawning a fresh one. Adapters whose
+runtime exposes a restore command (Grok `sessionId`, a Codex thread, an opencode session) implement
+it; adapters without one ALIAS it to `SPAWN_WORKER`, the documented idempotent-relaunch fallback. It
+is constrained to `live`-classified rows only (per `recovery_scan.py`): the engine never re-attaches
+a session whose PR merged or whose branch is gone. The resume budget is bounded: when a row's
+`RESUME_COUNT` reaches `MAX_RESUME_ATTEMPTS` (3), the recovery scanner recommends `ESCALATE_TO_DECISIONS`
+instead of another continue. Documented in all four adapters and the template.
+See [The engine](06-the-engine.md).
+
+### causal lineage
+
+The parent-pointer chain that links a worker's trace events back to its spawn. `emit()` stamps every
+event with a unique `id` and RETURNS it; a worker's `COMMIT` (and `INSPECT` / `WORKER_DONE`) sets
+`parent_event` to that worker's `SPAWN_WORKER` id, so a consumer can reconstruct one worker's
+lifeline. `id` is optional in the schema (a non-breaking addition, not a schema bump) but always
+generated, and the id factory is injectable so the fixture stays reproducible. `fleet_run` wires the
+reference `SPAWN_WORKER` -> `COMMIT` edge. See [The engine](06-the-engine.md) and
+[Trace schema](16-trace-schema.md).
+
+### sha-pin
+
+The reviewer-emitted record that binds a PASS to the exact branch SHA inspected. The reviewer writes
+`.fleet/runs/<run_id>/sha-pin.json` with `{schema_version, review_id, reviewed_sha, branch, verdict}`
+(its shape pinned by `skills/autonomous-fleet-core/assets/fleet-sha-pin.schema.json`). `verify_sha_pin.py` (wired into
+`validate-all`) resolves the branch HEAD and, when it has diverged from `reviewed_sha`, flips the
+verdict from REVIEWED to OUTDATED and demands a force re-review. Only `approve`/`PASS` records are
+enforced; a deleted-but-merged branch is N/A, not a failure. The kill switch is `FLEET_DISABLE_SHA_PIN`.
+The split is intentional: see TRACKER vs SCM, which does not relax this rule.
+See [Troubleshooting](14-troubleshooting.md) and [The engine](06-the-engine.md).
+
+### TRACKER vs SCM
+
+The engine.md naming of two DISTINCT adapter bindings. The SCM binding is primitive 7's ship verbs
+(`OPEN_PR` against BASE, conflict-aware `MERGE_PR`, `CLEANUP`); the TRACKER binding is the
+issue-facing verbs (read issue, derive branch name, mark issue done). `gh`/GitHub is the DEFAULT
+binding for both, NOT the contract: the contract is "open a PR against BASE and conflict-aware merge
+it", which a Linear-tracker + GitHub-SCM pairing also satisfies. An adapter declares its TRACKER and
+SCM bindings independently. The split does NOT relax the conflict-aware, never-squash, or sha-pin
+rules: those bind whatever SCM is used. See [The engine](06-the-engine.md).
+
 ## The run-archive
 
 ### run-archive
@@ -118,6 +161,16 @@ produced, with a manifest naming each file and its sha256. The `<run_id>` follow
 `YYYYMMDDTHHMMSSZ-<mission>-<short-hash>` (UTC timestamp, mission slug, 6-char hex), and the
 run-archive validator rejects freeform ids. The fleet never garbage-collects archives; operators
 prune out of band. See [Run-archive anatomy](15-run-archive.md).
+
+### run_short
+
+The 6-hex tail of a `run_id`, derived by `namespace.derive_run_short` and used as the per-run
+suffix on every isolated branch and worktree. `namespaced_branch` produces `<prefix><slug>-<run_short>`
+and `namespaced_worktree` produces `../<repo>-<slug>-<run_short>`, so two concurrent runs (or two
+checkouts of the same slug) never collide on a branch name or a worktree path. `validate_namespacing.py`
+(wired into `validate-all`) reads each archive manifest and fails any recorded branch or worktree that
+does not carry the run's `-<run_short>` suffix; the kill switch is `FLEET_DISABLE_NAMESPACING`. All four
+adapters and the template emit namespaced placements. See [Troubleshooting](14-troubleshooting.md).
 
 ### manifest
 
@@ -242,6 +295,30 @@ Layer 4 (the mutation gate) is intentionally undisableable. The strict truthy al
 typo from silently disabling a layer. Full doctrine in `references/substrate-disable-knobs.md`.
 See [The substrate](07-the-substrate.md).
 
+### round budget
+
+The review-round circuit breaker. The trace stream is the source of truth: once a task accumulates
+more than `MAX_ROUNDS` (3) failed reviewer events, it MUST finish as `GOAL_BLOCKED` / `blocked` and
+must not have shipped through a successful `MERGE`. `verify_round_budget.py` (wired into `validate-all`)
+counts failed reviewer rounds per task in `trace.jsonl` and fails a task that ran over budget but
+merged anyway, or ran over budget with no terminal BLOCKED. The kill switch is
+`FLEET_DISABLE_ROUND_BUDGET`. It stops a never-converging review loop from grinding a task to a
+forced merge. See [Troubleshooting](14-troubleshooting.md).
+
+### reviewer sandbox
+
+The read-only placement for the reviewer role plus its audit-side check. Live enforcement is
+`scripts/run-sandboxed.sh --role reviewer`, which runs the reviewer with the candidate git tree
+read-only and only `.fleet/runs/<run_id>/` writable, using `sandbox-exec` on macOS, `bwrap` on Linux,
+or, when neither exists, a best-effort post-exec tracked-file hash assertion (it exits 4 if the
+reviewer modified any tracked file outside the run dir). The audit companion is
+`verify_reviewer_sandbox.py` (wired into `validate-all`): in each archive manifest, a reviewer
+producer slug may only emit `blind_fix`, `findings`, and `verify_summary` entries, and is a hard
+failure if attributed any `diff` or `commit` on the candidate branch. The kill switch is
+`FLEET_DISABLE_REVIEWER_SANDBOX`. It enforces build-blindness structurally: the grader cannot write
+the code it grades. See [Troubleshooting](14-troubleshooting.md) and
+[Roles and blindness](08-roles-and-blindness.md).
+
 ### strict mode
 
 The opt-in discipline level where the stop-verify hook is installed and enforcing, so a Claude Code
@@ -302,6 +379,19 @@ One discrete engineering job: a goal, a role pipeline, a phase/task structure, a
 flag set, a done condition, and decision defaults. The shipped missions are `doc-sync`,
 `test-coverage`, and `adversarial-review-and-fix`. A mission is the unit you invoke.
 See [Mission catalog](09-mission-catalog.md) and [Missions vs campaigns](05-missions-vs-campaigns.md).
+
+### mission registry
+
+The single machine-readable source for the mission/adapter catalog: the `MISSIONS` dict in
+`scripts/lib/fleet_registry.py`, one row per mission with its `shipped` flag, `skill_dir`, progress
+and readiness doc names, metric names, required adapters, and tier. `mission_registry.py` and
+`fleet_outcome.py`'s `MISSION_METRICS` DERIVE from it rather than re-listing missions, so there is
+one place a mission is defined. `registry_lint.py` (wired into `validate-all`) checks the registry
+against reality three ways: every `shipped:true` row has its on-disk skill dir (and every on-disk
+mission skill has a `shipped:true` row), every shipped mission is named in the README and umbrella
+catalog, and the `skills-lock.json` dirs match the on-disk skills. The kill switch is
+`FLEET_DISABLE_REGISTRY_LINT`. See [Troubleshooting](14-troubleshooting.md) and
+[Extending](13-extending.md).
 
 ### campaign
 
@@ -372,6 +462,18 @@ It scrubs credential-shaped env vars before exec and refuses classified command 
 confine filesystem or network reach, so pair it with a real OS-level sandbox.
 See [Safety and secrets](12-safety-and-secrets.md).
 
+### recovery scan
+
+The resume-time triage of a half-finished run. `recovery_scan.py` (pure library in
+`scripts/lib/recovery_scan.py`) reads three text snapshots the caller supplies: the markdown progress
+ledger, `git worktree list --porcelain`, and `gh pr list --json number,headRefName,state,mergedAt`.
+It never shells out itself and never mutates the repo. It classifies each task row as `live`, `dead`,
+`partial`, or `orphan` and attaches one ADVISORY action: `CONTINUE`, `CLEANUP_WORKTREE`, `RE_DRIVE`,
+`ESCALATE_TO_DECISIONS`, or `ARCHIVE_ORPHAN`. It runs at resume so a fresh coordinator can decide what
+to do before touching anything; the coordinator, not the scanner, executes the action. A row whose
+`RESUME_COUNT` has reached `MAX_RESUME_ATTEMPTS` (3) is escalated rather than continued.
+See [FAQ](19-faq.md) and [The engine](06-the-engine.md).
+
 ### blast radius
 
 The scope of damage a run can do. The framework limits it structurally: merge is not deploy, workers
@@ -394,6 +496,16 @@ gap and the isolation gap in one move. Absent it, placement falls back to plain 
 See [Safety and secrets](12-safety-and-secrets.md) and [Installation](02-installation.md).
 
 ## Extending
+
+### requires-block
+
+The fenced ` ```yaml requires ` block each adapter declares in its `SKILL.md` PRECONDITIONS,
+naming the host capabilities it needs: `bins` (required binaries), `env` (required env vars), and
+`auth` (commands whose exit code is the check). `adapter_preflight.py` loads the block and runs the
+checks, and `scripts/preflight.sh` is the CLI. The checks are intent-keyed: an `auth` entry (and its
+binary) marked `skip_if_intent: no_scm` is skipped unless the caller's intent actually needs SCM/PR
+writes, so a read-only run does not fail for a missing `gh` login it will never use.
+See [Extending](13-extending.md).
 
 ### agentskills.io
 
