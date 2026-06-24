@@ -273,7 +273,7 @@ Examples:
 ./scripts/mutation-check.sh
 
 # Just two mutations, quiet
-./scripts/mutation-check.sh --id lock-second-liveness --id trace-order -q
+./scripts/mutation-check.sh --id lock-steal-second-liveness-check-off --id trace-event-validation-off -q
 ```
 
 Notes. The wrapper best-effort bootstraps the venv, then `exec`s

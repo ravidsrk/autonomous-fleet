@@ -11,7 +11,7 @@
 > that have drifted, and inline examples that no longer run. This is a documentation mission ONLY.
 > It does not change application behaviour or logic. It makes the docs match the code as it is.
 
-🟧 **Tier 3 · Mission**: a discrete engineering job, run via the autonomous-fleet-core engine.
+🟦 **Tier 1 · Mission**: a discrete engineering job, run via the autonomous-fleet-core engine.
 
 **On this page:** [When to use it](#when-to-use-it) · [What it produces](#what-it-produces) ·
 [What it expects from your repo](#what-it-expects-from-your-repo) ·

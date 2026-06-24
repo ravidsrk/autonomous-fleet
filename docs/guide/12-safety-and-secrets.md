@@ -237,7 +237,7 @@ autonomous-fleet clone, the run refuses to start unless you also pass
 The exact refusal, verbatim from the script:
 
 ```
-error: --yolo against an external --repo auto-approves every tool call — a full RCE surface.
+error: --yolo against an external --repo auto-approves every tool call, a full RCE surface.
        Run under scripts/run-sandboxed.sh, or pass --yolo-untrusted-acknowledged to accept the risk.
 ```
 
@@ -398,10 +398,10 @@ anything beyond a repo you fully own, and wrap any headless `--yolo` run in `run
 If you find a security issue in autonomous-fleet, please report it privately rather than opening a
 public issue, so it can be fixed before it is broadly known.
 
-The intended destination is the repository's `SECURITY.md`, which carries the supported-versions
-table, the threat model, and the private reporting channel with a disclosure window. `SECURITY.md`
-is being added alongside this guide; until it lands, report privately through the repository's
-maintainer contact rather than filing a public issue that discloses the vulnerability.
+The live destination is the repository root `SECURITY.md`, which carries the supported-versions
+table, the threat model, and the private reporting channel. Follow that policy: email
+ravidsrk@gmail.com privately, do not open a public GitHub issue, and use the documented 90-day
+disclosure window.
 
 When you report, include the exact command line or repo content that triggers the issue, the runtime
 and adapter you used, whether `--yolo` was set, and the verdict `run-sandboxed.sh --classify`

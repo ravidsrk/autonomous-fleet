@@ -1,4 +1,4 @@
-<!-- title: Adapter — Claude Code | description: Maps autonomous-fleet engine primitives to Claude Code mechanics (Task-tool subagents, git worktrees, gh CLI, TodoWrite). | sidebar_order: 8 -->
+<!-- title: Adapter, Claude Code | description: Maps autonomous-fleet engine primitives to Claude Code mechanics (Task-tool subagents, git worktrees, gh CLI, TodoWrite). | sidebar_order: 8 -->
 
 # autonomous-fleet-adapter-claude-code
 
@@ -7,7 +7,7 @@
 [Quick install](#quick-install) · [Learn more](#learn-more)
 
 <p align="center">
-  <img src="assets/banner.jpg" alt="autonomous-fleet-adapter-claude-code — autonomous-fleet skill" width="100%">
+  <img src="assets/banner.jpg" alt="autonomous-fleet-adapter-claude-code, autonomous-fleet skill" width="100%">
 </p>
 
 > The Claude Code adapter for autonomous-fleet-core. It maps each engine primitive to Claude Code's
@@ -17,7 +17,7 @@
 > runtime, the coordinator IS the main Claude Code session, workers are subagents or
 > worktree-scoped sub-sessions, and the file ledger is the durable source of truth.
 
-🟧 **Tier 2 · Adapter** — resolves the engine's portable primitives to one specific runtime.
+🟧 **Tier 2 · Adapter**, resolves the engine's portable primitives to one specific runtime.
 
 ## When to use it
 
@@ -77,10 +77,10 @@ Then load it alongside `autonomous-fleet-core` and run a mission in Claude Code.
 
 ## Learn more
 
-- [Guide 02 — Installation](../../docs/guide/02-installation.md) — per-runtime setup for Claude Code
-- [Guide 13 — Extending](../../docs/guide/13-extending.md) — primitive-by-primitive adapter mapping
-- [SKILL.md](./SKILL.md) — the agent-facing spec
+- [Guide 02, Installation](../../docs/guide/02-installation.md), per-runtime setup for Claude Code
+- [Guide 13, Extending](../../docs/guide/13-extending.md), primitive-by-primitive adapter mapping
+- [SKILL.md](./SKILL.md), the agent-facing spec
 
 ---
 
-← Prev: none · [📖 Guide Index](README.md) · Next: none →
+← Prev: none · [Guide Index](../../docs/guide/README.md) · Next: none →

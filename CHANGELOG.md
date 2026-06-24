@@ -110,5 +110,3 @@ Removed    deleted capabilities (none yet)
 
 Every PR description should open with a one-line changelog entry so this file stays current. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the distillation discipline that governs what lands here.
-
-← [Guide Index](README.md)

@@ -3,7 +3,7 @@
 # autonomous-fleet-adapter-codex
 
 <p align="center">
-  <img src="assets/banner.jpg" alt="autonomous-fleet-adapter-codex — autonomous-fleet skill" width="100%">
+  <img src="assets/banner.jpg" alt="autonomous-fleet-adapter-codex, autonomous-fleet skill" width="100%">
 </p>
 
 > The Codex adapter for autonomous-fleet-core. It maps each engine primitive to OpenAI Codex
@@ -12,7 +12,7 @@
 > coordinator IS the main Codex thread, workers are subagents or worktree-scoped sessions, and the
 > file ledger survives compaction.
 
-🟧 **Tier 2 · Adapter** — the runtime bridge that teaches the engine how to speak Codex.
+🟧 **Tier 2 · Adapter**, the runtime bridge that teaches the engine how to speak Codex.
 
 **On this page:** [When to use it](#when-to-use-it) · [What it produces](#what-it-produces) ·
 [What it expects](#what-it-expects-from-your-repo) ·
@@ -71,10 +71,10 @@ Then load it alongside `autonomous-fleet-core` in your Codex session and referen
 
 ## Learn more
 
-- [Guide 02 — Installation](../../docs/guide/02-installation.md) — picking and setting up the Codex runtime
-- [Guide 13 — Extending](../../docs/guide/13-extending.md) — the primitive-by-primitive adapter mapping
-- [SKILL.md](./SKILL.md) — the agent-facing spec that governs this adapter's behavior
+- [Guide 02, Installation](../../docs/guide/02-installation.md), picking and setting up the Codex runtime
+- [Guide 13, Extending](../../docs/guide/13-extending.md), the primitive-by-primitive adapter mapping
+- [SKILL.md](./SKILL.md), the agent-facing spec that governs this adapter's behavior
 
 ---
 
-[📖 Guide Index](README.md)
+[Guide Index](../../docs/guide/README.md)

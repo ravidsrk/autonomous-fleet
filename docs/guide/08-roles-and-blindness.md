@@ -56,7 +56,7 @@ in three separate terminals, with deliberately different information:
   tests green, then opens a PR. The builder owns the full construction conversation: every
   exploration, every dead end, every "actually this approach is cleaner" pivot.
 
-- The **reviewer** is the load-bearing role. The engine describes it as `REVIEW (reviewer — FRESH,
+- The **reviewer** is the load-bearing role. The engine describes it as `REVIEW (reviewer, FRESH,
 BUILD-BLIND, never saw the build conversation)`. It reads the PR diff and grades it _only_ against
   the unit's acceptance criteria. Read and verdict only, no edits. It is handed the diff plus the
   acceptance contract as text, and nothing else: not the build worktree, not the builder's session,
@@ -185,7 +185,7 @@ discipline above is only real if the order it demands actually happened, and the
 auditable on disk. The engine:
 
 > A review run whose blind-fix file is missing or is mtime-AFTER the candidate-findings file is
-> structurally suspect — the protocol requires blind-fix BEFORE patch read, and the filesystem must
+> structurally suspect, the protocol requires blind-fix BEFORE patch read, and the filesystem must
 > reflect that order.
 
 The run-archive validator enforces exactly this as one of its mtime-ordering invariants:
@@ -299,7 +299,7 @@ and in the frontmatter:
 The two missions this applies to are `design-integration` and `landing-page-convergence`. The engine
 classes both as Tier 2 work in its risk tiers:
 
-> design-integration, landing-page-convergence (no direct category in the study — treat as Tier 2).
+> design-integration, landing-page-convergence (no direct category in the study, treat as Tier 2).
 
 Why a different builder for design. The choice of `@grok` as the builder for these missions is a
 mission-level role-pipeline override, not a change to the topology. The roles are still

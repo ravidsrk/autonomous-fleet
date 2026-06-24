@@ -445,9 +445,9 @@ The reference in-code integration is `fleet_run.write_manifest`, which emits the
 transition. The ordering is visible in the source, and it is the right way around:
 
 ```python
-# scripts/lib/fleet_run.py — write_manifest()
+# scripts/lib/fleet_run.py, write_manifest()
 manifest_path = archive_root / "manifest.json"
-# Doctrine (engine.md TRACE EMISSION): trace first, ledger second — never the reverse,
+# Doctrine (engine.md TRACE EMISSION): trace first, ledger second, never the reverse,
 # or a crash leaves the manifest on disk with no externally-visible cause. Emit BEFORE write.
 if emitter is not None:
     emitter.emit(
@@ -503,9 +503,10 @@ call sites in `emit_trace.py`:
 - `emit()` runs the same `_scan_details(details)` and raises `ValueError` if it finds a secret or a
   host-absolute path, before the line is ever written to disk.
 
-The scanner walks the payload recursively and flags strings that match a secret pattern (OpenAI
-`sk-`, AWS `AKIA`, GitHub `ghp_`, xAI `xai-`, a PEM private-key header) or a host-absolute path
-(`/home/`, `/Users/`, `/root/`, or a `.ssh` / `.aws` / `.gnupg` directory). Sensitive evidence is
+The scanner walks the payload recursively and flags strings that match a secret pattern. Examples
+include OpenAI `sk-`, AWS `AKIA`, GitHub `ghp_`, xAI `xai-`, and a PEM private-key header, among
+others. It also flags host-absolute paths such as `/home/`, `/Users/`, `/root/`, or a `.ssh` /
+`.aws` / `.gnupg` directory, among others. Sensitive evidence is
 referenced by `evidence_hash` instead. So a worker that accidentally puts a token in `details` gets
 a hard `ValueError` at emit time, not a leaked secret on a public dashboard.
 
