@@ -28,6 +28,8 @@ ACTION_RE_DRIVE = "RE_DRIVE"
 ACTION_ESCALATE = "ESCALATE_TO_DECISIONS"
 ACTION_ARCHIVE_ORPHAN = "ARCHIVE_ORPHAN"
 
+MAX_RESUME_ATTEMPTS = 3
+
 SCM_MERGED = "merged"
 SCM_OPEN = "open"
 SCM_CLOSED_UNMERGED = "closed_unmerged"
@@ -275,6 +277,27 @@ def _worktree_for_row(row: LedgerRow, worktrees: list[WorktreeRecord]) -> Worktr
     return None
 
 
+def _resume_count(row: LedgerRow) -> int | None:
+    raw = row.flags.get("RESUME_COUNT")
+    if raw is None:
+        return None
+    value = _clean(raw)
+    return int(value) if value.isdecimal() else None
+
+
+def _resume_budget_exhausted(row: LedgerRow) -> bool:
+    resume_count = _resume_count(row)
+    return resume_count is not None and resume_count >= MAX_RESUME_ATTEMPTS
+
+
+def _classified_entry(
+    row: LedgerRow, classification: str, action: str, signals: dict[str, Any]
+) -> dict[str, Any]:
+    if action in {ACTION_CONTINUE, ACTION_RE_DRIVE} and _resume_budget_exhausted(row):
+        action = ACTION_ESCALATE
+    return {"classification": classification, "action": action, "signals": signals}
+
+
 def classify_row(row: LedgerRow, worktrees: list[WorktreeRecord], prs: list[PullRequest]) -> dict[str, Any]:
     """Classify one ledger row from ledger, worktree, and SCM signals."""
     ledger_merged = _boolish(row.flags.get("MERGED") or row.flags.get("DONE"))
@@ -287,16 +310,16 @@ def classify_row(row: LedgerRow, worktrees: list[WorktreeRecord], prs: list[Pull
     }
 
     if scm_state == SCM_MERGED and ledger_merged is not True:
-        return {"classification": CLASS_PARTIAL, "action": ACTION_ESCALATE, "signals": signals}
+        return _classified_entry(row, CLASS_PARTIAL, ACTION_ESCALATE, signals)
     if ledger_merged is True and scm_state in {SCM_OPEN, SCM_CLOSED_UNMERGED, SCM_AMBIGUOUS}:
-        return {"classification": CLASS_PARTIAL, "action": ACTION_ESCALATE, "signals": signals}
+        return _classified_entry(row, CLASS_PARTIAL, ACTION_ESCALATE, signals)
     if ledger_merged is True and scm_state == SCM_MERGED:
-        return {"classification": CLASS_DEAD, "action": ACTION_CLEANUP_WORKTREE, "signals": signals}
+        return _classified_entry(row, CLASS_DEAD, ACTION_CLEANUP_WORKTREE, signals)
     if scm_state == SCM_CLOSED_UNMERGED:
-        return {"classification": CLASS_PARTIAL, "action": ACTION_RE_DRIVE, "signals": signals}
+        return _classified_entry(row, CLASS_PARTIAL, ACTION_RE_DRIVE, signals)
     if wt is not None or scm_state == SCM_OPEN:
-        return {"classification": CLASS_LIVE, "action": ACTION_CONTINUE, "signals": signals}
-    return {"classification": CLASS_PARTIAL, "action": ACTION_ESCALATE, "signals": signals}
+        return _classified_entry(row, CLASS_LIVE, ACTION_CONTINUE, signals)
+    return _classified_entry(row, CLASS_PARTIAL, ACTION_ESCALATE, signals)
 
 
 def _orphan_entry(wt: WorktreeRecord, prs: list[PullRequest]) -> dict[str, Any]:

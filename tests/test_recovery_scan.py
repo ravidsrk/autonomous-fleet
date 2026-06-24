@@ -177,6 +177,42 @@ def test_live_rows_continue_and_closed_unmerged_rows_redrive() -> None:
     assert _first(redrive)["action"] == rs.ACTION_RE_DRIVE
 
 
+@pytest.mark.parametrize(
+    ("resume_flag", "expected_action"),
+    [
+        (" RESUME_COUNT=3", rs.ACTION_ESCALATE),
+        (" RESUME_COUNT=1", rs.ACTION_CONTINUE),
+        ("", rs.ACTION_CONTINUE),
+    ],
+)
+def test_resume_attempt_cap_escalates_only_after_budget_burned(
+    resume_flag: str, expected_action: str
+) -> None:
+    row = _first(
+        rs.scan_recovery(
+            f"TASK Resume | BRANCH=fleet/resume PR=24 MERGED=false{resume_flag}\n",
+            _wt("fleet/resume"),
+            _prs({"number": 24, "headRefName": "fleet/resume", "state": "OPEN", "mergedAt": None}),
+        )
+    )
+
+    assert row["classification"] == rs.CLASS_LIVE
+    assert row["action"] == expected_action
+
+
+def test_resume_attempt_cap_escalates_redrive_action() -> None:
+    row = _first(
+        rs.scan_recovery(
+            "TASK Redrive | BRANCH=fleet/redrive PR=25 MERGED=false RESUME_COUNT=3\n",
+            "",
+            _prs({"number": 25, "headRefName": "fleet/redrive", "state": "CLOSED", "mergedAt": None}),
+        )
+    )
+
+    assert row["classification"] == rs.CLASS_PARTIAL
+    assert row["action"] == rs.ACTION_ESCALATE
+
+
 def test_ledger_terminal_contradicted_by_open_pr_escalates() -> None:
     row = _first(
         rs.scan_recovery(
