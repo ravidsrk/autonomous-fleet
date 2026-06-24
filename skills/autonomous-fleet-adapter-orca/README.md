@@ -3,7 +3,7 @@
 # autonomous-fleet-adapter-orca
 
 <p align="center">
-  <img src="assets/banner.png" alt="autonomous-fleet-adapter-orca — autonomous-fleet skill" width="100%">
+  <img src="assets/banner.png" alt="autonomous-fleet-adapter-orca, autonomous-fleet skill" width="100%">
 </p>
 
 > The Orca adapter for autonomous-fleet-core. It maps each engine primitive (spawn worker,
@@ -11,7 +11,7 @@
 > real Orca orchestration CLI. Load it alongside autonomous-fleet-core when you run a mission on
 > Orca.
 
-🟦 **Tier 2 · Adapter** — the runtime bridge that turns engine primitives into Orca CLI calls.
+🟦 **Tier 2 · Adapter**, the runtime bridge that turns engine primitives into Orca CLI calls.
 
 **On this page:** [When to use it](#when-to-use-it) · [What it produces](#what-it-produces) ·
 [What it expects from your repo](#what-it-expects-from-your-repo) ·
@@ -66,8 +66,8 @@
 
 > Two current limitations to know up front. The trace stream emits only the `T-FINAL` event in
 > production today; per-transition emission is still rolling out. And headless campaign mode
-> (`run-campaign.sh`) is not yet fully validated end-to-end, so interactive chat and `/goal` are the
-> supported path.
+> (`run-campaign.sh`) accepts only the `grok`, `claude`, and `codex` CLIs, so interactive Orca
+> orchestration is the supported path for Orca missions.
 
 ## Quick install
 
@@ -80,8 +80,8 @@ Then load it alongside `autonomous-fleet-core` and run a mission on Orca.
 
 ## Learn more
 
-- [Guide 02 — Installation](../../docs/guide/02-installation.md) — setting up the Orca runtime
-- [Guide 13 — Extending](../../docs/guide/13-extending.md) — the adapter primitive table, end to end
-- [SKILL.md](./SKILL.md) — the agent-facing spec
+- [Guide 02, Installation](../../docs/guide/02-installation.md), setting up the Orca runtime
+- [Guide 13, Extending](../../docs/guide/13-extending.md), the adapter primitive table, end to end
+- [SKILL.md](./SKILL.md), the agent-facing spec
 
-← [Guide Index](README.md)
+← [Guide Index](../../docs/guide/README.md)

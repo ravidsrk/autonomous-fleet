@@ -3,7 +3,7 @@
 # test-coverage
 
 <p align="center">
-  <img src="assets/banner.png" alt="test-coverage — autonomous-fleet skill" width="100%">
+  <img src="assets/banner.png" alt="test-coverage, autonomous-fleet skill" width="100%">
 </p>
 
 > Raise real test coverage on a repo or a target area with behaviour-exercising tests, not
@@ -11,7 +11,7 @@
 > that genuinely assert behaviour, and it never changes your application logic. Runs fully
 > autonomously via the autonomous-fleet-core engine.
 
-🟧 **Tier 3 · Mission**: a discrete engineering job, safe to compose.
+🟦 **Tier 1 · Mission**: a discrete engineering job, safe to compose.
 
 **On this page:** [When to use it](#when-to-use-it) · [What it produces](#what-it-produces) ·
 [What it expects from your repo](#what-it-expects-from-your-repo) ·

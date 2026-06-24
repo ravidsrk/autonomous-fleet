@@ -213,7 +213,7 @@ places in `emit_trace.py`, both calling the same `_scan_details` walker:
 2. `TraceEmitter.emit(...)` runs `_scan_details` on `details` and RAISES `ValueError` before the line is
    written, so a leaking event never reaches disk in the first place.
 
-What the scanner flags:
+Illustrative examples the scanner flags:
 
 ```text
 category            pattern (from emit_trace.py)
@@ -225,6 +225,10 @@ xAI key             xai-<16+ alnum/->
 PEM private key      -----BEGIN ... PRIVATE KEY-----
 host-absolute path  a path under /home, /Users, or /root, or a /.ssh /.aws /.gnupg dir
 ```
+
+This is a representative subset; `_SECRET_RE` and `_HOST_PATH_RE` in `scripts/lib/emit_trace.py`
+are the source of truth and also cover Stripe, Slack, Google, JWT, and Bearer tokens plus `/etc`,
+`/var`, `/opt` paths.
 
 The walker recurses through nested objects and lists, so a secret buried three levels deep in `details`
 is still caught. The remediation it suggests is the right one: reference sensitive evidence by

@@ -212,7 +212,7 @@ A clean run here means the wrapper resolved the checkout, found
 not behave:
 
 ```
-  stop-verify: warning — CLI not found at .../scripts/stop_verify.py
+  stop-verify: warning, CLI not found at .../scripts/stop_verify.py
      ->  AUTONOMOUS_FLEET_HOME points at the wrong directory, or the checkout
          is incomplete. Fix the env var and re-run.
 
@@ -270,7 +270,7 @@ When the gate blocks, the CLI emits a structured BLOCK message as JSON on stdout
 identical human-readable form on stderr. The message looks like this:
 
 ```
-stop-verify: BLOCKED — no fleet-outcome-grade evidence in the last 30min.
+stop-verify: BLOCKED, no fleet-outcome-grade evidence in the last 30min.
   evidence found: no evidence kinds matched
   required: at least 1 distinct kind(s) from {evid_flag, wt_clean_flag,
     e2e_verified, status_done, verify_summary, test_artifact, e2e_artifact}

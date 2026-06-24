@@ -111,7 +111,7 @@ trimmed in the middle for length:
       "bytes": 2570
     }
   ],
-  "notes": "Canonical example fixture — exercises every validator in validate-all.sh."
+  "notes": "Canonical example fixture, exercises every validator in validate-all.sh."
 }
 ```
 
@@ -177,8 +177,9 @@ The `producer` field is load-bearing for the ordering checks. The validator does
 "the earliest blind-fix" with "the earliest findings" globally. It groups by producer first,
 so a multi-reviewer run with reviewer A and reviewer B is checked per reviewer: A's blind-fix
 must predate A's findings, B's blind-fix must predate B's findings, and the two reviewers do
-not constrain each other. The verifier inherits the producer slug of the reviewer it audits,
-so the verify-summary-after-findings check pairs the same way.
+not constrain each other. The shipped example fixture records the `verify_summary` producer as
+`verifier`; the validator groups verify summaries by exact producer slug when applying the
+verify-summary-after-findings check.
 
 ## File kinds
 
@@ -419,7 +420,7 @@ A few representative failure lines, so you recognize them:
 ```
 FAIL .fleet/runs/<id>
   - .../manifest.json: schema_version must be '1.0', got '2.0'
-  - .../manifest.json.files[2]: sha256 mismatch — manifest says <a>, disk says <b>
+  - .../manifest.json.files[2]: sha256 mismatch, manifest says <a>, disk says <b>
   - .../manifest.json: ANTI-ANCHORING violation: blind_fix '...' (producer='...') mtime
     ... is not strictly before findings '...' mtime ...
   - .../manifest.json: readiness-not-latest violation: other file '...' mtime ... is

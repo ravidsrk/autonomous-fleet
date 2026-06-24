@@ -3,7 +3,7 @@
 # autonomous-fleet-adapter-template
 
 <p align="center">
-  <img src="assets/banner.png" alt="autonomous-fleet-adapter-template — autonomous-fleet skill" width="100%">
+  <img src="assets/banner.png" alt="autonomous-fleet-adapter-template, autonomous-fleet skill" width="100%">
 </p>
 
 > TEMPLATE for writing a new autonomous-fleet adapter (codex, gemini-cli, a custom CLI fleet, or a
@@ -11,7 +11,7 @@
 > YOUR runtime implements each PRIMITIVE the core calls. The missions and the core never change,
 > only this mapping does. Not a runnable mission skill.
 
-🟦 **Tier 2 · Adapter** — the starting point for adding a new runtime to autonomous-fleet.
+🟦 **Tier 2 · Adapter**, the starting point for adding a new runtime to autonomous-fleet.
 
 **On this page:** [When to use it](#when-to-use-it) · [What it produces](#what-it-produces) ·
 [What it expects from your repo](#what-it-expects-from-your-repo) ·
@@ -66,9 +66,9 @@ Then activate in your agent (Claude Code, Cursor, Grok, Codex, or Orca) and refe
 
 ## Learn more
 
-- [Guide 13 — Extending](../../docs/guide/13-extending.md) — adding an adapter, primitive by primitive.
-- [Guide 02 — Installation](../../docs/guide/02-installation.md) — where adapters fit at install time.
-- [SKILL.md](./SKILL.md) — the agent-facing spec and the full PRIMITIVE mapping skeleton.
+- [Guide 13, Extending](../../docs/guide/13-extending.md), adding an adapter, primitive by primitive.
+- [Guide 02, Installation](../../docs/guide/02-installation.md), where adapters fit at install time.
+- [SKILL.md](./SKILL.md), the agent-facing spec and the full PRIMITIVE mapping skeleton.
 
 ---
 

@@ -1,6 +1,6 @@
 <!-- title: The Guide | description: Structured walk through every concept, mission, and reference in autonomous-fleet | sidebar_order: 0 -->
 
-# autonomous-fleet — The Guide
+# autonomous-fleet: The Guide
 
 **On this page:** [How to read this guide](#how-to-read-this-guide) ·
 [Get started](#-get-started) · [Concepts](#-concepts) · [How-to](#-how-to) ·
@@ -46,17 +46,17 @@ Two honest limitations are surfaced where they live, not hidden:
 
 ## 🚀 Get started
 
-- [Quickstart](01-quickstart.md) — your first PR in 10 minutes
-- [Installation](02-installation.md) — full setup across all 4 runtimes
-- [Your first mission](03-your-first-mission.md) — running doc-sync end-to-end
+- [Quickstart](01-quickstart.md), your first PR in 10 minutes
+- [Installation](02-installation.md), full setup across all 4 runtimes
+- [Your first mission](03-your-first-mission.md), running doc-sync end-to-end
 
 ## 🧠 Concepts
 
-- [Mental model](04-mental-model.md) — what a "run" actually is
-- [Missions vs campaigns](05-missions-vs-campaigns.md) — when to chain
-- [The engine](06-the-engine.md) — primitives, ledger, frozen DAG
-- [The substrate](07-the-substrate.md) — 4-layer verification
-- [Roles and blindness](08-roles-and-blindness.md) — why review is structural
+- [Mental model](04-mental-model.md), what a "run" actually is
+- [Missions vs campaigns](05-missions-vs-campaigns.md), when to chain
+- [The engine](06-the-engine.md), primitives, ledger, frozen DAG
+- [The substrate](07-the-substrate.md), 4-layer verification
+- [Roles and blindness](08-roles-and-blindness.md), why review is structural
 
 ## 🛠️ How-to
 
