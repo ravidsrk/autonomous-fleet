@@ -12,6 +12,9 @@
 #      ordinary git push, gh release, rm -rf of a scoped path). This wrapper is non-interactive,
 #      so an ASK has no human to prompt: it refuses too, and the operator re-runs the command by
 #      hand once they've eyeballed it.
+#   3. With `--role reviewer`, runs the command after classification with the candidate git tree
+#      read-only and `.fleet/runs/<run_id>/` writable. It prefers macOS sandbox-exec, then Linux
+#      bwrap. If neither exists, it falls back to a post-exec tracked-file hash assertion.
 #
 # What it is NOT: an OS sandbox. It does not confine filesystem, network, or syscall reach. Run it
 # INSIDE a container / VM / restricted user account when the target is genuinely untrusted, and
@@ -25,6 +28,9 @@
 # `$1`) it FAILS SAFE to ASK; where it is not, a determined caller CAN evade it. It is a net against
 # accidental / obvious damage. Pair it with real OS-level sandboxing (container-use) for untrusted
 # targets — that, not this script, is the boundary.
+# Reviewer-role read-only placement is also best-effort when neither sandbox-exec nor bwrap is
+# present: the fallback detects tracked-file changes after the command and exits non-zero, but it is
+# an audit gate, not a live filesystem boundary and it does not roll changes back.
 # It FAILS SAFE: on an ambiguous wrapper construction (e.g. an unknown wrapper's positional operand
 # preceding the real command) it errs toward DENY/ASK rather than ALLOW. Refusing a rare safe
 # command is acceptable; silently running an irreversible one is not.
@@ -34,6 +40,7 @@
 # Usage:
 #   ./scripts/run-sandboxed.sh <command> [args...]
 #   ./scripts/run-sandboxed.sh --classify <command> [args...]   # print verdict, do not exec
+#   ./scripts/run-sandboxed.sh --role reviewer [--run-id <run_id>] -- <command> [args...]
 #   ./scripts/run-sandboxed.sh --help
 #
 # Examples:
@@ -47,6 +54,7 @@ usage() {
   cat <<'EOF'
 Usage: run-sandboxed.sh <command> [args...]
        run-sandboxed.sh --classify <command> [args...]
+       run-sandboxed.sh --role reviewer [--run-id <run_id>] -- <command> [args...]
 
 Best-effort safety wrapper. Scrubs credential-shaped env vars and classifies the command line by
 blast radius (ported from omnigent nessie blast_radius) before exec.
@@ -70,6 +78,12 @@ assignments (CI=1 ...), command chaining (; && || |), git -C <dir>/global option
 split rm flags (-rf, -r -f, --recursive --force), and +/: push refspecs.
 
 --classify  print the verdict (DENY|ASK|ALLOW) on stdout and exit 0 without exec. For tests.
+--role reviewer
+            after blast-radius classification, run with the candidate git tree read-only and only
+            .fleet/runs/<run_id>/ writable. Uses sandbox-exec on macOS, bwrap on Linux, else a
+            best-effort post-exec tracked-file hash assertion.
+--run-id    run archive id for reviewer writable output. Defaults to FLEET_RUN_ID, then a generated
+            reviewer-sandbox id.
 
 This is NOT a general sandbox. It does not confine fs/network/syscalls. Combine with a
 container / VM / restricted user for untrusted targets.
@@ -78,16 +92,48 @@ EOF
 
 # --- Argument handling ----------------------------------------------------------------------
 classify_only=0
-case "${1:-}" in
-  -h|--help)
-    usage
-    exit 0
-    ;;
-  --classify)
-    classify_only=1
-    shift
-    ;;
-esac
+role=""
+run_id="${FLEET_RUN_ID:-}"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --classify)
+      classify_only=1
+      shift
+      ;;
+    --role)
+      if [[ $# -lt 2 ]]; then
+        echo "run-sandboxed: --role requires a value" >&2
+        exit 1
+      fi
+      role="$2"
+      shift 2
+      ;;
+    --run-id)
+      if [[ $# -lt 2 ]]; then
+        echo "run-sandboxed: --run-id requires a value" >&2
+        exit 1
+      fi
+      run_id="$2"
+      shift 2
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+if [[ -n "$role" && "$role" != "reviewer" ]]; then
+  echo "run-sandboxed: unsupported --role '$role' (supported: reviewer)" >&2
+  exit 1
+fi
 
 if [[ $# -eq 0 ]]; then
   usage
@@ -533,6 +579,131 @@ if [[ "$verdict" == "ASK" ]]; then
   exit 3
 fi
 
+_generated_run_id() {
+  # Regex-compatible enough for run-archive naming, but only used when the caller has not supplied
+  # the real run id yet.
+  printf '%s-reviewer-sandbox-%06x' "$(date -u +%Y%m%dT%H%M%SZ)" "$(( $$ & 0xffffff ))"
+}
+
+_repo_root() {
+  local root
+  if root="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+    (cd "$root" && pwd -P)
+  else
+    pwd -P
+  fi
+}
+
+_sha256_path() {
+  local path="$1"
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$path" | awk '{print $1}'
+  elif command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$path" | awk '{print $1}'
+  else
+    git hash-object "$path"
+  fi
+}
+
+_snapshot_tracked_hashes() {
+  local repo="$1" rel abs
+  git -C "$repo" ls-files -z | while IFS= read -r -d '' rel; do
+    case "$rel" in
+      .fleet/runs/*) continue ;;
+    esac
+    abs="$repo/$rel"
+    if [[ -f "$abs" ]]; then
+      printf 'file %s %s\n' "$(_sha256_path "$abs")" "$rel"
+    else
+      printf 'missing %s\n' "$rel"
+    fi
+  done | LC_ALL=C sort
+}
+
+_sbpl_string() {
+  local s="$1"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  printf '"%s"' "$s"
+}
+
+_reviewer_env() {
+  local kv name
+  reviewer_filtered=()
+  for kv in "${filtered[@]}"; do
+    name="${kv%%=*}"
+    case "$name" in
+      HOME|TMPDIR|FLEET_ROLE|FLEET_RUN_ID|FLEET_RUN_DIR|FLEET_TEST_OUTPUT_DIR)
+        continue
+        ;;
+    esac
+    reviewer_filtered+=("$kv")
+  done
+  reviewer_filtered+=(
+    "HOME=$reviewer_home"
+    "TMPDIR=$reviewer_tmp"
+    "FLEET_ROLE=reviewer"
+    "FLEET_RUN_ID=$run_id"
+    "FLEET_RUN_DIR=$reviewer_run_dir"
+    "FLEET_TEST_OUTPUT_DIR=$reviewer_test_output"
+  )
+}
+
+_exec_reviewer_sandbox() {
+  local run_q tmp_q test_q home_q profile
+  if command -v sandbox-exec >/dev/null 2>&1; then
+    run_q="$(_sbpl_string "$reviewer_run_dir")"
+    tmp_q="$(_sbpl_string "$reviewer_tmp")"
+    test_q="$(_sbpl_string "$reviewer_test_output")"
+    home_q="$(_sbpl_string "$reviewer_home")"
+    profile="$(cat <<EOF
+(version 1)
+(deny default)
+(allow process*)
+(allow sysctl*)
+(allow mach-lookup)
+(allow network*)
+(allow file-read*)
+(allow file-write*
+  (subpath $run_q)
+  (subpath $tmp_q)
+  (subpath $test_q)
+  (subpath $home_q)
+  (subpath "/dev")
+)
+EOF
+)"
+    exec sandbox-exec -p "$profile" env -i "${reviewer_filtered[@]}" "${reviewer_cmd[@]}"
+  fi
+
+  if command -v bwrap >/dev/null 2>&1; then
+    exec bwrap \
+      --bind / / \
+      --ro-bind "$repo_root" "$repo_root" \
+      --bind "$reviewer_run_dir" "$reviewer_run_dir" \
+      --chdir "$PWD" \
+      env -i "${reviewer_filtered[@]}" "${reviewer_cmd[@]}"
+  fi
+
+  local before after child_status=0
+  before="$(mktemp "${TMPDIR:-/tmp}/reviewer-before.XXXXXX")"
+  after="$(mktemp "${TMPDIR:-/tmp}/reviewer-after.XXXXXX")"
+  _snapshot_tracked_hashes "$repo_root" >"$before"
+  set +e
+  env -i "${reviewer_filtered[@]}" "${reviewer_cmd[@]}"
+  child_status=$?
+  set -e
+  _snapshot_tracked_hashes "$repo_root" >"$after"
+  if ! cmp -s "$before" "$after"; then
+    echo "run-sandboxed: reviewer modified tracked files outside .fleet/runs" >&2
+    diff -u "$before" "$after" >&2 || true
+    rm -f "$before" "$after"
+    exit 4
+  fi
+  rm -f "$before" "$after"
+  exit "$child_status"
+}
+
 # --- Env scrub ------------------------------------------------------------------------------
 # Build an allowlist of names to KEEP, then exec the command via `env -i` with only those.
 keep_vars=(PATH HOME USER LOGNAME SHELL LANG TERM TMPDIR PWD)
@@ -564,5 +735,23 @@ for kv in "${preserved[@]}"; do
   esac
   filtered+=("$kv")
 done
+
+if [[ "$role" == "reviewer" ]]; then
+  repo_root="$(_repo_root)"
+  if [[ -z "$run_id" ]]; then
+    run_id="$(_generated_run_id)"
+  fi
+  reviewer_run_dir="$repo_root/.fleet/runs/$run_id"
+  reviewer_run_dir="$(mkdir -p "$reviewer_run_dir" && cd "$reviewer_run_dir" && pwd -P)"
+  reviewer_tmp="$reviewer_run_dir/tmp"
+  reviewer_test_output="$reviewer_run_dir/test-output"
+  reviewer_home="$reviewer_run_dir/home"
+  mkdir -p "$reviewer_tmp" "$reviewer_test_output" "$reviewer_home"
+
+  reviewer_filtered=()
+  reviewer_cmd=("$@")
+  _reviewer_env
+  _exec_reviewer_sandbox
+fi
 
 exec env -i "${filtered[@]}" "$@"
