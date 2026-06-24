@@ -307,7 +307,7 @@ and your mental model should account for them:
   state transition (one JSONL line per transition, the contract a dashboard reads), but only one
   event is wired in production code today: the `T-FINAL` archive event emitted when a run writes its
   manifest. Per-transition emission across the coordinator and adapters is rolling out; the schema
-  already covers all eleven primitives, the stream does not fill them yet. The trace contract is
+  already covers all eleven of its trace-enum primitives, the stream does not fill them yet. The trace contract is
   real; the full stream is in progress. Details in [trace schema](16-trace-schema.md).
 
 - Headless campaign mode is not yet fully validated end-to-end. The supported path today is the
