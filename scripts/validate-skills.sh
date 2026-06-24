@@ -35,6 +35,9 @@ for skill in "$SKILLS_DIR"/*/; do
   if ! output="$("$VENV_PYTHON" "$VALIDATOR" "$skill" 2>&1)"; then
     echo "FAIL $name: $output"
     ERRORS=$((ERRORS + 1))
+  elif ! output="$("$VENV_PYTHON" "$ROOT/scripts/lib/skill_lint.py" "$skill" 2>&1)"; then
+    echo "FAIL $name: $output"
+    ERRORS=$((ERRORS + 1))
   else
     echo "OK   $name"
   fi
