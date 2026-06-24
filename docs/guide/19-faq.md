@@ -3,9 +3,9 @@
 # FAQ
 
 **On this page:** [Installation](#installation) · [Choosing a mission](#choosing-a-mission) ·
-[Campaigns](#campaigns) · [Safety](#safety) · [Models and runtimes](#models-and-runtimes) ·
-[Cost](#cost) · [Commercial use](#commercial-use) · [Comparison](#comparison) ·
-[Limitations today](#limitations-today)
+[Resume and recovery](#resume-and-recovery) · [Campaigns](#campaigns) · [Safety](#safety) ·
+[Models and runtimes](#models-and-runtimes) · [Cost](#cost) · [Commercial use](#commercial-use) ·
+[Comparison](#comparison) · [Limitations today](#limitations-today)
 
 This is the skim-for-an-answer chapter. Each question is one or two paragraphs, with a link to the
 chapter that covers it in depth. If a question here contradicts a chapter, the chapter wins: the
@@ -109,6 +109,43 @@ machine-readable summary is the `fleet-outcome` YAML block. See [Your first miss
 
 ---
 
+## Resume and recovery
+
+### A run died halfway. Can I just resume it?
+
+Yes, and resume is the point of the file ledger: a fresh coordinator with zero prior context can pick
+a run back up from `.fleet/runs/<run_id>/` alone, because the ledger is authoritative and the
+coordinator's memory is not. On resume the coordinator does not blindly continue. It runs the recovery
+scanner first to find out which tasks are actually still alive. See [The engine](06-the-engine.md).
+
+### How does recovery decide what to do with each task?
+
+`recovery_scan.py` cross-references three live signals per task row: the markdown progress ledger, the
+`git worktree list` output, and the `gh pr list` state. From those it classifies each row as `live`,
+`dead`, `partial`, or `orphan`, and attaches one advisory action: `CONTINUE`, `CLEANUP_WORKTREE`,
+`RE_DRIVE`, `ESCALATE_TO_DECISIONS`, or `ARCHIVE_ORPHAN`. The word advisory is load-bearing: the
+scanner never executes anything and never touches the repo. The coordinator reads the classification
+and decides. A row that says merged on the SCM but not in the ledger (or the reverse) is flagged
+`partial` and escalated, not silently continued.
+
+### How many times will it retry a stuck task?
+
+Three. A `live` row can be re-attached with `CONTINUE_WORKER` (the optional 14th primitive) instead
+of a fresh spawn, but the resume budget is bounded: once a row's `RESUME_COUNT` reaches
+`MAX_RESUME_ATTEMPTS` (3), the recovery scanner stops recommending another continue and recommends
+`ESCALATE_TO_DECISIONS` instead, so a task that cannot make progress lands in `DECISIONS.md` for a
+human rather than looping forever. Adapters whose runtime has no session-restore command alias
+`CONTINUE_WORKER` to `SPAWN_WORKER`, so resume still works, it just relaunches instead of re-attaching.
+
+### What happens to a leftover worktree from a dead run?
+
+The recovery scan sweeps for `orphan` worktrees: a worktree on a fleet-prefixed branch with no ledger
+row. It only recommends `ARCHIVE_ORPHAN` when the SCM proves the branch merged and the worktree has no
+uncommitted changes; otherwise it recommends `ESCALATE_TO_DECISIONS`. It will not clean up a worktree
+that still holds unmerged work. See [The engine](06-the-engine.md).
+
+---
+
 ## Campaigns
 
 ### What is a campaign versus a mission?
@@ -172,6 +209,21 @@ container instead of sharing the host. It is opt-in and adds setup; see the cont
 Env vars only, set at runtime, in memory, never written to disk. Workers do not hardcode secrets, and
 the sandbox wrapper scrubs credential-shaped variables before running a command. If you ever find a
 committed secret, treat it as compromised and rotate it.
+
+### Can I turn off a gate that is blocking me?
+
+Most gates, yes, with a deliberate env var, but think before you do. Each validator that can be
+disabled reads one `FLEET_DISABLE_*` knob, set truthy (`1`/`true`/`yes`/`on`), and exits 0 with a
+`DISABLED` notice instead of running. The newer run gates each have one: `FLEET_DISABLE_SHA_PIN`
+(the sha-pin OUTDATED check), `FLEET_DISABLE_ROUND_BUDGET` (the review round-budget circuit breaker),
+`FLEET_DISABLE_REGISTRY_LINT` (the mission/adapter registry drift check),
+`FLEET_DISABLE_REVIEWER_SANDBOX` (the reviewer-write attribution check), and `FLEET_DISABLE_NAMESPACING`
+(the branch/worktree run-suffix check). The substrate layers have their own knobs
+(`FLEET_DISABLE_VERIFY_FINDINGS`, `FLEET_DISABLE_STOP_VERIFY`, `FLEET_DISABLE_BLIND_FIX`,
+`FLEET_DISABLE_RUN_ARCHIVE`). The strict truthy allow-list means a typo never silently disables a
+gate. The mutation gate (Layer 4) has no knob on purpose. Disabling a gate turns its verdict into PASS
+for the run, so reach for it only when you understand exactly what you are silencing.
+See [The substrate](07-the-substrate.md) and [Troubleshooting](14-troubleshooting.md).
 
 ### How do I report a vulnerability?
 
@@ -291,7 +343,7 @@ squashed), and worktrees are cleaned up after every merge. See [Mental model](04
 
 Because a green test suite that does not actually fail when the code breaks is not verification. The
 substrate's mutation gate pins known bugs and asserts the tests catch them, which is a stronger
-signal than a coverage percentage. The shipped manifest holds 35 mutations today. See the substrate
+signal than a coverage percentage. The shipped manifest holds 50 mutations today. See the substrate
 chapter when it lands.
 
 ---

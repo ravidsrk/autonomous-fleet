@@ -5,6 +5,7 @@
 **On this page:** [Three roles, three terminals](#three-roles-three-terminals) ·
 [Build-blindness is structural](#build-blindness-is-structural) ·
 [Anti-anchoring: the blind fix](#anti-anchoring-the-blind-fix) ·
+[The read-only reviewer sandbox](#the-read-only-reviewer-sandbox) ·
 [The Aula run](#the-aula-run) ·
 [Single-vendor mode](#single-vendor-mode) ·
 [The design-mission exception](#the-design-mission-exception) ·
@@ -203,6 +204,60 @@ The role topology in this chapter is the _intent_; the manifest and its mtime in
 _proof_ that the intent was honored. See [Run-archive anatomy](15-run-archive.md) for the manifest
 fields and [The substrate](07-the-substrate.md) for how the four layers compose.
 
+## The read-only reviewer sandbox
+
+Everything above makes the reviewer build-blind: it never had the build context, and the blind-fix
+protocol stops it from anchoring on the candidate patch. There is one more thing the reviewer must not
+do, and it is the thing the role definition was built around: the reviewer must not write. "Read and
+verdict only, no edits" is the rule, and like build-blindness, a prompt is not a control. A reviewer
+that edits the candidate is no longer grading independent work; it has become a second builder, and the
+PASS it issues is partly a PASS on its own hands.
+
+The fleet makes that read-only constraint structural with `scripts/run-sandboxed.sh --role reviewer`. In
+that mode the wrapper runs the reviewer command with the candidate git tree read-only and only
+`.fleet/runs/<run_id>/` writable, choosing the strongest mechanism the host offers:
+
+```
+  ┌─────────────────────┬──────────────────────────────────────────────────────────────┐
+  │ Host has ...        │ How the read-only tree is enforced                           │
+  ├─────────────────────┼──────────────────────────────────────────────────────────────┤
+  │ sandbox-exec (macOS)│ an SBPL profile: deny default, file-read* allowed, file-      │
+  │                     │ write* allowed ONLY under the run dir, tmp, test-output, home │
+  │ bwrap (Linux)       │ a ro-bind of the repo root, a writable bind of the run dir    │
+  │ neither             │ post-exec fallback: hash every tracked file before and after; │
+  │                     │ if anything outside .fleet/runs changed, exit non-zero        │
+  └─────────────────────┴──────────────────────────────────────────────────────────────┘
+```
+
+The first two are real filesystem boundaries: a reviewer that tries to edit a source file is denied by
+the OS. The third is honest about its weaker guarantee: it is a post-exec assertion, an audit gate, not
+a live boundary, and it does not roll a change back. It snapshots the sha256 of every tracked file
+(skipping `.fleet/runs/`), runs the command, re-snapshots, and exits non-zero with a diff if any tracked
+file outside the run dir changed. The wrapper also scrubs credential-shaped env vars before exec and
+gives the reviewer a run-scoped `HOME`, `TMPDIR`, and `FLEET_TEST_OUTPUT_DIR` so its writes have a
+legitimate place to land that is not the candidate tree.
+
+So read-only is no longer a sentence in the reviewer's prompt that the model may or may not honor. On a
+host with sandbox-exec or bwrap it is a property the operating system enforces; on a bare host it is a
+property the post-exec assertion catches. Either way, a reviewer that writes to the candidate is a
+detected condition, not a silent one.
+
+### The standing audit gate
+
+The live placement above stops the write while the reviewer runs. A second, standing gate audits the
+archive after the fact, and it is the same mechanism documented in
+[The substrate](07-the-substrate.md): `scripts/verify_reviewer_sandbox.py` (backed by the pure
+`scripts/lib/reviewer_sandbox.py`) reads the run-archive `manifest.json` and asserts that no reviewer
+producer slug is attributed a write. A reviewer may only be the producer of `blind_fix`, `findings`, or
+`verify_summary` entries; a reviewer producer attributed a `diff` or `commit` on the candidate branch is
+a hard failure. This gate is wired into `scripts/validate-all.sh`, and it has its own kill switch,
+`FLEET_DISABLE_REVIEWER_SANDBOX`, on the substrate's one-knob-per-gate convention.
+
+The two pieces compose the way the rest of this chapter's disciplines do. The live sandbox is the
+mechanism that keeps the reviewer read-only as it runs; the manifest audit is the proof, after the run,
+that it stayed read-only. The role topology says the reviewer is read and verdict only; the sandbox and
+the audit gate are what make that something the run _has_, not something it _promises_.
+
 ## The Aula run
 
 The roles exist because of mistakes the framework's predecessors actually made. The clearest origin
@@ -328,6 +383,10 @@ archive.
   │ Blind-fix written BEFORE the diff read   │ Filesystem: mtime ordering        │
   │                                         │ checked by the archive validator  │
   │ blind_fix.mtime < findings.mtime        │ Archive validator (hard fail)     │
+  │ Reviewer is read-only (no candidate     │ OS sandbox when present (sandbox- │
+  │ edits)                                  │ exec / bwrap), else post-exec     │
+  │                                         │ tracked-file assertion; plus the  │
+  │                                         │ manifest audit gate (hard fail)   │
   │ Reviewer = DIFFERENT vendor             │ Default (SHOULD), when >1 vendor  │
   │ Same-vendor fallback                    │ Allowed, must be noted in         │
   │                                         │ DECISIONS.md                      │
@@ -355,7 +414,8 @@ proves the order, so that build-blindness is something the run _has_, not someth
 - [The engine](06-the-engine.md): the primitives that spawn and place these roles, and the
   signal-reconciliation discipline that decides when a review-fix cycle is really done.
 - [The substrate](07-the-substrate.md): the four verification layers that back these roles,
-  including the blind-fix mechanical guard (Layer 3) that enforces the mtime ordering.
+  including the blind-fix mechanical guard (Layer 3) that enforces the mtime ordering, and the
+  standing validator suite (the reviewer-sandbox manifest audit, SHA-pin, round-budget, and more).
 - [Run-archive anatomy](15-run-archive.md): the `reviewer-blind-fix-*.md` file, the findings file,
   and the manifest fields that make the order auditable.
 - [Installation](02-installation.md): getting a second vendor authenticated so you get cross-vendor

@@ -5,6 +5,7 @@
 **On this page:** [What it is](#what-it-is) · [Where it lives](#where-it-lives) ·
 [Required fields](#required-fields) · [Mission metrics](#mission-metrics) ·
 [Cross-cutting fields](#cross-cutting-fields) · [Review-findings metrics](#review-findings-metrics) ·
+[The readiness tasks block](#the-readiness-tasks-block) ·
 [Campaign edge expressions](#campaign-edge-expressions) · [Validating an outcome](#validating-an-outcome) ·
 [Field reference table](#field-reference-table)
 
@@ -274,6 +275,49 @@ All four must be non-negative integers when present (they go through the same nu
 check as any other metric). A campaign edge MAY branch on `unverified_findings == 0` to refuse to
 advance a fix loop on a hallucinated finding set.
 
+## The readiness tasks block
+
+The markdown ledger (`docs/<mission>-progress.md`) is the source of narrative loop memory: per-task
+flags, the frozen audit index, the CONTEXT HANDOFF block. The outcome's optional `tasks:` block is a
+small machine-readable snapshot of that ledger that lets the validator catch a class of bug the prose
+ledger cannot: a row whose flags say something that is physically impossible. It is the
+ledger-contradiction guard.
+
+When present, `tasks:` must be a list. Each row is a mapping of booleans for one unit. The validator
+walks each row through `_validate_task_row_invariants` in `fleet_outcome.py` and rejects three
+impossible combinations:
+
+```
+  Row flags                         Rejected with
+  -------------------------------   -----------------------------------------------
+  merged: true, built: not true     "task <id>: merged a task that never built"
+  merged: true, wt_clean: not true  "task <id>: merged but worktree not clean"
+  reviewed: true, pr_open: not true "task <id>: reviewed before PR opened"
+```
+
+Each is a hard invariant of the loop, not a heuristic. You cannot merge a unit that never built. You
+cannot merge while the worktree is dirty (the conflict-aware merge and checkout-cleanup rules forbid
+it). You cannot have reviewed a unit before its PR existed (the reviewer reads the PR). A row that
+asserts any of these is a ledger that contradicts itself, and the validator says so by row `id` (or
+`#<index>` if the row has no `id`).
+
+```yaml
+tasks: # optional machine-readable ledger snapshot, validated for self-consistency
+  - id: T-BUILD-auth
+    built: true
+    pr_open: true
+    reviewed: true
+    merged: true
+    wt_clean: true
+```
+
+The check is strict-identity on `True`: a row is only flagged when `merged`/`reviewed` is exactly
+`True` and the partner flag is anything other than `True` (missing, `false`, `null`). A row with no
+`merged: true` is never flagged, so a partial run with in-flight units validates cleanly. The block is
+optional: a mission that does not emit a snapshot omits it entirely, and the prose ledger stays the
+loop's authority. It exists to make "merged-but-never-built", "merged-but-not-clean", and
+"reviewed-before-PR" un-claimable in a machine-readable outcome, not to duplicate the ledger.
+
 ## Campaign edge expressions
 
 A `fleet-program` campaign is a DAG of missions. Each edge carries an optional `if` expression. The
@@ -390,6 +434,8 @@ other field is optional and omitted when not applicable.
   archive_enabled          bool      no    yes          hard-gates status=done
   run_id                   string    no    no           RUN_ID_PATTERN
   deferred_missions        list      no    via contains rows of {id, reason, blocker}
+  tasks                    list      no    no           ledger snapshot; rows checked
+                                                        for self-consistency
 ```
 
 For the trace event that carries this outcome at T-FINAL, see [Trace schema](16-trace-schema.md). For
