@@ -114,7 +114,7 @@ integrity:
 ./scripts/install-skills.sh doc-sync test-coverage # named skills
 ```
 
-The starter set is umbrella + `fleet-program` + core + the Grok adapter + `doc-sync`. The script
+The starter set is umbrella + `setup-autonomous-fleet` + `fleet-program` + core + the Grok adapter + `doc-sync` (six skills). The script
 pins the `skills` CLI to a known version rather than fetching whatever is latest, which an
 unpinned `npx skills` would do. Bump that pin deliberately when you want a newer installer.
 
