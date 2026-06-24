@@ -31,6 +31,18 @@ versions, the adapter says "try X, fall back to Y" — never hard-fail on one sy
 (else local merge-commits into BASE) · gitleaks availability · BASE exists (create off the default
 branch at current HEAD if absent).
 
+Machine-readable preflight requires-block:
+
+```yaml requires
+bins: [orca, git, gh]
+env: []
+auth:
+  - check: "gh auth status"
+    skip_if_intent: "no_scm"
+intent_gated:
+  scm: "willClaimExistingPR"
+```
+
 ## PRIMITIVE → ORCA COMMAND
 
 ### PLACE(kind) → worker location

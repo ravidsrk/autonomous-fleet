@@ -34,6 +34,18 @@ file ledger is the sole source of truth or a daemon also holds state.
 List the exact start-up checks for your runtime (runtime reachable / auth / worktree support /
 gitleaks / BASE exists).
 
+Machine-readable preflight requires-block:
+
+```yaml requires
+bins: [git, gh]
+env: []
+auth:
+  - check: "gh auth status"
+    skip_if_intent: "no_scm"
+intent_gated:
+  scm: "willClaimExistingPR"
+```
+
 ## PRIMITIVE → <TOOL> MAPPING (fill every one)
 
 ### PLACE(kind)
