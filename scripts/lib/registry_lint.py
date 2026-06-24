@@ -109,7 +109,16 @@ def lint_skills_lock(root: Path) -> list[str]:
     if errors:
         return errors
 
-    expected = _skill_dirs_on_disk(root)
+    # Skills installed from another source (e.g. anthropics/skills -> skill-creator,
+    # which CI vendors into skills/) are legitimately on disk without a local lock row.
+    # Exclude them from the on-disk set so the check stays apples-to-apples with the
+    # local-source lock dirs; only fleet-owned drift should surface here.
+    external = {
+        name
+        for name, row in skills.items()
+        if isinstance(row, dict) and row.get("source") not in (None, LOCAL_LOCK_SOURCE)
+    }
+    expected = _skill_dirs_on_disk(root) - external
     actual = _local_lock_skill_dirs(skills)
     missing = sorted(expected - actual)
     stale = sorted(actual - expected)

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import importlib.util
 import io
+import json
 import os
 import sys
 from contextlib import redirect_stderr, redirect_stdout
@@ -65,3 +66,21 @@ def test_missing_shipped_dir_is_flagged(tmp_path: Path):
     missions = {"ghost": {"shipped": True, "skill_dir": "ghost-mission-xyz"}}
     errors = rl.lint_shipped_mission_dirs(tmp_path, missions)
     assert any("ghost" in e and "ghost-mission-xyz" in e for e in errors)
+
+
+def test_external_source_skill_on_disk_is_not_drift(tmp_path: Path):
+    # CI vendors an external skill (skill-creator from anthropics/skills) into
+    # skills/; it is on disk and in the lock with a non-local source. That must
+    # NOT register as drift (this is the exact case that failed CI on the first push).
+    creator = tmp_path / "skills" / "skill-creator"
+    creator.mkdir(parents=True)
+    (creator / "SKILL.md").write_text("---\nname: skill-creator\n---\n")
+    lock = {
+        "version": 1,
+        "skills": {
+            "skill-creator": {"source": "anthropics/skills", "sourceType": "github"}
+        },
+    }
+    (tmp_path / "skills-lock.json").write_text(json.dumps(lock))
+    errors = rl.lint_skills_lock(tmp_path)
+    assert not any("skill-creator" in e for e in errors), errors
