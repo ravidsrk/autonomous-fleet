@@ -21,6 +21,31 @@ MISSION_METRICS: dict[str, frozenset[str]] = {
 E2E_VERIFIED_MISSIONS = frozenset(
     {"take-product-to-completion", "legacy-rebuild"}
 )
+DONE_METRIC_REQUIREMENTS: dict[str, dict[str, Any]] = {
+    "doc-sync": {"drift_open": 0},
+    "test-coverage": {"gaps_open": 0, "coverage_regressed": False},
+    "dependency-update": {"advisories_open": 0},
+    "cleanup": {"cleanup_items_open": 0},
+    "bug-batch": {"bugs_open": 0},
+    "adversarial-review-and-fix": {"p0_open": 0, "findings_open": 0},
+    "targeted-migration": {"migration_items_open": 0, "old_axis_removed": True},
+    "design-integration": {"parity_items_open": 0, "regressions": 0},
+    "landing-page-convergence": {"divergences_open": 0},
+    "legacy-rebuild": {"units_open": 0, "floor_preserved": True, "e2e_verified": True},
+    "take-product-to-completion": {
+        "in_items_open": 0,
+        "stubs_remaining": 0,
+        "e2e_verified": True,
+    },
+    "inference-cost": {
+        "cost_regressed": False,
+        "quality_regressed": False,
+        "levers_open": 0,
+    },
+}
+DONE_OPTIONAL_METRIC_REQUIREMENTS: dict[str, dict[str, Any]] = {
+    "adversarial-review-and-fix": {"unverified_findings": 0},
+}
 
 
 def _validate_task_row_invariants(
@@ -111,6 +136,21 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
                     "e2e_verified must be true (verify the real end-to-end "
                     "result state, not exit codes)"
                 )
+            if outcome.get("status") == "done":
+                for mkey, expected in DONE_METRIC_REQUIREMENTS.get(mission, {}).items():
+                    if metrics.get(mkey) != expected:
+                        errors.append(
+                            f"{prefix}: cannot be done while metric '{mkey}' is "
+                            f"{metrics.get(mkey)!r}; expected {expected!r}"
+                        )
+                for mkey, expected in DONE_OPTIONAL_METRIC_REQUIREMENTS.get(
+                    mission, {}
+                ).items():
+                    if mkey in metrics and metrics[mkey] != expected:
+                        errors.append(
+                            f"{prefix}: cannot be done while metric '{mkey}' is "
+                            f"{metrics[mkey]!r}; expected {expected!r}"
+                        )
             for mkey, mval in metrics.items():
                 if isinstance(mval, bool):
                     continue

@@ -218,10 +218,10 @@ def _check_file(
     if require_findings_mtime and findings_mtime is None:
         reasons.append("findings mtime missing from manifest")
 
-    if findings_mtime is not None and mtime is not None and mtime > findings_mtime:
+    if findings_mtime is not None and mtime is not None and mtime >= findings_mtime:
         reasons.append(
-            f"mtime({path.name})={mtime:.0f} > findings.mtime={findings_mtime:.0f} "
-            "(blind-fix must precede findings)"
+            f"mtime({path.name})={mtime:.0f} >= findings.mtime={findings_mtime:.0f} "
+            "(blind-fix must strictly precede findings)"
         )
 
     try:

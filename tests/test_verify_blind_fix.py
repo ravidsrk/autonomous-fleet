@@ -232,6 +232,21 @@ def test_mtime_after_findings(tmp_path: Path) -> None:
     assert any("mtime" in r for r in reasons)
 
 
+def test_mtime_equal_to_findings_fails_strict_precedence(tmp_path: Path) -> None:
+    findings_path = _write_findings(tmp_path, ["BF-201"])
+    bf = _bf_path(tmp_path, "BF-201", GOOD_BLIND_FIX)
+    _set_mtime(bf, findings_path.stat().st_mtime)
+
+    summary = verify_blind_fix_doc(
+        json.loads(findings_path.read_text()),
+        run_dir=tmp_path,
+        findings_path=findings_path,
+    )
+
+    reasons = summary["results"][0]["reasons"]
+    assert any("strictly precede findings" in r for r in reasons)
+
+
 def test_diff_marker_means_post_anchoring(tmp_path: Path) -> None:
     findings_path = _write_findings(tmp_path, ["BF-300"])
     poisoned = GOOD_BLIND_FIX + "\n\ndiff --git a/x b/x\n--- a/x\n+++ b/x\n"

@@ -308,12 +308,16 @@ def classify_row(row: LedgerRow, worktrees: list[WorktreeRecord], prs: list[Pull
         "worktree_present": wt is not None,
         "scm_state": scm_state,
     }
+    if wt is not None:
+        signals["uncommitted_changes"] = wt.uncommitted_changes
 
     if scm_state == SCM_MERGED and ledger_merged is not True:
         return _classified_entry(row, CLASS_PARTIAL, ACTION_ESCALATE, signals)
     if ledger_merged is True and scm_state in {SCM_OPEN, SCM_CLOSED_UNMERGED, SCM_AMBIGUOUS}:
         return _classified_entry(row, CLASS_PARTIAL, ACTION_ESCALATE, signals)
     if ledger_merged is True and scm_state == SCM_MERGED:
+        if wt is not None and wt.uncommitted_changes:
+            return _classified_entry(row, CLASS_PARTIAL, ACTION_ESCALATE, signals)
         return _classified_entry(row, CLASS_DEAD, ACTION_CLEANUP_WORKTREE, signals)
     if scm_state == SCM_CLOSED_UNMERGED:
         return _classified_entry(row, CLASS_PARTIAL, ACTION_RE_DRIVE, signals)

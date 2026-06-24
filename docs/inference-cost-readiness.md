@@ -1,7 +1,7 @@
 ---
 fleet-outcome:
   mission: inference-cost
-  status: done
+  status: partial
   repo: ravidsrk/autonomous-fleet
   base_branch: ravidsrk/inference-cost-dogfood
   prs_merged: 0
@@ -15,7 +15,7 @@ fleet-outcome:
   cost_estimate: 0.4
   run:
     duration_min: 20
-    note: inference-cost dogfood — mission-fit adapted; measurement-first gate delivered
+    note: inference-cost dogfood — measurement-first gate delivered; operator levers remain open
 ---
 
 # inference-cost readiness — autonomous-fleet (2026-06-23)
@@ -66,13 +66,12 @@ surfaced for a human decision, not auto-applied:
 2. Close the telemetry gap: the 1 run missing `cost_estimate` (make T-FINAL always record it).
 3. Enable prompt caching / batch-or-flex-tier pricing at the adapter CLI layer.
 
-## Why status: done
+## Why status: partial
 
-This is the full extent inference-cost can achieve ON this repo: the framework has no inference code
-to optimize, so the measurement-first gate + the routing audit + the surfaced operator levers IS the
-deliverable. Applying levers 1-3 is an operator action (dispatch/model choice), out of framework
-scope. cost_regressed:false and quality_regressed:false — this run added a measurement tool, changed
-no cost or behaviour.
+The run delivered the measurement-first gate and routing audit, but `levers_open: 3` means the
+mission contract is not terminal. Applying levers 1-3 is an operator action (dispatch/model choice),
+out of framework scope for this code pass, so the honest result is partial. cost_regressed:false and
+quality_regressed:false — this run added a measurement tool, changed no cost or behaviour.
 
 ## Verification
 

@@ -1050,22 +1050,12 @@ def test_sv_cli_explain_prints_counts_and_evidence(tmp_path, monkeypatch, capsys
 # ─────────────────────────────────────────────────────────────────────
 
 
-def _mc_require_clean(rel: str):
-    import subprocess as _sp
-    r = _sp.run(
-        ["git", "status", "--porcelain", "--", rel], cwd=ROOT, capture_output=True, text=True
-    )
-    if r.stdout.strip():
-        pytest.skip(f"{rel} has uncommitted changes; mutation-check needs it clean")
-
-
 def test_mc_run_reports_caught_when_guard_fails(tmp_path, capsys, monkeypatch):
     """Lines 105-107: a mutation whose guard tests FAIL counts as 'caught' and
     is printed with the 'caught' label (when not quiet). Pin the positive path
     by stubbing _run_guards to True (=guard failed = mutation caught) — we are
     proving the gate's accounting of a caught mutation, not the subprocess
     plumbing (which test_mutation_check.py already exercises end-to-end)."""
-    _mc_require_clean("README.md")
     import yaml as _yaml
     manifest = tmp_path / "m.yaml"
     manifest.write_text(_yaml.safe_dump({"mutations": [
@@ -1089,7 +1079,6 @@ def test_mc_run_reports_caught_when_guard_fails(tmp_path, capsys, monkeypatch):
 def test_mc_run_quiet_suppresses_caught_print(tmp_path, capsys, monkeypatch):
     """Line 106 negative complement: with quiet=True the caught-branch must
     NOT print the 'caught   <id>' line — only survivors/stale are shown."""
-    _mc_require_clean("README.md")
     import yaml as _yaml
     manifest = tmp_path / "m.yaml"
     manifest.write_text(_yaml.safe_dump({"mutations": [
@@ -1114,7 +1103,6 @@ def test_mc_main_entry_point_with_tmp_manifest(tmp_path, monkeypatch):
     caught-mutation manifest (guards stubbed) so main() returns 0 AND the
     --id filter actually narrows the run set (one of two manifest entries
     runs)."""
-    _mc_require_clean("README.md")
     import yaml as _yaml
     manifest = tmp_path / "m.yaml"
     manifest.write_text(_yaml.safe_dump({"mutations": [
