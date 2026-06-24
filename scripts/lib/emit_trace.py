@@ -379,10 +379,9 @@ class TraceEmitter:
         if details is not None:
             event["details"] = details
 
-        if details is not None:
-            violations = _scan_details(details)
-            if violations:
-                raise ValueError("; ".join(violations))
+        violations = validate_event(event)
+        if violations:
+            raise ValueError("; ".join(violations))
         line = json.dumps(event, sort_keys=True) + "\n"
         self._fh.write(line)
         self._fh.flush()

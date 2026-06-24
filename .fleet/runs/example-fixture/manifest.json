@@ -65,10 +65,10 @@
     {
       "path": "fleet-outcome.yaml",
       "kind": "readiness",
-      "sha256": "e968f06c45af55571bd89a0ed3070969c6009db6a6be6972cbbf480e7692b51a",
+      "sha256": "2aa1cf3a2b3f3d3c4b37e7488a92f996171f442ddde0ab3fc6910ceda3937a5c",
       "mtime_utc": "2026-06-23T00:10:00Z",
       "producer": "t-final",
-      "bytes": 936
+      "bytes": 939
     },
     {
       "path": "README.md",

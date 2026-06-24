@@ -332,7 +332,7 @@ def _trace_events_with_ids() -> list[dict]:
 FLEET_OUTCOME_YAML = """---
 fleet-outcome:
   mission: adversarial-review-and-fix
-  status: done
+  status: partial
   repo: ravidsrk/autonomous-fleet
   base_branch: roadmap/post-substrate-impl
   prs_merged: 0
