@@ -131,6 +131,10 @@ To stop a run mid-flight, close the chat (workers check in with the ledger and e
 
 That's it. The rest of this README is for going deeper.
 
+> 📖 **Going deeper?** The [Guide](docs/guide/README.md) walks through every
+> concept, mission, and reference, from your first PR to writing a custom
+> adapter.
+
 ---
 
 # The full menu
