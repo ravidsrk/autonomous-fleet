@@ -267,6 +267,37 @@ def iter_trace_file(path: Path) -> Iterator[dict]:
     iter_trace_file.last_skipped = skipped  # type: ignore[attr-defined]
 
 
+def health_rollup(events) -> dict:
+    """Summarize run health from a trace event stream."""
+    rollup: dict[str, Any] = {
+        "total": 0,
+        "succeeded": 0,
+        "failed": 0,
+        "blocked": 0,
+        "skipped": 0,
+        "last_failure": None,
+    }
+    for event in events:
+        rollup["total"] += 1
+        status = event.get("status")
+        if status in {"succeeded", "failed", "blocked", "skipped"}:
+            rollup[status] += 1
+        if status in {"failed", "blocked"}:
+            failure = {
+                "ts": event.get("ts"),
+                "primitive": event.get("primitive"),
+                "role": event.get("role"),
+                "task_id": event.get("task_id"),
+                "details": event.get("details"),
+            }
+            last_failure = rollup["last_failure"]
+            if last_failure is None or str(failure["ts"] or "") >= str(
+                last_failure["ts"] or ""
+            ):
+                rollup["last_failure"] = failure
+    return rollup
+
+
 class TraceEmitter:
     """Append-only JSONL emitter for one run's trace stream.
 

@@ -224,3 +224,28 @@ mutations:
     find: 'return hashlib.sha256(b).hexdigest()'
     replace: 'return "0" * 64'
     guards: [tests/test_build_example_fixture.py]
+
+  # --- Wave 1 (AO comparison improvements) ---
+  - id: sha-pin-divergence-ignored
+    file: scripts/lib/verify_sha_pin.py
+    find: 'if reviewed_sha.lower() != head.lower():'
+    replace: 'if False and reviewed_sha.lower() != head.lower():'
+    guards: [tests/test_sha_pin.py]
+
+  - id: dashboard-watch-always-rebuild
+    file: scripts/render-dashboard.py
+    find: 'if fp != last_fp:'
+    replace: 'if True:'
+    guards: [tests/test_dashboard.py]
+
+  - id: ledger-contradiction-merged-not-built-allowed
+    file: scripts/lib/fleet_outcome.py
+    find: 'if task.get("merged") is True and task.get("built") is not True:'
+    replace: 'if False and task.get("merged") is True and task.get("built") is not True:'
+    guards: [tests/test_ledger_invariants.py]
+
+  - id: trace-health-last-failure-off
+    file: scripts/lib/emit_trace.py
+    find: 'if status in {"failed", "blocked"}:'
+    replace: 'if False:'
+    guards: [tests/test_emit_trace.py]
