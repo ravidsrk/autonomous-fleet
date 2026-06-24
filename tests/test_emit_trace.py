@@ -48,6 +48,7 @@ from lib.emit_trace import (  # noqa: E402
     _RUN_ID_RE,
     _TS_RE,
     _UUID_RE,
+    health_rollup,
     iter_trace_file,
     validate_event,
 )
@@ -408,6 +409,74 @@ def test_iter_trace_yields_events_and_skips_malformed(tmp_path: Path) -> None:
     assert iter_trace_file.last_skipped == 2  # type: ignore[attr-defined]
 
 
+# --- health_rollup ----------------------------------------------------------
+
+
+def test_health_rollup_surfaces_last_failure() -> None:
+    events = [
+        _valid_event(
+            primitive="SPAWN_WORKER",
+            role="COORDINATOR",
+            status="succeeded",
+            ts="2026-01-01T00:00:00Z",
+        ),
+        _valid_event(
+            primitive="INSPECT",
+            role="REVIEWER",
+            status="failed",
+            ts="2026-01-01T00:01:00Z",
+            task_id="T1",
+            details={"reason": "a"},
+        ),
+        _valid_event(
+            primitive="FREEZE",
+            role="COORDINATOR",
+            status="blocked",
+            ts="2026-01-01T00:02:00Z",
+            task_id="T2",
+            details={"reason": "b"},
+        ),
+        _valid_event(status="skipped", ts="2026-01-01T00:03:00Z"),
+        _valid_event(status="started", ts="2026-01-01T00:04:00Z"),
+    ]
+
+    rollup = health_rollup(events)
+
+    assert rollup["total"] == 5
+    assert rollup["succeeded"] == 1
+    assert rollup["failed"] == 1
+    assert rollup["blocked"] == 1
+    assert rollup["skipped"] == 1
+    assert rollup["last_failure"] == {
+        "ts": "2026-01-01T00:02:00Z",
+        "primitive": "FREEZE",
+        "role": "COORDINATOR",
+        "task_id": "T2",
+        "details": {"reason": "b"},
+    }
+
+
+def test_health_rollup_all_succeeded_has_no_last_failure() -> None:
+    rollup = health_rollup(
+        [
+            _valid_event(status="succeeded", ts="2026-01-01T00:00:00Z"),
+            _valid_event(
+                primitive="MERGE",
+                role="INTEGRATOR",
+                status="succeeded",
+                ts="2026-01-01T00:01:00Z",
+            ),
+        ]
+    )
+
+    assert rollup["total"] == 2
+    assert rollup["succeeded"] == 2
+    assert rollup["failed"] == 0
+    assert rollup["blocked"] == 0
+    assert rollup["skipped"] == 0
+    assert rollup["last_failure"] is None
+
+
 # --- CLI --------------------------------------------------------------------
 
 
@@ -488,6 +557,26 @@ def test_cli_summary_happy(tmp_path: Path) -> None:
     assert "DISPATCH: 2" in out
     assert "BUILDER: 2" in out
     assert "started: 1" in out
+    assert "health: 2 ok / 0 failed / 0 blocked / 0 skipped; last failure none" in out
+
+
+def test_cli_summary_prints_health_last_failure(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    with TraceEmitter(run_dir, mission=MISSION, run_id=RUN_ID) as emitter:
+        emitter.emit(
+            "INSPECT",
+            "REVIEWER",
+            "failed",
+            task_id="T1",
+            details={"reason": "a"},
+        )
+        event = emitter.emit("FREEZE", "COORDINATOR", "blocked", task_id="T2")
+    rc, out, err = _run_cli("summary", str(run_dir))
+    assert rc == 0, err
+    assert (
+        "health: 0 ok / 1 failed / 1 blocked / 0 skipped; "
+        f"last failure FREEZE@COORDINATOR ts={event['ts']}"
+    ) in out
 
 
 def test_cli_summary_missing_dir(tmp_path: Path) -> None:

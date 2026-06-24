@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import os
 import sys
 from pathlib import Path
 
@@ -109,6 +111,94 @@ def test_render_html_is_self_contained(tmp_path: Path):
     # Renders a real task and the readiness mission.
     assert "build-three" in out
     assert "doc-sync" in out
+
+
+def test_render_html_includes_separate_trace_health_panel(tmp_path: Path):
+    rd = _load()
+    repo = _fixture(tmp_path)
+    run_id = "20260624T120000Z-doc-sync-abc123"
+    run_dir = repo / ".fleet" / "runs" / run_id
+    run_dir.mkdir(parents=True)
+    (run_dir / "trace.jsonl").write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "ts": "2026-06-24T12:00:00Z",
+                        "primitive": "DISPATCH",
+                        "role": "BUILDER",
+                        "status": "succeeded",
+                    }
+                ),
+                json.dumps(
+                    {
+                        "ts": "2026-06-24T12:01:00Z",
+                        "primitive": "FREEZE",
+                        "role": "COORDINATOR",
+                        "status": "blocked",
+                        "task_id": "T1",
+                        "details": {"reason": "review budget"},
+                    }
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    ok_run_id = "20260624T120100Z-doc-sync-def456"
+    ok_run_dir = repo / ".fleet" / "runs" / ok_run_id
+    ok_run_dir.mkdir(parents=True)
+    (ok_run_dir / "trace.jsonl").write_text(
+        json.dumps(
+            {
+                "ts": "2026-06-24T12:01:00Z",
+                "primitive": "MERGE",
+                "role": "INTEGRATOR",
+                "status": "succeeded",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    model = rd.build_model(repo)
+    out = rd.render_html(model)
+
+    assert model["run_health"][0]["run_id"] == run_id
+    assert model["run_health"][0]["blocked"] == 1
+    assert model["run_health"][1]["run_id"] == ok_run_id
+    assert model["run_health"][1]["last_failure"] is None
+    assert "Run health (from trace.jsonl)" in out
+    assert "last failure" in out
+    assert run_id in out
+    assert ok_run_id in out
+    assert "FREEZE@COORDINATOR" in out
+
+
+def test_watch_rebuilds_only_on_mtime_change(tmp_path: Path):
+    rd = _load()
+    repo = _fixture(tmp_path)
+    out = tmp_path / "dashboard.html"
+
+    first_fp = rd.watch_once(repo, out, 0.0)
+
+    assert first_fp is not None
+    assert out.exists()
+    os.utime(out, (1, 1))
+    stable_mtime = out.stat().st_mtime_ns
+
+    assert rd.watch_once(repo, out, first_fp) is None
+    assert out.stat().st_mtime_ns == stable_mtime
+
+    progress = repo / "docs" / "alpha-progress.md"
+    newer = first_fp + 10
+    os.utime(progress, (newer, newer))
+
+    next_fp = rd.watch_once(repo, out, first_fp)
+
+    assert next_fp is not None
+    assert next_fp > first_fp
+    assert out.stat().st_mtime_ns != stable_mtime
 
 
 def test_table_parser_skips_malformed_and_header_like_rows():
