@@ -5,10 +5,15 @@
 **On this page:** [How to read this](#how-to-read-this) · [analyze_cost.py](#analyze_costpy) ·
 [analyze_seat.py](#analyze_seatpy) · [emit_trace.py](#emit_tracepy) ·
 [install-skills.sh](#install-skillssh) · [mutation-check.sh](#mutation-checksh) ·
+[preflight.sh](#preflightsh) · [recovery_scan.py](#recovery_scanpy) ·
+[registry_lint.py](#registry_lintpy) · [render-dashboard.py](#render-dashboardpy) ·
 [run-campaign.sh](#run-campaignsh) · [run-mission-headless.sh](#run-mission-headlesssh) ·
 [run-sandboxed.sh](#run-sandboxedsh) · [stop_verify.py](#stop_verifypy) ·
-[validate-all.sh](#validate-allsh) · [validate_run_archive.py](#validate_run_archivepy) ·
+[validate-all.sh](#validate-allsh) · [validate_namespacing.py](#validate_namespacingpy) ·
+[validate_run_archive.py](#validate_run_archivepy) ·
 [verify_blind_fix.py](#verify_blind_fixpy) · [verify_findings.py](#verify_findingspy) ·
+[verify_reviewer_sandbox.py](#verify_reviewer_sandboxpy) ·
+[verify_round_budget.py](#verify_round_budgetpy) · [verify_sha_pin.py](#verify_sha_pinpy) ·
 [Exit-code cheatsheet](#exit-code-cheatsheet)
 
 This chapter is the look-up table for everything under `scripts/`. It is reference, not a tutorial:
@@ -45,8 +50,9 @@ All paths are relative to the repository root. The shell scripts `cd` to the rep
 current working directory unless a flag says otherwise.
 
 > A note on the venv. The shell scripts that need Python (`run-campaign.sh`,
-> `run-mission-headless.sh`, `validate-all.sh`, `mutation-check.sh`, the `validate-*.sh` wrappers)
-> source `scripts/lib/venv-bootstrap.sh` and call `bootstrap_validation_venv`. That helper
+> `run-mission-headless.sh`, `validate-all.sh`, `mutation-check.sh`, `preflight.sh`, the
+> `validate-*.sh` wrappers) source `scripts/lib/venv-bootstrap.sh` and call
+> `bootstrap_validation_venv`. That helper
 > re-checks `import yaml, pytest` and reinstalls from `requirements.txt` if anything is missing, so
 > a stale `.venv` self-heals instead of crashing with a raw `ModuleNotFoundError`. You do not
 > activate the venv yourself; the scripts run `$VENV_PYTHON` directly.
@@ -142,7 +148,12 @@ each archive file contributes.
 What it does. Validates and summarizes a run's trace stream. It does not write trace events; the
 engine emits those (see the note below). `validate` checks every line of a `trace.jsonl` file
 against the trace schema. `summary` reads `<run_dir>/trace.jsonl` and prints counts by primitive,
-role, and status.
+role, and status, then a one-line health roll-up: `<succeeded> ok / <failed> failed / <blocked>
+blocked / <skipped> skipped` plus the last failure (`<primitive>@<role> ts=<ts>`, or `none`). The
+roll-up comes from `lib/emit_trace.health_rollup`, which returns `{total, succeeded, failed,
+blocked, skipped, last_failure}`; the same function feeds the dashboard's separate Run-health panel
+(see [render-dashboard.py](#render-dashboardpy)). It is deliberately distinct from the ledger zone
+counts: zones are per-task lifecycle, the roll-up is per-trace-event status.
 
 Usage:
 
@@ -189,6 +200,12 @@ prints a one-line tally at the end.
 > rolls out across the coordinator and adapters. So `summary` on a real run will usually show a
 > single `T-FINAL` line. See the [Trace schema](16-trace-schema.md) reference for the full contract
 > and the rollout status.
+>
+> Causal lineage. `TraceEmitter.emit()` stamps every event with a unique `id` and RETURNS it, so a
+> caller can attach a child. A worker `COMMIT` sets `parent_event` to its `SPAWN_WORKER` id, drawing
+> the `SPAWN -> COMMIT` edge (`fleet_run` wires the reference edge). Both fields are optional in the
+> schema (no breaking bump): `validate` accepts a stream with neither. The id factory is injectable
+> so the example fixture stays reproducible.
 
 ## install-skills.sh
 
@@ -243,7 +260,7 @@ What it does. Runs the standing mutation gate: it asserts that every mutation pi
 `tests/mutations.yaml` is caught by its guard test. A surviving mutation (a deliberate bug the
 tests fail to notice) or a stale manifest entry (a find-string that no longer matches the source)
 fails the gate. This is Layer 4 of the substrate; see
-[The substrate](07-the-substrate.md). There are 35 mutations in the manifest today.
+[The substrate](07-the-substrate.md). There are 50 mutations in the manifest today.
 
 Usage:
 
@@ -280,6 +297,185 @@ Notes. The wrapper best-effort bootstraps the venv, then `exec`s
 `scripts/mutation_check.py`. It always restores every mutated file on exit (the `finally:
 _restore_all()` in the Python entrypoint), so an interrupted run does not leave your tree mutated.
 Adding a mutation is covered in [Extending](13-extending.md).
+
+## preflight.sh
+
+What it does. Runs an adapter SKILL.md requires-block preflight: it loads the `requires` block (bins,
+env, auth) out of an adapter's PRECONDITIONS section and asserts each is satisfied on this host before
+a mission runs. SCM/PR checks are intent-gated: they are skipped unless you pass `--scm`, so a
+mission that never touches the SCM does not fail on a missing `gh` login. The shell wrapper resolves
+the adapter directory, bootstraps the venv, then calls `lib/adapter_preflight.check`.
+
+Usage:
+
+```
+preflight.sh <adapter|adapter-dir> [--scm]
+```
+
+Arguments:
+
+```
+adapter (positional)   An adapter name (e.g. grok), or a path to an adapter dir. Required.
+                       A bare name resolves to skills/autonomous-fleet-adapter-<name>/, then
+                       skills/<name>/. A path with a slash is used as-is (absolute) or under ROOT.
+--scm                  Include SCM/PR preconditions in the check. Default: off (SCM checks skipped).
+-h, --help             Print usage and exit 0.
+```
+
+Exit codes:
+
+```
+0   every requires-block precondition is satisfied (prints `preflight: ok`)
+1   at least one precondition failed (each printed as `FAIL  <reason>`)
+2   usage error: no adapter given, unknown flag, or adapter not found
+```
+
+Examples:
+
+```bash
+# Preflight the Grok adapter, no SCM
+./scripts/preflight.sh grok
+
+# Preflight an adapter dir with SCM/PR checks included
+./scripts/preflight.sh skills/autonomous-fleet-adapter-claude --scm
+```
+
+Notes. The requires block lives in each adapter's PRECONDITIONS section; the pure check is
+`lib/adapter_preflight.py` (`Intent(scm=...)` gates the SCM tier). This is a pre-run gate, not part
+of `validate-all.sh`.
+
+## recovery_scan.py
+
+What it does. The resume-time recovery scanner. It classifies each task row in a progress ledger as
+`live`, `dead`, `partial`, or `orphan` by comparing the ledger against `git worktree list
+--porcelain` and `gh pr list` state, then attaches an ADVISORY action: `CONTINUE`,
+`CLEANUP_WORKTREE`, `RE_DRIVE`, `ESCALATE_TO_DECISIONS`, or `ARCHIVE_ORPHAN`. It never executes any
+action; it prints a JSON report a coordinator inspects at resume. The classifier library
+(`lib/recovery_scan.py`) is hermetic; this CLI is the thin wrapper that shells `git` and `gh` for it.
+
+Usage:
+
+```
+recovery_scan.py <ledger> [--repo PATH] [--base BRANCH] [--branch-prefix PREFIX]
+```
+
+Arguments:
+
+```
+ledger (positional)   The progress ledger (docs/*-progress.md) to scan. Required.
+--repo PATH            Repository root for `git -C <repo> worktree list`. Default: CWD.
+--base BRANCH          Optional gh PR base-branch filter (`gh pr list --base <BRANCH>`).
+--branch-prefix PREFIX Branch prefix used for the orphan sweep. Default: fleet/
+```
+
+Exit codes:
+
+```
+0   the scan ran and the JSON report was printed
+1   an input error: ledger unreadable, or `git worktree list` / `gh pr list` failed
+```
+
+Examples:
+
+```bash
+# Classify every row in a ledger against live worktrees + PRs
+python3 scripts/recovery_scan.py docs/arch-build-progress.md
+
+# Scan against an external repo, base-filter the PR query
+python3 scripts/recovery_scan.py docs/arch-build-progress.md --repo /tmp/target --base main
+```
+
+Notes. A row's action is upgraded to `ESCALATE_TO_DECISIONS` when its `RESUME_COUNT` flag has hit
+`MAX_RESUME_ATTEMPTS` (3), so a `CONTINUE`/`RE_DRIVE` that has already been retried three times is
+escalated instead of looped again. Worktree branches under `--branch-prefix` that have no ledger row
+are reported as `orphan`. This is read-only and advisory: it is run at resume, not in
+`validate-all.sh`, and it never mutates the repo.
+
+## registry_lint.py
+
+What it does. Asserts the mission/adapter registry (`lib/fleet_registry.MISSIONS`, the single source)
+matches the on-disk catalog and the skills lock. It runs three checks: every `shipped:true` mission
+row points to a real `skills/<dir>/SKILL.md` (and every on-disk mission skill has a shipped row);
+every shipped mission id is mentioned in the catalog files (`README.md` and
+`skills/autonomous-fleet/SKILL.md`); and the fleet-owned skill dirs on disk match the local-source
+rows in `skills-lock.json`. This is a `validate-all.sh` gate.
+
+Usage:
+
+```
+registry_lint.py [root]
+```
+
+Arguments:
+
+```
+root (positional)   Repo root to lint. Default: `.` (CWD).
+```
+
+Exit codes:
+
+```
+0   the registry, catalog, and skills-lock agree
+1   at least one drift (each printed as `registry-lint: <reason>` to stderr)
+```
+
+Examples:
+
+```bash
+# Lint the registry against this clone
+python3 scripts/registry_lint.py .
+```
+
+Notes. Externally-sourced skills (e.g. `skill-creator` vendored from `anthropics/skills`) are
+excluded from the skills-lock cross-check, so only fleet-owned drift surfaces. Kill switch:
+`FLEET_DISABLE_REGISTRY_LINT` (the CLI early-exits 0 with a stderr notice).
+
+## render-dashboard.py
+
+What it does. Renders the docs ledgers into one static, self-contained HTML file: the four AO
+attention zones (Working, Needs you, In review, Ready to merge) from `docs/*-progress.md`, a
+fleet-outcome table from `docs/*-readiness.md`, and a SEPARATE Run-health panel built from each
+`.fleet/runs/*/trace.jsonl` (events/ok/failed/blocked/skipped/last-failure, via
+`lib/emit_trace.health_rollup`). No JS, no network, no daemon: re-run it to refresh.
+
+Usage:
+
+```
+render-dashboard.py [--repo PATH] [-o OUT] [--watch] [--interval SECONDS]
+```
+
+Arguments:
+
+```
+--repo PATH        Repo root containing docs/. Default: this repo.
+-o, --out PATH     Output HTML path. Default: fleet-dashboard.html
+--watch            Re-render in the FOREGROUND whenever a dashboard input's mtime changes.
+--interval SECONDS Seconds between --watch polls. Default: 2.0
+```
+
+Exit codes:
+
+```
+0   wrote the HTML (or, with --watch, the foreground loop was started)
+2   usage error (--repo has no docs/ directory)
+```
+
+Examples:
+
+```bash
+# One-shot render to the default path
+python3 scripts/render-dashboard.py
+
+# Foreground re-render: rebuild on ledger/trace change, poll every second
+python3 scripts/render-dashboard.py --watch --interval 1
+```
+
+Notes. `--watch` is NOT a daemon: it has no socket, PID file, or port, it re-renders on a foreground
+poll loop, and it exits with the terminal. The watched inputs are `docs/*-progress.md`,
+`docs/*-readiness.md`, and `.fleet/runs/*/trace.jsonl`; a change to any of their mtimes triggers one
+rebuild and prints a `rebuilt ... at <ts>` line to stderr. The Run-health panel is kept distinct
+from the zone counts on purpose (per-trace-event status vs per-task lifecycle). A malformed readiness
+doc is skipped, not fatal. See [Run-archive anatomy](15-run-archive.md) for what feeds each panel.
 
 ## run-campaign.sh
 
@@ -425,14 +621,18 @@ The same RCE guard as `run-campaign.sh` applies here.
 What it does. A best-effort safety wrapper for headless runs against untrusted repos. It does two
 things before exec-ing the wrapped command: (1) scrubs credential-shaped variables from the
 environment, and (2) classifies the command line by blast radius and refuses irreversible or
-outward-destructive commands. It is NOT an OS sandbox: it does not confine filesystem, network, or
-syscalls. Run it inside a container, VM, or restricted user account for genuinely untrusted targets.
+outward-destructive commands. With `--role reviewer` it also runs the wrapped command with the
+candidate git tree READ-ONLY and only `.fleet/runs/<run_id>/` writable, which is how the reviewer
+role is held to "look, do not touch". It is NOT an OS sandbox: it does not confine filesystem,
+network, or syscalls. Run it inside a container, VM, or restricted user account for genuinely
+untrusted targets.
 
 Usage:
 
 ```
 run-sandboxed.sh <command> [args...]
 run-sandboxed.sh --classify <command> [args...]
+run-sandboxed.sh --role reviewer [--run-id <run_id>] -- <command> [args...]
 run-sandboxed.sh --help
 ```
 
@@ -441,6 +641,10 @@ Arguments:
 ```
 <command> [args...]   The command to scrub-and-classify, then exec.
 --classify            Print the verdict (DENY|ASK|ALLOW) on stdout and exit 0 without exec.
+--role reviewer       After classification, run with the candidate tree read-only and only
+                      .fleet/runs/<run_id>/ writable. `reviewer` is the only supported role.
+--run-id <run_id>     Run-archive id for the reviewer writable output. Defaults to FLEET_RUN_ID,
+                      then a generated reviewer-sandbox id.
 -h, --help            Print usage and exit 0.
 ```
 
@@ -465,9 +669,10 @@ Exit codes:
 ```
 0   --classify printed a verdict, OR (without --classify) the wrapped command was ALLOW and exec'd
     (the wrapped command's own exit code then applies)
-1   usage error (no command given)
+1   usage error (no command given, or an unsupported --role / a flag missing its value)
 2   refused: DENY verdict
 3   refused: ASK verdict (non-interactive, cannot prompt)
+4   reviewer fallback assertion: --role reviewer modified tracked files outside .fleet/runs
 ```
 
 Examples:
@@ -482,7 +687,20 @@ Examples:
 # Check a verdict without running anything
 ./scripts/run-sandboxed.sh --classify rm -rf /etc      # prints DENY, exit 0
 ./scripts/run-sandboxed.sh --classify git push          # prints ASK,  exit 0
+
+# Run a reviewer command with the candidate tree read-only
+./scripts/run-sandboxed.sh --role reviewer --run-id 20260101T000000Z-review-abc123 -- \
+  python3 scripts/verify_findings.py p0-review-findings.json
 ```
+
+Reviewer read-only placement. Under `--role reviewer` the wrapper picks the strongest mechanism
+available: `sandbox-exec` on macOS, then `bwrap` on Linux, then a post-exec tracked-file hash
+assertion as a fallback. The sandbox/bwrap paths bind the repo read-only and `.fleet/runs/<run_id>/`
+writable; the fallback snapshots tracked-file hashes before and after the command and exits 4 if any
+tracked file outside `.fleet/runs/` changed (an audit gate, not a live boundary, and it does not roll
+changes back). It also re-points `HOME`/`TMPDIR` and the `FLEET_*` reviewer vars under the writable
+run dir. The audit-side companion that checks the resulting manifest is
+[verify_reviewer_sandbox.py](#verify_reviewer_sandboxpy).
 
 Notes. The classifier is a static heuristic over tokens, not a security boundary. It deliberately
 fails safe (toward DENY/ASK) on ambiguous constructions, and it cannot resolve commands built at
@@ -560,13 +778,18 @@ validate-all.sh
 It takes no arguments. In order, it runs:
 
 ```
-1. validate-skills.sh             agentskills.io spec check on every skill under skills/
-2. validate-fleet-outcome.sh      fleet-outcome frontmatter in docs/*-readiness.md
-3. validate-goal-condition.sh     --scan-docs: goal conditions in docs/*-progress.md
-4. validate_run_archive.py        run-archive manifests under .fleet/runs/ (+ the example fixture)
-5. verify_blind_fix.py            Layer 3 over every archive with a p0-review-findings.json
-6. emit_trace.py validate         every .fleet/runs/*/trace.jsonl against the schema
-7. pytest + coverage              coverage run over scripts/, then report --fail-under=100
+ 1. validate-skills.sh             agentskills.io spec check on every skill under skills/
+ 2. validate-fleet-outcome.sh      fleet-outcome frontmatter in docs/*-readiness.md
+ 3. validate-goal-condition.sh     --scan-docs: goal conditions in docs/*-progress.md
+ 4. validate_run_archive.py        run-archive manifests under .fleet/runs/ (+ the example fixture)
+ 5. verify_blind_fix.py            Layer 3 over every archive with a p0-review-findings.json
+ 6. verify_sha_pin.py              every archive's sha-pin.json: reviewed_sha vs branch HEAD
+ 7. verify_round_budget.py         every archive's trace: >3 failed rounds must be BLOCKED not MERGED
+ 8. registry_lint.py               mission/adapter registry vs catalog vs skills-lock
+ 9. verify_reviewer_sandbox.py     every archive's manifest: reviewer slug attributed no diff/commit
+10. validate_namespacing.py        every archive: recorded branches/worktrees carry the -<run_short>
+11. emit_trace.py validate         every .fleet/runs/*/trace.jsonl against the schema
+12. pytest + coverage              coverage run over scripts/, then report --fail-under=100
 ```
 
 Exit codes:
@@ -602,6 +825,52 @@ validate-goal-condition.sh lints runtime goal conditions: --text "<cond>", --led
                            --scan-docs. A condition must reference a docs/ path and mention
                            progress, readiness, or fleet-program.
 ```
+
+## validate_namespacing.py
+
+What it does. Validates per-run branch/worktree hash namespacing in run archives. For each archive it
+derives the 6-hex `run_short` from the manifest `run_id`, then asserts every branch and worktree path
+recorded in the manifest-listed progress ledgers carries the `-<run_short>` suffix. That suffix is
+what keeps two parallel runs (or a re-checkout of the same task) from colliding on the same branch or
+worktree. The suffix-derivation helpers live in `lib/namespace.py` (`derive_run_short`,
+`namespaced_branch`, `namespaced_worktree`).
+
+Usage:
+
+```
+validate_namespacing.py [archives...] [--repo-root PATH] [--quiet]
+```
+
+Arguments:
+
+```
+archives (positional)   Archive directories to validate. Default: every .fleet/runs/<run_id>/ that
+                        has a manifest.json.
+--repo-root PATH         Repo root for the default archive discovery. Default: CWD.
+--quiet                  Suppress OK / no-archive lines; print only failures.
+```
+
+Exit codes:
+
+```
+0   all archives pass (OR no archives present)
+1   one or more archives have a branch/worktree without the run suffix (or a bad manifest/ledger)
+```
+
+Examples:
+
+```bash
+# Default scan of .fleet/runs/
+python3 scripts/validate_namespacing.py
+
+# Validate one archive, quiet
+python3 scripts/validate_namespacing.py .fleet/runs/example-fixture --quiet
+```
+
+Notes. A `run_id` that does not end in a 6-hex suffix is itself a failure (the helper raises on it).
+Kill switch: `FLEET_DISABLE_NAMESPACING` (the CLI early-exits 0 with a stderr notice). All four
+adapters and the template were updated to namespace their isolated branches and worktrees; this gate
+is the enforcement.
 
 ## validate_run_archive.py
 
@@ -747,6 +1016,142 @@ a clean schema error instead of misleading file-not-found noise. On exit 1 it pr
 notice: `fleet-outcome.metrics.unverified_findings` must surface the count and the operator must
 inspect each one before the fix loop consumes them. Kill switch: `FLEET_DISABLE_VERIFY_FINDINGS`.
 
+## verify_reviewer_sandbox.py
+
+What it does. The audit-side companion to `run-sandboxed.sh --role reviewer`. For each run-archive
+`manifest.json` it checks file-attribution: a reviewer producer slug (one with `reviewer` in its
+name, or one you name with `--reviewer-producer`) may only be attributed `blind_fix`, `findings`, or
+`verify_summary` entries. A reviewer attributed a `diff` or `commit` on the candidate branch is a
+hard failure. The pure check is `lib/reviewer_sandbox.py`. This is a `validate-all.sh` gate.
+
+Usage:
+
+```
+verify_reviewer_sandbox.py <target> [--reviewer-producer SLUG]...
+                           [--candidate-branch BRANCH] [--summary-out PATH]
+```
+
+Arguments:
+
+```
+target (positional)        A manifest.json, a run-archive dir, or a repo root with .fleet/runs.
+                           Required.
+--reviewer-producer SLUG   A reviewer producer slug to enforce. Repeatable. Default: auto-detect
+                           any producer whose slug contains "reviewer".
+--candidate-branch BRANCH  Candidate branch name. Default: the manifest's candidate_branch / branch
+                           / head_branch / headRefName field when present.
+--summary-out PATH         Write the verification summary as JSON to this path.
+```
+
+Exit codes:
+
+```
+0   no reviewer producer is attributed a forbidden artifact (OR no manifests found)
+1   at least one violation (each printed as `FAIL  <reason>`), or a manifest could not be read
+```
+
+Examples:
+
+```bash
+# Audit one archive's manifest
+python3 scripts/verify_reviewer_sandbox.py .fleet/runs/example-fixture
+
+# Enforce a specific reviewer slug and write a summary
+python3 scripts/verify_reviewer_sandbox.py .fleet/runs/example-fixture \
+  --reviewer-producer claude-reviewer --summary-out /tmp/rs.json
+```
+
+Notes. The live read-only placement is `run-sandboxed.sh --role reviewer`; this script is the after-
+the-fact manifest check, so the two are complementary (boundary plus audit). Kill switch:
+`FLEET_DISABLE_REVIEWER_SANDBOX` (the CLI early-exits 0 with a stderr notice).
+
+## verify_round_budget.py
+
+What it does. The review round-budget circuit breaker. It reads `<run_dir>/trace.jsonl`, counts
+failed reviewer rounds per task (REVIEWER events with `status: failed`), and asserts that any task
+with MORE than `MAX_ROUNDS` (3) failed rounds ended terminally BLOCKED (`GOAL_BLOCKED`/`blocked`) and
+did NOT ship through a successful `MERGE`. A task that ran the budget out and merged anyway, or never
+reached a terminal block, is a violation. The pure verifier is `lib/verify_round_budget.py`. This is
+a `validate-all.sh` gate.
+
+Usage:
+
+```
+verify_round_budget.py <run_dir>
+```
+
+Arguments:
+
+```
+run_dir (positional)   The run-archive directory (.fleet/runs/<run_id>/). Required; must contain a
+                       trace.jsonl.
+```
+
+Exit codes:
+
+```
+0   every over-budget task is terminally blocked (and not merged)
+1   at least one task exceeded its round budget without BLOCKED (or run_dir/trace.jsonl missing)
+```
+
+Examples:
+
+```bash
+# Check one archive's round budget
+python3 scripts/verify_round_budget.py .fleet/runs/example-fixture
+```
+
+Notes. The threshold is STRICTLY greater than 3 failed rounds: 3 is within budget, 4+ must be
+blocked. A task that hit the budget AND merged is reported as `... MERGED without BLOCKED`. Kill
+switch: `FLEET_DISABLE_ROUND_BUDGET` (the CLI early-exits 0 with a stderr notice).
+
+## verify_sha_pin.py
+
+What it does. Enforces that a reviewer PASS is bound to the exact SHA the reviewer inspected. The
+reviewer writes `.fleet/runs/<run_id>/sha-pin.json` = `{schema_version, review_id, reviewed_sha,
+branch, verdict}` (plus an optional `merged` boolean). For each record whose verdict is `approve` or
+`PASS`, the CLI resolves the branch's current HEAD (`git -C <repo> rev-parse <branch>`) and asks the
+pure verifier to compare it with `reviewed_sha`. If the branch HEAD has diverged, REVIEWED is flipped
+to OUTDATED (force a re-review). A deleted/unknown branch is N/A (not a failure) only when a merged
+marker is present, on the record or in a sibling readiness/fleet-outcome doc. This is a
+`validate-all.sh` gate.
+
+Usage:
+
+```
+verify_sha_pin.py <target> [--repo PATH] [--summary-out PATH]
+```
+
+Arguments:
+
+```
+target (positional)   A sha-pin.json, a run-archive dir, or a repo root with .fleet/runs. Required.
+--repo PATH            Repo root for `git -C <repo> rev-parse <branch>`. Default: CWD.
+--summary-out PATH     Write the verification summary as JSON to this path.
+```
+
+Exit codes:
+
+```
+0   every approved pin still matches its branch HEAD (OR no sha-pin.json records found)
+1   at least one approved pin is OUTDATED or unenforceable (each printed as `FAIL  <reason>`),
+    or --repo is not a directory, or target does not exist
+```
+
+Examples:
+
+```bash
+# Check one archive's sha-pin against the current repo HEADs
+python3 scripts/verify_sha_pin.py .fleet/runs/example-fixture --repo .
+
+# Check a single record explicitly, write a summary
+python3 scripts/verify_sha_pin.py .fleet/runs/example-fixture/sha-pin.json --summary-out /tmp/sp.json
+```
+
+Notes. Only `approve`/`PASS` verdicts are enforced; `request_changes`/`fail`/etc. are recorded but
+not pinned. A deleted-but-merged branch resolves to N/A, not a fail, because the SHA it pinned is now
+in the base. Kill switch: `FLEET_DISABLE_SHA_PIN` (the CLI early-exits 0 with a stderr notice).
+
 ## Exit-code cheatsheet
 
 Most validators in this chapter follow a shared convention: 0 = clean, 1 = a real failure
@@ -754,23 +1159,28 @@ Most validators in this chapter follow a shared convention: 0 = clean, 1 = a rea
 worth memorizing:
 
 ```
-script                   special exit codes
------------------------  ---------------------------------------------------------------
-run-campaign.sh          2 = refused (RCE guard) OR halted on a blocked node (human gate)
-run-mission-headless.sh  2 = refused (RCE guard)
-run-sandboxed.sh         2 = DENY refused, 3 = ASK refused
-verify_findings.py       1 = unverified finding, 2 = schema-invalid, 3 = usage error
-emit_trace.py            1 = invalid trace line, 2 = usage error
-stop_verify.py           0 = verdict produced (block vs allow is in the stdout JSON), 2 = usage
+script                     special exit codes
+-------------------------  ---------------------------------------------------------------
+run-campaign.sh            2 = refused (RCE guard) OR halted on a blocked node (human gate)
+run-mission-headless.sh    2 = refused (RCE guard)
+run-sandboxed.sh           2 = DENY refused, 3 = ASK refused, 4 = reviewer wrote outside .fleet/runs
+verify_findings.py         1 = unverified finding, 2 = schema-invalid, 3 = usage error
+emit_trace.py              1 = invalid trace line, 2 = usage error
+stop_verify.py             0 = verdict produced (block vs allow is in the stdout JSON), 2 = usage
 ```
 
-Kill switches (env vars, truthy = disable that layer):
+Kill switches (env vars, truthy = "1"/"true"/"yes"/"on"; disable that layer, the CLI early-exits 0):
 
 ```
-FLEET_DISABLE_VERIFY_FINDINGS   verify_findings.py returns its disabled-announce path
-FLEET_DISABLE_BLIND_FIX         verify_blind_fix.py likewise
-FLEET_DISABLE_RUN_ARCHIVE       validate_run_archive.py likewise
-FLEET_DISABLE_STOP_VERIFY       stop_verify.py returns ALLOW immediately
+FLEET_DISABLE_VERIFY_FINDINGS    verify_findings.py returns its disabled-announce path
+FLEET_DISABLE_BLIND_FIX          verify_blind_fix.py likewise
+FLEET_DISABLE_RUN_ARCHIVE        validate_run_archive.py likewise
+FLEET_DISABLE_STOP_VERIFY        stop_verify.py returns ALLOW immediately
+FLEET_DISABLE_SHA_PIN            verify_sha_pin.py likewise
+FLEET_DISABLE_ROUND_BUDGET       verify_round_budget.py likewise
+FLEET_DISABLE_REGISTRY_LINT      registry_lint.py likewise
+FLEET_DISABLE_REVIEWER_SANDBOX   verify_reviewer_sandbox.py likewise
+FLEET_DISABLE_NAMESPACING        validate_namespacing.py likewise
 ```
 
 See [The substrate](07-the-substrate.md) for what disabling each layer actually changes, and

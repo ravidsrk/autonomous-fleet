@@ -1,4 +1,4 @@
-<!-- title: The engine | description: The 13 coordinator primitives, the file-based ledger, the coordinator/adapter split, signal reconciliation, anti-flap, evidence-hash, and the plan/DAG validation gate that make a fleet run deterministic and auditable. | sidebar_order: 6 -->
+<!-- title: The engine | description: The coordinator primitives (13 core plus the optional CONTINUE_WORKER), the TRACKER/SCM binding split, the file-based ledger with hash-namespaced placement, the coordinator/adapter split, signal reconciliation, anti-flap, evidence-hash, trace causal lineage, and the plan/DAG validation gate that make a fleet run deterministic and auditable. | sidebar_order: 6 -->
 
 # The engine
 
@@ -18,9 +18,10 @@ the real mechanics. Three things compose every run:
   CORE (the method)        MISSION (the work)           ADAPTER (the mechanics)
   ─────────────────        ──────────────────           ───────────────────────
   tool-agnostic loop       goal, role pipeline,         how THIS tool spawns a
-  + the 13 primitives      phase/task structure,        worker, dispatches a task,
-  + all the doctrine       ledger filename + flags,     waits, inspects, places
-  blocks in this chapter   done condition, defaults     work, opens/merges a PR
+  + 13 core primitives     phase/task structure,        worker, dispatches a task,
+  + 1 optional (14th)      ledger filename + flags,     waits, inspects, places
+  + all the doctrine       done condition, defaults     work, opens/merges a PR
+  blocks in this chapter
 ```
 
 The CORE only ever calls primitives by name. It never hard-codes a tool command. If a runtime
@@ -53,11 +54,14 @@ There are two vocabularies you will meet, and the single most common confusion a
 treating them as one list. They are not. Keep them straight from the start:
 
 - The **coordinator primitives** in `engine.md` are the full interface the adapter implements, and
-  there are **thirteen** of them: `SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`, `PLACE`,
+  there are **thirteen** core ones: `SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`, `PLACE`,
   `WORKER_DONE` / `ASK` / `REPLY` (counted as one primitive, #6), `OPEN_PR` / `MERGE_PR` / `CLEANUP`
   (one primitive, #7), `SYNC_TASK_STATE`, and the optional goal/loop family `SET_GOAL`,
-  `UPDATE_GOAL`, `GOAL_COMPLETE`, `GOAL_BLOCKED`, `LOOP_POLL`. These are the verbs the coordinator
-  sequences and the adapter resolves into real commands. This whole section describes them.
+  `UPDATE_GOAL`, `GOAL_COMPLETE`, `GOAL_BLOCKED`, `LOOP_POLL`. A **fourteenth**, `CONTINUE_WORKER`,
+  is optional on the same footing as the goal/loop family: an adapter whose runtime exposes a
+  session-restore command implements it, and one without aliases it to `SPAWN_WORKER`. These are the
+  verbs the coordinator sequences and the adapter resolves into real commands. This whole section
+  describes them.
 - The **trace primitives** are a SEPARATE, closed eleven-value enum the observability stream uses to
   name a ledger transition. That list lives in `scripts/lib/emit_trace.py` and belongs to the
   [Trace schema](16-trace-schema.md) reference, not here.
@@ -65,9 +69,10 @@ treating them as one list. They are not. Keep them straight from the start:
 The two enums overlap but neither is a subset of the other. The trace records ledger
 state-transition verbs the coordinator never dispatches as primitives (`SYNC`, `MERGE`, `FREEZE`,
 `T-FINAL`, `COMMIT`, `ABORT`) plus a `FIXER` role, and it omits coordinator-only primitives the
-trace never emits (`PLACE`, `WORKER_DONE`, `OPEN_PR`, `CLEANUP`, `LOOP_POLL`). So do not read the
-eleven trace values as "the engine's primitives": the engine has thirteen coordinator primitives;
-the trace enum is its own vocabulary, covered field-by-field in [Trace schema](16-trace-schema.md).
+trace never emits (`PLACE`, `WORKER_DONE`, `OPEN_PR`, `CLEANUP`, `LOOP_POLL`, `CONTINUE_WORKER`). So
+do not read the eleven trace values as "the engine's primitives": the engine has thirteen core
+coordinator primitives plus the optional `CONTINUE_WORKER`; the trace enum is its own vocabulary,
+covered field-by-field in [Trace schema](16-trace-schema.md).
 
 > Both enums are closed on purpose. For the trace side, adding a value is a breaking change to the
 > dashboard contract (see [Trace first, ledger second](#trace-first-ledger-second)). The mapping
@@ -150,6 +155,15 @@ preserving both intent and what landed since fork, and merges with a merge commi
 preserved, never squashed. `CLEANUP` removes the merged checkout only after guard clauses pass:
 never the active worktree, never an unmerged branch, never a worktree with uncommitted changes.
 
+These ship verbs are the SCM binding. `engine.md` names two distinct adapter bindings here: the SCM
+binding (open a PR against BASE, conflict-aware merge, cleanup) and a separate TRACKER binding (read
+an issue, derive a branch name from it, mark the issue done). `gh` / GitHub is the DEFAULT for both,
+not the contract. The contract is "open a PR against BASE and conflict-aware merge it," which `gh`,
+`glab`, or a Linear-tracker-plus-GitHub-SCM pairing all satisfy. An adapter declares its TRACKER and
+its SCM independently, so a Linear tracker driving a GitHub SCM is a legal pairing. Splitting the
+binding does not relax anything: the conflict-aware, never-squash, and SHA-pin rules bind whatever
+SCM is used.
+
 ### SYNC_TASK_STATE(task, status)
 
 Keeps the runtime's native task view aligned with the ledger. The ledger is the source of truth;
@@ -170,6 +184,32 @@ see. See `references/runtime-goals.md` for the binding details.
 
 > Adapters without a scheduler fall back to a foreground `check --wait` loop. The engine never
 > assumes a primitive exists; it calls it by name and lets the adapter decide whether it has one.
+
+### CONTINUE_WORKER (optional, the fourteenth)
+
+`CONTINUE_WORKER(role, placement, session_handle)` re-attaches an EXISTING resumable agent session
+for an in-flight task instead of spawning a fresh worker. It exists so a run that crashed or
+compacted mid-task can pick the worker back up rather than redo its work. Adapters whose runtime
+exposes a restore command (a Grok `sessionId`, a Codex thread, an opencode session) implement it;
+adapters without one ALIAS it to `SPAWN_WORKER`, which is the documented idempotent-relaunch
+fallback. Like the goal/loop family, it is optional: an adapter that cannot restore a session is
+fully conformant without it.
+
+Two guard rails bound when the coordinator may call it:
+
+- It is constrained to `live`-classified rows only. The recovery scanner
+  (`scripts/lib/recovery_scan.py`, see [Resume and recovery](#resume-and-recovery) below)
+  classifies each ledger row `live` / `dead` / `partial` / `orphan`; only a `live` row gets a
+  `CONTINUE` recommendation. The engine never re-attaches a session whose PR already merged or whose
+  branch is gone.
+- The resume budget is bounded. Each row tracks a `RESUME_COUNT`, and when it reaches
+  `MAX_RESUME_ATTEMPTS` (3, defined in `recovery_scan.py`) the scanner downgrades the recommendation
+  from `CONTINUE` to `ESCALATE_TO_DECISIONS` instead of another continue, so a perpetually-failing
+  task escalates to a human decision rather than looping resume attempts forever.
+
+In the trace stream a resumed worker does not introduce a new trace verb: `CONTINUE_WORKER` is a
+coordinator primitive the trace never emits, so a resumed session's events still record under the
+existing transition verbs.
 
 ---
 
@@ -235,11 +275,49 @@ The mission defines the ledger filename and its flag set. The per-task row carri
 task ID, the branch, the PR number, the reviewed SHA, the worktree path or environment id, the
 placement, and the flags `BUILT`, `PR_OPEN`, `REVIEWED`, `MERGED`, `WT_CLEAN`.
 
+The reviewed SHA is not just recorded, it is enforced. A reviewer that returns PASS writes
+`.fleet/runs/<run_id>/sha-pin.json` with `{reviewed_sha, branch, verdict}`, and
+`scripts/verify_sha_pin.py` (run by validate-all, with a `FLEET_DISABLE_SHA_PIN` kill-switch)
+re-resolves the branch HEAD and flips `REVIEWED` to OUTDATED when it diverges from `reviewed_sha`,
+so a PASS graded against a SHA the branch has since moved past cannot ship even if the coordinator
+forgets to clear it. A task whose branch was deleted but is provably merged is N/A, not a fail.
+
 A task is terminal only when `MERGED=true` AND `WT_CLEAN=true`. The coordinator's last check before
 ending a turn is to re-read the ledger and `INSPECT()`: any non-terminal task, any unmerged branch,
 any open PR means it is not done, and it takes the next action in the same turn. A merged-but-
 uncleaned task is explicitly not terminal; `T_FINAL` runs a worktree-orphan sweep before the run can
 close.
+
+### Hash-namespaced placement
+
+Every isolated branch and worktree a run creates carries the active run's 6-character suffix, so two
+runs, or two checkouts of the same mission, never collide on a bare slug. The shape is fixed:
+
+```
+  branch    <prefix><slug>-<run_short>      e.g. fleet/auth-fix-3a9c2f
+  worktree  ../<repo>-<slug>-<run_short>     e.g. ../myrepo-auth-fix-3a9c2f
+```
+
+`run_short` is the 6-hex tail of the run-id, derived by `namespace.derive_run_short()`
+(`scripts/lib/namespace.py`), and `namespaced_branch()` / `namespaced_worktree()` are the helpers
+that build the two strings. This is the placement counterpart to the run-id discipline above: the
+run-id makes the archive sortable and greppable; the `-<run_short>` suffix makes the branches and
+worktrees of concurrent runs distinguishable on disk. `scripts/validate_namespacing.py` (wired into
+validate-all, with a `FLEET_DISABLE_NAMESPACING` kill-switch) reads the manifest's progress ledgers
+and rejects any recorded task-row branch or worktree path that does not end in `-<run_short>`, so a
+bare `<prefix><slug>` cannot slip through.
+
+### Resume and recovery
+
+At resume, after a compaction or a crash, the coordinator runs `scripts/recovery_scan.py` over the
+ledger before driving more work. The scanner is advisory and never executes: it classifies each task
+row `live` / `dead` / `partial` / `orphan` against the live `git worktree list` and `gh pr list`,
+and emits one of `CONTINUE` / `CLEANUP_WORKTREE` / `RE_DRIVE` / `ESCALATE_TO_DECISIONS` /
+`ARCHIVE_ORPHAN` per row. The coordinator reads those recommendations and decides; the scanner only
+reports. A `live` row recommends `CONTINUE`, which is exactly the row class that authorizes
+`CONTINUE_WORKER` (the fourteenth primitive above). The `RESUME_COUNT` / `MAX_RESUME_ATTEMPTS` (3)
+budget lives here too: an exhausted budget flips a `CONTINUE` or `RE_DRIVE` recommendation to
+`ESCALATE_TO_DECISIONS`.
 
 ---
 
@@ -432,7 +510,7 @@ This is the doctrine that makes the whole thing auditable, and it is now enforce
 prose.
 
 The trace stream is one JSONL line per state transition, written to `.fleet/runs/<run_id>/trace.jsonl`.
-The schema (`assets/fleet-trace.schema.json`, pinned at `schema_version: "1.0"`) is the contract:
+The schema (`skills/autonomous-fleet-core/assets/fleet-trace.schema.json`, pinned at `schema_version: "1.0"`) is the contract:
 vibe-kanban, Claude Code Agent View, and custom dashboards are interchangeable consumers. Owning the
 format, not the renderer, is what keeps live observability free of UI debt.
 
@@ -470,6 +548,24 @@ the manifest follows. This is the doctrine made mechanical at the one production
 > (the emit now precedes the write, as shown above). The framework found and closed its own bug
 > through the same review gate it applies to your repo. This is no longer an open issue; it is the
 > reason the comment in the source is so emphatic about ordering.
+
+### Causal lineage: id and parent_event
+
+A flat list of transitions tells you what happened but not which worker caused which event. The
+trace closes that gap with two fields. `emit()` stamps every event with a unique `id` and RETURNS
+it (the return is the whole point: the caller keeps the id to wire children to it). A worker's later
+events, its `COMMIT` and the like, then set `parent_event` to that worker's `SPAWN_WORKER` id, so a
+consumer can walk parent links and reconstruct one worker's lifeline from spawn to commit.
+`fleet_run` wires the reference SPAWN to COMMIT edge.
+
+Two design choices keep this from being a breaking change:
+
+- `id` is an optional field in the schema but is always generated at emit time, so adding lineage did
+  not bump the pinned `1.0` schema or break a consumer that ignores `id`. `parent_event` is likewise
+  optional, validated as a non-empty string only when present.
+- The id factory is injectable. `TraceEmitter(..., id_factory=...)` defaults to `uuid.uuid4`, but a
+  fixture can pass a deterministic factory so the trace stays reproducible byte-for-byte in tests.
+  The emitter rejects a factory that returns a non-string or empty id with a `ValueError`.
 
 ### Why nothing is auto-emitted
 

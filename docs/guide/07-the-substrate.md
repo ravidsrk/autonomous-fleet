@@ -2,7 +2,7 @@
 
 # The substrate (4-layer verification)
 
-**On this page:** [Why a substrate](#why-a-substrate) · [The four layers at a glance](#the-four-layers-at-a-glance) · [Layer 1: findings schema](#layer-1--findings-schema) · [Layer 2: stop-verify hook](#layer-2--stop-verify-hook) · [Layer 3: blind-fix mechanical guard](#layer-3--blind-fix-mechanical-guard) · [Layer 4: mutation gate](#layer-4--mutation-gate) · [How the layers compose](#how-the-layers-compose) · [Kill switches](#kill-switches) · [Why mutation testing beats coverage](#why-mutation-testing-beats-coverage) · [What is not yet enforced](#what-is-not-yet-enforced)
+**On this page:** [Why a substrate](#why-a-substrate) · [The four layers at a glance](#the-four-layers-at-a-glance) · [Layer 1: findings schema](#layer-1--findings-schema) · [Layer 2: stop-verify hook](#layer-2--stop-verify-hook) · [Layer 3: blind-fix mechanical guard](#layer-3--blind-fix-mechanical-guard) · [Layer 4: mutation gate](#layer-4--mutation-gate) · [How the layers compose](#how-the-layers-compose) · [Kill switches](#kill-switches) · [The standing validator suite](#the-standing-validator-suite) · [Why mutation testing beats coverage](#why-mutation-testing-beats-coverage) · [What is not yet enforced](#what-is-not-yet-enforced)
 
 The [engine](06-the-engine.md) decides what work to do and routes it to workers. The substrate is the
 other half: it decides whether the work that comes back is real. This chapter is about how the
@@ -427,7 +427,7 @@ mirroring Layer 1's shape so the two summaries are easy to read side by side.
 ## Layer 4: mutation gate
 
 Layers 1 through 3 are tests. Layer 4 tests the tests. It is the standing mutation gate, and its
-manifest is `tests/mutations.yaml`. There are 35 mutations in the manifest today.
+manifest is `tests/mutations.yaml`. There are 50 mutations in the manifest today.
 
 The idea is fault injection. Each entry describes a representative bug as a `find` string and a
 `replace` string in a real source file, plus the `guards` (test files) that MUST catch it. The gate
@@ -619,6 +619,141 @@ There are two reasons, and the second is the interesting one:
    a regression test asserts the driver actually exports and unsets them, because the original bug was
    a driver that built the env string and only echoed it, never exporting it.
 
+## The standing validator suite
+
+The four numbered layers are the spine of the substrate, and they stay exactly as described above. But
+the substrate has grown more checkable gates around that spine. These are not new layers in the Layer
+1-4 sense: they are additional standing one-shot validators, each a small pure library plus a thin CLI,
+each with its own `FLEET_DISABLE_*` kill switch, and most of them wired into `scripts/validate-all.sh`
+so they run on every validation pass. They follow the same discipline as the four layers: the library
+is side-effect free and the CLI does the filesystem and git work, each kill switch routes through the
+same `scripts/lib/substrate_disable.py` helper, and a truthy env var makes the CLI early-exit 0 with the
+pinned `<label>: DISABLED via <ENV_VAR>=1 (no-op exit 0)` stderr notice.
+
+Five of them are gates in `validate-all.sh`, one (the recovery scanner) is an advisory tool that runs at
+resume rather than as a standing gate:
+
+```
+  ┌────────────────────┬────────────────────────────────────┬──────────────────────────────┬──────────┐
+  │ Validator          │ What it checks                     │ Kill switch (env var)        │ in       │
+  │                    │                                    │                              │validate- │
+  │                    │                                    │                              │ all?     │
+  ├────────────────────┼────────────────────────────────────┼──────────────────────────────┼──────────┤
+  │ verify-sha-pin     │ a reviewer PASS is bound to the    │ FLEET_DISABLE_SHA_PIN        │ yes      │
+  │                    │ SHA it graded; branch divergence   │                              │          │
+  │                    │ flips REVIEWED to OUTDATED         │                              │          │
+  │ verify-round-      │ a task over its review-round       │ FLEET_DISABLE_ROUND_BUDGET   │ yes      │
+  │   budget           │ budget must end BLOCKED, not MERGED│                              │          │
+  │ registry-lint      │ shipped dirs vs catalog vs         │ FLEET_DISABLE_REGISTRY_LINT  │ yes      │
+  │                    │ skills-lock all agree              │                              │          │
+  │ verify-reviewer-   │ a reviewer producer is never       │ FLEET_DISABLE_REVIEWER_      │ yes      │
+  │   sandbox          │ attributed a diff/commit on the    │ SANDBOX                      │          │
+  │                    │ candidate branch                   │                              │          │
+  │ validate-          │ every isolated branch + worktree   │ FLEET_DISABLE_NAMESPACING    │ yes      │
+  │   namespacing      │ carries the run -<run_short> suffix│                              │          │
+  │ recovery-scan      │ classifies each task row live/dead/│ (advisory; no kill switch)   │ no       │
+  │                    │ partial/orphan, ADVISORY only      │                              │ (resume) │
+  └────────────────────┴────────────────────────────────────┴──────────────────────────────┴──────────┘
+```
+
+Each validator follows the substrate's "no archives, exit 0" rule: the discipline is gated on artifact
+production, not on a directory existing. A repo with no `sha-pin.json`, no `trace.jsonl`, no
+`manifest.json` passes each gate cleanly.
+
+### SHA-pin enforcement
+
+A reviewer PASS is not a blanket blessing of a branch. It is a blessing of one specific SHA. The
+reviewer records the SHA it graded in `.fleet/runs/<run_id>/sha-pin.json`, whose shape is pinned by
+`assets/fleet-sha-pin.schema.json`:
+
+```json
+{
+  "schema_version": "1.0",
+  "review_id": "feat-locks-1-skeptic",
+  "reviewed_sha": "0e1f2a3b4c5d6e7f8091a2b3c4d5e6f7a8b9c0d1",
+  "branch": "fleet/feat-locks-1-a1b2c3",
+  "verdict": "approve"
+}
+```
+
+The required fields are `schema_version` (pinned to `"1.0"`), `review_id`, `reviewed_sha` (a 40-hex git
+SHA), `branch`, and `verdict`; an optional `merged` boolean is allowed and nothing else. The pure
+verifier in `scripts/lib/verify_sha_pin.py` only enforces records whose verdict is `approve` or `PASS`
+(a `request_changes` or `fail` record is recorded but not enforced). For each enforced record it asks a
+caller-injected `head_resolver` for the branch's current HEAD. The CLI (`scripts/verify_sha_pin.py`)
+resolves that HEAD with `git -C <repo> rev-parse <branch>`. When the reviewed SHA no longer equals the
+branch HEAD, the verifier emits `... moved <reviewed>..<head>: REVIEWED is OUTDATED, force re-review`:
+the PASS is stale and the work must be re-reviewed against the new tip.
+
+The deleted-branch case is handled honestly. If the resolver returns `None` (the branch is unknown or
+deleted), a record carrying a merged marker is N/A, not a failure: a branch that was reviewed and then
+merged and deleted is the normal happy path, not a divergence. The CLI derives that merged marker either
+from `merged: true` on the record itself or from a sibling readiness / `fleet-outcome` doc that says
+`merged: true` or `status: done`. Without any merged marker, a HEAD-unknown enforced record is a fail,
+because there is then no evidence the reviewed work actually shipped. The kill switch is
+`FLEET_DISABLE_SHA_PIN`, and the gate is wired into `validate-all.sh`.
+
+### Round-budget circuit breaker
+
+Review is not infinite. A task that keeps failing review round after round is not converging, and at
+some point the honest outcome is BLOCKED, not a merge that papered over the disagreement. The
+round-budget validator (`scripts/lib/verify_round_budget.py`) reads the run's `trace.jsonl`, counts
+`REVIEWER` events with `status == "failed"` per task, and applies one invariant: a task with more than
+`MAX_ROUNDS` (3) failed review rounds must finish as `GOAL_BLOCKED`/`blocked` and must not have shipped
+through a successful `MERGE`. A task that ran four failed rounds and then MERGED is a violation
+(`... ran N review rounds then MERGED without BLOCKED`); so is one that ran four failed rounds and
+reached no terminal BLOCKED at all. The kill switch is `FLEET_DISABLE_ROUND_BUDGET`, and the CLI
+(`scripts/verify_round_budget.py`) is wired into `validate-all.sh`.
+
+### Registry lint
+
+The mission and adapter registry has a single source of truth: `scripts/lib/fleet_registry.py`, whose
+`MISSIONS` table is what `mission_registry.py` and `fleet_outcome.py`'s `MISSION_METRICS` derive from.
+Registry lint (`scripts/lib/registry_lint.py`) keeps that table honest against the rest of the repo. It
+checks three seams: every `shipped: true` registry row points at a real `skills/<dir>/SKILL.md` and
+every on-disk mission skill has a `shipped: true` row (no drift in either direction); every shipped
+mission id is mentioned in the catalog files (`README.md` and `skills/autonomous-fleet/SKILL.md`); and
+the shipped skill dirs on disk reconcile with `skills-lock.json` (skills vendored from another source,
+like `skill-creator` from `anthropics/skills`, are excluded so the check stays apples-to-apples). The
+kill switch is `FLEET_DISABLE_REGISTRY_LINT`, and the CLI (`scripts/registry_lint.py`) is wired into
+`validate-all.sh`.
+
+### Reviewer-sandbox attribution
+
+The reviewer is read-only, and Layer-style enforcement of that is the subject of the
+[Roles and blindness](08-roles-and-blindness.md) chapter (the live `run-sandboxed.sh --role reviewer`
+placement). The standing gate here is its audit-side companion:
+`scripts/lib/reviewer_sandbox.py` reads a run-archive `manifest.json` and checks that no reviewer
+producer slug is attributed a write. A reviewer producer (detected by `reviewer` appearing in the
+producer slug, or passed explicitly with `--reviewer-producer`) may only emit `blind_fix`, `findings`,
+or `verify_summary` entries. A reviewer attributed a `diff` or `commit` on the candidate branch is a
+hard failure, and any other kind from a reviewer producer is rejected too. The kill switch is
+`FLEET_DISABLE_REVIEWER_SANDBOX`, and the CLI (`scripts/verify_reviewer_sandbox.py`) is wired into
+`validate-all.sh`.
+
+### Namespacing
+
+When several runs (or several checkouts of one run) share a host, their branches and worktrees must not
+collide. The namespace helpers (`scripts/lib/namespace.py`) derive a 6-hex run suffix from the run_id
+(`derive_run_short`) and stamp it onto every isolated branch (`namespaced_branch` ->
+`<prefix><slug>-<run_short>`) and worktree (`namespaced_worktree` -> `../<repo>-<slug>-<run_short>`). The
+validator reads each archive's manifest and the progress ledgers it lists, and fails any task row whose
+branch or worktree path does not end with `-<run_short>`. The kill switch is `FLEET_DISABLE_NAMESPACING`,
+and the CLI (`scripts/validate_namespacing.py`) is wired into `validate-all.sh`.
+
+### Recovery scanner (advisory, at resume)
+
+The recovery scanner is the one tool in this group that is not a standing gate. It runs at resume, and it
+is purely advisory: it never shells out beyond the snapshots its caller hands it and never mutates the
+repo. `scripts/lib/recovery_scan.py` takes three text snapshots (the markdown progress ledger,
+`git worktree list --porcelain`, and `gh pr list --json number,headRefName,state,mergedAt`) and
+classifies each task row as `live`, `dead`, `partial`, or `orphan`, then attaches a recommended action:
+`CONTINUE`, `CLEANUP_WORKTREE`, `RE_DRIVE`, `ESCALATE_TO_DECISIONS`, or `ARCHIVE_ORPHAN`. A coordinator
+inspects those classifications at resume time and decides what to do; the scanner itself never executes
+any of the actions. A row whose `RESUME_COUNT` has reached `MAX_RESUME_ATTEMPTS` (3) is escalated rather
+than continued or re-driven. Because it is advisory and runs at resume, it has no `FLEET_DISABLE_*` knob
+and is not part of `validate-all.sh`. The CLI is `scripts/recovery_scan.py`.
+
 ## Why mutation testing beats coverage
 
 Line coverage answers "did a test execute this line?" It does not answer "would a test fail if this
@@ -674,7 +809,7 @@ the same gate, and the library is adapter-agnostic, but the wired-in Stop hook i
 feature. The mtime-based ordering in Layer 3 and the path-containment in Layers 1 and 3 are
 adapter-independent and apply to any run-archive.
 
-What you should take away: the verification is real and the gates bite, pinned by 35 mutations of which
+What you should take away: the verification is real and the gates bite, pinned by 50 mutations of which
 eleven target the substrate directly. The trace stream that visualizes it is still being wired
 transition by transition. We document both, because documentation that hides a limitation is worse than
 no documentation.
