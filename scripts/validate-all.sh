@@ -75,6 +75,28 @@ if (( sp_status != 0 )); then
   exit 1
 fi
 
+echo "== verify-round-budget =="
+# A task that exhausted its review-round budget must have gone BLOCKED, not MERGED.
+shopt -s nullglob
+rb_status=0
+for run_dir in .fleet/runs/*/; do
+  if ! "$VENV_PYTHON" scripts/verify_round_budget.py "$run_dir"; then
+    rb_status=1
+  fi
+done
+shopt -u nullglob
+if (( rb_status != 0 )); then
+  echo "verify-round-budget: a task exceeded its round budget without BLOCKED" >&2
+  exit 1
+fi
+
+echo "== registry-lint =="
+# The mission/adapter registry must match the on-disk catalog + skills-lock.
+if ! "$VENV_PYTHON" scripts/registry_lint.py .; then
+  echo "registry-lint: the catalog has drifted from the registry" >&2
+  exit 1
+fi
+
 echo ""
 echo "== validate-trace (telemetry contract) =="
 # Trace stream (engine.md TRACE EMISSION). One JSONL line per state
