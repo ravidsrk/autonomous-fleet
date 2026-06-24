@@ -13,54 +13,18 @@ back, add its id here AFTER `git mv`-ing the SKILL.md back to `skills/`.
 
 from __future__ import annotations
 
+from .fleet_registry import MISSIONS
+
 SHIPPED_MISSIONS: frozenset[str] = frozenset(
-    {
-        "doc-sync",
-        "test-coverage",
-        "adversarial-review-and-fix",
-    }
+    mission_id for mission_id, row in MISSIONS.items() if row["shipped"] is True
 )
 
 MISSION_DOCS: dict[str, dict[str, str]] = {
-    "doc-sync": {"progress": "doc-sync-progress.md", "readiness": "doc-sync-readiness.md"},
-    "test-coverage": {
-        "progress": "test-coverage-progress.md",
-        "readiness": "test-coverage-readiness.md",
-    },
-    "dependency-update": {
-        "progress": "dependency-update-progress.md",
-        "readiness": "dependency-update-readiness.md",
-    },
-    "cleanup": {"progress": "cleanup-progress.md", "readiness": "cleanup-readiness.md"},
-    "bug-batch": {"progress": "bug-batch-progress.md", "readiness": "bug-batch-readiness.md"},
-    "adversarial-review-and-fix": {
-        "progress": "arch-build-progress.md",
-        "readiness": "arch-build-readiness.md",
-    },
-    "targeted-migration": {
-        "progress": "migration-progress.md",
-        "readiness": "migration-readiness.md",
-    },
-    "design-integration": {
-        "progress": "parity-progress.md",
-        "readiness": "parity-readiness.md",
-    },
-    "landing-page-convergence": {
-        "progress": "landing-progress.md",
-        "readiness": "landing-readiness.md",
-    },
-    "legacy-rebuild": {
-        "progress": "rebuild-progress.md",
-        "readiness": "rebuild-readiness.md",
-    },
-    "take-product-to-completion": {
-        "progress": "completion-progress.md",
-        "readiness": "completion-readiness.md",
-    },
-    "inference-cost": {
-        "progress": "inference-cost-progress.md",
-        "readiness": "inference-cost-readiness.md",
-    },
+    mission_id: {
+        "progress": str(row["progress_doc"]),
+        "readiness": str(row["readiness_doc"]),
+    }
+    for mission_id, row in MISSIONS.items()
 }
 
 
