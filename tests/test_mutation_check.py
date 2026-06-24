@@ -7,11 +7,9 @@ assert the gate FAILS, and assert a known-good real mutation is caught.
 
 from __future__ import annotations
 
-import subprocess
 import sys
 from pathlib import Path
 
-import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,19 +24,9 @@ def _manifest(tmp_path: Path, entries: list[dict]) -> Path:
     return p
 
 
-def _require_clean(rel: str) -> None:
-    # The gate refuses to mutate a dirty file; skip rather than fail if a probe target is dirty.
-    r = subprocess.run(
-        ["git", "status", "--porcelain", "--", rel], cwd=ROOT, capture_output=True, text=True
-    )
-    if r.stdout.strip():
-        pytest.skip(f"{rel} has uncommitted changes; gate self-test needs it clean")
-
-
 def test_gate_reports_survivor_when_guard_is_weak(tmp_path, capsys):
     # Mutate a real, tracked-clean file harmlessly; guard is a test that passes regardless of it.
     # The mutation therefore SURVIVES and the gate must fail (rc 1) and name it.
-    _require_clean("README.md")
     manifest = _manifest(
         tmp_path,
         [
@@ -60,7 +48,6 @@ def test_gate_reports_survivor_when_guard_is_weak(tmp_path, capsys):
 
 
 def test_gate_reports_stale_when_find_absent(tmp_path, capsys):
-    _require_clean("README.md")
     manifest = _manifest(
         tmp_path,
         [
@@ -81,7 +68,6 @@ def test_gate_reports_stale_when_find_absent(tmp_path, capsys):
 
 def test_gate_catches_a_known_real_mutation(tmp_path):
     # The positive path: a real manifest entry whose guard genuinely catches it returns 0.
-    _require_clean("scripts/lib/fleet_outcome.py")
     rc = mc.run(ROOT / "tests" / "mutations.yaml", {"e2e-gate-inert"}, quiet=True)
     assert rc == 0
     # restored
@@ -113,10 +99,10 @@ def test_no_mutations_selected_returns_2(capsys):
     assert "no mutations selected" in capsys.readouterr().err
 
 
-def test_refuses_to_run_on_dirty_target(tmp_path, capsys):
-    _require_clean("README.md")
+def test_dirty_target_is_restored_to_dirty_pre_run_content(tmp_path, monkeypatch):
     readme = ROOT / "README.md"
     original = readme.read_text(encoding="utf-8")
+    dirty = original + "\n<!-- dirty before mutation gate -->\n"
     manifest = _manifest(
         tmp_path,
         [
@@ -129,16 +115,16 @@ def test_refuses_to_run_on_dirty_target(tmp_path, capsys):
             }
         ],
     )
+    monkeypatch.setattr(mc, "_run_guards", lambda _guards: True)
     try:
-        readme.write_text(original + "\n<!-- dirty -->\n", encoding="utf-8")
+        readme.write_text(dirty, encoding="utf-8")
         rc = mc.run(manifest, None, quiet=True)
+        assert rc == 0
+        assert readme.read_text(encoding="utf-8") == dirty
     finally:
         readme.write_text(original, encoding="utf-8")
-    assert rc == 2
-    assert "uncommitted changes" in capsys.readouterr().err
 
 
 def test_main_entry_point_runs_gate(monkeypatch):
-    _require_clean("scripts/lib/fleet_outcome.py")
     monkeypatch.setattr(sys, "argv", ["mutation_check", "--id", "e2e-gate-inert"])
     assert mc.main() == 0  # main() + non-quiet caught print + the restore finally

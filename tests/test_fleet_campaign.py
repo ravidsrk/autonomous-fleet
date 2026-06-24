@@ -173,6 +173,72 @@ def test_validate_outcome_rejects_non_finite_registered_mission_metrics():
         ), errors
 
 
+def test_validate_outcome_rejects_done_with_open_terminal_metrics():
+    errors = validate_outcome(
+        {
+            **DOC_SYNC_OUTCOME,
+            "metrics": {**DOC_SYNC_OUTCOME["metrics"], "drift_open": 7},
+        }
+    )
+    assert any("cannot be done while metric 'drift_open'" in e for e in errors)
+
+    partial = {
+        **DOC_SYNC_OUTCOME,
+        "status": "partial",
+        "metrics": {**DOC_SYNC_OUTCOME["metrics"], "drift_open": 7},
+    }
+    assert validate_outcome(partial) == []
+
+
+def test_validate_outcome_done_gates_adversarial_findings_without_closing_info_metrics():
+    outcome = {
+        "mission": "adversarial-review-and-fix",
+        "status": "done",
+        "repo": "/tmp/repo",
+        "base_branch": "fleet/base",
+        "prs_merged": 1,
+        "metrics": {
+            "p0_open": 0,
+            "p1_open": 2,
+            "findings_open": 0,
+            "ops_queue_count": 3,
+        },
+        "deferred_missions": [],
+    }
+    assert validate_outcome(outcome) == []
+
+    open_findings = {
+        **outcome,
+        "metrics": {**outcome["metrics"], "findings_open": 5},
+    }
+    assert any(
+        "cannot be done while metric 'findings_open'" in e
+        for e in validate_outcome(open_findings)
+    )
+
+
+def test_validate_outcome_rejects_done_with_unverified_findings_when_reported():
+    outcome = {
+        "mission": "adversarial-review-and-fix",
+        "status": "done",
+        "repo": "/tmp/repo",
+        "base_branch": "fleet/base",
+        "prs_merged": 1,
+        "metrics": {
+            "p0_open": 0,
+            "p1_open": 0,
+            "findings_open": 0,
+            "ops_queue_count": 0,
+            "unverified_findings": 1,
+        },
+        "deferred_missions": [],
+    }
+
+    errors = validate_outcome(outcome)
+
+    assert any("cannot be done while metric 'unverified_findings'" in e for e in errors)
+
+
 def test_eval_ordering_coerces_string_and_float_metrics():
     """EVAL-05: ordering ops coerce defensively instead of raising TypeError."""
     outcome = {"metrics": {"coverage": 79.5}}

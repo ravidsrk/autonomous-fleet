@@ -46,7 +46,7 @@ def test_completion_done_rejects_false_e2e_verified():
 
     errors = validate_outcome(outcome)
 
-    assert any("e2e" in e for e in errors)
+    assert any("cannot be done without end-to-end verification" in e for e in errors)
 
 
 def test_completion_done_rejects_absent_e2e_verified():
@@ -57,7 +57,7 @@ def test_completion_done_rejects_absent_e2e_verified():
 
     errors = validate_outcome(outcome)
 
-    assert any("e2e" in e for e in errors)
+    assert any("cannot be done without end-to-end verification" in e for e in errors)
 
 
 def test_completion_done_accepts_true_e2e_verified():

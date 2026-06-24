@@ -605,19 +605,30 @@ _sha256_path() {
   fi
 }
 
-_snapshot_tracked_hashes() {
+_snapshot_worktree_hashes() {
   local repo="$1" rel abs
-  git -C "$repo" ls-files -z | while IFS= read -r -d '' rel; do
-    case "$rel" in
-      .fleet/runs/*) continue ;;
-    esac
-    abs="$repo/$rel"
-    if [[ -f "$abs" ]]; then
-      printf 'file %s %s\n' "$(_sha256_path "$abs")" "$rel"
-    else
-      printf 'missing %s\n' "$rel"
-    fi
-  done | LC_ALL=C sort
+  {
+    git -C "$repo" ls-files -z | while IFS= read -r -d '' rel; do
+      case "$rel" in
+        .fleet/runs/*) continue ;;
+      esac
+      abs="$repo/$rel"
+      if [[ -f "$abs" ]]; then
+        printf 'file %s %s\n' "$(_sha256_path "$abs")" "$rel"
+      else
+        printf 'missing %s\n' "$rel"
+      fi
+    done
+    git -C "$repo" ls-files -z --others --exclude-standard | while IFS= read -r -d '' rel; do
+      case "$rel" in
+        .fleet/runs/*) continue ;;
+      esac
+      abs="$repo/$rel"
+      if [[ -f "$abs" ]]; then
+        printf 'untracked %s %s\n' "$(_sha256_path "$abs")" "$rel"
+      fi
+    done
+  } | LC_ALL=C sort
 }
 
 _sbpl_string() {
@@ -688,14 +699,14 @@ EOF
   local before after child_status=0
   before="$(mktemp "${TMPDIR:-/tmp}/reviewer-before.XXXXXX")"
   after="$(mktemp "${TMPDIR:-/tmp}/reviewer-after.XXXXXX")"
-  _snapshot_tracked_hashes "$repo_root" >"$before"
+  _snapshot_worktree_hashes "$repo_root" >"$before"
   set +e
   env -i "${reviewer_filtered[@]}" "${reviewer_cmd[@]}"
   child_status=$?
   set -e
-  _snapshot_tracked_hashes "$repo_root" >"$after"
+  _snapshot_worktree_hashes "$repo_root" >"$after"
   if ! cmp -s "$before" "$after"; then
-    echo "run-sandboxed: reviewer modified tracked files outside .fleet/runs" >&2
+    echo "run-sandboxed: reviewer modified tracked/untracked files outside .fleet/runs" >&2
     diff -u "$before" "$after" >&2 || true
     rm -f "$before" "$after"
     exit 4

@@ -8,8 +8,10 @@ mutation whose guard tests still PASS SURVIVED: the guarding test is weak/tautol
 survivor (or a stale manifest entry whose `find` no longer matches) fails the gate.
 
 Source files are mutated in place, so restore is defended three ways: a per-mutation try/finally, a
-SIGINT/SIGTERM handler, and a final `git checkout` of every touched file. The gate refuses to run if
-a target file already has uncommitted changes (so restore can never clobber real work).
+SIGINT/SIGTERM handler, and a final in-memory restore of any active mutation. A target file may have
+uncommitted changes before the gate runs; the restore point is the exact file content read before
+each mutation, so pre-commit mutation checks do not require committing first and do not clobber real
+work.
 
 Usage: python scripts/mutation_check.py [--manifest PATH] [--id ID ...] [-q]
 Exit 0 = every mutation caught; 1 = a survivor or stale entry; 2 = unsafe preconditions.
@@ -43,13 +45,6 @@ def _on_signal(signum, _frame):  # pragma: no cover - signal path
     sys.exit(130)
 
 
-def _is_dirty(rel: str) -> bool:
-    r = subprocess.run(
-        ["git", "status", "--porcelain", "--", rel], cwd=ROOT, capture_output=True, text=True
-    )
-    return bool(r.stdout.strip())
-
-
 def _run_guards(guards: list[str]) -> bool:
     """Return True if the guard tests FAILED (i.e. the mutation was CAUGHT)."""
     r = subprocess.run(
@@ -68,13 +63,6 @@ def run(manifest_path: Path, only: set[str] | None, quiet: bool) -> int:
         mutations = [m for m in mutations if m["id"] in only]
     if not mutations:
         print("no mutations selected", file=sys.stderr)
-        return 2
-
-    # Precondition: every target file must be clean so restore is reliable.
-    targets = {m["file"] for m in mutations}
-    dirty = sorted(t for t in targets if _is_dirty(t))
-    if dirty:
-        print(f"refusing to run: uncommitted changes in {dirty}", file=sys.stderr)
         return 2
 
     signal.signal(signal.SIGINT, _on_signal)
@@ -109,8 +97,9 @@ def run(manifest_path: Path, only: set[str] | None, quiet: bool) -> int:
             survived.append(mid)
             print(f"  SURVIVED   {mid}  ({rel}: guards {m['guards']} did not catch it)")
 
-    # Belt-and-suspenders: ensure nothing was left mutated.
-    subprocess.run(["git", "checkout", "--", *sorted(targets)], cwd=ROOT, capture_output=True)
+    # Belt-and-suspenders: ensure nothing was left mutated without using git checkout,
+    # which would clobber legitimate pre-existing local edits.
+    _restore_all()
 
     total = len(mutations)
     print(f"\n{total} mutations: {caught} caught, {len(survived)} survived, {len(stale)} stale")
