@@ -236,9 +236,11 @@ See [Trace schema](16-trace-schema.md) and [The substrate](07-the-substrate.md).
 The operator escape hatch on each substrate layer: a `FLEET_DISABLE_*` env var that, when set
 truthy (`1`/`true`/`yes`/`on`), makes that layer's CLI exit 0 with a `DISABLED` notice before arg
 parsing, treating its verdict as PASS for the run. The registry is `FLEET_DISABLE_VERIFY_FINDINGS`
-(L1), `FLEET_DISABLE_STOP_VERIFY` (L2), `FLEET_DISABLE_BLIND_FIX` (L3), `FLEET_DISABLE_RUN_ARCHIVE`
-(L4). The strict truthy allow-list prevents a typo from silently disabling a layer. Full doctrine
-in `references/substrate-disable-knobs.md`. See [The substrate](07-the-substrate.md).
+(L1), `FLEET_DISABLE_STOP_VERIFY` (L2), `FLEET_DISABLE_BLIND_FIX` (L3), and
+`FLEET_DISABLE_RUN_ARCHIVE`. The run-archive validator is a gate, but it is not substrate Layer 4.
+Layer 4 (the mutation gate) is intentionally undisableable. The strict truthy allow-list prevents a
+typo from silently disabling a layer. Full doctrine in `references/substrate-disable-knobs.md`.
+See [The substrate](07-the-substrate.md).
 
 ### strict mode
 
@@ -363,10 +365,11 @@ See [Installation](02-installation.md) and [Campaigns](10-campaigns.md).
 ### sandbox wrapper
 
 `scripts/run-sandboxed.sh`: the wrapper operators should put around untrusted-target headless runs.
-It scrubs credential-shaped env vars before exec and refuses a deny-list of production/publish
-command lines (`terraform apply`, `kubectl`, `aws `, `gcloud `, `npm publish`, `cargo publish`,
-`gh release`, `git push --tags`). It is best-effort, not a general OS sandbox: it does not confine
-filesystem or network reach, so pair it with a real OS-level sandbox.
+It scrubs credential-shaped env vars before exec and refuses classified command lines: force-push
+(`git push --force` and equivalent destructive push forms), remote hard-reset, `gh pr merge`,
+`gh repo delete`, `gh release`, and `terraform` / `tofu` / `kubectl` / `helm` / `databricks` with
+`apply`, `deploy`, `destroy`, or `delete`. It is best-effort, not a general OS sandbox: it does not
+confine filesystem or network reach, so pair it with a real OS-level sandbox.
 See [Safety and secrets](12-safety-and-secrets.md).
 
 ### blast radius

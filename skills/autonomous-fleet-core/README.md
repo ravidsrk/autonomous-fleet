@@ -3,7 +3,7 @@
 # autonomous-fleet-core
 
 <p align="center">
-  <img src="assets/banner.png" alt="autonomous-fleet-core — the tool-agnostic engine" width="100%">
+  <img src="assets/banner.png" alt="autonomous-fleet-core, the tool-agnostic engine" width="100%">
 </p>
 
 > The portable, tool-agnostic engine for running fully-autonomous multi-agent engineering jobs. It
@@ -14,7 +14,7 @@
 > safety rails, secret hygiene, and commit/authorship policy. It speaks in primitives; the active
 > adapter maps each primitive to its tool's real commands.
 
-🟦 **Tier 1 · Engine** — loaded automatically by missions; do not run it alone.
+🟦 **Tier 1 · Engine**, loaded automatically by missions; do not run it alone.
 
 **On this page:** [When to use it](#when-to-use-it) · [What it produces](#what-it-produces) ·
 [What it expects](#what-it-expects-from-your-repo) · [Failure modes](#common-failure-modes) ·
@@ -34,7 +34,7 @@ You almost never load this skill by hand. It is the engine a mission loads for y
 Core does not produce artifacts on its own. Driven by a mission, it leaves a manifest-audited trail
 under `.fleet/runs/<run_id>/` (run_id format `YYYYMMDDTHHMMSSZ-<mission>-<6-hex>`):
 
-- `manifest.json` — the audit trail; a `status: done` outcome is rejected if it does not validate.
+- `manifest.json`, the audit trail; a `status: done` outcome is rejected if it does not validate.
 - One PR per task, commits preserved, merged conflict-aware, with worktrees cleaned up after.
 - A `T-FINAL` trace event, emitted BEFORE the manifest write per the trace-first doctrine.
 
@@ -64,8 +64,8 @@ agent (Claude Code, Cursor, Grok, Codex, or Orca) and reference it by name.
 
 ## Learn more
 
-- [Guide 06 — The engine](../../docs/guide/06-the-engine.md) — primitives, the ledger, the frozen DAG
-- [SKILL.md](./SKILL.md) — the agent-facing spec
+- [Guide 06, The engine](../../docs/guide/06-the-engine.md), primitives, the ledger, the frozen DAG
+- [SKILL.md](./SKILL.md), the agent-facing spec
 
 ---
 

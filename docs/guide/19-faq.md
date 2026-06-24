@@ -175,9 +175,8 @@ committed secret, treat it as compromised and rotate it.
 
 ### How do I report a vulnerability?
 
-There is no `SECURITY.md` in the repo yet (one is planned). Until it lands, open a GitHub issue or
-contact the maintainer privately rather than disclosing publicly. Do not assume a disclosure policy
-that is not written down.
+`SECURITY.md` exists in the repo root. Follow its disclosure process: email ravidsrk@gmail.com,
+report privately rather than opening a public GitHub issue, and use the 90-day disclosure window.
 
 ### What does the framework NOT defend against?
 

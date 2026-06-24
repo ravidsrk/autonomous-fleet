@@ -100,11 +100,11 @@ sections. This list is verbatim from
 `skills/autonomous-fleet-adapter-template/SKILL.md`:
 
 ```
-## Required skills    — core + one adapter; pointer to references/composition.md
-## Optional skills    — coordinator-only; "Activate when" / "If unavailable"
-## Worker skills      — per role (@grok builder, etc.); injected via DISPATCH
-## Deferred missions  — table routing out-of-scope work
-T-FINAL readiness doc — fleet-outcome YAML first, then Recommended next missions
+## Required skills   , core + one adapter; pointer to references/composition.md
+## Optional skills   , coordinator-only; "Activate when" / "If unavailable"
+## Worker skills     , per role (@grok builder, etc.); injected via DISPATCH
+## Deferred missions , table routing out-of-scope work
+T-FINAL readiness doc, fleet-outcome YAML first, then Recommended next missions
 ```
 
 And one hard rule, also verbatim from the template:
@@ -138,7 +138,7 @@ metadata:
 
 ## Required skills
 
-1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md`
+1. `autonomous-fleet-core`, read `references/engine.md` and `references/composition.md`
 2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`,
    `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
 
@@ -156,8 +156,8 @@ Inject per role on DISPATCH (workers load these; coordinator does not):
 
 | Role                                      | Skills | If unavailable               |
 | ----------------------------------------- | ------ | ---------------------------- |
-| @codex (build)                            | —      | Repo README + manifests only |
-| @claude (audit, fresh review, integrator) | —      | Repo README + manifests only |
+| @codex (build)                            |,      | Repo README + manifests only |
+| @claude (audit, fresh review, integrator) |,      | Repo README + manifests only |
 
 ## Deferred missions
 
@@ -173,7 +173,7 @@ surfaces work it is not allowed to do, record it as a finding, do not do it.
 
 ## ROLE PIPELINE
 
-- @claude AUDITS (finds the work) — the frozen index.
+- @claude AUDITS (finds the work), the frozen index.
 - @codex BUILDS each unit.
 - A fresh build-blind @claude REVIEWS each PR.
 - @claude is the INTEGRATOR: opens the PR, merges (conflict-aware), cleans the worktree.
@@ -184,16 +184,16 @@ surfaces work it is not allowed to do, record it as a finding, do not do it.
 
 ## TASK STRUCTURE
 
-- T-AUDIT [@claude] — the only discovery task; freeze it, then build.
-- T-BUILD… [per unit, loop] — one PR per unit; build → fresh build-blind review → merge.
-- T-FINAL [@claude] — verify every index item closed; write docs/<your-mission>-readiness.md
+- T-AUDIT [@claude], the only discovery task; freeze it, then build.
+- T-BUILD… [per unit, loop], one PR per unit; build → fresh build-blind review → merge.
+- T-FINAL [@claude], verify every index item closed; write docs/<your-mission>-readiness.md
   starting with the fleet-outcome YAML, then Recommended next missions. Ship as the final PR.
 ```
 
 The `## Worker skills` block is not optional decoration. The engine's WORKER SKILLS doctrine (see
 `skills/autonomous-fleet-core/references/engine.md`) requires the adapter to prepend the mission's
 per-role `## Worker skills` to the task spec on every DISPATCH. If your mission omits the block, the
-adapter has nothing to inject and your workers run skill-blind. Even an empty table (with `—` for
+adapter has nothing to inject and your workers run skill-blind. Even an empty table (with `, ` for
 skills) is a deliberate declaration that the role needs no extra skills, and it is what `doc-sync`
 ships.
 
@@ -630,7 +630,7 @@ The README's closing line is the whole philosophy in one sentence:
 The same evidence bar applies to a new adapter, by the same logic. An adapter that has never driven
 a real run is an unproven claim. Prove it with an archived run before you present it as shipped.
 
-> The nine demoted missions currently in `docs/exploratory/missions/` (for example `bug-batch`,
+> The twelve missions currently in `docs/exploratory/missions/` (for example `bug-batch`,
 > `cleanup`, `dependency-update`, `legacy-rebuild`) are the worked examples of this rule. Each one's
 > entry in the README states exactly which of the three artifacts it is missing. Read them before
 > you write a new mission; they show you what "not yet proven" looks like in practice.

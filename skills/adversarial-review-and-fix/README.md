@@ -8,7 +8,7 @@
 [Learn more](#learn-more)
 
 <p align="center">
-  <img src="assets/banner.png" alt="adversarial-review-and-fix — autonomous-fleet skill" width="100%">
+  <img src="assets/banner.png" alt="adversarial-review-and-fix, autonomous-fleet skill" width="100%">
 </p>
 
 > Run a rigorous CODE-GROUNDED adversarial architecture review of a repo, freeze it as the source
@@ -16,7 +16,7 @@
 > source (not existing docs) and a skeptic narrows out false findings; Phase 1 fixes the confirmed
 > set with full safety rails. Runs on the autonomous-fleet-core engine.
 
-🟩 **Tier 3 · Mission** — the two-phase red-team-then-patch workhorse: review freezes into a spec,
+🟪 **Tier 2 · Mission**: the two-phase red-team-then-patch workhorse: review freezes into a spec,
 fixes close against it.
 
 ```
@@ -42,14 +42,14 @@ fixes close against it.
 
 ## What it produces
 
-- `docs/adversarial-review-fresh.md` — the frozen review: ranked, dependency-ordered findings, each
+- `docs/adversarial-review-fresh.md`, the frozen review: ranked, dependency-ordered findings, each
   with file:line evidence, a concrete fix, acceptance criteria, and a CODE vs CODE+OPS tag.
-- `.fleet/runs/<run_id>/p0-review-findings.json` and `p0-skeptic-findings.json` — schema-verified
+- `.fleet/runs/<run_id>/p0-review-findings.json` and `p0-skeptic-findings.json`, schema-verified
   findings (conformant to `fleet-review-findings.schema.json`), each quote checked against source.
-- `docs/arch-build-progress.md` — the ledger: PHASE marker, the finding CLOSE-INDEX with each
+- `docs/arch-build-progress.md`, the ledger: PHASE marker, the finding CLOSE-INDEX with each
   finding's lane and state, and per-fix-task rows flagged `CODED EVID PR_OPEN REVIEWED MERGED ACCEPT`.
-- `docs/arch-ops-actions.md` — `HUMAN_ACTION_REQUIRED:<finding-id>` entries for Lane 0 OPS work.
-- `docs/arch-build-readiness.md` — the final report, starting with a `fleet-outcome` YAML block
+- `docs/arch-ops-actions.md`, `HUMAN_ACTION_REQUIRED:<finding-id>` entries for Lane 0 OPS work.
+- `docs/arch-build-readiness.md`, the final report, starting with a `fleet-outcome` YAML block
   (`p0_open`, `p1_open`, `findings_open`, `ops_queue_count`), then finding status and every PR.
 - One PR per fix task, plus a final PR. Lane B findings open as `do-not-merge` labelled draft PRs.
 
@@ -87,7 +87,7 @@ Then activate in your agent (Claude Code, Cursor, Grok, Codex, or Orca) and refe
 
 ## Learn more
 
-- [Guide chapter 09 §adversarial](../../docs/guide/09-mission-catalog.md) — the depth on this mission
-- [SKILL.md](./SKILL.md) — the agent-facing spec
+- [Guide chapter 09 §adversarial](../../docs/guide/09-mission-catalog.md), the depth on this mission
+- [SKILL.md](./SKILL.md), the agent-facing spec
 
 [📖 Guide Index](../../docs/guide/README.md)

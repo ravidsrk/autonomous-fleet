@@ -196,7 +196,7 @@ own clone, but the agent's working directory is the `--repo` target.
 What you see:
 
 ```
-error: --yolo against an external --repo auto-approves every tool call — a full RCE surface.
+error: --yolo against an external --repo auto-approves every tool call, a full RCE surface.
        Run under scripts/run-sandboxed.sh, or pass --yolo-untrusted-acknowledged to accept the risk.
 ```
 
@@ -226,13 +226,13 @@ for the full threat model.
 What you see (running under `run-sandboxed.sh`):
 
 ```
-run-sandboxed: REFUSED (DENY): irreversible command — <the command line>
+run-sandboxed: REFUSED (DENY): irreversible command, <the command line>
 ```
 
 or:
 
 ```
-run-sandboxed: REFUSED (ASK): outward / destructive-but-recoverable command — <the command line>
+run-sandboxed: REFUSED (ASK): outward / destructive-but-recoverable command, <the command line>
 ```
 
 What's wrong: `run-sandboxed.sh` classifies the wrapped command line by blast radius before it
@@ -513,13 +513,13 @@ unattended scrubbed run.
 What you see (under the sandbox):
 
 ```
-run-sandboxed: REFUSED (ASK): outward / destructive-but-recoverable command — git push ...
+run-sandboxed: REFUSED (ASK): outward / destructive-but-recoverable command, git push ...
 ```
 
 or, for a force-push:
 
 ```
-run-sandboxed: REFUSED (DENY): irreversible command — git push --force ...
+run-sandboxed: REFUSED (DENY): irreversible command, git push --force ...
 ```
 
 What's wrong: an ordinary `git push` is `ASK`; a force-push (`--force`, `-f`, a `+refspec`, or
