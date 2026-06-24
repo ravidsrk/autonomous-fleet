@@ -33,6 +33,18 @@ branch at current HEAD if absent) · goals feature enabled for SET_GOAL · OPTIO
 MCP (`codex mcp add container-use -- container-use stdio`, needs Docker) for sandboxed container
 placement, see PLACE(independent) via container-use below.
 
+Machine-readable preflight requires-block:
+
+```yaml requires
+bins: [codex, git, gh]
+env: []
+auth:
+  - check: "gh auth status"
+    skip_if_intent: "no_scm"
+intent_gated:
+  scm: "willClaimExistingPR"
+```
+
 ## CONCURRENCY MODEL
 
 Codex parallelism is via subagents — multiple can run concurrently within one coordinator turn.

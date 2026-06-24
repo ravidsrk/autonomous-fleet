@@ -249,3 +249,35 @@ mutations:
     find: 'if status in {"failed", "blocked"}:'
     replace: 'if False:'
     guards: [tests/test_emit_trace.py]
+
+  # --- Wave 2 (AO comparison improvements) ---
+  - id: round-budget-never-trips
+    file: scripts/lib/verify_round_budget.py
+    find: 'if rounds <= max_rounds:'
+    replace: 'if rounds <= 99999:'
+    guards: [tests/test_round_budget.py]
+  - id: recovery-scm-disagreement-off
+    file: scripts/lib/recovery_scan.py
+    find: 'if scm_state == SCM_MERGED and ledger_merged is not True:'
+    replace: 'if False and scm_state == SCM_MERGED and ledger_merged is not True:'
+    guards: [tests/test_recovery_scan.py]
+  - id: orphan-archive-precondition-off
+    file: scripts/lib/recovery_scan.py
+    find: 'ACTION_ARCHIVE_ORPHAN if archive_ok else ACTION_ESCALATE'
+    replace: 'ACTION_ARCHIVE_ORPHAN if True else ACTION_ESCALATE'
+    guards: [tests/test_recovery_scan.py]
+  - id: registry-disk-check-off
+    file: scripts/lib/registry_lint.py
+    find: 'if not skill_file.is_file():'
+    replace: 'if False and not skill_file.is_file():'
+    guards: [tests/test_fleet_registry_consistency.py]
+  - id: skill-lint-section-check-off
+    file: scripts/lib/skill_lint.py
+    find: 'if not _has_heading(text, hashes, token):'
+    replace: 'if False:'
+    guards: [tests/test_skill_lint.py]
+  - id: preflight-bin-probe-off
+    file: scripts/lib/adapter_preflight.py
+    find: 'if which(binary) is None:'
+    replace: 'if False:'
+    guards: [tests/test_adapter_preflight.py]
