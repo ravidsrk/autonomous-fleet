@@ -159,6 +159,12 @@ instinct is a BUG. Suppress it mechanically:
 - TERMINATE rejects merged-but-uncleaned tasks: every shipped task row must read MERGED=true and
   WT_CLEAN=true, and T_FINAL must have run the worktree-orphan sweep. A merged but uncleaned task
   is NOT terminal.
+- LEDGER CONTRADICTIONS are checkable, not just narrated: a task row that reads MERGED=true with
+  BUILT=false, MERGED=true with WT_CLEAN=false, or REVIEWED=true with PR_OPEN=false is a protocol
+  violation. `scripts/lib/fleet_outcome.py` rejects these over the readiness `tasks:` block. The
+  dashboard (`scripts/render-dashboard.py`) renders the ledger to attention zones; `--watch` re-
+  renders on ledger mtime change in the FOREGROUND (a convenience that dies with the terminal, NOT
+  a daemon).
 - RUNTIME GOAL (when adapter supports primitives 9–12): after SELF-ORIENTATION and ledger init,
   SET_GOAL with a condition that paraphrases the mission DONE gates (must reference `docs/` ledger
   and readiness paths). UPDATE_GOAL at major phase transitions. GOAL_COMPLETE only after TERMINATE
@@ -756,6 +762,10 @@ Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
   If a newer SHA lands on the branch before SHIP (a fix-round push, a rebase, any commit), the prior
   PASS is OUTDATED: clear REVIEWED and force a re-review of the new SHA. Never ship a PASS that was
   graded against a SHA the branch has since moved past.
+  ENFORCED (not prose-only): the reviewer writes `.fleet/runs/<run_id>/sha-pin.json`
+  {reviewed_sha, branch, verdict} at PASS; `scripts/verify_sha_pin.py` (run by validate-all)
+  re-resolves the branch HEAD and FAILs when reviewed_sha has diverged, so a stale PASS cannot
+  ship even if the coordinator forgets. A merged task whose branch was deleted is N/A, not a fail.
 
 ═══════════════════════════════════════════════════════════
 DONE CONDITION: regression-catching test.
