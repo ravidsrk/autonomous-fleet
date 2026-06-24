@@ -6,6 +6,8 @@ GUI." This parses the docs ledgers (docs/*-progress.md task rows + docs/*-readin
 fleet-outcome YAML) and sorts every task into ComposioHQ AO's four attention zones
 (Working / Needs you / In review / Ready to merge), then emits a single static,
 self-contained HTML file. No daemon, no JS, no network: re-run it to refresh.
+Optional --watch mode is a foreground poll loop only; it has no socket, PID
+file, or port, and exits with the terminal.
 
 Zone mapping (AO dashboard-language: Working -> Needs you -> In review -> Ready to
 merge), derived from the per-task lifecycle flags CODED/PR_OPEN/REVIEWED/MERGED:
@@ -24,6 +26,8 @@ import argparse
 import html
 import re
 import sys
+import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +35,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from lib.emit_trace import health_rollup, iter_trace_file  # noqa: E402
 from lib.fleet_outcome import parse_readiness  # noqa: E402
 
 ZONES = ("Working", "Needs you", "In review", "Ready to merge")
@@ -161,7 +166,47 @@ def build_model(repo: Path) -> dict[str, Any]:
         outcome = {**outcome, "_source": path.name}
         outcomes.append(outcome)
 
-    return {"zones": zones, "done": done, "outcomes": outcomes}
+    run_health: list[dict[str, Any]] = []
+    for path in sorted((repo / ".fleet" / "runs").glob("*/trace.jsonl")):
+        run_health.append(
+            {
+                "run_id": path.parent.name,
+                **health_rollup(iter_trace_file(path)),
+            }
+        )
+
+    return {
+        "zones": zones,
+        "done": done,
+        "outcomes": outcomes,
+        "run_health": run_health,
+    }
+
+
+def _mtime_fingerprint(repo: Path) -> float:
+    """Max mtime for dashboard inputs, or 0.0 when no inputs exist."""
+    docs = repo / "docs"
+    paths = [
+        *docs.glob("*-progress.md"),
+        *docs.glob("*-readiness.md"),
+        *(repo / ".fleet" / "runs").glob("*/trace.jsonl"),
+    ]
+    return max((path.stat().st_mtime for path in paths), default=0.0)
+
+
+def _write_dashboard(repo: Path, out: Path) -> dict[str, Any]:
+    model = build_model(repo)
+    out.write_text(render_html(model), encoding="utf-8")
+    return model
+
+
+def watch_once(repo: Path, out: Path, last_fp: float) -> float | None:
+    """Rebuild once if dashboard input mtimes changed since last_fp."""
+    fp = _mtime_fingerprint(repo)
+    if fp != last_fp:
+        _write_dashboard(repo, out)
+        return fp
+    return None
 
 
 # Color discipline borrowed from AO dashboard-language: grayscale by default,
@@ -224,12 +269,42 @@ def render_html(model: dict[str, Any]) -> str:
         )
     outcome_table = "".join(rows) or '<tr><td colspan=5 class=empty>no readiness docs</td></tr>'
 
+    health_rows = []
+    for run in model["run_health"]:
+        last_failure = run["last_failure"]
+        if last_failure is None:
+            last = "none"
+        else:
+            task = last_failure.get("task_id") or "-"
+            last = (
+                f"{_esc(last_failure.get('primitive', ''))}"
+                f"@{_esc(last_failure.get('role', ''))} "
+                f"{_esc(last_failure.get('ts', ''))} "
+                f"task={_esc(task)}"
+            )
+        health_rows.append(
+            "<tr>"
+            f"<td>{_esc(run['run_id'])}</td>"
+            f"<td class=num>{_esc(run['total'])}</td>"
+            f"<td class=num>{_esc(run['succeeded'])}</td>"
+            f"<td class=num>{_esc(run['failed'])}</td>"
+            f"<td class=num>{_esc(run['blocked'])}</td>"
+            f"<td class=num>{_esc(run['skipped'])}</td>"
+            f"<td>{last}</td>"
+            "</tr>"
+        )
+    health_table = (
+        "".join(health_rows)
+        or '<tr><td colspan=7 class=empty>no trace files</td></tr>'
+    )
+
     done_n = len(model["done"])
     done_names = ", ".join(_esc(t["name"]) for t in model["done"])
 
     return _TEMPLATE.format(
         board=board,
         outcome_table=outcome_table,
+        health_table=health_table,
         done_n=done_n,
         done_names=done_names or "none",
     )
@@ -266,8 +341,8 @@ _TEMPLATE = """<!doctype html>
     font-family:ui-monospace,"JetBrains Mono",monospace; }}
   .note {{ color:var(--t2); font-size:11px; margin-top:4px; }}
   .empty {{ color:var(--t3); font-size:11px; padding:4px; }}
-  section.outcomes {{ padding:6px 24px 28px; }}
-  section.outcomes h2 {{ font-size:12px; color:var(--t2); text-transform:uppercase;
+  section.outcomes, section.health {{ padding:6px 24px 28px; }}
+  section.outcomes h2, section.health h2 {{ font-size:12px; color:var(--t2); text-transform:uppercase;
     letter-spacing:.6px; }}
   table {{ width:100%; border-collapse:collapse; font-size:12px; }}
   th, td {{ text-align:left; padding:6px 10px; border-bottom:1px solid var(--line); }}
@@ -290,9 +365,27 @@ _TEMPLATE = """<!doctype html>
     <tbody>{outcome_table}</tbody>
   </table>
 </section>
+<section class="health">
+  <h2>Run health (from trace.jsonl)</h2>
+  <table>
+    <thead><tr><th>run</th><th>events</th><th>ok</th><th>failed</th><th>blocked</th><th>skipped</th><th>last failure</th></tr></thead>
+    <tbody>{health_table}</tbody>
+  </table>
+</section>
 <div class="done">Done ({done_n}): {done_names}</div>
 </body></html>
 """
+
+
+def _watch_loop(repo: Path, out: Path, interval: float) -> None:  # pragma: no cover
+    last_fp = 0.0
+    while True:
+        time.sleep(interval)
+        fp = watch_once(repo, out, last_fp)
+        if fp is not None:
+            last_fp = fp
+            ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            print(f"render-dashboard: rebuilt {out} at {ts}", file=sys.stderr)
 
 
 def main() -> int:
@@ -310,14 +403,27 @@ def main() -> int:
         default=Path("fleet-dashboard.html"),
         help="Output HTML path (default: fleet-dashboard.html)",
     )
+    p.add_argument(
+        "--watch",
+        action="store_true",
+        help="Poll dashboard inputs and rebuild in the foreground.",
+    )
+    p.add_argument(
+        "--interval",
+        type=float,
+        default=2.0,
+        help="Seconds between --watch polls (default: 2).",
+    )
     args = p.parse_args()
 
     if not (args.repo / "docs").is_dir():
         p.error(f"{args.repo}/docs not found")
 
-    model = build_model(args.repo)
-    out_html = render_html(model)
-    args.out.write_text(out_html, encoding="utf-8")
+    if args.watch:  # pragma: no cover - infinite foreground loop; watch_once is tested.
+        _watch_loop(args.repo, args.out, args.interval)
+        return 0
+
+    model = _write_dashboard(args.repo, args.out)
     total = sum(len(v) for v in model["zones"].values())
     print(
         f"wrote {args.out} "

@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib.emit_trace import iter_trace_file, validate_event  # noqa: E402
+from lib.emit_trace import health_rollup, iter_trace_file, validate_event  # noqa: E402
 
 
 def _cmd_validate(path: Path) -> int:
@@ -80,8 +80,9 @@ def _cmd_summary(run_dir: Path) -> int:
     primitives: Counter[str] = Counter()
     roles: Counter[str] = Counter()
     statuses: Counter[str] = Counter()
+    events = list(iter_trace_file(trace_path))
     total = 0
-    for event in iter_trace_file(trace_path):
+    for event in events:
         total += 1
         primitives[str(event.get("primitive", "<missing>"))] += 1
         roles[str(event.get("role", "<missing>"))] += 1
@@ -97,6 +98,21 @@ def _cmd_summary(run_dir: Path) -> int:
     print("  statuses:")
     for key, count in sorted(statuses.items()):
         print(f"    {key}: {count}")
+    health = health_rollup(events)
+    last_failure = health["last_failure"]
+    if last_failure is None:
+        last = "last failure none"
+    else:
+        last = (
+            "last failure "
+            f"{last_failure['primitive']}@{last_failure['role']} "
+            f"ts={last_failure['ts']}"
+        )
+    print(
+        "  health: "
+        f"{health['succeeded']} ok / {health['failed']} failed / "
+        f"{health['blocked']} blocked / {health['skipped']} skipped; {last}"
+    )
     return 0
 
 

@@ -37,6 +37,23 @@ E2E_VERIFIED_MISSIONS = frozenset(
 )
 
 
+def _validate_task_row_invariants(
+    task: dict[str, Any], prefix: str, index: int
+) -> list[str]:
+    errors: list[str] = []
+    task_id = task.get("id", f"#{index}")
+    label = f"{prefix}: task {task_id}"
+
+    if task.get("merged") is True and task.get("built") is not True:
+        errors.append(f"{label}: merged a task that never built")
+    if task.get("merged") is True and task.get("wt_clean") is not True:
+        errors.append(f"{label}: merged but worktree not clean")
+    if task.get("reviewed") is True and task.get("pr_open") is not True:
+        errors.append(f"{label}: reviewed before PR opened")
+
+    return errors
+
+
 def split_frontmatter(text: str) -> tuple[str | None, str]:
     text = text.replace("\r\n", "\n").replace("\r", "\n")
     text = text.lstrip("\ufeff \t\n\r")
@@ -209,6 +226,15 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
             errors.append(
                 f"{prefix}: cost_estimate must be a non-negative finite number, got {cval!r}"
             )
+
+    # Optional flat-ledger row invariants. The markdown ledger remains the
+    # source of narrative loop memory; this only rejects impossible booleans
+    # when a machine-readable task snapshot is present.
+    tasks = outcome.get("tasks")
+    if isinstance(tasks, list):
+        for index, task in enumerate(tasks):
+            if isinstance(task, dict):
+                errors.extend(_validate_task_row_invariants(task, prefix, index))
 
     return errors
 
