@@ -43,6 +43,7 @@ from lib.emit_trace import (  # noqa: E402
     SCHEMA_VERSION,
     STATUSES,
     TraceEmitter,
+    emit_full_primitive_trace,
     _ALLOWED_FIELDS,
     _EVIDENCE_HASH_RE,
     _REQUIRED_FIELDS,
@@ -112,6 +113,20 @@ def _manifest_archive(tmp_path: Path) -> tuple[Path, fleet_run.FileEntry]:
 
 
 # --- TraceEmitter -----------------------------------------------------------
+
+
+def test_emit_full_primitive_trace_parses_runtime_from_details_note(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    with TraceEmitter(run_dir, mission=MISSION, run_id=RUN_ID) as emitter:
+        ids = emit_full_primitive_trace(
+            emitter,
+            details_note="headless dry-run via grok",
+            include_t_final=False,
+        )
+    assert "goal_blocked" in ids
+    events = list(iter_trace_file(run_dir / "trace.jsonl"))
+    goal = next(e for e in events if e["primitive"] == "GOAL_BLOCKED")
+    assert "grok" in goal["details"]["reason"]
 
 
 def test_emit_creates_jsonl_and_returns_event_id(tmp_path: Path) -> None:
