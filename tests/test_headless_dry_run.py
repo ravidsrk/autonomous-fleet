@@ -12,14 +12,16 @@ VALIDATE = ROOT / "scripts" / "validate-headless.sh"
 
 def test_headless_dry_run_doc_sync_grok():
     r = subprocess.run(
-        [str(HEADLESS), "grok", "doc-sync", "--dry-run"],
+        [str(HEADLESS), "grok", "doc-sync", "--dry-run", "--repo", str(ROOT)],
         capture_output=True,
         text=True,
         check=False,
+        cwd=ROOT,
     )
     assert r.returncode == 0, r.stderr
     assert "grok not invoked" in r.stdout
     assert "would run:" in r.stdout
+    assert "primitives (11):" in r.stdout
 
 
 def test_headless_dry_run_rejects_unknown_runtime():
