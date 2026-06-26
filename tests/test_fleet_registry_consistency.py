@@ -215,3 +215,30 @@ def test_consistent_registry_fixture_passes(tmp_path: Path) -> None:
     missions = {"doc-sync": {"shipped": True, "skill_dir": "doc-sync"}}
 
     assert registry_lint.lint_registry(tmp_path, missions) == []
+
+
+def test_lint_campaign_missions_rejects_unshipped(tmp_path: Path) -> None:
+    campaigns = tmp_path / "scripts" / "campaigns"
+    campaigns.mkdir(parents=True)
+    (campaigns / "bad.yaml").write_text(
+        "campaign: bad\nnodes:\n  tidy: { mission: cleanup }\n",
+        encoding="utf-8",
+    )
+    missions = {
+        "doc-sync": {"shipped": True, "skill_dir": "doc-sync"},
+        "cleanup": {"shipped": False, "skill_dir": "cleanup"},
+    }
+    errors = registry_lint.lint_campaign_missions(tmp_path, missions)
+    assert len(errors) == 1
+    assert "unshipped mission 'cleanup'" in errors[0]
+
+
+def test_lint_campaign_missions_skips_archived(tmp_path: Path) -> None:
+    campaigns = tmp_path / "scripts" / "campaigns"
+    campaigns.mkdir(parents=True)
+    (campaigns / "archived.yaml").write_text(
+        "campaign: secure-ship\nstatus: archived-pending-exploratory-promotion\n",
+        encoding="utf-8",
+    )
+    missions = {"dependency-update": {"shipped": False, "skill_dir": "dependency-update"}}
+    assert registry_lint.lint_campaign_missions(tmp_path, missions) == []
