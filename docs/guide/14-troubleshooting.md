@@ -87,7 +87,7 @@ coverage>=7.0
 ```
 
 The wrapper scripts source `scripts/lib/venv-bootstrap.sh`, which creates `.venv/`, then
-**re-checks** `import yaml, pytest` and reinstalls from `requirements.txt` if either is missing.
+**re-checks** `import yaml, pytest, coverage` and reinstalls from `requirements.txt` if any are missing.
 A stale venv (the binary exists but `pyyaml` was never installed) self-heals through that path. You
 hit the traceback when you bypass it and call `python3 scripts/foo.py` yourself.
 
