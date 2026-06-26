@@ -12,7 +12,7 @@ All notable changes to `autonomous-fleet` are recorded here. The format follows
 ## [0.1.0] - 2026-06-26
 
 First tagged release: three shipped missions, four runtime adapters, four-layer verification
-substrate, and 933-test validation gate (50 test files, 100% `scripts/lib` coverage).
+substrate, and 936-test validation gate (50 test files, 100% `scripts/lib` coverage).
 
 ### 2026-06-26
 

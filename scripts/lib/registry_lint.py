@@ -168,9 +168,7 @@ def lint_campaign_missions(
             continue
         if _campaign_is_archived(spec):
             continue
-        nodes = spec.get("nodes")
-        if not isinstance(nodes, dict):
-            continue
+        nodes = spec.get("nodes") or {}
         campaign_id = spec.get("campaign", path.stem)
         for node_id, node in nodes.items():
             if not isinstance(node, dict):

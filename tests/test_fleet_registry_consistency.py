@@ -242,3 +242,37 @@ def test_lint_campaign_missions_skips_archived(tmp_path: Path) -> None:
     )
     missions = {"dependency-update": {"shipped": False, "skill_dir": "dependency-update"}}
     assert registry_lint.lint_campaign_missions(tmp_path, missions) == []
+
+
+def test_lint_campaign_missions_invalid_yaml(tmp_path: Path) -> None:
+    campaigns = tmp_path / "scripts" / "campaigns"
+    campaigns.mkdir(parents=True)
+    (campaigns / "broken.yaml").write_text("nodes: [\n", encoding="utf-8")
+    errors = registry_lint.lint_campaign_missions(tmp_path, {})
+    assert len(errors) == 1
+    assert "invalid YAML" in errors[0]
+
+
+def test_lint_campaign_missions_unknown_mission(tmp_path: Path) -> None:
+    campaigns = tmp_path / "scripts" / "campaigns"
+    campaigns.mkdir(parents=True)
+    (campaigns / "bad.yaml").write_text(
+        "campaign: bad\nnodes:\n  x: { mission: no-such-mission }\n",
+        encoding="utf-8",
+    )
+    errors = registry_lint.lint_campaign_missions(tmp_path, {"doc-sync": {"shipped": True}})
+    assert len(errors) == 1
+    assert "unknown mission" in errors[0]
+
+
+def test_lint_campaign_missions_skips_malformed_nodes(tmp_path: Path) -> None:
+    campaigns = tmp_path / "scripts" / "campaigns"
+    campaigns.mkdir(parents=True)
+    (campaigns / "null-doc.yaml").write_text("---\n", encoding="utf-8")
+    (campaigns / "scalar.yaml").write_text("campaign: x\nnodes: not-a-map\n", encoding="utf-8")
+    (campaigns / "list-nodes.yaml").write_text("campaign: z\nnodes: []\n", encoding="utf-8")
+    (campaigns / "empty-node.yaml").write_text(
+        "campaign: y\nnodes:\n  a: not-a-dict\n  b: { mission: '' }\n",
+        encoding="utf-8",
+    )
+    assert registry_lint.lint_campaign_missions(tmp_path, {}) == []
