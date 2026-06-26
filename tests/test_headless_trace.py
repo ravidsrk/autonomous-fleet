@@ -19,6 +19,7 @@ from lib import fleet_run  # noqa: E402
 from lib.headless_trace import (  # noqa: E402
     emit_headless_dryrun_archive,
     progress_excerpt_for_mission,
+    record_headless_run,
 )
 
 
@@ -275,6 +276,20 @@ def test_emit_headless_default_fleet_root(tmp_path: Path) -> None:
         assert arch == tmp_path / ".fleet" / "runs" / run_id
         assert len(primitives) == 11
         assert "-doc-sync-" in run_id
+    finally:
+        _cleanup_archive(arch)
+
+
+def test_headless_trace_record_headless_run_wrapper(tmp_path: Path) -> None:
+    arch, run_id, primitives = record_headless_run(
+        tmp_path,
+        mission="doc-sync",
+        runtime="grok",
+        fleet_root=REPO_ROOT,
+    )
+    try:
+        assert arch == tmp_path / ".fleet" / "runs" / run_id
+        assert len(primitives) == 11
     finally:
         _cleanup_archive(arch)
 
