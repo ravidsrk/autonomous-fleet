@@ -206,7 +206,7 @@ def ensure_archive_dir(
 
 
 def emit_worker_commit_lifeline(
-    emitter: TraceEmitter,
+    emitter: "TraceEmitter",
     *,
     task_id: str,
     worker_role: str,
@@ -226,6 +226,152 @@ def emit_worker_commit_lifeline(
         parent_event=spawn_event_id,
     )
     return spawn_event_id, commit_event_id
+
+
+def progress_excerpt_for_mission(source_root: Path, mission: str) -> str:
+    """Return a verbatim slice from docs/<mission>-progress.md when present."""
+    path = source_root / "docs" / f"{mission}-progress.md"
+    if path.is_file():
+        text = path.read_text(encoding="utf-8")
+        return text[:2500] if len(text) > 2500 else text
+    return (
+        f"# headless dry-run\n"
+        f"MISSION: {mission}\n"
+        f"PHASE: mechanical validation (no progress doc on disk)\n"
+    )
+
+
+def emit_dryrun_lifecycle_trace(
+    emitter: "TraceEmitter",
+    *,
+    task_id: str,
+    runtime: str = "grok",
+    include_t_final: bool = False,
+    manifest_name: str = "manifest.json",
+    file_count: int = 2,
+    goal_blocked_status: str = "skipped",
+    abort_status: str = "skipped",
+) -> dict[str, str]:
+    """Orchestrate all 11 engine trace transitions for one headless dry-run unit.
+
+    Owned by fleet_run so headless entry points exercise the lib orchestration
+    path, not only emit_trace helpers. T-FINAL is omitted when write_manifest
+    will emit it (trace-before-ledger doctrine).
+    """
+    note = f"headless dry-run via {runtime}"
+    ids: dict[str, str] = {}
+    ids["dispatch"] = emitter.emit("DISPATCH", "COORDINATOR", "started", task_id=task_id)
+    ids["spawn"] = emitter.emit(
+        "SPAWN_WORKER",
+        "COORDINATOR",
+        "started",
+        task_id=task_id,
+        parent_event=ids["dispatch"],
+    )
+    ids["wait"] = emitter.emit("WAIT", "COORDINATOR", "started", task_id=task_id)
+    ids["goal_blocked"] = emitter.emit(
+        "GOAL_BLOCKED",
+        "COORDINATOR",
+        goal_blocked_status,
+        task_id=task_id,
+        details={"reason": note},
+    )
+    ids["inspect"] = emitter.emit(
+        "INSPECT",
+        "REVIEWER",
+        "succeeded",
+        task_id=task_id,
+        parent_event=ids["spawn"],
+    )
+    ids["sync"] = emitter.emit("SYNC", "COORDINATOR", "succeeded", task_id=task_id)
+    ids["merge"] = emitter.emit("MERGE", "INTEGRATOR", "succeeded", task_id=task_id)
+    ids["freeze"] = emitter.emit("FREEZE", "COORDINATOR", "succeeded")
+    ids["commit"] = emitter.emit(
+        "COMMIT",
+        "FIXER",
+        "succeeded",
+        task_id=task_id,
+        parent_event=ids["spawn"],
+    )
+    ids["abort"] = emitter.emit(
+        "ABORT",
+        "COORDINATOR",
+        abort_status,
+        task_id=task_id,
+        details={"reason": f"compensation path not taken ({note})"},
+    )
+    if include_t_final:
+        ids["t_final"] = emitter.emit(
+            "T-FINAL",
+            "INTEGRATOR",
+            "succeeded",
+            details={"manifest": manifest_name, "files": file_count},
+        )
+    return ids
+
+
+def write_headless_dryrun_archive(
+    repo_root: Path,
+    *,
+    mission: str,
+    runtime: str = "grok",
+    progress_source_root: Path | None = None,
+) -> tuple[Path, str, list[str]]:
+    """Emit archive under repo_root/.fleet/runs/<run_id>/ with full lifecycle trace.
+
+    progress_source_root defaults to repo_root; pass fleet_root when --repo
+    targets an external checkout but progress excerpts live in this clone.
+    Returns (archive_dir, run_id, sorted primitive names).
+    """
+    from .emit_trace import TraceEmitter, iter_trace_file
+
+    source = progress_source_root if progress_source_root is not None else repo_root
+    run_id = allocate_run_id(mission)
+    arch = ensure_archive_dir(repo_root, run_id)
+
+    progress_path = arch / "headless-dryrun-progress.md"
+    progress_path.write_text(
+        progress_excerpt_for_mission(source, mission), encoding="utf-8"
+    )
+
+    with TraceEmitter(arch, mission=mission, run_id=run_id) as emitter:
+        emit_dryrun_lifecycle_trace(
+            emitter,
+            task_id=f"headless-{mission}-1",
+            runtime=runtime,
+            include_t_final=False,
+        )
+        trace_path = arch / "trace.jsonl"
+        entries = [
+            file_entry_for(
+                progress_path,
+                arch,
+                kind="progress",
+                producer=f"headless-dryrun-{runtime}",
+            ),
+            file_entry_for(
+                trace_path,
+                arch,
+                kind="other",
+                producer="coordinator",
+            ),
+        ]
+        write_manifest(
+            arch,
+            run_id=run_id,
+            mission=mission,
+            files=entries,
+            coordinator=f"headless-dryrun-{runtime}",
+            base_branch="main",
+            notes=(
+                "Mechanical headless dry-run archive "
+                "(progress excerpt + fleet_run lifecycle trace)."
+            ),
+            emitter=emitter,
+        )
+
+    primitives = sorted({e["primitive"] for e in iter_trace_file(trace_path)})
+    return arch, run_id, primitives
 
 
 # ───────────────────────────────────────────────────────────────────────
