@@ -25,3 +25,19 @@ def emit_headless_dryrun_archive(
         runtime=runtime,
         progress_source_root=fleet_root,
     )
+
+
+def record_headless_run(
+    repo_root: Path,
+    *,
+    mission: str,
+    runtime: str = "grok",
+    fleet_root: Path | None = None,
+) -> tuple[Path, str, list[str]]:
+    """Persist headless archive; callers control ephemeral cleanup (shell dry-run only)."""
+    return fleet_run.record_headless_run(
+        repo_root,
+        mission=mission,
+        runtime=runtime,
+        progress_source_root=fleet_root,
+    )

@@ -153,19 +153,33 @@ if [[ "$YOLO" -eq 1 ]]; then
   echo "warning: --yolo auto-approves all agent tool calls; untrusted --repo/--campaign + yolo = full RCE surface" >&2
 fi
 
-emit_and_cleanup_dryrun_trace() {
+emit_headless_trace_archive() {
   local emit_mission="$1"
+  local cleanup="${2:-0}"
   local out archive
   out="$("$VENV_PYTHON" "$ROOT/scripts/emit_headless_dryrun_trace.py" \
     --mission "$emit_mission" --repo "$REPO_ROOT" --runtime "$RUNTIME" --fleet-root "$ROOT" 2>&1)" || {
-    echo "warning: emit_headless_dryrun_trace failed (non-fatal in dry-run)" >&2
+    echo "warning: emit_headless_dryrun_trace failed (non-fatal)" >&2
     return 0
   }
   echo "$out"
   archive="$(echo "$out" | sed -n 's/^emit_headless_dryrun_trace: archive=//p' | head -1)"
   if [[ -n "$archive" && -d "$archive" ]]; then
-    rm -rf "$archive"
+    if [[ "$cleanup" -eq 1 ]]; then
+      rm -rf "$archive"
+    else
+      echo "archive emitted for --repo: $REPO_ROOT"
+      echo "  kept: $archive"
+    fi
   fi
+}
+
+emit_and_cleanup_dryrun_trace() {
+  emit_headless_trace_archive "$1" 1
+}
+
+emit_and_keep_headless_archive() {
+  emit_headless_trace_archive "$(dryrun_emit_mission)" 0
 }
 
 dryrun_emit_mission() {
@@ -190,6 +204,7 @@ case "$RUNTIME" in
       exit 0
     fi
     "${CMD[@]}"
+    emit_and_keep_headless_archive
     ;;
   claude)
     # Claude /goal in non-interactive prompt (v2.1.139+); no --max-turns or --cwd support
@@ -200,6 +215,7 @@ case "$RUNTIME" in
       exit 0
     fi
     (cd "$REPO_ROOT" && claude -p "$PROMPT")
+    emit_and_keep_headless_archive
     ;;
   codex)
     if [[ "$DRY_RUN" -eq 1 ]]; then
@@ -215,6 +231,7 @@ case "$RUNTIME" in
       echo "  /goal ${GOAL_COND:-<see prompt above>}" >&2
       exit 1
     fi
+    emit_and_keep_headless_archive
     ;;
   *)
     echo "error: unsupported runtime '$RUNTIME' (use grok, claude, or codex)" >&2
