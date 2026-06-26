@@ -7,7 +7,8 @@ setup steps, and success criteria.
 |------|----------|-------|-----------------|
 | [repo-health on gemoji](repo-health-gemoji.md) | `repo-health-campaign.yaml` | doc-sync → test-coverage | None |
 | [ship-with-proof on gemoji](ship-with-proof-gemoji.md) | `ship-with-proof-campaign.yaml` | audit → tests → docs | Optional gstack post-gates |
-| [Evidence (interactive; headless pending)](ship-with-proof-evidence.md) | — | ravidsrk/gemoji @ `1541ce9` | Interactive dogfood 2026-06-20; headless path not yet validated |
+| [Evidence (interactive)](ship-with-proof-evidence.md) | — | ravidsrk/gemoji @ `1541ce9` | Interactive dogfood 2026-06-20 |
+| [Headless run (Lane 2)](gemoji-headless-run.md) | `ship-with-proof-campaign.yaml` | ravidsrk/gemoji fork | `grok -p` + `--repo` validation |
 
 ## Shared target
 
@@ -22,9 +23,8 @@ setup steps, and success criteria.
 ./scripts/bench-adversarial.sh --help
 ```
 
-**PENDING operator runs:** live gemoji campaigns and adversarial bench A/B numbers need runtime auth
-(`grok login`, etc.). Interactive ship-with-proof evidence exists on `ravidsrk/gemoji` @ `1541ce9`;
-headless path not yet validated — see [ship-with-proof-evidence.md](ship-with-proof-evidence.md).
+**PENDING operator runs:** adversarial bench A/B numbers on fresh OSS repos. Gemoji ship-with-proof
+has interactive evidence (`1541ce9`) and headless validation (Lane 2, 2026-06-27).
 
 ## Before first run on any external repo
 
