@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "mission": "adversarial-review-and-fix",
+  "run_id": "20260626T200255Z-adversarial-review-and-fix-8358f1",
+  "findings_closed": [
+    "F-001",
+    "F-002"
+  ],
+  "fix_landed": true,
+  "blind_fix_chains": [
+    {
+      "finding_id": "F-001",
+      "blind_fix_path": "reviewer-blind-fix-F-001.md",
+      "integration_sha": "pending"
+    },
+    {
+      "finding_id": "F-002",
+      "blind_fix_path": "reviewer-blind-fix-F-002.md",
+      "integration_sha": "pending"
+    }
+  ],
+  "attested_by": "fixer-grok",
+  "attested_at": "2026-06-27T20:08:00Z"
+}
