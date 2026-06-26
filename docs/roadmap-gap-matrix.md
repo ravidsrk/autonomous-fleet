@@ -12,7 +12,7 @@ Legend: **Code** = shipped in repo · **Operator** = human/authenticated run · 
 | B-blind | Blind-fix mechanical guard (Layer 3) | Shipped (`verify_blind_fix.py`) | — | — (already closed) |
 | C-bench | Public bench numbers (5 OSS repos) | `bench-adversarial.sh` + headless `--repo` + archive keep | PENDING: authenticated A/B runs | headless + archive path complete |
 | D-demote | Demote 9 unproven missions | Shipped → `docs/exploratory/missions/` | — | — (already closed) |
-| E-trace | Full 11-primitive trace per run | 11-primitive emit + kept archives on real headless runs | Live coordinator partial | `run-mission-headless.sh` keeps archive under `--repo` |
+| E-trace | Full 11-primitive trace per run | `plan_dryrun_trace_from_progress` + `emit_dryrun_lifecycle_trace` + kept archives | Live coordinator partial | `run-mission-headless.sh` keeps archive under `--repo` |
 | F-seat | Seat analysis + write locks | Shipped (`analyze_seat.py`, `locks.py`) | — | — (already closed) |
 | G-market | Marketplace Console submit | Packet refreshed | PENDING: human submit | README repro + status |
 
