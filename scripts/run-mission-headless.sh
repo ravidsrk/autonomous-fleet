@@ -179,8 +179,9 @@ emit_headless_trace_archive() {
 }
 
 # Run a runtime command, tee stdout/stderr to a capture file, emit archive
-# unconditionally (even on non-zero exit), then propagate the runtime exit code.
-run_runtime_emit_and_exit() {
+# unconditionally (even on non-zero exit). Returns the runtime exit code so
+# callers (e.g. run-campaign.sh) can emit their own archive before exiting.
+run_runtime_emit() {
   local -a cmd=("$@")
   local runtime_capture runtime_rc=0
   runtime_capture="$(mktemp "${TMPDIR:-/tmp}/headless-runtime-XXXXXX")"
@@ -188,7 +189,7 @@ run_runtime_emit_and_exit() {
   cat "$runtime_capture"
   emit_headless_trace_archive "$(dryrun_emit_mission)" 0 "$runtime_capture"
   rm -f "$runtime_capture"
-  exit "$runtime_rc"
+  return "$runtime_rc"
 }
 
 emit_and_cleanup_dryrun_trace() {
@@ -216,7 +217,8 @@ case "$RUNTIME" in
       echo "headless dry-run complete (grok not invoked; runtime auth not required)"
       exit 0
     fi
-    run_runtime_emit_and_exit "${CMD[@]}"
+    run_runtime_emit "${CMD[@]}"
+    exit $?
     ;;
   claude)
     # Claude /goal in non-interactive prompt (v2.1.139+); no --max-turns or --cwd support
@@ -226,7 +228,8 @@ case "$RUNTIME" in
       echo "headless dry-run complete (claude not invoked; runtime auth not required)"
       exit 0
     fi
-    run_runtime_emit_and_exit bash -c "cd $(printf '%q' "$REPO_ROOT") && claude -p $(printf '%q' "$PROMPT")"
+    run_runtime_emit bash -c "cd $(printf '%q' "$REPO_ROOT") && claude -p $(printf '%q' "$PROMPT")"
+    exit $?
     ;;
   codex)
     if [[ "$DRY_RUN" -eq 1 ]]; then
@@ -236,7 +239,8 @@ case "$RUNTIME" in
       exit 0
     fi
     if command -v codex >/dev/null 2>&1; then
-      run_runtime_emit_and_exit codex exec --cd "$REPO_ROOT" "$PROMPT"
+      run_runtime_emit codex exec --cd "$REPO_ROOT" "$PROMPT"
+      exit $?
     else
       echo "error: codex CLI not found on PATH; run interactively in Codex app with:" >&2
       echo "  /goal ${GOAL_COND:-<see prompt above>}" >&2
