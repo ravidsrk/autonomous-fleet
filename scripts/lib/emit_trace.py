@@ -398,17 +398,22 @@ class TraceEmitter:
         self.close()
 
 
-def emit_representative_mission_trace(
+def emit_full_primitive_trace(
     emitter: TraceEmitter,
     *,
     task_id: str = "task-example-1",
     manifest_name: str = "manifest.json",
     file_count: int = 1,
+    include_t_final: bool = True,
+    goal_blocked_status: str = "skipped",
+    abort_status: str = "skipped",
+    details_note: str | None = None,
 ) -> dict[str, str]:
-    """Emit a representative multi-primitive trace for one task (no runtime auth).
+    """Emit all 11 trace primitives for one task (no runtime auth).
 
-    Exercises DISPATCH, SPAWN_WORKER, WAIT, INSPECT, SYNC, MERGE, FREEZE, COMMIT,
-    and T-FINAL — the transitions engine.md names for a single PR-per-task unit.
+    GOAL_BLOCKED and ABORT default to ``skipped`` on the dry-run happy path
+    (goal probe passed; compensation not invoked). Set ``include_t_final=False``
+    when ``write_manifest`` will emit T-FINAL per engine doctrine.
     Returns a map of logical step names to event ids.
     """
     ids: dict[str, str] = {}
@@ -417,6 +422,14 @@ def emit_representative_mission_trace(
         "SPAWN_WORKER", "COORDINATOR", "started", task_id=task_id, parent_event=ids["dispatch"]
     )
     ids["wait"] = emitter.emit("WAIT", "COORDINATOR", "started", task_id=task_id)
+    goal_details = {"reason": details_note or "goal condition probe (dry-run)"}
+    ids["goal_blocked"] = emitter.emit(
+        "GOAL_BLOCKED",
+        "COORDINATOR",
+        goal_blocked_status,
+        task_id=task_id,
+        details=goal_details,
+    )
     ids["inspect"] = emitter.emit(
         "INSPECT",
         "REVIEWER",
@@ -434,10 +447,36 @@ def emit_representative_mission_trace(
         task_id=task_id,
         parent_event=ids["spawn"],
     )
-    ids["t_final"] = emitter.emit(
-        "T-FINAL",
-        "INTEGRATOR",
-        "succeeded",
-        details={"manifest": manifest_name, "files": file_count},
+    abort_details = {"reason": details_note or "compensation path not taken (dry-run)"}
+    ids["abort"] = emitter.emit(
+        "ABORT",
+        "COORDINATOR",
+        abort_status,
+        task_id=task_id,
+        details=abort_details,
     )
+    if include_t_final:
+        ids["t_final"] = emitter.emit(
+            "T-FINAL",
+            "INTEGRATOR",
+            "succeeded",
+            details={"manifest": manifest_name, "files": file_count},
+        )
     return ids
+
+
+def emit_representative_mission_trace(
+    emitter: TraceEmitter,
+    *,
+    task_id: str = "task-example-1",
+    manifest_name: str = "manifest.json",
+    file_count: int = 1,
+) -> dict[str, str]:
+    """Emit all 11 primitives including T-FINAL (standalone CLI / fixture use)."""
+    return emit_full_primitive_trace(
+        emitter,
+        task_id=task_id,
+        manifest_name=manifest_name,
+        file_count=file_count,
+        include_t_final=True,
+    )
