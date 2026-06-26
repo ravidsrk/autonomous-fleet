@@ -316,6 +316,7 @@ def test_roadmap_gap_matrix_trace_row_names_emit_helper() -> None:
     text = (REPO_ROOT / "docs" / "roadmap-gap-matrix.md").read_text()
     assert "write_headless_dryrun_archive" in text or "headless_trace" in text
     assert "emit_dryrun_lifecycle_trace" in text or "fleet_run" in text
+    assert "plan_dryrun_trace_from_progress" in text
 
 
 # ── shipped mission registry scenarios ──────────────────────────────────

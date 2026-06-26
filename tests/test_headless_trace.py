@@ -62,6 +62,36 @@ def test_fleet_run_emit_dryrun_lifecycle_trace_eleven_primitives(tmp_path: Path)
     assert {e["primitive"] for e in events} == set(PRIMITIVES)
 
 
+def test_emit_dryrun_lifecycle_derives_statuses_from_doc_sync_progress(
+    tmp_path: Path,
+) -> None:
+    """Progress excerpt drives task_id and ledger-derived primitive statuses."""
+    progress = progress_excerpt_for_mission(REPO_ROOT, "doc-sync")
+    run_id = "20260626T120000Z-doc-sync-000099"
+    arch = tmp_path / ".fleet" / "runs" / run_id
+    arch.mkdir(parents=True)
+    with TraceEmitter(arch, mission="doc-sync", run_id=run_id) as emitter:
+        fleet_run.emit_dryrun_lifecycle_trace(
+            emitter,
+            mission="doc-sync",
+            progress_excerpt=progress,
+            runtime="grok",
+            include_t_final=True,
+            file_count=1,
+        )
+    events = list(iter_trace_file(arch / "trace.jsonl"))
+    task_events = [e for e in events if e.get("task_id")]
+    assert task_events
+    assert all(e["task_id"] == "doc-sync-readme" for e in task_events)
+    inspect = next(e for e in events if e["primitive"] == "INSPECT")
+    assert inspect["status"] == "succeeded"
+    merge = next(e for e in events if e["primitive"] == "MERGE")
+    assert merge["status"] == "started"
+    goal = next(e for e in events if e["primitive"] == "GOAL_BLOCKED")
+    assert goal["status"] == "skipped"
+    assert "MISSION:doc-sync" in goal["details"]["reason"]
+
+
 def test_emit_headless_dryrun_archive_all_eleven_primitives(tmp_path: Path) -> None:
     arch, run_id, primitives = emit_headless_dryrun_archive(
         tmp_path,
