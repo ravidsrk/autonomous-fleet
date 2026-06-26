@@ -32,4 +32,44 @@ for mission in "${SHIPPED_MISSIONS[@]}"; do
   done
 done
 
+echo "== validate-headless: trace emission (lib + shell entry points) =="
+ARCHIVE=""
+cleanup_archive() {
+  if [[ -n "${ARCHIVE:-}" && -d "$ARCHIVE" ]]; then
+    rm -rf "$ARCHIVE"
+  fi
+}
+trap cleanup_archive EXIT
+
+# 1) Direct lib CLI (validates before run-mission-headless cleanup)
+EMIT_OUT="$("$ROOT/.venv/bin/python" "$ROOT/scripts/emit_headless_dryrun_trace.py" \
+  --mission doc-sync --repo "$ROOT" --runtime grok --fleet-root "$ROOT" 2>&1)"
+echo "$EMIT_OUT" | grep -q "primitives (11):" || {
+  echo "validate-headless: expected 11 primitives from emit_headless_dryrun_trace" >&2
+  echo "$EMIT_OUT" >&2
+  exit 1
+}
+ARCHIVE="$(echo "$EMIT_OUT" | sed -n 's/^emit_headless_dryrun_trace: archive=//p' | head -1)"
+if [[ -z "$ARCHIVE" || ! -d "$ARCHIVE" ]]; then
+  echo "validate-headless: could not resolve archive path from emit output" >&2
+  echo "$EMIT_OUT" >&2
+  exit 1
+fi
+if ! "$ROOT/.venv/bin/python" "$ROOT/scripts/emit_trace.py" validate "$ARCHIVE/trace.jsonl"; then
+  exit 1
+fi
+if ! "$ROOT/.venv/bin/python" "$ROOT/scripts/validate_run_archive.py" "$ARCHIVE" --quiet; then
+  exit 1
+fi
+ARCHIVE=""
+trap - EXIT
+
+# 2) Shell entry point invokes emitter then cleans up (no archive left behind)
+HEADLESS_OUT="$("$ROOT/scripts/run-mission-headless.sh" grok doc-sync --dry-run --repo "$ROOT" 2>&1)"
+echo "$HEADLESS_OUT" | grep -q "primitives (11):" || {
+  echo "validate-headless: run-mission-headless --dry-run must emit 11 primitives" >&2
+  echo "$HEADLESS_OUT" >&2
+  exit 1
+}
+
 echo "validate-headless: all mechanical checks passed"

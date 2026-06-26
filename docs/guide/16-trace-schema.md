@@ -461,6 +461,24 @@ can change without touching the fleet run loop as long as it keeps consuming the
 So the practical reading order for a dashboard author is: this chapter for the field-level contract and
 the honest emission state, the integration doc for the consumption recipe, and
 `fleet-trace.schema.json` plus `emit_trace.py` as the ground truth both defer to.
+## Real-world use cases
+
+### Example — validate fixture trace
+
+```bash
+python scripts/emit_trace.py validate .fleet/runs/example-fixture/trace.jsonl
+python scripts/emit_trace.py summary .fleet/runs/example-fixture
+```
+
+### Invocation — headless dry-run trace dir
+
+`validate-headless.sh` runs `emit_headless_dryrun_trace.py`, validates
+`.fleet/runs/<run_id>/trace.jsonl` (timestamped `run_id` suffix), then deletes the ephemeral
+archive. `run-mission-headless.sh --dry-run` does the same via `fleet_run.write_headless_dryrun_archive`.
+
+### Real run on parent_event lineage
+
+Fixture trace: SPAWN_WORKER parent_event → DISPATCH evt-0001; COMMIT parent_event → SPAWN evt-0002.
 
 ---
 

@@ -512,6 +512,34 @@ For the surrounding reference material this chapter touched:
 - [fleet-outcome schema](17-fleet-outcome-schema.md), every outcome field and what downstream
   campaigns check.
 - [Troubleshooting](14-troubleshooting.md), when a run does not reach `done`.
+## Real-world use cases
+
+### Example — doc-sync TASK row
+
+From `docs/doc-sync-progress.md`:
+
+```
+TASK doc-sync-readme | FILE=README.md | PLACE=container-use(independent) | WORKER=codex
+```
+
+One hot file → one serialized task; parallelism width = 1 by design.
+
+### Invocation — validate fleet outcome after close
+
+```bash
+./scripts/validate-fleet-outcome.sh docs/doc-sync-readiness.md
+```
+
+Ship-with-proof gemoji dogfood ran the same validator over three readiness files (audit, tests, docs).
+
+### Real run on gemoji repo-health
+
+`docs/external-dogfood/repo-health-gemoji.md` chains `doc-sync` → `test-coverage` on github/gemoji —
+two missions, one external checkout, dry-run today via:
+
+```bash
+./scripts/run-campaign.sh grok --campaign docs/external-dogfood/repo-health-campaign.yaml --dry-run
+```
 
 ---
 

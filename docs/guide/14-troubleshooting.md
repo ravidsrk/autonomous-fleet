@@ -905,6 +905,30 @@ This page covers operator-fixable failures. File a GitHub issue when:
 Include the failing command, the exact stderr, and `git rev-parse HEAD` of the fleet clone. Do not
 file an issue for a missing dependency, a wrong argument order, or an unauthenticated CLI: those are
 covered here.
+## Real-world use cases
+
+### Example — headless auth failure
+
+Ship-with-proof evidence: `grok -p` failed `Auth(AuthorizationRequired)`; run completed interactively.
+Reproduce dry wiring without auth:
+
+```bash
+./scripts/validate-headless.sh
+```
+
+### Invocation — coverage subprocess trap
+
+`docs/test-coverage-progress.md` SIGNAL RECONCILIATION: subprocess CLI tests on
+`scripts/eval-campaign-edge.py` did not move coverage numbers — rewrite to in-process `main()`
+invocation.
+
+### Real run on fixture validators
+
+When archive validation fails, start from committed good shape:
+
+```bash
+python scripts/validate_run_archive.py .fleet/runs/example-fixture
+```
 
 ---
 

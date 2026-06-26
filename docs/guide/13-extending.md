@@ -190,6 +190,22 @@ metadata:
   version: "1.0.0"
   tier: "N"
   fleet-component: "mission"
+## Real-world use cases
+
+### Example — eval-campaign-edge coverage gap
+
+`docs/test-coverage-progress.md`: dogfood added `tests/test_eval_campaign_cli.py` after
+`scripts/coupling-graph.py` placement — extension pattern: new test file, no hub edit.
+
+### Invocation — emit_representative_trace extension
+
+Roadmap added `scripts/emit_representative_trace.py` + `emit_representative_mission_trace()` without
+changing the schema — new entry point, same contract.
+
+### Worked example — --repo flag for external dogfood
+
+`ship-with-proof-evidence.md` documents `--repo PATH` on `run-campaign.sh` for targeting `/tmp/gemoji`.
+
 ---
 
 # Mission: your-mission

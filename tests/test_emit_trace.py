@@ -26,6 +26,7 @@ from __future__ import annotations
 import importlib.util
 import io
 import json
+import subprocess
 import sys
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
@@ -42,6 +43,7 @@ from lib.emit_trace import (  # noqa: E402
     SCHEMA_VERSION,
     STATUSES,
     TraceEmitter,
+    emit_full_primitive_trace,
     _ALLOWED_FIELDS,
     _EVIDENCE_HASH_RE,
     _REQUIRED_FIELDS,
@@ -111,6 +113,20 @@ def _manifest_archive(tmp_path: Path) -> tuple[Path, fleet_run.FileEntry]:
 
 
 # --- TraceEmitter -----------------------------------------------------------
+
+
+def test_emit_full_primitive_trace_parses_runtime_from_details_note(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    with TraceEmitter(run_dir, mission=MISSION, run_id=RUN_ID) as emitter:
+        ids = emit_full_primitive_trace(
+            emitter,
+            details_note="headless dry-run via grok",
+            include_t_final=False,
+        )
+    assert "goal_blocked" in ids
+    events = list(iter_trace_file(run_dir / "trace.jsonl"))
+    goal = next(e for e in events if e["primitive"] == "GOAL_BLOCKED")
+    assert "grok" in goal["details"]["reason"]
 
 
 def test_emit_creates_jsonl_and_returns_event_id(tmp_path: Path) -> None:
@@ -824,3 +840,180 @@ def test_scan_flags_more_host_paths(hostpath):
     from lib.emit_trace import _scan_details
 
     assert _scan_details({"k": hostpath})
+
+
+def _load_representative_cli():
+    spec = importlib.util.spec_from_file_location(
+        "emit_representative_trace",
+        REPO_ROOT / "scripts" / "emit_representative_trace.py",
+    )
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_emit_representative_cli_invalid_run_id(capsys: pytest.CaptureFixture[str]) -> None:
+    cli = _load_representative_cli()
+    old = sys.argv
+    sys.argv = ["emit_representative_trace.py", "--run-id", "bad"]
+    try:
+        assert cli.main() == 2
+    finally:
+        sys.argv = old
+    assert "invalid run_id" in capsys.readouterr().err
+
+
+def test_emit_representative_cli_requires_out_or_fixture(capsys: pytest.CaptureFixture[str]) -> None:
+    cli = _load_representative_cli()
+    old = sys.argv
+    sys.argv = ["emit_representative_trace.py"]
+    try:
+        assert cli.main() == 2
+    finally:
+        sys.argv = old
+    assert "specify --out or --fixture" in capsys.readouterr().err
+
+
+def test_emit_representative_cli_fixture_mode(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cli = _load_representative_cli()
+    script = tmp_path / "scripts" / "emit_representative_trace.py"
+    script.parent.mkdir(parents=True)
+    script.touch()
+    fixture_dir = tmp_path / ".fleet" / "runs" / "example-fixture"
+    fixture_dir.mkdir(parents=True)
+    manifest = json.loads(
+        (REPO_ROOT / ".fleet" / "runs" / "example-fixture" / "manifest.json").read_text()
+    )
+    (fixture_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(cli, "__file__", str(script))
+    old = sys.argv
+    sys.argv = [
+        "emit_representative_trace.py",
+        "--fixture",
+        "--mission",
+        manifest["mission"],
+        "--run-id",
+        manifest["run_id"],
+    ]
+    try:
+        assert cli.main() == 0
+    finally:
+        sys.argv = old
+    out = capsys.readouterr().out
+    assert "emit_representative_trace: wrote" in out
+    assert (fixture_dir / "trace.jsonl").is_file()
+
+
+def test_emit_representative_cli_fixture_rejects_missing_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cli = _load_representative_cli()
+    script = tmp_path / "scripts" / "emit_representative_trace.py"
+    script.parent.mkdir(parents=True)
+    script.touch()
+    (tmp_path / ".fleet" / "runs" / "example-fixture").mkdir(parents=True)
+    monkeypatch.setattr(cli, "__file__", str(script))
+    old = sys.argv
+    sys.argv = ["emit_representative_trace.py", "--fixture"]
+    try:
+        assert cli.main() == 2
+    finally:
+        sys.argv = old
+    assert "manifest missing" in capsys.readouterr().err
+
+
+def test_emit_representative_cli_fixture_rejects_run_id_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cli = _load_representative_cli()
+    script = tmp_path / "scripts" / "emit_representative_trace.py"
+    script.parent.mkdir(parents=True)
+    script.touch()
+    fixture_dir = tmp_path / ".fleet" / "runs" / "example-fixture"
+    fixture_dir.mkdir(parents=True)
+    manifest = json.loads(
+        (REPO_ROOT / ".fleet" / "runs" / "example-fixture" / "manifest.json").read_text()
+    )
+    (fixture_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(cli, "__file__", str(script))
+    old = sys.argv
+    sys.argv = [
+        "emit_representative_trace.py",
+        "--fixture",
+        "--mission",
+        manifest["mission"],
+        "--run-id",
+        "20260626T120000Z-doc-sync-000001",
+    ]
+    try:
+        assert cli.main() == 2
+    finally:
+        sys.argv = old
+    assert "requires --run-id" in capsys.readouterr().err
+
+
+def test_emit_representative_cli_fixture_rejects_mission_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cli = _load_representative_cli()
+    script = tmp_path / "scripts" / "emit_representative_trace.py"
+    script.parent.mkdir(parents=True)
+    script.touch()
+    fixture_dir = tmp_path / ".fleet" / "runs" / "example-fixture"
+    fixture_dir.mkdir(parents=True)
+    manifest = json.loads(
+        (REPO_ROOT / ".fleet" / "runs" / "example-fixture" / "manifest.json").read_text()
+    )
+    (fixture_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(cli, "__file__", str(script))
+    old = sys.argv
+    sys.argv = ["emit_representative_trace.py", "--fixture", "--mission", "doc-sync"]
+    try:
+        assert cli.main() == 2
+    finally:
+        sys.argv = old
+    assert "requires --mission" in capsys.readouterr().err
+
+
+def test_emit_representative_cli_out_mode_overwrites_existing_trace(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cli = _load_representative_cli()
+    stale = tmp_path / "trace.jsonl"
+    stale.write_text('{"stale": true}\n', encoding="utf-8")
+    old = sys.argv
+    sys.argv = [
+        "emit_representative_trace.py",
+        "--out",
+        str(tmp_path),
+        "--run-id",
+        "20260626T120000Z-doc-sync-000003",
+    ]
+    try:
+        assert cli.main() == 0
+    finally:
+        sys.argv = old
+    events = list(iter_trace_file(stale))
+    assert len(events) == 11
+    assert "emit_representative_trace: wrote" in capsys.readouterr().out
+
+
+def test_emit_representative_cli_main_entrypoint(tmp_path: Path) -> None:
+    r = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "scripts" / "emit_representative_trace.py"),
+            "--out",
+            str(tmp_path),
+            "--run-id",
+            "20260626T120000Z-doc-sync-000004",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=REPO_ROOT,
+    )
+    assert r.returncode == 0, r.stderr

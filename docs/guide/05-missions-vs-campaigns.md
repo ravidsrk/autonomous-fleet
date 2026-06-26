@@ -413,6 +413,25 @@ edge against a specific metric.
 > anything under `metrics`, `deferred_missions`, and a handful of explicitly branchable discipline
 > assertions (`unverified_assumptions`, `cost_estimate`, `root_cause_audited`, `archive_enabled`).
 > The schema chapter marks which is which.
+## Real-world use cases
+
+### Example — repo-health preset (2 nodes)
+
+External pack `repo-health-campaign.yaml`: doc-sync then test-coverage. Shipped preset dry-run:
+
+```bash
+./scripts/run-campaign.sh grok --preset repo-health --dry-run
+```
+
+### Invocation — ship-with-proof (3 nodes)
+
+`ship-with-proof-campaign.yaml`: audit → test-coverage → doc-sync. Evidence pack closed REL-001..003
+on gemoji with 26 runs, 57 assertions.
+
+### Real run on quality-gate preset
+
+`validate-headless.sh` exercises `quality-gate` alongside `repo-health` and `ship-with-proof` —
+all three presets must dry-run exit 0 before merge.
 
 ---
 

@@ -396,3 +396,49 @@ class TraceEmitter:
 
     def __exit__(self, exc_type, exc, tb) -> None:
         self.close()
+
+
+def emit_full_primitive_trace(
+    emitter: TraceEmitter,
+    *,
+    task_id: str = "task-example-1",
+    manifest_name: str = "manifest.json",
+    file_count: int = 1,
+    include_t_final: bool = True,
+    goal_blocked_status: str = "skipped",
+    abort_status: str = "skipped",
+    details_note: str | None = None,
+) -> dict[str, str]:
+    """Emit all 11 trace primitives — delegates to fleet_run lifecycle orchestration."""
+    from . import fleet_run
+
+    runtime = details_note or "standalone"
+    if details_note and "via " in details_note:
+        runtime = details_note.split("via ", 1)[-1]
+    return fleet_run.emit_dryrun_lifecycle_trace(
+        emitter,
+        task_id=task_id,
+        runtime=runtime,
+        include_t_final=include_t_final,
+        manifest_name=manifest_name,
+        file_count=file_count,
+        goal_blocked_status=goal_blocked_status,
+        abort_status=abort_status,
+    )
+
+
+def emit_representative_mission_trace(
+    emitter: TraceEmitter,
+    *,
+    task_id: str = "task-example-1",
+    manifest_name: str = "manifest.json",
+    file_count: int = 1,
+) -> dict[str, str]:
+    """Emit all 11 primitives including T-FINAL (standalone CLI / fixture use)."""
+    return emit_full_primitive_trace(
+        emitter,
+        task_id=task_id,
+        manifest_name=manifest_name,
+        file_count=file_count,
+        include_t_final=True,
+    )

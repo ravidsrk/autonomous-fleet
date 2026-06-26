@@ -153,6 +153,25 @@ if [[ "$YOLO" -eq 1 ]]; then
   echo "warning: --yolo auto-approves all agent tool calls; untrusted --repo/--campaign + yolo = full RCE surface" >&2
 fi
 
+emit_and_cleanup_dryrun_trace() {
+  local emit_mission="$1"
+  local out run_id archive
+  out="$("$VENV_PYTHON" "$ROOT/scripts/emit_headless_dryrun_trace.py" \
+    --mission "$emit_mission" --repo "$REPO_ROOT" --runtime "$RUNTIME" --fleet-root "$ROOT" 2>&1)" || {
+    echo "warning: emit_headless_dryrun_trace failed (non-fatal in dry-run)" >&2
+    return 0
+  }
+  echo "$out"
+  archive="$(echo "$out" | sed -n 's/^emit_headless_dryrun_trace: archive=//p' | head -1)"
+  if [[ -n "$archive" && -d "$archive" ]]; then
+    rm -rf "$archive"
+  fi
+}
+
+dryrun_emit_mission() {
+  "$VENV_PYTHON" -c 'import sys; sys.path.insert(0, sys.argv[1]+"/scripts"); from lib.mission_registry import headless_emit_mission; print(headless_emit_mission(sys.argv[2]))' "$ROOT" "$MISSION"
+}
+
 echo "== run-mission-headless =="
 echo "runtime:  $RUNTIME"
 echo "mission:  $MISSION"
@@ -166,6 +185,7 @@ case "$RUNTIME" in
     [[ "$YOLO" -eq 1 ]] && CMD+=(--yolo)
     if [[ "$DRY_RUN" -eq 1 ]]; then
       printf 'would run: '; printf '%q ' "${CMD[@]}"; echo
+      emit_and_cleanup_dryrun_trace "$(dryrun_emit_mission)"
       echo "headless dry-run complete (grok not invoked; runtime auth not required)"
       exit 0
     fi
@@ -175,6 +195,7 @@ case "$RUNTIME" in
     # Claude /goal in non-interactive prompt (v2.1.139+); no --max-turns or --cwd support
     if [[ "$DRY_RUN" -eq 1 ]]; then
       echo "would run: (cd $(printf '%q' "$REPO_ROOT") && claude -p <prompt>)"
+      emit_and_cleanup_dryrun_trace "$(dryrun_emit_mission)"
       echo "headless dry-run complete (claude not invoked; runtime auth not required)"
       exit 0
     fi
@@ -183,6 +204,7 @@ case "$RUNTIME" in
   codex)
     if [[ "$DRY_RUN" -eq 1 ]]; then
       echo "would run: codex exec --cd $(printf '%q' "$REPO_ROOT") <prompt>"
+      emit_and_cleanup_dryrun_trace "$(dryrun_emit_mission)"
       echo "headless dry-run complete (codex not invoked; runtime auth not required)"
       exit 0
     fi
