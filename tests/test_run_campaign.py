@@ -188,8 +188,14 @@ def test_run_campaign_dry_run_self_heals_broken_real_venv(tmp_path: Path):
         "8.3.4",
         {"pytest.py": "__version__ = '8.3.4'\n"},
     )
+    coverage_wheel = _write_minimal_wheel(
+        wheelhouse,
+        "coverage",
+        "7.0.0",
+        {"coverage/__init__.py": "__version__ = '7.0.0'\n"},
+    )
     (repo / "requirements.txt").write_text(
-        f"--no-index\n{pyyaml_wheel}\n{pytest_wheel}\n",
+        f"--no-index\n{pyyaml_wheel}\n{pytest_wheel}\n{coverage_wheel}\n",
         encoding="utf-8",
     )
     (repo / "scripts" / "campaigns" / "t.yaml").write_text(

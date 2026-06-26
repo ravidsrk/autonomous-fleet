@@ -9,6 +9,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-amber.svg?color=F59E0B" alt="MIT License"></a>
   <a href="https://agentskills.io/"><img src="https://img.shields.io/badge/spec-agentskills.io-amber.svg?color=F59E0B" alt="agentskills.io spec"></a>
   <a href="https://github.com/ravidsrk/autonomous-fleet/stargazers"><img src="https://img.shields.io/github/stars/ravidsrk/autonomous-fleet.svg?style=flat" alt="Stars"></a>
+  <a href="https://github.com/ravidsrk/autonomous-fleet/releases"><img src="https://img.shields.io/badge/version-0.1.0-amber.svg?color=F59E0B" alt="Version 0.1.0"></a>
   <a href="https://github.com/ravidsrk/autonomous-fleet/commits/main"><img src="https://img.shields.io/github/last-commit/ravidsrk/autonomous-fleet.svg" alt="Last commit"></a>
 </p>
 
@@ -432,7 +433,7 @@ autonomous-fleet/
 │   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate, secure-ship, handoff-to-product
 │   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, emit_trace, analyze_seat, analyze_cost, locks, substrate_disable, stop_verify, mission_registry, venv-bootstrap
 │   └── install-skills.sh
-├── tests/                               # 49 test files, 928 tests; validators + engine doctrine + 4-layer substrate
+├── tests/                               # 50 test files, 933 tests; validators + engine doctrine + 4-layer substrate
 ├── .agents/skills/                      # installed skill copies (gitignored)
 └── skills-lock.json                     # lockfile for npx skills
 ```
