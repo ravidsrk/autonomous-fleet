@@ -571,6 +571,22 @@ exit 0 pass · exit 1 one or more failed
 
 Related reference chapters: [Trace schema (v1)](16-trace-schema.md) for `trace.jsonl`, and
 [fleet-outcome schema](17-fleet-outcome-schema.md) for `fleet-outcome.yaml`.
+## Real-world use cases
+
+### Example — example-fixture manifest
+
+Nine files, kinds spanning `blind_fix`, `findings`, `verify_summary`, `readiness` — run_id
+`20260623T000000Z-adversarial-review-and-fix-000001`.
+
+### Invocation — write_manifest + T-FINAL
+
+`fleet_run.write_manifest` emits T-FINAL into `trace.jsonl`; representative helper fills the other
+primitives for mechanical validation.
+
+### Worked example — sha256 + mtime on every file
+
+Each manifest entry in example-fixture includes `sha256`, `mtime_utc`, `bytes` — replay attack
+surface is checksum-bound.
 
 ---
 

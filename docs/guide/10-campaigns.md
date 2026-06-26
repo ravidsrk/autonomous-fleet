@@ -25,6 +25,23 @@ the [Mission catalog](09-mission-catalog.md); a campaign is only as good as the 
 [Headless mode and its caveat](#headless-mode-and-its-caveat) ·
 [Reading the composition-e2e audit](#reading-the-composition-e2e-audit) ·
 [The archived presets](#the-archived-presets)
+## Real-world use cases
+
+### Example — external YAML campaigns
+
+```bash
+./scripts/run-campaign.sh grok --campaign docs/external-dogfood/repo-health-campaign.yaml --dry-run
+./scripts/run-campaign.sh grok --campaign docs/external-dogfood/ship-with-proof-campaign.yaml --dry-run
+```
+
+### Invocation — preset repo-health
+
+Ship-with-proof and repo-health both appear in `docs/external-dogfood/README.md` quick dry-run block.
+
+### Worked example — edge eval after audit
+
+Ship-with-proof evidence: `audit → tests` edge confirmed via `eval-campaign-edge.sh` before tests
+node ran on gemoji.
 
 ---
 

@@ -488,6 +488,26 @@ One last sanity check on the gitignore. After installing, your `git status` shou
 `skills-lock.json` (and the config files the wizard wrote) as the only fleet-related changes. If
 you see `.agents/skills/` showing up as untracked, your `.gitignore` is missing the `.agents/`
 entry; add it before committing so you do not accidentally check in a few hundred skill files.
+## Real-world use cases
+
+### Example — ship-with-proof external repo
+
+`docs/external-dogfood/ship-with-proof-evidence.md` installed skills on a fork of gemoji
+(`ravidsrk/gemoji` @ `1541ce9`) before running the `ship-with-proof` campaign.
+
+### Invocation — per-runtime adapter swap
+
+Doc-sync dogfood used Claude Code coordinator + Codex worker (`docs/doc-sync-progress.md` TASK row:
+`WORKER=codex(cross-vendor)`). Swap only the adapter skill; engine + mission stay identical.
+
+### Worked example — bootstrap contributor path
+
+```bash
+./scripts/bootstrap.sh   # venv + validate-all gate
+./scripts/validate-headless.sh
+```
+
+Both exit 0 on a clean checkout — installation is validated mechanically before any agent auth.
 
 ---
 

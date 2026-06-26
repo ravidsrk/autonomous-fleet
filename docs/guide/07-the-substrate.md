@@ -813,6 +813,22 @@ What you should take away: the verification is real and the gates bite, pinned b
 eleven target the substrate directly. The trace stream that visualizes it is still being wired
 transition by transition. We document both, because documentation that hides a limitation is worse than
 no documentation.
+## Real-world use cases
+
+### Example — Layer 1 findings on fixture
+
+`p0-review-findings.json` in example-fixture: two findings, F-001 verified with blind-fix chain
+to `reviewer-blind-fix-F-001.md`.
+
+### Invocation — substrate-off bench comparator
+
+`docs/external-dogfood/adversarial-bench-2026-06.md` documents running twice per target with
+`FLEET_DISABLE_STOP_VERIFY=1` (off) vs unset (on). Results: PENDING operator runs.
+
+### Real run on stop-verify log
+
+Fixture includes `stop-verify-decisions.log` (producer: `stop-verify-hook`) — Layer 2 evidence from
+the adversarial-review-and-fix archive shape.
 
 ---
 
