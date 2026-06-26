@@ -396,3 +396,48 @@ class TraceEmitter:
 
     def __exit__(self, exc_type, exc, tb) -> None:
         self.close()
+
+
+def emit_representative_mission_trace(
+    emitter: TraceEmitter,
+    *,
+    task_id: str = "task-example-1",
+    manifest_name: str = "manifest.json",
+    file_count: int = 1,
+) -> dict[str, str]:
+    """Emit a representative multi-primitive trace for one task (no runtime auth).
+
+    Exercises DISPATCH, SPAWN_WORKER, WAIT, INSPECT, SYNC, MERGE, FREEZE, COMMIT,
+    and T-FINAL — the transitions engine.md names for a single PR-per-task unit.
+    Returns a map of logical step names to event ids.
+    """
+    ids: dict[str, str] = {}
+    ids["dispatch"] = emitter.emit("DISPATCH", "COORDINATOR", "started", task_id=task_id)
+    ids["spawn"] = emitter.emit(
+        "SPAWN_WORKER", "COORDINATOR", "started", task_id=task_id, parent_event=ids["dispatch"]
+    )
+    ids["wait"] = emitter.emit("WAIT", "COORDINATOR", "started", task_id=task_id)
+    ids["inspect"] = emitter.emit(
+        "INSPECT",
+        "REVIEWER",
+        "succeeded",
+        task_id=task_id,
+        parent_event=ids["spawn"],
+    )
+    ids["sync"] = emitter.emit("SYNC", "COORDINATOR", "succeeded", task_id=task_id)
+    ids["merge"] = emitter.emit("MERGE", "INTEGRATOR", "succeeded", task_id=task_id)
+    ids["freeze"] = emitter.emit("FREEZE", "COORDINATOR", "succeeded")
+    ids["commit"] = emitter.emit(
+        "COMMIT",
+        "FIXER",
+        "succeeded",
+        task_id=task_id,
+        parent_event=ids["spawn"],
+    )
+    ids["t_final"] = emitter.emit(
+        "T-FINAL",
+        "INTEGRATOR",
+        "succeeded",
+        details={"manifest": manifest_name, "files": file_count},
+    )
+    return ids
