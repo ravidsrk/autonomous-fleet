@@ -241,11 +241,70 @@ def progress_excerpt_for_mission(source_root: Path, mission: str) -> str:
     )
 
 
+@dataclass(frozen=True)
+class ProgressTracePlan:
+    """Trace transition hints parsed from a verbatim mission progress excerpt."""
+
+    task_id: str
+    runtime: str
+    inspect_status: str
+    merge_status: str
+    goal_blocked_status: str
+    note: str
+
+
+def plan_dryrun_trace_from_progress(
+    progress: str,
+    *,
+    mission: str,
+    runtime: str,
+) -> ProgressTracePlan:
+    """Derive per-primitive statuses from progress-doc signals (TASK, PHASE, ledger flags)."""
+    task_m = re.search(r"(?:^|\n)TASK\s+([^\s|]+)", progress)
+    task_id = task_m.group(1) if task_m else f"headless-{mission}-1"
+
+    phase_m = re.search(r"PHASE:\s*(\S+)", progress, re.I)
+    phase = phase_m.group(1).upper() if phase_m else ""
+    goal_blocked_status = "skipped" if phase == "DONE" else "started"
+
+    reviewed_m = re.search(r"REVIEWED=(t|f)", progress, re.I)
+    inspect_status = (
+        "succeeded"
+        if reviewed_m and reviewed_m.group(1).lower() == "t"
+        else "started"
+    )
+
+    merged_m = re.search(r"MERGED=(t|f)", progress, re.I)
+    merge_status = (
+        "succeeded"
+        if merged_m and merged_m.group(1).lower() == "t"
+        else "started"
+    )
+
+    mission_m = re.search(r"MISSION:\s*(\S+)", progress)
+    mission_slug = mission_m.group(1) if mission_m else mission
+    note = (
+        f"progress excerpt MISSION:{mission_slug} "
+        f"PHASE:{phase or 'unknown'} via {runtime}"
+    )
+
+    return ProgressTracePlan(
+        task_id=task_id,
+        runtime=runtime,
+        inspect_status=inspect_status,
+        merge_status=merge_status,
+        goal_blocked_status=goal_blocked_status,
+        note=note,
+    )
+
+
 def emit_dryrun_lifecycle_trace(
     emitter: "TraceEmitter",
     *,
-    task_id: str,
+    mission: str = "doc-sync",
+    task_id: str | None = None,
     runtime: str = "grok",
+    progress_excerpt: str | None = None,
     include_t_final: bool = False,
     manifest_name: str = "manifest.json",
     file_count: int = 2,
@@ -254,11 +313,27 @@ def emit_dryrun_lifecycle_trace(
 ) -> dict[str, str]:
     """Orchestrate all 11 engine trace transitions for one headless dry-run unit.
 
-    Owned by fleet_run so headless entry points exercise the lib orchestration
-    path, not only emit_trace helpers. T-FINAL is omitted when write_manifest
-    will emit it (trace-before-ledger doctrine).
+    When ``progress_excerpt`` is set, task_id and per-primitive statuses are
+    derived from ledger signals in the excerpt (TASK / PHASE / REVIEWED / MERGED).
+    Otherwise the caller-supplied synthetic defaults apply.
+
+    T-FINAL is omitted when write_manifest will emit it (trace-before-ledger).
     """
-    note = f"headless dry-run via {runtime}"
+    if progress_excerpt:
+        plan = plan_dryrun_trace_from_progress(
+            progress_excerpt, mission=mission, runtime=runtime
+        )
+        task_id = plan.task_id
+        goal_blocked_status = plan.goal_blocked_status
+        inspect_status = plan.inspect_status
+        merge_status = plan.merge_status
+        note = plan.note
+    else:
+        task_id = task_id or f"headless-{mission}-1"
+        note = f"headless dry-run via {runtime}"
+        inspect_status = "succeeded"
+        merge_status = "succeeded"
+
     ids: dict[str, str] = {}
     ids["dispatch"] = emitter.emit("DISPATCH", "COORDINATOR", "started", task_id=task_id)
     ids["spawn"] = emitter.emit(
@@ -279,12 +354,12 @@ def emit_dryrun_lifecycle_trace(
     ids["inspect"] = emitter.emit(
         "INSPECT",
         "REVIEWER",
-        "succeeded",
+        inspect_status,
         task_id=task_id,
         parent_event=ids["spawn"],
     )
     ids["sync"] = emitter.emit("SYNC", "COORDINATOR", "succeeded", task_id=task_id)
-    ids["merge"] = emitter.emit("MERGE", "INTEGRATOR", "succeeded", task_id=task_id)
+    ids["merge"] = emitter.emit("MERGE", "INTEGRATOR", merge_status, task_id=task_id)
     ids["freeze"] = emitter.emit("FREEZE", "COORDINATOR", "succeeded")
     ids["commit"] = emitter.emit(
         "COMMIT",
@@ -329,15 +404,15 @@ def write_headless_dryrun_archive(
     run_id = allocate_run_id(mission)
     arch = ensure_archive_dir(repo_root, run_id)
 
+    progress_text = progress_excerpt_for_mission(source, mission)
     progress_path = arch / "headless-dryrun-progress.md"
-    progress_path.write_text(
-        progress_excerpt_for_mission(source, mission), encoding="utf-8"
-    )
+    progress_path.write_text(progress_text, encoding="utf-8")
 
     with TraceEmitter(arch, mission=mission, run_id=run_id) as emitter:
         emit_dryrun_lifecycle_trace(
             emitter,
-            task_id=f"headless-{mission}-1",
+            mission=mission,
+            progress_excerpt=progress_text,
             runtime=runtime,
             include_t_final=False,
         )
