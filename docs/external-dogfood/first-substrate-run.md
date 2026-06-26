@@ -1,6 +1,6 @@
 # First substrate run — real archive on autonomous-fleet (Lane 1)
 
-**Status:** IN PROGRESS (operator run started 2026-06-26)  
+**Status:** DONE (operator run completed 2026-06-27)  
 **Closes gap:** A-real (way-ahead Commit A operator half)  
 **Mission:** `adversarial-review-and-fix` on this repo (`main`)
 
@@ -53,10 +53,23 @@ git commit -m "dogfood: first real substrate archive ($RUN_ID)"
 
 ## Post-run evidence
 
-_Paste validator output below when the run completes._
-
 ```
-(pending)
+== validate-first-substrate-archive: .fleet/runs/20260626T200255Z-adversarial-review-and-fix-8358f1 ==
+  Layer 4: validate_run_archive
+  Layer 1: verify_findings
+verify-findings: 2/2 findings verified
+  unverified: 0
+  auto_applicable: 2
+  human_gated:     0
+  Layer 3: verify_blind_fix
+verify-blind-fix: 2/2 findings have valid blind-fix chains
+  Trace: emit_trace validate
+emit-trace: validated 14 events from trace.jsonl (0 invalid, 0 unparseable)
+  Manifest cross-check (fleet_run)
+  analyze_seat rollup
+validate-first-substrate-archive: all checks passed for 20260626T200255Z-adversarial-review-and-fix-8358f1
+
+./scripts/validate-all.sh → All checks passed.
 ```
 
 ## Archive inventory
@@ -74,7 +87,8 @@ _Paste validator output below when the run completes._
 
 | | example-fixture | first real run |
 |--|-----------------|----------------|
-| Origin | `scripts/_build_example_fixture.py` | Live agent session |
-| Manifest files | 9 | TBD |
-| Trace events | 11 (all primitives) | TBD |
+| Origin | `scripts/_build_example_fixture.py` | Live Grok headless session |
+| Run ID | `20260623T000000Z-adversarial-review-and-fix-000001` | `20260626T200255Z-adversarial-review-and-fix-8358f1` |
+| Manifest files | 9 | 12 |
+| Trace events | 11 (all primitives) | 14 (coordinator transitions + T-FINAL) |
 | CI gate | `validate-all.sh` | Same validators + this doc |

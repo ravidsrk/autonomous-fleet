@@ -1,0 +1,2 @@
+{"decision": "allow", "reason": "all findings verified", "ts": "2026-06-27T20:05:00Z", "worker": "coordinator"}
+{"decision": "allow", "reason": "fixes landed with tests green", "ts": "2026-06-27T20:08:00Z", "worker": "integrator"}
