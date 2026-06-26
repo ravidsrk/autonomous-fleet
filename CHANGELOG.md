@@ -3,16 +3,40 @@
 # Changelog
 
 All notable changes to `autonomous-fleet` are recorded here. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This project has not cut a tagged
-release yet, so everything to date lives under `[Unreleased]`, grouped by the date the work
-landed on `main`. Dates are the merge dates in IST.
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Dates are merge dates in IST.
 
-**On this page:** [Unreleased](#unreleased) · [Conventions](#conventions)
-
-> No git tags exist yet. When the first version is tagged, the entries below move under a
-> versioned heading and `[Unreleased]` resets to empty.
+**On this page:** [Unreleased](#unreleased) · [0.1.0](#010---2026-06-26) · [Conventions](#conventions)
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-06-26
+
+First tagged release: three shipped missions, four runtime adapters, four-layer verification
+substrate, and 933-test validation gate (50 test files, 100% `scripts/lib` coverage).
+
+### 2026-06-26
+
+Added
+
+- `scripts/bootstrap.sh` — one-command contributor setup (venv + deps + validate-all).
+- `scripts/validate-headless.sh` — mechanical headless-path dry-run harness wired into
+  `validate-all.sh`; `run-mission-headless.sh --dry-run` previews agent commands without
+  runtime auth.
+- Campaign registry lint — active campaign YAMLs must bind only shipped missions.
+- `VERSION` file for release pinning.
+
+Changed
+
+- `venv-bootstrap.sh` now requires `coverage` alongside `yaml` and `pytest`, with post-install
+  import verification.
+- External dogfood `repo-health` campaign aligned to shipped missions only (removed demoted
+  `cleanup` node).
+- `docs/DECISIONS.md` and `docs/autonomous-fleet-review.md` baselines refreshed (933 tests).
+
+Fixed
+
+- Local dev friction when `.venv` existed without `coverage` installed.
+- Stale README test inventory (37 → 49 files / 928+ tests).
 
 ### 2026-06-24
 
