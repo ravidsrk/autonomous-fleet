@@ -194,8 +194,8 @@ metadata:
 
 ### Example — eval-campaign-edge coverage gap
 
-Test-coverage dogfood added `tests/test_eval_campaign_cli.py` after coupling-graph placement —
-extension pattern: new test file, no hub edit.
+`docs/test-coverage-progress.md`: dogfood added `tests/test_eval_campaign_cli.py` after
+`scripts/coupling-graph.py` placement — extension pattern: new test file, no hub edit.
 
 ### Invocation — emit_representative_trace extension
 

@@ -341,8 +341,8 @@ in parallel, hub untouched.
 
 ### Worked example — signal reconciliation catch
 
-Test-coverage progress documents re-measuring coverage externally after subprocess-based tests showed
-0% on `eval-campaign-edge.py` — ledger claims overridden by measured truth.
+`docs/test-coverage-progress.md` SIGNAL RECONCILIATION: subprocess CLI tests on
+`scripts/eval-campaign-edge.py` showed 0% coverage — external re-measure overrode the ledger claim.
 
 ---
 

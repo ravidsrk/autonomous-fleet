@@ -40,8 +40,8 @@ Ship-with-proof and repo-health both appear in `docs/external-dogfood/README.md`
 
 ### Worked example — edge eval after audit
 
-Ship-with-proof evidence: `audit → tests` edge confirmed via `eval-campaign-edge.sh` before tests
-node ran on gemoji.
+`docs/external-dogfood/ship-with-proof-evidence.md`: `audit → tests` edge confirmed via
+`scripts/eval-campaign-edge.sh` before the tests node ran on gemoji (`--repo` external checkout).
 
 ---
 

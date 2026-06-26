@@ -365,8 +365,8 @@ than one that never claimed to.
 
 ### Invocation — registry lint on campaigns
 
-Campaign registry lint rejects demoted missions in active YAML — repo-health was aligned to shipped
-missions only (v0.1.0 changelog).
+`python scripts/registry_lint.py scripts/campaigns/repo-health.yaml` rejects demoted missions in
+active YAML — repo-health was aligned to shipped missions only (v0.1.0 changelog).
 
 ### Real run on mutation-check
 

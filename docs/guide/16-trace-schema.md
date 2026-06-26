@@ -472,8 +472,9 @@ python scripts/emit_trace.py summary .fleet/runs/example-fixture
 
 ### Invocation — headless dry-run trace dir
 
-`validate-headless.sh` writes to `.fleet/runs/headless-dryrun-trace/`, validates, then deletes —
-ephemeral proof per CI run.
+`validate-headless.sh` runs `emit_headless_dryrun_trace.py`, validates
+`.fleet/runs/<run_id>/trace.jsonl` (timestamped `run_id` suffix), then deletes the ephemeral
+archive. `run-mission-headless.sh --dry-run` does the same via `fleet_run.write_headless_dryrun_archive`.
 
 ### Real run on parent_event lineage
 

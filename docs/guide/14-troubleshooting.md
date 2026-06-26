@@ -918,8 +918,9 @@ Reproduce dry wiring without auth:
 
 ### Invocation — coverage subprocess trap
 
-Test-coverage progress SIGNAL RECONCILIATION: subprocess CLI tests did not move coverage numbers —
-rewrite to in-process `main()` invocation.
+`docs/test-coverage-progress.md` SIGNAL RECONCILIATION: subprocess CLI tests on
+`scripts/eval-campaign-edge.py` did not move coverage numbers — rewrite to in-process `main()`
+invocation.
 
 ### Real run on fixture validators
 
