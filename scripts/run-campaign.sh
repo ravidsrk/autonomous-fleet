@@ -244,8 +244,22 @@ while [[ -n "$CURRENT" ]]; do
   READINESS_ABS="$REPO_ROOT/$READINESS"
 
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "  would run: run-mission-headless.sh $RUNTIME $MISSION --repo $REPO_ROOT --max-turns $MAX_TURNS"
+    echo "  would run: run-mission-headless.sh $RUNTIME $MISSION --repo $REPO_ROOT --max-turns $MAX_TURNS --dry-run"
     echo "  expect:    $READINESS_ABS with fleet-outcome.status done"
+    if [[ -f "$ROOT/scripts/emit_headless_dryrun_trace.py" ]]; then
+      EMIT_OUT="$("$VENV_PYTHON" "$ROOT/scripts/emit_headless_dryrun_trace.py" \
+        --mission "$MISSION" --repo "$REPO_ROOT" --runtime "$RUNTIME" --fleet-root "$ROOT" 2>&1)" || {
+        echo "  warn: emit_headless_dryrun_trace failed (non-fatal in dry-run)" >&2
+        EMIT_OUT=""
+      }
+      if [[ -n "$EMIT_OUT" ]]; then
+        echo "$EMIT_OUT" | sed 's/^/  /'
+        EMIT_RUN_ID="$(echo "$EMIT_OUT" | sed -n 's/^  run_id: //p' | head -1)"
+        if [[ -n "$EMIT_RUN_ID" && -d "$REPO_ROOT/.fleet/runs/$EMIT_RUN_ID" ]]; then
+          rm -rf "$REPO_ROOT/.fleet/runs/$EMIT_RUN_ID"
+        fi
+      fi
+    fi
   else
     EXTRA=(--repo "$REPO_ROOT")
     [[ "$YOLO" -eq 1 ]] && EXTRA+=(--yolo)
