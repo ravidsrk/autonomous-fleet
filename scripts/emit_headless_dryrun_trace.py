@@ -26,6 +26,11 @@ def main(argv: list[str] | None = None) -> int:
         help="autonomous-fleet clone for progress excerpts (default: parent of scripts/)",
     )
     parser.add_argument("--runtime", default="grok")
+    parser.add_argument(
+        "--runtime-response",
+        type=Path,
+        help="Captured stdout/stderr from a real headless runtime invocation",
+    )
     args = parser.parse_args(argv)
 
     if args.mission not in MISSION_DOCS and args.mission != "fleet-program":
@@ -50,6 +55,7 @@ def main(argv: list[str] | None = None) -> int:
         mission=mission,
         runtime=args.runtime,
         fleet_root=fleet_root,
+        runtime_response_path=args.runtime_response,
     )
     print(f"emit_headless_dryrun_trace: archive={arch}")
     print(f"  run_id: {run_id}")

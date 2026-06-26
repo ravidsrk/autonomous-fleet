@@ -9,6 +9,19 @@ All notable changes to `autonomous-fleet` are recorded here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- `run-mission-headless.sh` — emit and keep `.fleet/runs/<run_id>/` even when grok/claude/codex
+  exits non-zero; capture runtime stdout/stderr as `headless-runtime-response.{json,txt}` in the
+  archive manifest (`kind=response`).
+- `run-campaign.sh` — explicit per-node archive emit after each real node invocation under
+  `--repo` (acceptance criterion 1; complements child `run-mission-headless.sh` emit).
+
+### Added
+
+- `--runtime-response` on `emit_headless_dryrun_trace.py`; tests for failure-path emit and runtime
+  capture in `tests/test_headless_trace.py`.
+
 ## [0.2.0] - 2026-06-27
 
 Lane 1 + Lane 2 dogfood evidence, external archive emission, and adversarial-bench
