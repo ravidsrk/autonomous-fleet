@@ -905,7 +905,7 @@ def test_emit_representative_cli_out_mode_overwrites_existing_trace(
     finally:
         sys.argv = old
     events = list(iter_trace_file(stale))
-    assert len(events) == 9
+    assert len(events) == 11
     assert "emit_representative_trace: wrote" in capsys.readouterr().out
 
 

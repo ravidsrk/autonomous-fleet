@@ -87,11 +87,13 @@ TRACE_EVENTS = list(iter_trace_file(FIXTURE / "trace.jsonl"))
         "DISPATCH",
         "SPAWN_WORKER",
         "WAIT",
+        "GOAL_BLOCKED",
         "INSPECT",
         "SYNC",
         "MERGE",
         "FREEZE",
         "COMMIT",
+        "ABORT",
         "T-FINAL",
     ],
 )
@@ -121,8 +123,9 @@ def test_fixture_trace_t_final_records_nine_archived_files() -> None:
 
 def test_fixture_health_rollup_counts_started_and_succeeded() -> None:
     rollup = health_rollup(TRACE_EVENTS)
-    assert rollup["total"] == 9
+    assert rollup["total"] == 11
     assert rollup["succeeded"] == 6
+    assert rollup["skipped"] == 2
     assert rollup["failed"] == 0
 
 
@@ -135,7 +138,16 @@ def test_emit_representative_mission_trace_round_trip(tmp_path: Path) -> None:
     assert "t_final" in ids
     events = list(iter_trace_file(tmp_path / "trace.jsonl"))
     primitives = {e["primitive"] for e in events}
-    assert primitives >= {"DISPATCH", "SPAWN_WORKER", "INSPECT", "FREEZE", "COMMIT", "T-FINAL"}
+    assert primitives >= {
+        "DISPATCH",
+        "SPAWN_WORKER",
+        "GOAL_BLOCKED",
+        "INSPECT",
+        "FREEZE",
+        "COMMIT",
+        "ABORT",
+        "T-FINAL",
+    }
     assert all(validate_event(e) == [] for e in events)
 
 
@@ -302,7 +314,8 @@ def test_roadmap_gap_matrix_lists_pending_item(gap_id: str) -> None:
 
 def test_roadmap_gap_matrix_trace_row_names_emit_helper() -> None:
     text = (REPO_ROOT / "docs" / "roadmap-gap-matrix.md").read_text()
-    assert "emit_representative_mission_trace" in text
+    assert "emit_full_primitive_trace" in text
+    assert "headless_trace" in text
 
 
 # ── shipped mission registry scenarios ──────────────────────────────────
