@@ -91,3 +91,21 @@ Then activate in your agent (Claude Code, Cursor, Grok, Codex, or Orca) and refe
 - [SKILL.md](./SKILL.md), the agent-facing spec
 
 [📖 Guide Index](../../docs/guide/README.md)
+
+## Real-world use cases
+
+### Example — example-fixture archive
+
+`.fleet/runs/example-fixture/` is the canonical adversarial-review-and-fix archive: findings,
+blind-fixes, verify summary, nine-event trace, fleet-outcome readiness.
+
+### Invocation — bench target list
+
+Five OSS targets in `docs/external-dogfood/adversarial-bench-targets.yaml`; driver
+`scripts/bench-adversarial.sh --target <name>`. Results PENDING authenticated operator runs.
+
+### Worked example — substrate A/B claim
+
+`adversarial-bench-2026-06.md`: run twice per repo (substrate OFF vs ON); headline metric is DELTA
+precision and cost-per-closed-finding — falsifiable, not vibes.
+

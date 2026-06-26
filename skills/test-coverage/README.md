@@ -71,3 +71,21 @@ Then activate it in your agent (Claude Code, Codex, Grok, or Orca) and reference
 - [SKILL.md](./SKILL.md): the agent-facing spec.
 
 [Guide Index](../../docs/guide/README.md)
+
+## Real-world use cases
+
+### Example — scripts/ coverage map
+
+`docs/test-coverage-progress.md` identified real gaps: `eval-campaign-edge.py` 0%,
+`mission_registry.py` 0%, `validate_fleet_outcome.py` 22% before the mission closed them.
+
+### Invocation — width-3 parallel test files
+
+Frozen units U1–U3 became `test_eval_campaign_cli.py`, `test_mission_registry.py`,
+`test_validate_fleet_outcome_cli.py` — coupling graph said hub `fleet_outcome.py` untouched.
+
+### Real run on signal reconciliation
+
+Worker claimed coverage gains; external re-measure showed subprocess tests did not move numbers —
+rewrote to in-process `main()` calls; total scripts coverage 74→86%.
+
