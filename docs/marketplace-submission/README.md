@@ -61,6 +61,20 @@ substrate-off vs substrate-on comparator across 5 OSS targets. Methodology
 shipped at `docs/external-dogfood/adversarial-bench-2026-06.md`. Numbers will
 be cited in the next packet refresh once operator runs land.
 
+🟢 **v0.1.0 + representative trace emission** — tagged release includes
+`scripts/emit_representative_trace.py`, nine-primitive example-fixture trace,
+`validate-headless.sh` gate, and 67+ real-world scenario tests. Mechanical
+repro before submit:
+
+```bash
+./scripts/validate-all.sh
+./scripts/validate-headless.sh
+python scripts/emit_trace.py validate .fleet/runs/example-fixture/trace.jsonl
+```
+
+🟡 **Console submit — PENDING human operator** — form at
+https://platform.claude.com/plugins/submit ; re-pin SHA to latest `main` at submit time.
+
 # Pre-submission checklist (already done ✅)
 
 - ✅ Both repos have `.claude-plugin/plugin.json` at the root

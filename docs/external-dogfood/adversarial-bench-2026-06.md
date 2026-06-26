@@ -2,6 +2,22 @@
 
 **Status:** methodology shipped; results PENDING operator runs.
 
+## Mechanical reproduction (no runtime auth)
+
+Validate the driver and trace contract today from a clean checkout:
+
+```bash
+./scripts/validate-headless.sh
+./scripts/bench-adversarial.sh --help
+./scripts/bench-adversarial.sh --target pallets/click --dry-run
+python scripts/emit_representative_trace.py --mission adversarial-review-and-fix \
+  --run-id 20260626T120000Z-adversarial-review-and-fix-000001 \
+  --out /tmp/bench-trace-demo
+python scripts/emit_trace.py validate /tmp/bench-trace-demo/trace.jsonl
+```
+
+Live substrate A/B numbers require authenticated operator runs per target — see Methodology below.
+
 # The falsifiable claim
 
 The 4-layer verification substrate (review-findings + stop-verify +
