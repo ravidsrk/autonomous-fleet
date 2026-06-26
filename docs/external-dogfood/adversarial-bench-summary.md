@@ -24,11 +24,22 @@ Per-target archives: [`adversarial-bench/`](adversarial-bench/).
 
 # Reproducing
 
+Mechanical (no auth — validates driver + trace today):
+
 ```bash
 git clone https://github.com/ravidsrk/autonomous-fleet.git
 cd autonomous-fleet
-./scripts/install-skills.sh
+./scripts/bootstrap.sh
+./scripts/validate-headless.sh
+./scripts/bench-adversarial.sh --help
+./scripts/bench-adversarial.sh --target pallets/click --dry-run
+```
+
+Live A/B (PENDING operator — requires authenticated adapter):
+
+```bash
 ./scripts/bench-adversarial.sh --target <name> --both
+# then dispatch adversarial-review-and-fix twice per target (substrate off vs on)
 ```
 
 Each archive validates against the schemas in

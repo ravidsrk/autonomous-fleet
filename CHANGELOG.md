@@ -9,6 +9,27 @@ All notable changes to `autonomous-fleet` are recorded here. The format follows
 
 ## [Unreleased]
 
+### 2026-06-26 (roadmap advance)
+
+Added
+
+- `docs/roadmap-gap-matrix.md` — consolidated pending items from way-ahead, improvement-plan,
+  and docs-site-plan with honest operator vs code-state columns.
+- `scripts/emit_representative_trace.py` and `emit_representative_mission_trace()` — mechanical
+  nine-primitive trace emission without runtime auth; wired into `validate-headless.sh`.
+- `tests/test_real_world_scenarios.py` — 67 direct exercises grounded in example-fixture,
+  progress docs, and external-dogfood packs.
+- "Real-world use cases" sections (≥3 examples each) in all 20 guide chapters and the three shipped
+  mission READMEs (`doc-sync`, `test-coverage`, `adversarial-review-and-fix`).
+
+Changed
+
+- `.fleet/runs/example-fixture/trace.jsonl` expanded from 4 to 9 primitives (DISPATCH through
+  T-FINAL with parent_event lineage); manifest and generator updated to match.
+- `docs/external-dogfood/` bench and dogfood READMEs — literal reproduction commands plus
+  PENDING operator-run notes where live auth is still required.
+- `docs/marketplace-submission/README.md` — v0.1.0 mechanical repro block and submit status.
+
 ## [0.1.0] - 2026-06-26
 
 First tagged release: three shipped missions, four runtime adapters, four-layer verification

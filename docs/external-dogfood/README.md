@@ -16,9 +16,15 @@ setup steps, and success criteria.
 ## Quick dry-run (from this repo)
 
 ```bash
+./scripts/validate-headless.sh
 ./scripts/run-campaign.sh grok --campaign docs/external-dogfood/repo-health-campaign.yaml --dry-run
 ./scripts/run-campaign.sh grok --campaign docs/external-dogfood/ship-with-proof-campaign.yaml --dry-run
+./scripts/bench-adversarial.sh --help
 ```
+
+**PENDING operator runs:** live gemoji campaigns and adversarial bench A/B numbers need runtime auth
+(`grok login`, etc.). Interactive ship-with-proof evidence exists on `ravidsrk/gemoji` @ `1541ce9`;
+headless path not yet validated — see [ship-with-proof-evidence.md](ship-with-proof-evidence.md).
 
 ## Before first run on any external repo
 
