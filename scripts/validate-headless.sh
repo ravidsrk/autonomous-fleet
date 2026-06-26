@@ -32,4 +32,13 @@ for mission in "${SHIPPED_MISSIONS[@]}"; do
   done
 done
 
+echo "== validate-headless: representative trace emission =="
+"$ROOT/.venv/bin/python" "$ROOT/scripts/emit_representative_trace.py" \
+  --mission doc-sync \
+  --run-id 20260626T120000Z-doc-sync-000001 \
+  --out "$ROOT/.fleet/runs/headless-dryrun-trace"
+"$ROOT/.venv/bin/python" "$ROOT/scripts/emit_trace.py" validate \
+  "$ROOT/.fleet/runs/headless-dryrun-trace/trace.jsonl"
+rm -rf "$ROOT/.fleet/runs/headless-dryrun-trace"
+
 echo "validate-headless: all mechanical checks passed"

@@ -1,5 +1,6 @@
 .venv/
 .research/
+.fleet/runs/headless-dryrun-trace/
 .agents/
 __pycache__/
 .pytest_cache/
