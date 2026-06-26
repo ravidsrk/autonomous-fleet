@@ -155,7 +155,7 @@ fi
 
 emit_and_cleanup_dryrun_trace() {
   local emit_mission="$1"
-  local out run_id archive
+  local out archive
   out="$("$VENV_PYTHON" "$ROOT/scripts/emit_headless_dryrun_trace.py" \
     --mission "$emit_mission" --repo "$REPO_ROOT" --runtime "$RUNTIME" --fleet-root "$ROOT" 2>&1)" || {
     echo "warning: emit_headless_dryrun_trace failed (non-fatal in dry-run)" >&2
