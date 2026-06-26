@@ -64,12 +64,12 @@ verify-findings: 2/2 findings verified
   Layer 3: verify_blind_fix
 verify-blind-fix: 2/2 findings have valid blind-fix chains
   Trace: emit_trace validate
-emit-trace: validated 14 events from trace.jsonl (0 invalid, 0 unparseable)
+emit-trace: validated 17 events from trace.jsonl (0 invalid, 0 unparseable)
   Manifest cross-check (fleet_run)
   analyze_seat rollup
 validate-first-substrate-archive: all checks passed for 20260626T200255Z-adversarial-review-and-fix-8358f1
 
-./scripts/validate-all.sh → All checks passed.
+./scripts/validate-all.sh → All checks passed (1031 tests, 100% scripts coverage).
 ```
 
 ## Archive inventory
@@ -90,5 +90,5 @@ validate-first-substrate-archive: all checks passed for 20260626T200255Z-adversa
 | Origin | `scripts/_build_example_fixture.py` | Live Grok headless session |
 | Run ID | `20260623T000000Z-adversarial-review-and-fix-000001` | `20260626T200255Z-adversarial-review-and-fix-8358f1` |
 | Manifest files | 9 | 12 |
-| Trace events | 11 (all primitives) | 14 (coordinator transitions + T-FINAL) |
+| Trace events | 11 (all primitives) | 17 (coordinator transitions + T-FINAL) |
 | CI gate | `validate-all.sh` | Same validators + this doc |
