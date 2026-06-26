@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "run_id": "20260626T191745Z-doc-sync-c42fba",
+  "mission": "doc-sync",
+  "created_utc": "2026-06-26T19:17:45Z",
+  "files": [
+    {
+      "path": "headless-dryrun-progress.md",
+      "kind": "progress",
+      "sha256": "c6d6d880d618408a1184e66b76e69133cc09e48aaf9a738f6b9d8d1948734784",
+      "mtime_utc": "2026-06-26T19:17:45Z",
+      "producer": "headless-dryrun-grok",
+      "bytes": 2500
+    },
+    {
+      "path": "trace.jsonl",
+      "kind": "other",
+      "sha256": "0033fc9979137f80a7ba9ff9e99ee4138b3f343099f574dffcddc80242791d5f",
+      "mtime_utc": "2026-06-26T19:17:45Z",
+      "producer": "coordinator",
+      "bytes": 3309
+    }
+  ],
+  "coordinator": "headless-dryrun-grok",
+  "base_branch": "main",
+  "notes": "Mechanical headless dry-run archive (progress excerpt + fleet_run lifecycle trace)."
+}

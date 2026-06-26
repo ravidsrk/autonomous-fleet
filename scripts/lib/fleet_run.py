@@ -230,10 +230,15 @@ def emit_worker_commit_lifeline(
 
 def progress_excerpt_for_mission(source_root: Path, mission: str) -> str:
     """Return a verbatim slice from docs/<mission>-progress.md when present."""
+    text = progress_text_for_mission(source_root, mission)
+    return text[:2500] if len(text) > 2500 else text
+
+
+def progress_text_for_mission(source_root: Path, mission: str) -> str:
+    """Return full progress doc text (or synthetic fallback) for trace planning."""
     path = source_root / "docs" / f"{mission}-progress.md"
     if path.is_file():
-        text = path.read_text(encoding="utf-8")
-        return text[:2500] if len(text) > 2500 else text
+        return path.read_text(encoding="utf-8")
     return (
         f"# headless dry-run\n"
         f"MISSION: {mission}\n"
@@ -263,8 +268,8 @@ def plan_dryrun_trace_from_progress(
     task_m = re.search(r"(?:^|\n)TASK\s+([^\s|]+)", progress)
     task_id = task_m.group(1) if task_m else f"headless-{mission}-1"
 
-    phase_m = re.search(r"PHASE:\s*(\S+)", progress, re.I)
-    phase = phase_m.group(1).upper() if phase_m else ""
+    phase_matches = re.findall(r"PHASE:\s*(\S+)", progress, re.I)
+    phase = phase_matches[-1].upper() if phase_matches else ""
     goal_blocked_status = "skipped" if phase == "DONE" else "started"
 
     reviewed_m = re.search(r"REVIEWED=(t|f)", progress, re.I)
@@ -404,15 +409,16 @@ def write_headless_dryrun_archive(
     run_id = allocate_run_id(mission)
     arch = ensure_archive_dir(repo_root, run_id)
 
-    progress_text = progress_excerpt_for_mission(source, mission)
+    progress_archive = progress_excerpt_for_mission(source, mission)
+    progress_parse = progress_text_for_mission(source, mission)
     progress_path = arch / "headless-dryrun-progress.md"
-    progress_path.write_text(progress_text, encoding="utf-8")
+    progress_path.write_text(progress_archive, encoding="utf-8")
 
     with TraceEmitter(arch, mission=mission, run_id=run_id) as emitter:
         emit_dryrun_lifecycle_trace(
             emitter,
             mission=mission,
-            progress_excerpt=progress_text,
+            progress_excerpt=progress_parse,
             runtime=runtime,
             include_t_final=False,
         )

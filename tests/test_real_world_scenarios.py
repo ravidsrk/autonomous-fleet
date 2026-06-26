@@ -26,6 +26,7 @@ from lib.emit_trace import (  # noqa: E402
     validate_event,
 )
 from lib import fleet_run  # noqa: E402
+from lib.mission_registry import headless_emit_mission  # noqa: E402
 from lib.registry_lint import shipped_missions  # noqa: E402
 
 
@@ -41,7 +42,22 @@ def _load_emit_cli():
 
 # ── example-fixture manifest scenarios ──────────────────────────────────
 
-MANIFEST_FILES = json.loads((FIXTURE / "manifest.json").read_text())["files"]
+
+def _manifest_files() -> list[dict]:
+    return json.loads((FIXTURE / "manifest.json").read_text(encoding="utf-8"))["files"]
+
+
+def _trace_events() -> list[dict]:
+    return list(iter_trace_file(FIXTURE / "trace.jsonl"))
+
+
+def _findings_doc() -> dict:
+    return json.loads((FIXTURE / "p0-review-findings.json").read_text(encoding="utf-8"))
+
+
+def _bench_targets() -> list[dict]:
+    path = REPO_ROOT / "docs" / "external-dogfood" / "adversarial-bench-targets.yaml"
+    return yaml.safe_load(path.read_text(encoding="utf-8"))["targets"]
 
 
 @pytest.mark.parametrize(
@@ -59,7 +75,7 @@ MANIFEST_FILES = json.loads((FIXTURE / "manifest.json").read_text())["files"]
     ],
 )
 def test_fixture_manifest_lists_real_artifact(path: str, kind: str) -> None:
-    entry = next(f for f in MANIFEST_FILES if f["path"] == path)
+    entry = next(f for f in _manifest_files() if f["path"] == path)
     assert entry["kind"] == kind
     assert entry["bytes"] > 0
     assert len(entry["sha256"]) == 64
@@ -77,8 +93,6 @@ def test_fixture_validate_manifest_passes_ordering_invariants() -> None:
 
 
 # ── example-fixture trace scenarios ─────────────────────────────────────
-
-TRACE_EVENTS = list(iter_trace_file(FIXTURE / "trace.jsonl"))
 
 
 @pytest.mark.parametrize(
@@ -98,31 +112,35 @@ TRACE_EVENTS = list(iter_trace_file(FIXTURE / "trace.jsonl"))
     ],
 )
 def test_fixture_trace_exercises_primitive(primitive: str) -> None:
-    found = [e for e in TRACE_EVENTS if e["primitive"] == primitive]
+    found = [e for e in _trace_events() if e["primitive"] == primitive]
     assert len(found) >= 1
     assert validate_event(found[0]) == []
 
 
 def test_fixture_trace_spawn_links_to_dispatch() -> None:
-    by_id = {e["id"]: e for e in TRACE_EVENTS}
-    spawn = next(e for e in TRACE_EVENTS if e["primitive"] == "SPAWN_WORKER")
+    events = _trace_events()
+    by_id = {e["id"]: e for e in events}
+    spawn = next(e for e in events if e["primitive"] == "SPAWN_WORKER")
     assert spawn.get("parent_event") == by_id["evt-0001"]["id"]
 
 
 def test_fixture_trace_commit_links_to_spawn() -> None:
-    spawn_id = next(e["id"] for e in TRACE_EVENTS if e["primitive"] == "SPAWN_WORKER")
-    commit = next(e for e in TRACE_EVENTS if e["primitive"] == "COMMIT")
+    events = _trace_events()
+    spawn_id = next(e["id"] for e in events if e["primitive"] == "SPAWN_WORKER")
+    commit = next(e for e in events if e["primitive"] == "COMMIT")
     assert commit.get("parent_event") == spawn_id
 
 
 def test_fixture_trace_t_final_records_nine_archived_files() -> None:
-    final = next(e for e in TRACE_EVENTS if e["primitive"] == "T-FINAL")
-    assert final["details"]["files"] == 9
+    events = _trace_events()
+    manifest = json.loads((FIXTURE / "manifest.json").read_text(encoding="utf-8"))
+    final = next(e for e in events if e["primitive"] == "T-FINAL")
+    assert final["details"]["files"] == len(manifest["files"])
     assert final["details"]["manifest"] == "manifest.json"
 
 
 def test_fixture_health_rollup_counts_started_and_succeeded() -> None:
-    rollup = health_rollup(TRACE_EVENTS)
+    rollup = health_rollup(_trace_events())
     assert rollup["total"] == 11
     assert rollup["succeeded"] == 6
     assert rollup["skipped"] == 2
@@ -228,15 +246,16 @@ def test_repo_health_gemoji_pack_lists_doc_sync_then_test_coverage() -> None:
 
 # ── adversarial bench target scenarios ──────────────────────────────────
 
-BENCH_TARGETS = yaml.safe_load(
-    (REPO_ROOT / "docs" / "external-dogfood" / "adversarial-bench-targets.yaml").read_text()
-)["targets"]
 
-
-@pytest.mark.parametrize("target", BENCH_TARGETS)
 def test_bench_target_has_clone_url_and_name(target: dict) -> None:
     assert "name" in target
     assert target.get("clone_url", "").startswith("https://")
+
+
+def pytest_generate_tests(metafunc):
+    if metafunc.definition.name == "test_bench_target_has_clone_url_and_name":
+        targets = _bench_targets()
+        metafunc.parametrize("target", targets, ids=[t["name"] for t in targets])
 
 
 def test_bench_methodology_documents_pending_operator_runs() -> None:
@@ -312,6 +331,11 @@ def test_roadmap_gap_matrix_lists_pending_item(gap_id: str) -> None:
     assert gap_id in text
 
 
+def test_headless_emit_mission_remaps_fleet_program() -> None:
+    assert headless_emit_mission("fleet-program") == "doc-sync"
+    assert headless_emit_mission("doc-sync") == "doc-sync"
+
+
 def test_roadmap_gap_matrix_trace_row_names_emit_helper() -> None:
     text = (REPO_ROOT / "docs" / "roadmap-gap-matrix.md").read_text()
     assert "write_headless_dryrun_archive" in text or "headless_trace" in text
@@ -353,12 +377,10 @@ def test_headless_dry_run_wiring_for_shipped_mission(mission: str, runtime: str)
 
 # ── findings fixture scenarios (adversarial-review-and-fix archive) ─────
 
-FINDINGS = json.loads((FIXTURE / "p0-review-findings.json").read_text())
-
-
 def test_fixture_findings_has_two_items_one_verified() -> None:
-    assert len(FINDINGS["findings"]) == 2
-    verified = [f for f in FINDINGS["findings"] if f.get("verified")]
+    findings = _findings_doc()
+    assert len(findings["findings"]) == 2
+    verified = [f for f in findings["findings"] if f.get("verified")]
     assert len(verified) == 1
 
 

@@ -884,13 +884,19 @@ def test_emit_representative_cli_fixture_mode(
     script.touch()
     fixture_dir = tmp_path / ".fleet" / "runs" / "example-fixture"
     fixture_dir.mkdir(parents=True)
+    manifest = json.loads(
+        (REPO_ROOT / ".fleet" / "runs" / "example-fixture" / "manifest.json").read_text()
+    )
+    (fixture_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
     monkeypatch.setattr(cli, "__file__", str(script))
     old = sys.argv
     sys.argv = [
         "emit_representative_trace.py",
         "--fixture",
+        "--mission",
+        manifest["mission"],
         "--run-id",
-        "20260626T120000Z-doc-sync-000002",
+        manifest["run_id"],
     ]
     try:
         assert cli.main() == 0
@@ -899,6 +905,77 @@ def test_emit_representative_cli_fixture_mode(
     out = capsys.readouterr().out
     assert "emit_representative_trace: wrote" in out
     assert (fixture_dir / "trace.jsonl").is_file()
+
+
+def test_emit_representative_cli_fixture_rejects_missing_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cli = _load_representative_cli()
+    script = tmp_path / "scripts" / "emit_representative_trace.py"
+    script.parent.mkdir(parents=True)
+    script.touch()
+    (tmp_path / ".fleet" / "runs" / "example-fixture").mkdir(parents=True)
+    monkeypatch.setattr(cli, "__file__", str(script))
+    old = sys.argv
+    sys.argv = ["emit_representative_trace.py", "--fixture"]
+    try:
+        assert cli.main() == 2
+    finally:
+        sys.argv = old
+    assert "manifest missing" in capsys.readouterr().err
+
+
+def test_emit_representative_cli_fixture_rejects_run_id_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cli = _load_representative_cli()
+    script = tmp_path / "scripts" / "emit_representative_trace.py"
+    script.parent.mkdir(parents=True)
+    script.touch()
+    fixture_dir = tmp_path / ".fleet" / "runs" / "example-fixture"
+    fixture_dir.mkdir(parents=True)
+    manifest = json.loads(
+        (REPO_ROOT / ".fleet" / "runs" / "example-fixture" / "manifest.json").read_text()
+    )
+    (fixture_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(cli, "__file__", str(script))
+    old = sys.argv
+    sys.argv = [
+        "emit_representative_trace.py",
+        "--fixture",
+        "--mission",
+        manifest["mission"],
+        "--run-id",
+        "20260626T120000Z-doc-sync-000001",
+    ]
+    try:
+        assert cli.main() == 2
+    finally:
+        sys.argv = old
+    assert "requires --run-id" in capsys.readouterr().err
+
+
+def test_emit_representative_cli_fixture_rejects_mission_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cli = _load_representative_cli()
+    script = tmp_path / "scripts" / "emit_representative_trace.py"
+    script.parent.mkdir(parents=True)
+    script.touch()
+    fixture_dir = tmp_path / ".fleet" / "runs" / "example-fixture"
+    fixture_dir.mkdir(parents=True)
+    manifest = json.loads(
+        (REPO_ROOT / ".fleet" / "runs" / "example-fixture" / "manifest.json").read_text()
+    )
+    (fixture_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(cli, "__file__", str(script))
+    old = sys.argv
+    sys.argv = ["emit_representative_trace.py", "--fixture", "--mission", "doc-sync"]
+    try:
+        assert cli.main() == 2
+    finally:
+        sys.argv = old
+    assert "requires --mission" in capsys.readouterr().err
 
 
 def test_emit_representative_cli_out_mode_overwrites_existing_trace(

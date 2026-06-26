@@ -38,3 +38,10 @@ def progress_path(mission: str) -> str:
     if mission not in MISSION_DOCS:
         return f"docs/{mission}-progress.md"
     return f"docs/{MISSION_DOCS[mission]['progress']}"
+
+
+def headless_emit_mission(mission: str) -> str:
+    """Map shell mission names to the slug used for headless dry-run trace emission."""
+    if mission == "fleet-program":
+        return "doc-sync"
+    return mission
