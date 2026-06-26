@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import shutil
 import subprocess
 import sys
@@ -18,6 +19,7 @@ from lib import fleet_run  # noqa: E402
 from lib.headless_trace import (  # noqa: E402
     emit_headless_dryrun_archive,
     progress_excerpt_for_mission,
+    record_headless_run,
 )
 
 
@@ -276,3 +278,148 @@ def test_emit_headless_default_fleet_root(tmp_path: Path) -> None:
         assert "-doc-sync-" in run_id
     finally:
         _cleanup_archive(arch)
+
+
+def test_headless_trace_record_headless_run_wrapper(tmp_path: Path) -> None:
+    arch, run_id, primitives = record_headless_run(
+        tmp_path,
+        mission="doc-sync",
+        runtime="grok",
+        fleet_root=REPO_ROOT,
+    )
+    try:
+        assert arch == tmp_path / ".fleet" / "runs" / run_id
+        assert len(primitives) == 11
+    finally:
+        _cleanup_archive(arch)
+
+
+def test_record_headless_run_alias(tmp_path: Path) -> None:
+    arch, run_id, primitives = fleet_run.record_headless_run(
+        tmp_path,
+        mission="doc-sync",
+        runtime="grok",
+        progress_source_root=REPO_ROOT,
+    )
+    try:
+        assert arch == tmp_path / ".fleet" / "runs" / run_id
+        assert len(primitives) == 11
+        _payload, errs = fleet_run.load_and_validate_manifest(arch)
+        assert errs == []
+    finally:
+        _cleanup_archive(arch)
+
+
+def test_external_git_repo_emit_twice_creates_two_archives(tmp_path: Path) -> None:
+    """Simulate pre-DONE re-runs: two distinct archives under external --repo."""
+    external = tmp_path / "external"
+    external.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=external, check=True)
+    subprocess.run(
+        ["git", "commit", "--allow-empty", "-m", "init", "-q"],
+        cwd=external,
+        check=True,
+    )
+    cli = _load_headless_cli()
+    try:
+        assert (
+            cli.main(
+                [
+                    "--mission",
+                    "doc-sync",
+                    "--repo",
+                    str(external),
+                    "--fleet-root",
+                    str(REPO_ROOT),
+                ]
+            )
+            == 0
+        )
+        assert (
+            cli.main(
+                [
+                    "--mission",
+                    "doc-sync",
+                    "--repo",
+                    str(external),
+                    "--fleet-root",
+                    str(REPO_ROOT),
+                ]
+            )
+            == 0
+        )
+        runs = sorted((external / ".fleet" / "runs").iterdir())
+        assert len(runs) == 2
+        assert runs[0].name != runs[1].name
+        for run_dir in runs:
+            assert (run_dir / "manifest.json").is_file()
+            assert (run_dir / "trace.jsonl").is_file()
+            vr = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO_ROOT / "scripts" / "validate_run_archive.py"),
+                    str(run_dir),
+                    "--quiet",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                cwd=REPO_ROOT,
+            )
+            assert vr.returncode == 0, vr.stderr
+            vt = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPO_ROOT / "scripts" / "emit_trace.py"),
+                    "validate",
+                    str(run_dir / "trace.jsonl"),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+                cwd=REPO_ROOT,
+            )
+            assert vt.returncode == 0, vt.stderr
+    finally:
+        if (external / ".fleet" / "runs").is_dir():
+            shutil.rmtree(external / ".fleet" / "runs")
+
+
+def test_run_mission_headless_keeps_archive_after_runtime(tmp_path: Path) -> None:
+    """Real run-mission-headless.sh path: fake grok on PATH, archive kept under --repo."""
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_grok = fake_bin / "grok"
+    fake_grok.write_text('#!/bin/sh\necho \'{"stopReason":"EndTurn","text":"ok"}\'\n')
+    fake_grok.chmod(0o755)
+
+    external = tmp_path / "repo"
+    external.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=external, check=True)
+
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env.get('PATH', '')}"
+
+    r = subprocess.run(
+        [
+            str(REPO_ROOT / "scripts" / "run-mission-headless.sh"),
+            "grok",
+            "doc-sync",
+            "--repo",
+            str(external),
+            "--max-turns",
+            "1",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=REPO_ROOT,
+        env=env,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "archive emitted for --repo:" in r.stdout
+    assert "kept:" in r.stdout
+    runs = list((external / ".fleet" / "runs").glob("*"))
+    assert len(runs) == 1
+    assert (runs[0] / "manifest.json").is_file()
+    assert (runs[0] / "trace.jsonl").is_file()

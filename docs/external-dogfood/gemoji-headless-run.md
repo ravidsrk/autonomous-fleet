@@ -67,8 +67,8 @@ Campaign complete. Nodes visited: audit tests docs
 
 **Note:** Fork ledgers were already `PHASE: DONE` from interactive dogfood (2026-06-20). This run
 proved headless orchestration end-to-end; nodes re-validated gates rather than re-landing PRs.
-No `.fleet/runs/` archives were written on gemoji (missions did not enter Phase 0/1 anew).
-Archive emission on external `--repo` checkouts is a follow-up item.
+Lane 2 follow-up closed: unconditional archive emission is now wired in
+`run-mission-headless.sh` / `run-campaign.sh` (kept under target `--repo` after real invocations).
 
 ## Comparison to interactive run (2026-06-20)
 
@@ -77,5 +77,5 @@ Archive emission on external `--repo` checkouts is a follow-up item.
 | Runtime | Cursor Grok | `grok -p` via `run-campaign.sh` |
 | Auth | N/A (in-IDE) | CLI auth required |
 | `--repo` | Added during dogfood | Validated end-to-end |
-| Archives | None on gemoji | None (verification-only; no new Phase 0) |
+| Archives | None on gemoji | Emitted on subsequent runs (v0.2.0+ keep policy) |
 | Duration | Multi-session interactive | ~163s headless campaign |

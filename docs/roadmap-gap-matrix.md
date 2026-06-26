@@ -8,11 +8,11 @@ Legend: **Code** = shipped in repo · **Operator** = human/authenticated run · 
 
 | Gap ID | Item | Code state | Operator / human | This goal closes |
 |--------|------|------------|------------------|------------------|
-| A-real | Real `.fleet/runs/<run_id>/` from live adversarial run on main | example-fixture + headless dry-run archives | PENDING: run mission on main | headless_trace + write_manifest wiring |
+| A-real | Real `.fleet/runs/<run_id>/` from live adversarial run on main | Lane 1 archive + example-fixture | — | closed (PR #55, `first-substrate-run.md`) |
 | B-blind | Blind-fix mechanical guard (Layer 3) | Shipped (`verify_blind_fix.py`) | — | — (already closed) |
-| C-bench | Public bench numbers (5 OSS repos) | `bench-adversarial.sh` + targets YAML | PENDING: authenticated A/B runs | bench docs + dry paths |
+| C-bench | Public bench numbers (5 OSS repos) | `bench-adversarial.sh` + headless `--repo` + archive keep | PENDING: authenticated A/B runs | headless + archive path complete |
 | D-demote | Demote 9 unproven missions | Shipped → `docs/exploratory/missions/` | — | — (already closed) |
-| E-trace | Full 11-primitive trace per run | `fleet_run.plan_dryrun_trace_from_progress` + `emit_dryrun_lifecycle_trace` + `write_headless_dryrun_archive` | Live coordinator partial | dry-run via `run-mission-headless.sh` (archive under `--repo`; statuses from progress excerpt) |
+| E-trace | Full 11-primitive trace per run | `plan_dryrun_trace_from_progress` + `emit_dryrun_lifecycle_trace` + kept archives | Live coordinator partial | `run-mission-headless.sh` keeps archive under `--repo` |
 | F-seat | Seat analysis + write locks | Shipped (`analyze_seat.py`, `locks.py`) | — | — (already closed) |
 | G-market | Marketplace Console submit | Packet refreshed | PENDING: human submit | README repro + status |
 
@@ -21,7 +21,7 @@ Legend: **Code** = shipped in repo · **Operator** = human/authenticated run · 
 | Gap ID | Item | Code state | Operator / human | This goal closes |
 |--------|------|------------|------------------|------------------|
 | W-proof | Mission proof for ≥10/12 missions | 3 shipped + 2 dogfood progress docs | PENDING per mission | Document promotion criteria |
-| W-bench-pub | Public benchmark citation artifact | Methodology doc | PENDING numbers | adversarial-bench-2026-06.md |
+| W-bench-pub | Public benchmark citation artifact | Methodology + headless/archive ready | PENDING numbers | adversarial-bench-2026-06.md updated |
 | W-adopt | External adopters / install metrics | Marketplace packet | PENDING submit + feedback | marketplace README |
 | W-gap1 | Non-busy WAIT (Codex/Grok ledger-poll) | Adapter prose | — | Documented in engine (degraded OK) |
 | W-telemetry | analyze.js "earns its seat" lens | `analyze_seat.py` scaffold | PENDING bench archives | bench docs |

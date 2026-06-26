@@ -5,11 +5,39 @@
 All notable changes to `autonomous-fleet` are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Dates are merge dates in IST.
 
-**On this page:** [Unreleased](#unreleased) · [0.1.0](#010---2026-06-26) · [Conventions](#conventions)
+**On this page:** [Unreleased](#unreleased) · [0.2.0](#020---2026-06-27) · [0.1.0](#010---2026-06-26) · [Conventions](#conventions)
 
 ## [Unreleased]
 
-### 2026-06-26 (roadmap advance)
+## [0.2.0] - 2026-06-27
+
+Lane 1 + Lane 2 dogfood evidence, external archive emission, and adversarial-bench
+infrastructure readiness.
+
+### Added
+
+- `record_headless_run` in `fleet_run` and `headless_trace` — alias for persisting headless archives.
+- Tests for twice-emit on external git repos and post-runtime archive keep via `run-mission-headless.sh`.
+
+### Changed
+
+- `run-mission-headless.sh` — after real grok/claude/codex invocations, unconditionally emits and
+  **keeps** `.fleet/runs/<run_id>/` under the target `--repo` (dry-run still cleans ephemeral copies).
+- `docs/external-dogfood/gemoji-headless-run.md` — Lane 2 headless ship-with-proof evidence
+  ([PR #56](https://github.com/ravidsrk/autonomous-fleet/pull/56), merge `87b9071`).
+- `docs/external-dogfood/ship-with-proof-evidence.md` — interactive + headless validated.
+- Adversarial bench docs (`adversarial-bench-2026-06.md`, `adversarial-bench-summary.md`, five
+  per-target stubs) — status: infrastructure ready for operator A/B runs; metrics ⬜ pending.
+- `docs/roadmap-gap-matrix.md` — A-real closed (Lane 1); C-bench / W-bench-pub headless path complete.
+
+### Dogfood evidence (Lanes 1–2)
+
+- **Lane 1:** First real substrate archive on `main`
+  (`docs/external-dogfood/first-substrate-run.md`, PR #55).
+- **Lane 2:** Headless `grok -p` + `run-campaign.sh --repo` on `ravidsrk/gemoji`
+  (`docs/external-dogfood/gemoji-headless-run.md`, PR #56).
+
+### 2026-06-26 (roadmap advance, codebase on main since PR #54)
 
 Added
 
