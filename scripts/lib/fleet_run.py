@@ -318,6 +318,32 @@ def write_manifest(
     created = (created_utc or _utc_now()).astimezone(timezone.utc).replace(microsecond=0)
     created_str = created.strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    manifest_path = archive_root / "manifest.json"
+    # Doctrine (engine.md TRACE EMISSION): trace first, ledger second — never the reverse,
+    # or a crash leaves the manifest on disk with no externally-visible cause. Emit BEFORE write.
+    if emitter is not None:
+        emitter.emit(
+            "T-FINAL",
+            "INTEGRATOR",
+            "succeeded",
+            details={"manifest": manifest_path.name, "files": len(file_list)},
+        )
+        # T-FINAL appends to trace.jsonl after callers built file entries — refresh checksum.
+        refreshed: list[FileEntry] = []
+        for fe in file_list:
+            if fe.path == "trace.jsonl":
+                refreshed.append(
+                    file_entry_for(
+                        archive_root / "trace.jsonl",
+                        archive_root,
+                        kind=fe.kind,
+                        producer=fe.producer,
+                    )
+                )
+            else:
+                refreshed.append(fe)
+        file_list = refreshed
+
     payload: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "run_id": run_id,
@@ -332,16 +358,6 @@ def write_manifest(
     if notes is not None:
         payload["notes"] = notes
 
-    manifest_path = archive_root / "manifest.json"
-    # Doctrine (engine.md TRACE EMISSION): trace first, ledger second — never the reverse,
-    # or a crash leaves the manifest on disk with no externally-visible cause. Emit BEFORE write.
-    if emitter is not None:
-        emitter.emit(
-            "T-FINAL",
-            "INTEGRATOR",
-            "succeeded",
-            details={"manifest": manifest_path.name, "files": len(file_list)},
-        )
     manifest_path.write_text(
         json.dumps(payload, indent=2, sort_keys=False) + "\n",
         encoding="utf-8",
