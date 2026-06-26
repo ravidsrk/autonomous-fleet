@@ -156,9 +156,13 @@ fi
 emit_headless_trace_archive() {
   local emit_mission="$1"
   local cleanup="${2:-0}"
-  local out archive
-  out="$("$VENV_PYTHON" "$ROOT/scripts/emit_headless_dryrun_trace.py" \
-    --mission "$emit_mission" --repo "$REPO_ROOT" --runtime "$RUNTIME" --fleet-root "$ROOT" 2>&1)" || {
+  local runtime_capture="${3:-}"
+  local out archive emit_args
+  emit_args=(--mission "$emit_mission" --repo "$REPO_ROOT" --runtime "$RUNTIME" --fleet-root "$ROOT")
+  if [[ -n "$runtime_capture" && -f "$runtime_capture" ]]; then
+    emit_args+=(--runtime-response "$runtime_capture")
+  fi
+  out="$("$VENV_PYTHON" "$ROOT/scripts/emit_headless_dryrun_trace.py" "${emit_args[@]}" 2>&1)" || {
     echo "warning: emit_headless_dryrun_trace failed (non-fatal)" >&2
     return 0
   }
@@ -174,12 +178,21 @@ emit_headless_trace_archive() {
   fi
 }
 
-emit_and_cleanup_dryrun_trace() {
-  emit_headless_trace_archive "$1" 1
+# Run a runtime command, tee stdout/stderr to a capture file, emit archive
+# unconditionally (even on non-zero exit), then propagate the runtime exit code.
+run_runtime_emit_and_exit() {
+  local -a cmd=("$@")
+  local runtime_capture runtime_rc=0
+  runtime_capture="$(mktemp "${TMPDIR:-/tmp}/headless-runtime-XXXXXX")"
+  "${cmd[@]}" > "$runtime_capture" 2>&1 || runtime_rc=$?
+  cat "$runtime_capture"
+  emit_headless_trace_archive "$(dryrun_emit_mission)" 0 "$runtime_capture"
+  rm -f "$runtime_capture"
+  exit "$runtime_rc"
 }
 
-emit_and_keep_headless_archive() {
-  emit_headless_trace_archive "$(dryrun_emit_mission)" 0
+emit_and_cleanup_dryrun_trace() {
+  emit_headless_trace_archive "$1" 1
 }
 
 dryrun_emit_mission() {
@@ -203,8 +216,7 @@ case "$RUNTIME" in
       echo "headless dry-run complete (grok not invoked; runtime auth not required)"
       exit 0
     fi
-    "${CMD[@]}"
-    emit_and_keep_headless_archive
+    run_runtime_emit_and_exit "${CMD[@]}"
     ;;
   claude)
     # Claude /goal in non-interactive prompt (v2.1.139+); no --max-turns or --cwd support
@@ -214,8 +226,7 @@ case "$RUNTIME" in
       echo "headless dry-run complete (claude not invoked; runtime auth not required)"
       exit 0
     fi
-    (cd "$REPO_ROOT" && claude -p "$PROMPT")
-    emit_and_keep_headless_archive
+    run_runtime_emit_and_exit bash -c "cd $(printf '%q' "$REPO_ROOT") && claude -p $(printf '%q' "$PROMPT")"
     ;;
   codex)
     if [[ "$DRY_RUN" -eq 1 ]]; then
@@ -225,13 +236,12 @@ case "$RUNTIME" in
       exit 0
     fi
     if command -v codex >/dev/null 2>&1; then
-      codex exec --cd "$REPO_ROOT" "$PROMPT"
+      run_runtime_emit_and_exit codex exec --cd "$REPO_ROOT" "$PROMPT"
     else
       echo "error: codex CLI not found on PATH; run interactively in Codex app with:" >&2
       echo "  /goal ${GOAL_COND:-<see prompt above>}" >&2
       exit 1
     fi
-    emit_and_keep_headless_archive
     ;;
   *)
     echo "error: unsupported runtime '$RUNTIME' (use grok, claude, or codex)" >&2
