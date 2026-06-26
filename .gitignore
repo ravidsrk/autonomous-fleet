@@ -1,6 +1,9 @@
 .venv/
 .research/
 .agents/
+# Ephemeral headless dry-run archives (example-fixture is committed intentionally)
+.fleet/runs/*
+!.fleet/runs/example-fixture/
 __pycache__/
 .pytest_cache/
 .coverage
