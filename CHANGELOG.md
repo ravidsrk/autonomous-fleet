@@ -13,9 +13,10 @@ All notable changes to `autonomous-fleet` are recorded here. The format follows
 
 - `run-mission-headless.sh` — emit and keep `.fleet/runs/<run_id>/` even when grok/claude/codex
   exits non-zero; capture runtime stdout/stderr as `headless-runtime-response.{json,txt}` in the
-  archive manifest (`kind=response`).
-- `run-campaign.sh` — explicit per-node archive emit after each real node invocation under
-  `--repo` (acceptance criterion 1; complements child `run-mission-headless.sh` emit).
+  archive manifest (`kind=response`). `run_runtime_emit` returns the runtime rc (standalone script
+  exits); campaign callers can emit before propagating failure.
+- `run-campaign.sh` — capture `node_rc` from `run-mission-headless.sh`, emit campaign archive
+  unconditionally (including on runtime failure under `set -euo pipefail`), then exit with `node_rc`.
 
 ### Added
 

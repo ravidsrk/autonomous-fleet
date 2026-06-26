@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import zipfile
@@ -10,6 +11,38 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "run-campaign.sh"
+
+_DOC_SYNC_READINESS = """---
+fleet-outcome:
+  mission: doc-sync
+  status: done
+  repo: /tmp/r
+  base_branch: fleet/b
+  prs_merged: 1
+  metrics:
+    drift_open: 0
+    code_bug_findings: 0
+---
+# ok
+"""
+
+
+def _fake_grok_bin(tmp_path: Path, *, exit_code: int = 0, body: str = '{"stopReason":"EndTurn"}') -> Path:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_grok = fake_bin / "grok"
+    fake_grok.write_text(f'#!/bin/sh\necho \'{body}\'\nexit {exit_code}\n')
+    fake_grok.chmod(0o755)
+    return fake_bin
+
+
+def _single_node_campaign(tmp_path: Path) -> Path:
+    campaign = tmp_path / "one-node.yaml"
+    campaign.write_text(
+        "campaign: one\nstart: docs\nnodes:\n  docs: { mission: doc-sync }\nedges:\n  docs: []\n",
+        encoding="utf-8",
+    )
+    return campaign
 
 
 def test_repo_health_dry_run():
@@ -252,6 +285,75 @@ def test_run_campaign_dry_run_self_heals_broken_real_venv(tmp_path: Path):
         check=False,
     )
     assert healed_imports.returncode == 0, healed_imports.stderr
+
+
+def test_run_campaign_non_dry_emits_campaign_archive_on_success(tmp_path: Path) -> None:
+    """Real (non-dry) campaign path reaches emit_campaign_node_archive after headless."""
+    external = tmp_path / "repo"
+    external.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=external, check=True)
+    (external / "docs").mkdir()
+    (external / "docs" / "doc-sync-readiness.md").write_text(_DOC_SYNC_READINESS, encoding="utf-8")
+
+    fake_bin = _fake_grok_bin(tmp_path)
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env.get('PATH', '')}"
+
+    r = subprocess.run(
+        [
+            str(SCRIPT),
+            "grok",
+            "--campaign",
+            str(_single_node_campaign(tmp_path)),
+            "--repo",
+            str(external),
+            "--max-turns",
+            "1",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "campaign archive kept:" in r.stdout
+    runs = sorted((external / ".fleet" / "runs").iterdir())
+    assert len(runs) >= 2, f"expected headless + campaign archives, got {runs}"
+
+
+def test_run_campaign_emits_campaign_archive_when_headless_fails(tmp_path: Path) -> None:
+    """set -e must not skip campaign emit when run-mission-headless exits non-zero."""
+    external = tmp_path / "repo"
+    external.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=external, check=True)
+
+    fake_bin = _fake_grok_bin(tmp_path, exit_code=1, body='{"error":"boom"}')
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env.get('PATH', '')}"
+
+    r = subprocess.run(
+        [
+            str(SCRIPT),
+            "grok",
+            "--campaign",
+            str(_single_node_campaign(tmp_path)),
+            "--repo",
+            str(external),
+            "--max-turns",
+            "1",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+    assert r.returncode == 1, r.stderr + r.stdout
+    assert "campaign archive kept:" in r.stdout
+    assert "archives emitted under" in r.stderr
+    runs = sorted((external / ".fleet" / "runs").iterdir())
+    assert len(runs) >= 2, f"expected headless + campaign archives on failure, got {runs}"
 
 
 def test_blocked_node_halts_campaign(tmp_path: Path):
