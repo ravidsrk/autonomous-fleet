@@ -41,10 +41,14 @@ echo "$EMIT_OUT" | grep -q "primitives (11):" || {
   echo "$EMIT_OUT" >&2
   exit 1
 }
-RUN_ID="$(echo "$EMIT_OUT" | sed -n 's/^  run_id: //p' | head -1)"
-ARCHIVE="$ROOT/.fleet/runs/$RUN_ID"
+ARCHIVE="$(echo "$EMIT_OUT" | sed -n 's/^emit_headless_dryrun_trace: archive=//p' | head -1)"
+if [[ -z "$ARCHIVE" || ! -d "$ARCHIVE" ]]; then
+  echo "validate-headless: could not resolve archive path from emit output" >&2
+  echo "$EMIT_OUT" >&2
+  exit 1
+fi
 "$ROOT/.venv/bin/python" "$ROOT/scripts/emit_trace.py" validate "$ARCHIVE/trace.jsonl"
-"$ROOT/.venv/bin/python" -c "import sys; sys.path.insert(0, '$ROOT/scripts'); from lib.fleet_run import load_and_validate_manifest; from pathlib import Path; _, errs = load_and_validate_manifest(Path('$ARCHIVE')); sys.exit(1 if errs else 0)"
+"$ROOT/.venv/bin/python" -c "import sys; sys.path.insert(0, '$ROOT/scripts'); from lib.fleet_run import load_and_validate_manifest; from pathlib import Path; _, errs = load_and_validate_manifest(Path('${ARCHIVE}')); sys.exit(1 if errs else 0)"
 rm -rf "$ARCHIVE"
 # 2) Shell entry point invokes emitter then cleans up (no archive left behind)
 HEADLESS_OUT="$("$ROOT/scripts/run-mission-headless.sh" grok doc-sync --dry-run --repo "$ROOT" 2>&1)"
