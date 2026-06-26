@@ -68,6 +68,26 @@ kick it off with a phrase like `sync the docs`.
 
 - [Guide 09, Mission catalog (§doc-sync)](../../docs/guide/09-mission-catalog.md): the depth here
 - [SKILL.md](./SKILL.md): the agent-facing spec (process, references, validation gates)
+## Real-world use cases
+
+### Example — autonomous-fleet README drift
+
+`docs/doc-sync-progress.md`: grep confirmed README omitted `run-sandboxed.sh`, `coupling-graph.py`,
+`render-dashboard.py`. MISSION-FIT confirmed; single README task row shipped.
+
+### Invocation — repo-health on gemoji
+
+`docs/external-dogfood/repo-health-gemoji.md` runs doc-sync as the first campaign node on
+github/gemoji — dry-run:
+
+```bash
+./scripts/run-campaign.sh grok --campaign docs/external-dogfood/repo-health-campaign.yaml --dry-run
+```
+
+### Worked example — container-use placement
+
+TASK row notes `PLACE=container-use(independent)` and cross-vendor review with SHA-pin —
+disciplines from `autonomous-fleet-core` exercised on a real doc-sync close.
 
 ---
 

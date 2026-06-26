@@ -57,10 +57,10 @@
     {
       "path": "trace.jsonl",
       "kind": "other",
-      "sha256": "402f4dc4587cb7cc38f87b885b98620433d5f2bdf3bc284b82442bd37a62c3aa",
+      "sha256": "481936c359450b4ebae9fb48fae462f938f11ce9def4012a3202a0d55f3f294f",
       "mtime_utc": "2026-06-23T00:08:00Z",
       "producer": "coordinator",
-      "bytes": 1100
+      "bytes": 3229
     },
     {
       "path": "fleet-outcome.yaml",

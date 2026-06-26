@@ -420,6 +420,23 @@ proves the order, so that build-blindness is something the run _has_, not someth
   and the manifest fields that make the order auditable.
 - [Installation](02-installation.md): getting a second vendor authenticated so you get cross-vendor
   review by default.
+## Real-world use cases
+
+### Example — blind-fix artifacts
+
+`.fleet/runs/example-fixture/` ships `reviewer-blind-fix-F-001.md` and `reviewer-blind-fix-F-002.md`
+(kind: `blind_fix`, producer `p0-reviewer-claude`) — reviewer never sees fixer patches before
+attestation.
+
+### Invocation — cross-vendor review row
+
+`docs/doc-sync-progress.md`: coordinator Claude, worker Codex, reviewer Claude via container-use diff —
+recorded `reviewed_sha=5a4c3e0` in the TASK row.
+
+### Worked example — fix attestation
+
+`.fleet/runs/example-fixture/p1-fix-attestation.json` closes the blind-fix loop for the adversarial
+mission archive (mission `adversarial-review-and-fix` in manifest).
 
 ---
 

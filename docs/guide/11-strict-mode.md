@@ -356,6 +356,22 @@ needs cleaning up in the repo: there is no copied script to delete.
 Announce the removal so the next operator knows strict mode was dropped. Do not
 remove it silently. A repo that looks like it has enforcement but does not is worse
 than one that never claimed to.
+## Real-world use cases
+
+### Example — validate-all as strict gate
+
+`docs/test-coverage-progress.md` closed when `scripts/` hit 100% coverage — the same gate
+`./scripts/validate-all.sh` enforces on every merge.
+
+### Invocation — registry lint on campaigns
+
+`python scripts/registry_lint.py scripts/campaigns/repo-health.yaml` rejects demoted missions in
+active YAML — repo-health was aligned to shipped missions only (v0.1.0 changelog).
+
+### Real run on mutation-check
+
+Roadmap verification plan requires `./scripts/mutation-check.sh` alongside validate-all — substrate
+mutations must stay caught.
 
 ---
 

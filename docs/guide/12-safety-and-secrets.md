@@ -408,6 +408,21 @@ and adapter you used, whether `--yolo` was set, and the verdict `run-sandboxed.s
 returns for the offending command if it is command-shaped. A classifier evasion (a dangerous command
 the classifier rates ALLOW) is a valid and useful report, because the classifier is a heuristic and
 closing gaps in it is ongoing work.
+## Real-world use cases
+
+### Example — sandboxed classify pass
+
+Doc-sync progress lists `scripts/run-sandboxed.sh --classify` on worker git/gh commands — safety
+classifier discipline exercised on a real run.
+
+### Invocation — headless without secrets on disk
+
+`validate-headless.sh` never writes API keys; dry-run paths preview commands only.
+
+### Worked example — reviewer sandbox
+
+Wave 2 shipped `scripts/run-sandboxed.sh --role reviewer` — read-only reviewer isolation tested in
+`tests/test_reviewer_sandbox.py`.
 
 ---
 

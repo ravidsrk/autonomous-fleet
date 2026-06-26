@@ -1186,6 +1186,26 @@ FLEET_DISABLE_NAMESPACING        validate_namespacing.py likewise
 See [The substrate](07-the-substrate.md) for what disabling each layer actually changes, and
 [Safety and secrets](12-safety-and-secrets.md) for the operator's view of the kill switches and the
 sandbox wrapper.
+## Real-world use cases
+
+### Example — bench-adversarial driver
+
+```bash
+./scripts/bench-adversarial.sh --help
+./scripts/bench-adversarial.sh --target pallets/click --dry-run
+```
+
+### Invocation — run-campaign presets
+
+```bash
+./scripts/run-campaign.sh grok --preset repo-health --dry-run
+./scripts/run-mission-headless.sh grok adversarial-review-and-fix --dry-run
+```
+
+### Real run on emit_trace CLI
+
+`tests/test_real_world_scenarios.py` invokes `emit_representative_trace.py` and `emit_trace.py validate`
+in-process — 67 scenario tests grounded in fixture + progress docs.
 
 ---
 

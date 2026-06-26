@@ -258,13 +258,44 @@ VERIFY_SUMMARY = {
 TRACE_EVENTS = [
     {
         "schema_version": "1.0",
+        "ts": "2026-06-23T00:00:10Z",
+        "run_id": RUN_ID,
+        "mission": MISSION,
+        "primitive": "DISPATCH",
+        "role": "COORDINATOR",
+        "status": "started",
+        "task_id": "task-example-1",
+    },
+    {
+        "schema_version": "1.0",
         "ts": "2026-06-23T00:00:30Z",
         "run_id": RUN_ID,
         "mission": MISSION,
         "primitive": "SPAWN_WORKER",
-        "role": "REVIEWER",
+        "role": "COORDINATOR",
         "status": "started",
         "task_id": "task-example-1",
+    },
+    {
+        "schema_version": "1.0",
+        "ts": "2026-06-23T00:01:00Z",
+        "run_id": RUN_ID,
+        "mission": MISSION,
+        "primitive": "WAIT",
+        "role": "COORDINATOR",
+        "status": "started",
+        "task_id": "task-example-1",
+    },
+    {
+        "schema_version": "1.0",
+        "ts": "2026-06-23T00:02:00Z",
+        "run_id": RUN_ID,
+        "mission": MISSION,
+        "primitive": "GOAL_BLOCKED",
+        "role": "COORDINATOR",
+        "status": "skipped",
+        "task_id": "task-example-1",
+        "details": {"reason": "goal probe passed (fixture)"},
     },
     {
         "schema_version": "1.0",
@@ -273,6 +304,26 @@ TRACE_EVENTS = [
         "mission": MISSION,
         "primitive": "INSPECT",
         "role": "REVIEWER",
+        "status": "succeeded",
+        "task_id": "task-example-1",
+    },
+    {
+        "schema_version": "1.0",
+        "ts": "2026-06-23T00:05:30Z",
+        "run_id": RUN_ID,
+        "mission": MISSION,
+        "primitive": "SYNC",
+        "role": "COORDINATOR",
+        "status": "succeeded",
+        "task_id": "task-example-1",
+    },
+    {
+        "schema_version": "1.0",
+        "ts": "2026-06-23T00:06:00Z",
+        "run_id": RUN_ID,
+        "mission": MISSION,
+        "primitive": "MERGE",
+        "role": "INTEGRATOR",
         "status": "succeeded",
         "task_id": "task-example-1",
     },
@@ -295,6 +346,27 @@ TRACE_EVENTS = [
         "status": "succeeded",
         "task_id": "task-example-1",
     },
+    {
+        "schema_version": "1.0",
+        "ts": "2026-06-23T00:07:45Z",
+        "run_id": RUN_ID,
+        "mission": MISSION,
+        "primitive": "ABORT",
+        "role": "COORDINATOR",
+        "status": "skipped",
+        "task_id": "task-example-1",
+        "details": {"reason": "compensation not taken (fixture)"},
+    },
+    {
+        "schema_version": "1.0",
+        "ts": "2026-06-23T00:08:00Z",
+        "run_id": RUN_ID,
+        "mission": MISSION,
+        "primitive": "T-FINAL",
+        "role": "INTEGRATOR",
+        "status": "succeeded",
+        "details": {"manifest": "manifest.json", "files": 9},
+    },
 ]
 
 
@@ -314,13 +386,19 @@ def _trace_events_with_ids() -> list[dict]:
     id_factory = _deterministic_event_id_factory()
     events: list[dict] = []
     spawn_id_by_task: dict[str, str] = {}
+    dispatch_id_by_task: dict[str, str] = {}
     for event in TRACE_EVENTS:
         row = dict(event)
         row["id"] = id_factory()
         task_id = row.get("task_id")
+        if row["primitive"] == "DISPATCH" and isinstance(task_id, str):
+            dispatch_id_by_task[task_id] = row["id"]
         if row["primitive"] == "SPAWN_WORKER" and isinstance(task_id, str):
             spawn_id_by_task[task_id] = row["id"]
-        if row["primitive"] == "INSPECT" and isinstance(task_id, str):
+            parent = dispatch_id_by_task.get(task_id)
+            if parent is not None:
+                row["parent_event"] = parent
+        if row["primitive"] in ("INSPECT", "COMMIT") and isinstance(task_id, str):
             parent_event = spawn_id_by_task.get(task_id)
             if parent_event is not None:
                 row["parent_event"] = parent_event
