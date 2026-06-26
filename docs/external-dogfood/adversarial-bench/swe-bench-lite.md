@@ -1,6 +1,6 @@
 # Adversarial bench — swe-bench-lite
 
-**Status:** ⬜ PENDING operator run.
+**Status:** Infrastructure ready for operator runs (headless `--repo`, archive emission); metrics ⬜ pending.
 
 # Methodology
 

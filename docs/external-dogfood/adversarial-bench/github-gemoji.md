@@ -1,6 +1,6 @@
 # Adversarial bench — github-gemoji
 
-**Status:** ⬜ PENDING operator run.
+**Status:** Infrastructure ready (headless `--repo`, archive emission); metrics ⬜ pending. Lane 2 gemoji baseline: `gemoji-headless-run.md`.
 
 # Methodology
 

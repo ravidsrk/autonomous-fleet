@@ -23,8 +23,9 @@ setup steps, and success criteria.
 ./scripts/bench-adversarial.sh --help
 ```
 
-**PENDING operator runs:** adversarial bench A/B numbers on fresh OSS repos. Gemoji ship-with-proof
-has interactive evidence (`1541ce9`) and headless validation (Lane 2, 2026-06-27).
+**Operator runs:** Headless driver + `--repo` + archive emission are ready (v0.2.0). Gemoji
+ship-with-proof has interactive evidence (`1541ce9`) and headless validation (Lane 2, 2026-06-27).
+Adversarial bench A/B **numbers** remain ⬜ pending authenticated operator sessions.
 
 ## Before first run on any external repo
 

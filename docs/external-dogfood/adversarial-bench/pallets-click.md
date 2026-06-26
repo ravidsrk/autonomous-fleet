@@ -1,6 +1,6 @@
 # Adversarial bench — pallets-click
 
-**Status:** ⬜ PENDING operator run.
+**Status:** Infrastructure ready for operator runs (headless `--repo`, archive emission); metrics ⬜ pending.
 
 # Methodology
 
