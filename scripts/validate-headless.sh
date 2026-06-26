@@ -32,13 +32,26 @@ for mission in "${SHIPPED_MISSIONS[@]}"; do
   done
 done
 
-echo "== validate-headless: representative trace emission =="
-"$ROOT/.venv/bin/python" "$ROOT/scripts/emit_representative_trace.py" \
-  --mission doc-sync \
-  --run-id 20260626T120000Z-doc-sync-000001 \
-  --out "$ROOT/.fleet/runs/headless-dryrun-trace"
-"$ROOT/.venv/bin/python" "$ROOT/scripts/emit_trace.py" validate \
-  "$ROOT/.fleet/runs/headless-dryrun-trace/trace.jsonl"
-rm -rf "$ROOT/.fleet/runs/headless-dryrun-trace"
+echo "== validate-headless: trace emission (lib + shell entry points) =="
+# 1) Direct lib CLI (validates before run-mission-headless cleanup)
+EMIT_OUT="$("$ROOT/.venv/bin/python" "$ROOT/scripts/emit_headless_dryrun_trace.py" \
+  --mission doc-sync --repo "$ROOT" --runtime grok --fleet-root "$ROOT" 2>&1)"
+echo "$EMIT_OUT" | grep -q "primitives (11):" || {
+  echo "validate-headless: expected 11 primitives from emit_headless_dryrun_trace" >&2
+  echo "$EMIT_OUT" >&2
+  exit 1
+}
+RUN_ID="$(echo "$EMIT_OUT" | sed -n 's/^  run_id: //p' | head -1)"
+ARCHIVE="$ROOT/.fleet/runs/$RUN_ID"
+"$ROOT/.venv/bin/python" "$ROOT/scripts/emit_trace.py" validate "$ARCHIVE/trace.jsonl"
+"$ROOT/.venv/bin/python" -c "import sys; sys.path.insert(0, '$ROOT/scripts'); from lib.fleet_run import load_and_validate_manifest; from pathlib import Path; _, errs = load_and_validate_manifest(Path('$ARCHIVE')); sys.exit(1 if errs else 0)"
+rm -rf "$ARCHIVE"
+# 2) Shell entry point invokes emitter then cleans up (no archive left behind)
+HEADLESS_OUT="$("$ROOT/scripts/run-mission-headless.sh" grok doc-sync --dry-run --repo "$ROOT" 2>&1)"
+echo "$HEADLESS_OUT" | grep -q "primitives (11):" || {
+  echo "validate-headless: run-mission-headless --dry-run must emit 11 primitives" >&2
+  echo "$HEADLESS_OUT" >&2
+  exit 1
+}
 
 echo "validate-headless: all mechanical checks passed"
