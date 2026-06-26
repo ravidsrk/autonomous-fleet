@@ -317,6 +317,7 @@ Full spec: [`skills/autonomous-fleet-core/references/fleet-outcome.md`](skills/a
 If you're hacking on the framework itself:
 
 ```bash
+./scripts/bootstrap.sh                             # first-time contributor setup: venv + deps + validate-all
 ./scripts/validate-all.sh                          # everything: skills + fleet-outcome + goals + run-archive + blind-fix + trace + pytest (100% coverage gate)
 ./scripts/run-campaign.sh grok --preset repo-health --dry-run
 ./scripts/run-mission-headless.sh grok doc-sync --max-turns 50

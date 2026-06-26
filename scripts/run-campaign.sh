@@ -127,7 +127,7 @@ if [[ "$YOLO" -eq 1 && "$REPO_ROOT" != "$ROOT" && "$YOLO_ACK" -ne 1 ]]; then
   exit 2
 fi
 
-# Bootstrap the venv via the shared helper: it RE-CHECKS `import yaml, pytest` and reinstalls from
+# Bootstrap the venv via the shared helper: it RE-CHECKS `import yaml, pytest, coverage` and reinstalls from
 # requirements.txt, so a stale venv (binary present but pyyaml missing) self-heals instead of
 # crashing the runner with a raw ModuleNotFoundError traceback.
 source "$ROOT/scripts/lib/venv-bootstrap.sh"

@@ -105,7 +105,7 @@ if [[ "$YOLO" -eq 1 && "$REPO_ROOT" != "$ROOT" && "$YOLO_ACK" -ne 1 ]]; then
   exit 2
 fi
 
-# Bootstrap the venv via the shared helper: it re-checks `import yaml, pytest` and reinstalls from
+# Bootstrap the venv via the shared helper: it re-checks `import yaml, pytest, coverage` and reinstalls from
 # requirements.txt, so a stale venv self-heals instead of drifting from the pinned dependency set.
 source "$ROOT/scripts/lib/venv-bootstrap.sh"
 bootstrap_validation_venv "$ROOT"

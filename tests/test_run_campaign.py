@@ -209,7 +209,7 @@ def test_run_campaign_dry_run_self_heals_broken_real_venv(tmp_path: Path):
 
     venv_python = repo / ".venv" / "bin" / "python"
     missing_imports = subprocess.run(
-        [str(venv_python), "-c", "import yaml, pytest"],
+        [str(venv_python), "-c", "import yaml, pytest, coverage"],
         cwd=repo,
         capture_output=True,
         text=True,
@@ -239,7 +239,7 @@ def test_run_campaign_dry_run_self_heals_broken_real_venv(tmp_path: Path):
     assert "Traceback" not in combined
 
     healed_imports = subprocess.run(
-        [str(venv_python), "-c", "import yaml, pytest"],
+        [str(venv_python), "-c", "import yaml, pytest, coverage"],
         cwd=repo,
         capture_output=True,
         text=True,

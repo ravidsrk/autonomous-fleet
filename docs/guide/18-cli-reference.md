@@ -53,7 +53,7 @@ current working directory unless a flag says otherwise.
 > `run-mission-headless.sh`, `validate-all.sh`, `mutation-check.sh`, `preflight.sh`, the
 > `validate-*.sh` wrappers) source `scripts/lib/venv-bootstrap.sh` and call
 > `bootstrap_validation_venv`. That helper
-> re-checks `import yaml, pytest` and reinstalls from `requirements.txt` if anything is missing, so
+> re-checks `import yaml, pytest, coverage` and reinstalls from `requirements.txt` if anything is missing, so
 > a stale `.venv` self-heals instead of crashing with a raw `ModuleNotFoundError`. You do not
 > activate the venv yourself; the scripts run `$VENV_PYTHON` directly.
 
