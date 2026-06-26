@@ -247,17 +247,16 @@ while [[ -n "$CURRENT" ]]; do
     echo "  would run: run-mission-headless.sh $RUNTIME $MISSION --repo $REPO_ROOT --max-turns $MAX_TURNS --dry-run"
     echo "  expect:    $READINESS_ABS with fleet-outcome.status done"
     if [[ -f "$ROOT/scripts/emit_headless_dryrun_trace.py" ]]; then
+      SCRATCH_REPO="$(mktemp -d "${TMPDIR:-/tmp}/fleet-campaign-dryrun-XXXXXX")"
+      git -C "$SCRATCH_REPO" init -q 2>/dev/null || true
       EMIT_OUT="$("$VENV_PYTHON" "$ROOT/scripts/emit_headless_dryrun_trace.py" \
-        --mission "$MISSION" --repo "$REPO_ROOT" --runtime "$RUNTIME" --fleet-root "$ROOT" 2>&1)" || {
+        --mission "$MISSION" --repo "$SCRATCH_REPO" --runtime "$RUNTIME" --fleet-root "$ROOT" 2>&1)" || {
         echo "  warn: emit_headless_dryrun_trace failed (non-fatal in dry-run)" >&2
         EMIT_OUT=""
       }
+      rm -rf "$SCRATCH_REPO"
       if [[ -n "$EMIT_OUT" ]]; then
         echo "$EMIT_OUT" | sed 's/^/  /'
-        EMIT_RUN_ID="$(echo "$EMIT_OUT" | sed -n 's/^  run_id: //p' | head -1)"
-        if [[ -n "$EMIT_RUN_ID" && -d "$REPO_ROOT/.fleet/runs/$EMIT_RUN_ID" ]]; then
-          rm -rf "$REPO_ROOT/.fleet/runs/$EMIT_RUN_ID"
-        fi
       fi
     fi
   else

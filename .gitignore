@@ -1,6 +1,5 @@
 .venv/
 .research/
-
 .agents/
 __pycache__/
 .pytest_cache/

@@ -155,22 +155,21 @@ fi
 
 emit_and_cleanup_dryrun_trace() {
   local emit_mission="$1"
-  local out run_id
+  local out run_id archive
   out="$("$VENV_PYTHON" "$ROOT/scripts/emit_headless_dryrun_trace.py" \
-    --mission "$emit_mission" --repo "$REPO_ROOT" --runtime "$RUNTIME" --fleet-root "$ROOT")"
+    --mission "$emit_mission" --repo "$REPO_ROOT" --runtime "$RUNTIME" --fleet-root "$ROOT" 2>&1)" || {
+    echo "warning: emit_headless_dryrun_trace failed (non-fatal in dry-run)" >&2
+    return 0
+  }
   echo "$out"
-  run_id="$(echo "$out" | sed -n 's/^  run_id: //p' | head -1)"
-  if [[ -n "$run_id" && -d "$REPO_ROOT/.fleet/runs/$run_id" ]]; then
-    rm -rf "$REPO_ROOT/.fleet/runs/$run_id"
+  archive="$(echo "$out" | sed -n 's/^emit_headless_dryrun_trace: archive=//p' | head -1)"
+  if [[ -n "$archive" && -d "$archive" ]]; then
+    rm -rf "$archive"
   fi
 }
 
 dryrun_emit_mission() {
-  if [[ "$MISSION" == "fleet-program" ]]; then
-    echo "doc-sync"
-  else
-    echo "$MISSION"
-  fi
+  "$VENV_PYTHON" -c 'import sys; sys.path.insert(0, sys.argv[1]+"/scripts"); from lib.mission_registry import headless_emit_mission; print(headless_emit_mission(sys.argv[2]))' "$ROOT" "$MISSION"
 }
 
 echo "== run-mission-headless =="

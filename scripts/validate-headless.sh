@@ -33,6 +33,14 @@ for mission in "${SHIPPED_MISSIONS[@]}"; do
 done
 
 echo "== validate-headless: trace emission (lib + shell entry points) =="
+ARCHIVE=""
+cleanup_archive() {
+  if [[ -n "${ARCHIVE:-}" && -d "$ARCHIVE" ]]; then
+    rm -rf "$ARCHIVE"
+  fi
+}
+trap cleanup_archive EXIT
+
 # 1) Direct lib CLI (validates before run-mission-headless cleanup)
 EMIT_OUT="$("$ROOT/.venv/bin/python" "$ROOT/scripts/emit_headless_dryrun_trace.py" \
   --mission doc-sync --repo "$ROOT" --runtime grok --fleet-root "$ROOT" 2>&1)"
@@ -47,9 +55,15 @@ if [[ -z "$ARCHIVE" || ! -d "$ARCHIVE" ]]; then
   echo "$EMIT_OUT" >&2
   exit 1
 fi
-"$ROOT/.venv/bin/python" "$ROOT/scripts/emit_trace.py" validate "$ARCHIVE/trace.jsonl"
-"$ROOT/.venv/bin/python" -c "import sys; sys.path.insert(0, '$ROOT/scripts'); from lib.fleet_run import load_and_validate_manifest; from pathlib import Path; _, errs = load_and_validate_manifest(Path('${ARCHIVE}')); sys.exit(1 if errs else 0)"
-rm -rf "$ARCHIVE"
+if ! "$ROOT/.venv/bin/python" "$ROOT/scripts/emit_trace.py" validate "$ARCHIVE/trace.jsonl"; then
+  exit 1
+fi
+if ! "$ROOT/.venv/bin/python" "$ROOT/scripts/validate_run_archive.py" "$ARCHIVE" --quiet; then
+  exit 1
+fi
+ARCHIVE=""
+trap - EXIT
+
 # 2) Shell entry point invokes emitter then cleans up (no archive left behind)
 HEADLESS_OUT="$("$ROOT/scripts/run-mission-headless.sh" grok doc-sync --dry-run --repo "$ROOT" 2>&1)"
 echo "$HEADLESS_OUT" | grep -q "primitives (11):" || {
