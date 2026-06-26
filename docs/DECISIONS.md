@@ -1,10 +1,15 @@
 # DECISIONS — composition-e2e campaign
 
+> **Canonical repo slug:** `ravidsrk/autonomous-fleet`. `REPO_ROOT` values below are
+> run-specific snapshots (local clone or Orca worktree at execution time), not the contract
+> form used in `fleet-outcome.repo` readiness fields.
+
 ## Self-orientation
 
 | Field | Value |
 |-------|-------|
-| REPO_ROOT | `/Users/ravindra/projects/autonomous-fleet` (canonical local clone of `ravidsrk/autonomous-fleet`) |
+| repo | `ravidsrk/autonomous-fleet` |
+| REPO_ROOT | `/Users/ravindra/projects/autonomous-fleet` (local clone at doc-sync dogfood) |
 | MAINTAINER | Ravindra Kumar `<ravidsrk@gmail.com>` |
 | BRANCH_PREFIX | `fleet/` |
 | BASE | `fleet/composition-e2e-base` |
@@ -20,7 +25,7 @@
 ## doc-sync (2026-06-20)
 
 - Pass: community-skills + PR #7 scope — D6–D14 in `docs/doc-sync-audit.md`
-- Verified: `validate-all.sh` 20/20 skills, pytest 25 pass
+- Verified: `validate-all.sh` 12/12 skills, pytest 928 pass (2026-06-26 refresh)
 - BASE for doc edits: `fleet/community-skills-and-dogfood`
 
 ## Prior runs
@@ -35,7 +40,8 @@ Orca multi-agent FIX run. Review is frozen; this run only closes findings.
 |-------|-------|
 | REVIEW_DOC | `docs/adversarial-audit-2026-06-20.md` (resolved: `__REVIEW_DOC__` placeholder was unsubstituted and the default `docs/adversarial-review.md` is absent; this audit, written this session and the only frozen review in the tree, is the source of truth) |
 | BASE | `ravidsrk/adversarial-fresh` off `main`@1460f47 |
-| REPO_ROOT | `/Users/ravindra/orca/workspaces/autonomous-fleet/new-research` (repoId d19bcfee) |
+| repo | `ravidsrk/autonomous-fleet` |
+| REPO_ROOT | `/Users/ravindra/orca/workspaces/autonomous-fleet/new-research` (Orca worktree snapshot; repoId d19bcfee) |
 | MAINTAINER | Ravindra Kumar `<ravidsrk@gmail.com>` |
 | Roles | @grok codes (interactive Orca terminal), @codex reviews (`codex --full-auto`), @claude integrates |
 | Worker effort | MAX / highest tier |
@@ -56,7 +62,8 @@ Second adversarial fix run. Closes the frozen `docs/autonomous-fleet-review.md` 
 |-------|-------|
 | REVIEW_DOC | `docs/autonomous-fleet-review.md` (materialized this session — the "Autonomous-Fleet — End-to-End Review") |
 | BASE | `ravidsrk/review-fix` off `main`@354c90a |
-| REPO_ROOT | `/Users/ravindra/orca/workspaces/autonomous-fleet/research-mission` (worktree; `main` is checked out at `/Users/ravindra/projects/autonomous-fleet`) |
+| repo | `ravidsrk/autonomous-fleet` |
+| REPO_ROOT | `/Users/ravindra/orca/workspaces/autonomous-fleet/research-mission` (Orca worktree snapshot; main checkout at `/Users/ravindra/projects/autonomous-fleet`) |
 | MAINTAINER | Ravindra Kumar `<ravidsrk@gmail.com>` (sole author, no agent/tool trailers) |
 | Roles | Coder = Agent-tool subagent; Reviewer = `codex exec` read-only; Integrator = @claude coordinator |
 
