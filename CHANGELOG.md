@@ -13,10 +13,14 @@ All notable changes to `autonomous-fleet` are recorded here. The format follows
 
 Added
 
-- `docs/roadmap-gap-matrix.md` — consolidated pending items from way-ahead, improvement-plan,
-  and docs-site-plan with honest operator vs code-state columns.
-- `scripts/emit_representative_trace.py` and `emit_representative_mission_trace()` — mechanical
-  nine-primitive trace emission without runtime auth; wired into `validate-headless.sh`.
+- `docs/roadmap-gap-matrix.md` — consolidated pending items from way-ahead (commits A–G),
+  improvement-plan (Waves 1–3), and docs-site-plan with honest operator vs code-state columns.
+- `scripts/lib/headless_trace.py` and `scripts/emit_headless_dryrun_trace.py` — mechanical
+  eleven-primitive trace + manifest archives from `run-mission-headless.sh --dry-run` and
+  `run-campaign.sh --dry-run`, using progress-doc excerpts and `write_manifest(emitter=…)`.
+- `emit_full_primitive_trace()` — all 11 primitives including `GOAL_BLOCKED` and `ABORT`.
+- `scripts/emit_representative_trace.py` and `emit_representative_mission_trace()` — standalone
+  CLI for fixture refresh; superseded for entry points by headless_trace wiring.
 - `tests/test_real_world_scenarios.py` — 67 direct exercises grounded in example-fixture,
   progress docs, and external-dogfood packs.
 - "Real-world use cases" sections (≥3 examples each) in all 20 guide chapters and the three shipped
@@ -24,8 +28,11 @@ Added
 
 Changed
 
-- `.fleet/runs/example-fixture/trace.jsonl` expanded from 4 to 9 primitives (DISPATCH through
-  T-FINAL with parent_event lineage); manifest and generator updated to match.
+- `.fleet/runs/example-fixture/trace.jsonl` expanded to 11 primitives (adds `GOAL_BLOCKED`,
+  `ABORT`); manifest and generator updated; `write_manifest` refreshes `trace.jsonl` checksum
+  after `T-FINAL` emit.
+- `run-mission-headless.sh` and `run-campaign.sh` `--dry-run` now emit and validate traces via
+  `headless_trace` (ephemeral archives cleaned up after emission).
 - `docs/external-dogfood/` bench and dogfood READMEs — literal reproduction commands plus
   PENDING operator-run notes where live auth is still required.
 - `docs/marketplace-submission/README.md` — v0.1.0 mechanical repro block and submit status.
