@@ -1,7 +1,8 @@
 # ship-with-proof interactive dogfood — gemoji (2026-06-20)
 
-**Status:** interactive dogfood (headless path not yet validated). Headless `grok -p` failed with
-`Auth(AuthorizationRequired)`; the run completed interactively in Cursor Grok.
+**Status:** interactive dogfood (2026-06-20) + **headless validated** (2026-06-27, Lane 2).
+Interactive run used Cursor Grok when `grok -p` lacked auth. Headless re-run:
+`docs/external-dogfood/gemoji-headless-run.md`.
 
 ## Target
 
