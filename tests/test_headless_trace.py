@@ -385,6 +385,80 @@ def test_external_git_repo_emit_twice_creates_two_archives(tmp_path: Path) -> No
             shutil.rmtree(external / ".fleet" / "runs")
 
 
+def test_write_headless_archive_includes_runtime_response_json(tmp_path: Path) -> None:
+    capture = tmp_path / "capture.json"
+    capture.write_text('{"stopReason":"EndTurn","text":"ok"}', encoding="utf-8")
+    external = tmp_path / "repo"
+    external.mkdir()
+    arch, _run_id, _prims = fleet_run.write_headless_dryrun_archive(
+        external,
+        mission="doc-sync",
+        runtime="grok",
+        progress_source_root=REPO_ROOT,
+        runtime_response_path=capture,
+    )
+    try:
+        response_path = arch / "headless-runtime-response.json"
+        assert response_path.is_file()
+        assert "EndTurn" in response_path.read_text(encoding="utf-8")
+        payload, errs = fleet_run.load_and_validate_manifest(arch)
+        assert errs == []
+        kinds = {e["kind"] for e in payload["files"]}
+        assert "response" in kinds
+    finally:
+        _cleanup_archive(arch)
+
+
+def test_runtime_response_archive_name_plain_text(tmp_path: Path) -> None:
+    capture = tmp_path / "out.txt"
+    capture.write_text("plain runtime log\n", encoding="utf-8")
+    assert fleet_run._runtime_response_archive_name(capture) == "headless-runtime-response.txt"
+
+
+def test_runtime_response_archive_name_missing_file(tmp_path: Path) -> None:
+    assert (
+        fleet_run._runtime_response_archive_name(tmp_path / "missing-capture")
+        == "headless-runtime-response.txt"
+    )
+
+
+def test_run_mission_headless_emits_archive_on_runtime_failure(tmp_path: Path) -> None:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_grok = fake_bin / "grok"
+    fake_grok.write_text('#!/bin/sh\necho \'{"error":"boom"}\' >&2\nexit 1\n')
+    fake_grok.chmod(0o755)
+
+    external = tmp_path / "repo"
+    external.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=external, check=True)
+
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env.get('PATH', '')}"
+
+    r = subprocess.run(
+        [
+            str(REPO_ROOT / "scripts" / "run-mission-headless.sh"),
+            "grok",
+            "doc-sync",
+            "--repo",
+            str(external),
+            "--max-turns",
+            "1",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=REPO_ROOT,
+        env=env,
+    )
+    assert r.returncode == 1, r.stderr + r.stdout
+    assert "archive emitted for --repo:" in r.stdout
+    runs = list((external / ".fleet" / "runs").glob("*"))
+    assert len(runs) == 1
+    assert (runs[0] / "headless-runtime-response.json").is_file()
+
+
 def test_run_mission_headless_keeps_archive_after_runtime(tmp_path: Path) -> None:
     """Real run-mission-headless.sh path: fake grok on PATH, archive kept under --repo."""
     fake_bin = tmp_path / "bin"
@@ -423,3 +497,4 @@ def test_run_mission_headless_keeps_archive_after_runtime(tmp_path: Path) -> Non
     assert len(runs) == 1
     assert (runs[0] / "manifest.json").is_file()
     assert (runs[0] / "trace.jsonl").is_file()
+    assert (runs[0] / "headless-runtime-response.json").is_file()
