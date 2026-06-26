@@ -1,4 +1,4 @@
-# Handoff — Lane 2 headless ship-with-proof on gemoji
+# Handoff — Lane 2 headless ship-with-proof on gemoji (COMPLETE 2026-06-27)
 
 **Campaign:** `external-gemoji-ship-with-proof` (audit → tests → docs)  
 **Repo:** `/tmp/gemoji` (fork `ravidsrk/gemoji`, branch `fleet/gemoji-ship-with-proof-base`)  
