@@ -409,60 +409,22 @@ def emit_full_primitive_trace(
     abort_status: str = "skipped",
     details_note: str | None = None,
 ) -> dict[str, str]:
-    """Emit all 11 trace primitives for one task (no runtime auth).
+    """Emit all 11 trace primitives — delegates to fleet_run lifecycle orchestration."""
+    from . import fleet_run
 
-    GOAL_BLOCKED and ABORT default to ``skipped`` on the dry-run happy path
-    (goal probe passed; compensation not invoked). Set ``include_t_final=False``
-    when ``write_manifest`` will emit T-FINAL per engine doctrine.
-    Returns a map of logical step names to event ids.
-    """
-    ids: dict[str, str] = {}
-    ids["dispatch"] = emitter.emit("DISPATCH", "COORDINATOR", "started", task_id=task_id)
-    ids["spawn"] = emitter.emit(
-        "SPAWN_WORKER", "COORDINATOR", "started", task_id=task_id, parent_event=ids["dispatch"]
-    )
-    ids["wait"] = emitter.emit("WAIT", "COORDINATOR", "started", task_id=task_id)
-    goal_details = {"reason": details_note or "goal condition probe (dry-run)"}
-    ids["goal_blocked"] = emitter.emit(
-        "GOAL_BLOCKED",
-        "COORDINATOR",
-        goal_blocked_status,
+    runtime = details_note or "standalone"
+    if details_note and "via " in details_note:
+        runtime = details_note.split("via ", 1)[-1]
+    return fleet_run.emit_dryrun_lifecycle_trace(
+        emitter,
         task_id=task_id,
-        details=goal_details,
+        runtime=runtime,
+        include_t_final=include_t_final,
+        manifest_name=manifest_name,
+        file_count=file_count,
+        goal_blocked_status=goal_blocked_status,
+        abort_status=abort_status,
     )
-    ids["inspect"] = emitter.emit(
-        "INSPECT",
-        "REVIEWER",
-        "succeeded",
-        task_id=task_id,
-        parent_event=ids["spawn"],
-    )
-    ids["sync"] = emitter.emit("SYNC", "COORDINATOR", "succeeded", task_id=task_id)
-    ids["merge"] = emitter.emit("MERGE", "INTEGRATOR", "succeeded", task_id=task_id)
-    ids["freeze"] = emitter.emit("FREEZE", "COORDINATOR", "succeeded")
-    ids["commit"] = emitter.emit(
-        "COMMIT",
-        "FIXER",
-        "succeeded",
-        task_id=task_id,
-        parent_event=ids["spawn"],
-    )
-    abort_details = {"reason": details_note or "compensation path not taken (dry-run)"}
-    ids["abort"] = emitter.emit(
-        "ABORT",
-        "COORDINATOR",
-        abort_status,
-        task_id=task_id,
-        details=abort_details,
-    )
-    if include_t_final:
-        ids["t_final"] = emitter.emit(
-            "T-FINAL",
-            "INTEGRATOR",
-            "succeeded",
-            details={"manifest": manifest_name, "files": file_count},
-        )
-    return ids
 
 
 def emit_representative_mission_trace(
