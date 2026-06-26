@@ -236,7 +236,9 @@ def progress_excerpt_for_mission(source_root: Path, mission: str) -> str:
 
 def progress_text_for_mission(source_root: Path, mission: str) -> str:
     """Return full progress doc text (or synthetic fallback) for trace planning."""
-    path = source_root / "docs" / f"{mission}-progress.md"
+    from .mission_registry import progress_path
+
+    path = source_root / progress_path(mission)
     if path.is_file():
         return path.read_text(encoding="utf-8")
     return (
