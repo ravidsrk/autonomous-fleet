@@ -189,5 +189,6 @@ def test_per_target_stubs_exist() -> None:
 
 def test_summary_doc_exists_with_pending_status() -> None:
     summary = (REPO_ROOT / "docs/external-dogfood/adversarial-bench-summary.md").read_text()
-    assert "PENDING" in summary
+    assert "pending" in summary.lower()
+    assert "ready for operator" in summary.lower() or "infrastructure ready" in summary.lower()
     assert "substrate-off-vs-on" in summary or "substrate" in summary
