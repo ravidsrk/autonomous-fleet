@@ -205,6 +205,22 @@ if [[ "$YOLO" -eq 1 ]]; then
   echo "warning: --yolo auto-approves all agent tool calls; untrusted --repo/--campaign + yolo = full RCE surface" >&2
 fi
 
+emit_campaign_node_archive() {
+  local mission="$1"
+  local emit_mission out archive
+  emit_mission="$("$VENV_PYTHON" -c 'import sys; sys.path.insert(0, sys.argv[1]+"/scripts"); from lib.mission_registry import headless_emit_mission; print(headless_emit_mission(sys.argv[2]))' "$ROOT" "$mission")"
+  out="$("$VENV_PYTHON" "$ROOT/scripts/emit_headless_dryrun_trace.py" \
+    --mission "$emit_mission" --repo "$REPO_ROOT" --runtime "$RUNTIME" --fleet-root "$ROOT" 2>&1)" || {
+    echo "  warn: campaign node archive emit failed (non-fatal)" >&2
+    return 0
+  }
+  echo "$out" | sed 's/^/  /'
+  archive="$(echo "$out" | sed -n 's/^emit_headless_dryrun_trace: archive=//p' | head -1)"
+  if [[ -n "$archive" && -d "$archive" ]]; then
+    echo "  campaign archive kept: $archive"
+  fi
+}
+
 echo "== run-campaign =="
 echo "runtime:  $RUNTIME"
 echo "repo:     $REPO_ROOT"
@@ -281,6 +297,7 @@ while [[ -n "$CURRENT" ]]; do
     else
       echo "warn: $READINESS_ABS not found after node $CURRENT" >&2
     fi
+    emit_campaign_node_archive "$MISSION"
   fi
 
   VISITED="${VISITED:+$VISITED }$CURRENT"
