@@ -1,6 +1,6 @@
 # Adversarial bench — pycqa-bandit-corpus
 
-**Status:** ⬜ PENDING operator run.
+**Status:** Infrastructure ready for operator runs (headless `--repo`, archive emission); metrics ⬜ pending.
 
 # Methodology
 

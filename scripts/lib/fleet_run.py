@@ -403,6 +403,8 @@ def write_headless_dryrun_archive(
 
     progress_source_root defaults to repo_root; pass fleet_root when --repo
     targets an external checkout but progress excerpts live in this clone.
+    Archives are always written to disk; shell entry points remove ephemeral
+    copies only on --dry-run (see run-mission-headless.sh).
     Returns (archive_dir, run_id, sorted primitive names).
     """
     from .emit_trace import TraceEmitter, iter_trace_file
@@ -455,6 +457,22 @@ def write_headless_dryrun_archive(
 
     primitives = sorted({e["primitive"] for e in iter_trace_file(trace_path)})
     return arch, run_id, primitives
+
+
+def record_headless_run(
+    repo_root: Path,
+    *,
+    mission: str,
+    runtime: str = "grok",
+    progress_source_root: Path | None = None,
+) -> tuple[Path, str, list[str]]:
+    """Persist a headless run archive (alias for write_headless_dryrun_archive)."""
+    return write_headless_dryrun_archive(
+        repo_root,
+        mission=mission,
+        runtime=runtime,
+        progress_source_root=progress_source_root,
+    )
 
 
 # ───────────────────────────────────────────────────────────────────────
