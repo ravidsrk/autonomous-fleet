@@ -15,9 +15,11 @@ Added
 
 - `docs/roadmap-gap-matrix.md` — consolidated pending items from way-ahead (commits A–G),
   improvement-plan (Waves 1–3), and docs-site-plan with honest operator vs code-state columns.
-- `scripts/lib/headless_trace.py` and `scripts/emit_headless_dryrun_trace.py` — mechanical
-  eleven-primitive trace + manifest archives from `run-mission-headless.sh --dry-run` and
-  `run-campaign.sh --dry-run`, using progress-doc excerpts and `write_manifest(emitter=…)`.
+- `fleet_run.emit_dryrun_lifecycle_trace` and `write_headless_dryrun_archive` — mechanical
+  eleven-primitive orchestration in `fleet_run` (not only emit_trace helpers); archives land
+  under `--repo` while progress excerpts read from the fleet clone.
+- `scripts/lib/headless_trace.py` and `scripts/emit_headless_dryrun_trace.py` — thin CLI/shell
+  wrappers for headless dry-run entry points.
 - `emit_full_primitive_trace()` — all 11 primitives including `GOAL_BLOCKED` and `ABORT`.
 - `scripts/emit_representative_trace.py` and `emit_representative_mission_trace()` — standalone
   CLI for fixture refresh; superseded for entry points by headless_trace wiring.

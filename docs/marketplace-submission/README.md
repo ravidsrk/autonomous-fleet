@@ -62,7 +62,7 @@ shipped at `docs/external-dogfood/adversarial-bench-2026-06.md`. Numbers will
 be cited in the next packet refresh once operator runs land.
 
 🟢 **v0.1.0 + representative trace emission** — tagged release includes
-`scripts/emit_representative_trace.py`, nine-primitive example-fixture trace,
+`scripts/emit_headless_dryrun_trace.py`, eleven-primitive example-fixture trace,
 `validate-headless.sh` gate, and 67+ real-world scenario tests. Mechanical
 repro before submit:
 
