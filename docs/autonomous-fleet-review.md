@@ -1,10 +1,18 @@
 # Autonomous-Fleet — End-to-End Review
 
-**Status:** FROZEN. This document is the single source of truth for the `ravidsrk/review-fix`
-fix run. It is a severity-ranked, verified, deduped adversarial review. Each finding carries a
-`→ Fix` recommendation that is the spec for closing it. Do not re-audit or re-scope.
+**Status:** FROZEN (historical). This document is the single source of truth for the
+`ravidsrk/review-fix` fix run (2026-06-20). It is a severity-ranked, verified, deduped adversarial
+review. Each finding carries a `→ Fix` recommendation that is the spec for closing it. Do not
+re-audit or re-scope the original findings below.
 
-**Confirmed-green baseline (regression floor):** `./scripts/validate-all.sh` green; `pytest` →
+**Post-review closure (2026-06-26):** H1 (LICENSE), H2 (validator false greens), H3 (trust
+boundaries + `run-sandboxed.sh`), L2 (`LOOP_POLL` in engine), L3 (`secure-ship.yaml` archived stub),
+and L5 (codex adapter version) are closed on `main`. The regression floor is now `./scripts/bootstrap.sh`
+or `./scripts/validate-all.sh` green; `pytest` → **928 passed** (49 test files); active campaign
+presets `repo-health`, `ship-with-proof`, and `quality-gate` dry-run exit 0 (`align-then-ship` is
+archived pending exploratory promotion).
+
+**Original confirmed-green baseline (2026-06-20):** `./scripts/validate-all.sh` green; `pytest` →
 25 passed; all 4 shipped campaign presets (`repo-health`, `ship-with-proof`, `quality-gate`,
 `align-then-ship`) dry-run exit 0.
 
