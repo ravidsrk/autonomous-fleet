@@ -575,8 +575,8 @@ Related reference chapters: [Trace schema (v1)](16-trace-schema.md) for `trace.j
 
 ### Example — example-fixture manifest
 
-Nine files, kinds spanning `blind_fix`, `findings`, `verify_summary`, `readiness` — run_id
-`20260623T000000Z-adversarial-review-and-fix-000001`.
+Nine manifest files (kinds spanning `blind_fix`, `findings`, `verify_summary`, `readiness`) plus an
+eleven-line `trace.jsonl` — run_id `20260623T000000Z-adversarial-review-and-fix-000001`.
 
 ### Invocation — write_manifest + T-FINAL
 

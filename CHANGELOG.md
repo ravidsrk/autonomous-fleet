@@ -15,6 +15,8 @@ Added
 
 - `docs/roadmap-gap-matrix.md` — consolidated pending items from way-ahead (commits A–G),
   improvement-plan (Waves 1–3), and docs-site-plan with honest operator vs code-state columns.
+- `fleet_run.plan_dryrun_trace_from_progress` — derive task_id and primitive statuses from
+  verbatim `docs/<mission>-progress.md` excerpts (TASK / PHASE / REVIEWED / MERGED).
 - `fleet_run.emit_dryrun_lifecycle_trace` and `write_headless_dryrun_archive` — mechanical
   eleven-primitive orchestration in `fleet_run` (not only emit_trace helpers); archives land
   under `--repo` while progress excerpts read from the fleet clone.

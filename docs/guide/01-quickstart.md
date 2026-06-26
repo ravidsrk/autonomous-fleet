@@ -232,8 +232,9 @@ Stdout contains `would run:` and `grok not invoked` — the wiring check from `v
 
 ### Worked example — fixture archive as proof shape
 
-`.fleet/runs/example-fixture/manifest.json` lists nine archived files including
-`p0-review-findings.json` and `trace.jsonl` — the same directory layout a live mission produces.
+`.fleet/runs/example-fixture/manifest.json` lists nine archived files; `trace.jsonl` has eleven
+events (all trace primitives). Same directory layout a live mission produces, with a complete
+mechanical trace for validators.
 
 ---
 
