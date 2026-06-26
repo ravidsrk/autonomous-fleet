@@ -43,6 +43,12 @@ def test_progress_excerpt_reads_doc_sync_progress() -> None:
     assert "doc-sync-progress" not in text  # content, not path
 
 
+def test_progress_excerpt_reads_arch_build_for_adversarial_mission() -> None:
+    text = progress_excerpt_for_mission(REPO_ROOT, "adversarial-review-and-fix")
+    assert "arch-build-progress" in text
+    assert "mechanical validation" not in text
+
+
 def test_progress_excerpt_fallback_for_unknown_mission(tmp_path: Path) -> None:
     text = progress_excerpt_for_mission(tmp_path, "no-such-mission")
     assert "no-such-mission" in text

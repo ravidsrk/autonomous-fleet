@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "mission": "adversarial-review-and-fix",
+  "review_id": "first-substrate-r1-grok",
+  "reviewer": {
+    "vendor": "xai",
+    "model": "grok",
+    "role": "build-blind-reviewer"
+  },
+  "round": 1,
+  "findings": [
+    {
+      "id": "F-001",
+      "severity": "medium",
+      "category": "bug",
+      "claim": "progress_text_for_mission ignored mission_registry progress_path remapping; fixed to resolve via progress_path(mission) so adversarial-review-and-fix reads docs/arch-build-progress.md.",
+      "evidence": {
+        "file_path": "scripts/lib/fleet_run.py",
+        "line_number": 241,
+        "quoted_line": "    path = source_root / progress_path(mission)"
+      },
+      "fix_alternatives": [
+        {
+          "label": "A",
+          "description": "Resolve via mission_registry.progress_path(mission) before opening the ledger file.",
+          "effort": "minimal",
+          "recommended": true
+        }
+      ],
+      "confidence": 92,
+      "fix_strategy": "auto",
+      "verified": true,
+      "blind_fix_chain": {
+        "path": "reviewer-blind-fix-F-001.md"
+      }
+    },
+    {
+      "id": "F-002",
+      "severity": "low",
+      "category": "test",
+      "claim": "validate-first-substrate-archive.sh now passes --write to verify_findings so verified flags persist in p0-review-findings.json.",
+      "evidence": {
+        "file_path": "scripts/validate-first-substrate-archive.sh",
+        "line_number": 38,
+        "quoted_line": "    \"$ARCHIVE/p0-review-findings.json\" --repo \"$ROOT\" --write \\"
+      },
+      "fix_alternatives": [
+        {
+          "label": "A",
+          "description": "Add --write to the verify_findings invocation in validate-first-substrate-archive.sh.",
+          "effort": "minimal",
+          "recommended": true
+        }
+      ],
+      "confidence": 85,
+      "fix_strategy": "auto",
+      "verified": true,
+      "blind_fix_chain": {
+        "path": "reviewer-blind-fix-F-002.md"
+      }
+    }
+  ],
+  "verdict": {
+    "decision": "approve",
+    "reasoning": "Both findings closed; archive re-verification cites post-fix anchor lines."
+  }
+}

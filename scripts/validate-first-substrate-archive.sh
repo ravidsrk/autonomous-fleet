@@ -35,7 +35,7 @@ echo "  Layer 4: validate_run_archive"
 echo "  Layer 1: verify_findings"
 if [[ -f "$ARCHIVE/p0-review-findings.json" ]]; then
   "$VENV_PYTHON" "$ROOT/scripts/verify_findings.py" \
-    "$ARCHIVE/p0-review-findings.json" --repo "$ROOT" \
+    "$ARCHIVE/p0-review-findings.json" --repo "$ROOT" --write \
     --summary-out "$ARCHIVE/p0-verify-summary.json"
 else
   echo "validate-first-substrate-archive: missing p0-review-findings.json" >&2
