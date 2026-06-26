@@ -16,6 +16,7 @@ def main() -> int:
         rl.lint_shipped_mission_dirs(root)
         + rl.lint_catalog_mentions(root)
         + rl.lint_skills_lock(root)
+        + rl.lint_campaign_missions(root)
     )
     for e in errors:
         print(f"registry-lint: {e}", file=sys.stderr)

@@ -5,7 +5,7 @@ setup steps, and success criteria.
 
 | Pack | Campaign | Nodes | Community hooks |
 |------|----------|-------|-----------------|
-| [repo-health on gemoji](repo-health-gemoji.md) | `repo-health-campaign.yaml` | doc-sync → test-coverage → cleanup | None |
+| [repo-health on gemoji](repo-health-gemoji.md) | `repo-health-campaign.yaml` | doc-sync → test-coverage | None |
 | [ship-with-proof on gemoji](ship-with-proof-gemoji.md) | `ship-with-proof-campaign.yaml` | audit → tests → docs | Optional gstack post-gates |
 | [Evidence (interactive; headless pending)](ship-with-proof-evidence.md) | — | ravidsrk/gemoji @ `1541ce9` | Interactive dogfood 2026-06-20; headless path not yet validated |
 

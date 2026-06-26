@@ -35,17 +35,19 @@ Rules:
 
 ## Preset: repo-health (linear)
 
+`cleanup` was removed from this preset when the mission demoted to
+`docs/exploratory/missions/cleanup/`. Restore the `tidy` node when cleanup earns a
+progress + readiness + external archive triple.
+
 ```yaml
 campaign: repo-health
 start: docs
 nodes:
   docs: { mission: doc-sync }
   tests: { mission: test-coverage }
-  tidy: { mission: cleanup }
 edges:
   docs: [{ to: tests, if: always }]
-  tests: [{ to: tidy, if: always }]
-  tidy: []
+  tests: []
 ```
 
 ## Preset: audit-branch (conditional)

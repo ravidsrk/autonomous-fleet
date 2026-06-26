@@ -11,7 +11,7 @@ clone (headless `grok` auth pending).
 |-------|-------|
 | Repo | [github/gemoji](https://github.com/github/gemoji) |
 | Why | Small, real OSS app; README + tests + cleanup surface; not autonomous-fleet |
-| Campaign | `repo-health-campaign.yaml` (doc-sync → test-coverage → cleanup) |
+| Campaign | `repo-health-campaign.yaml` (doc-sync → test-coverage) |
 
 ## Setup (on a machine with grok/claude + gh)
 
@@ -25,7 +25,6 @@ npx skills add https://github.com/ravidsrk/autonomous-fleet \
   --skill autonomous-fleet-adapter-grok \
   --skill doc-sync \
   --skill test-coverage \
-  --skill cleanup \
   -y
 
 git checkout -b fleet/gemoji-repo-health-base

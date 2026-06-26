@@ -8,6 +8,8 @@ from json import JSONDecodeError
 from pathlib import Path
 from typing import Any, Mapping
 
+import yaml
+
 from .fleet_registry import MISSIONS
 
 LOCAL_LOCK_SOURCE = "ravidsrk/autonomous-fleet"
@@ -131,6 +133,63 @@ def lint_skills_lock(root: Path) -> list[str]:
     return errors
 
 
+def _campaign_yaml_paths(root: Path) -> list[Path]:
+    paths: list[Path] = []
+    campaigns_dir = root / "scripts" / "campaigns"
+    if campaigns_dir.is_dir():
+        paths.extend(sorted(campaigns_dir.glob("*.yaml")))
+    dogfood_dir = root / "docs" / "external-dogfood"
+    if dogfood_dir.is_dir():
+        paths.extend(sorted(dogfood_dir.glob("*campaign*.yaml")))
+    return paths
+
+
+def _campaign_is_archived(spec: Mapping[str, Any]) -> bool:
+    status = spec.get("status")
+    if isinstance(status, str) and "archived" in status.lower():
+        return True
+    nodes = spec.get("nodes")
+    return not isinstance(nodes, dict) or not nodes
+
+
+def lint_campaign_missions(
+    root: Path, missions: Mapping[str, Mapping[str, Any]] = MISSIONS
+) -> list[str]:
+    errors: list[str] = []
+    shipped_ids = set(shipped_missions(missions))
+
+    for path in _campaign_yaml_paths(root):
+        try:
+            spec = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:
+            errors.append(f"{path.relative_to(root)}: invalid YAML: {exc}")
+            continue
+        if not isinstance(spec, dict):
+            continue
+        if _campaign_is_archived(spec):
+            continue
+        nodes = spec.get("nodes")
+        if not isinstance(nodes, dict):
+            continue
+        campaign_id = spec.get("campaign", path.stem)
+        for node_id, node in nodes.items():
+            if not isinstance(node, dict):
+                continue
+            mission = node.get("mission")
+            if not isinstance(mission, str) or not mission:
+                continue
+            if mission not in missions:
+                errors.append(
+                    f"{path.relative_to(root)}: node {node_id!r} references unknown mission {mission!r}"
+                )
+            elif mission not in shipped_ids:
+                errors.append(
+                    f"{path.relative_to(root)}: node {node_id!r} references unshipped mission {mission!r} "
+                    f"(campaign {campaign_id!r}; archive the campaign or promote the mission)"
+                )
+    return errors
+
+
 def lint_registry(
     root: Path, missions: Mapping[str, Mapping[str, Any]] = MISSIONS
 ) -> list[str]:
@@ -138,4 +197,5 @@ def lint_registry(
         lint_shipped_mission_dirs(root, missions)
         + lint_catalog_mentions(root, missions)
         + lint_skills_lock(root)
+        + lint_campaign_missions(root, missions)
     )
