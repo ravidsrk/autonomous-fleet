@@ -392,22 +392,37 @@ def emit_dryrun_lifecycle_trace(
     return ids
 
 
+def _runtime_response_archive_name(capture_path: Path) -> str:
+    """Pick archive filename for a captured runtime transcript."""
+    try:
+        head = capture_path.read_text(encoding="utf-8", errors="replace")[:1]
+    except OSError:
+        return "headless-runtime-response.txt"
+    if head in "{[":
+        return "headless-runtime-response.json"
+    return "headless-runtime-response.txt"
+
+
 def write_headless_dryrun_archive(
     repo_root: Path,
     *,
     mission: str,
     runtime: str = "grok",
     progress_source_root: Path | None = None,
+    runtime_response_path: Path | None = None,
 ) -> tuple[Path, str, list[str]]:
     """Emit archive under repo_root/.fleet/runs/<run_id>/ with full lifecycle trace.
 
     progress_source_root defaults to repo_root; pass fleet_root when --repo
     targets an external checkout but progress excerpts live in this clone.
+    When runtime_response_path is set, copy the captured stdout/stderr into
+    the archive and list it in manifest.json (kind=response).
     Archives are always written to disk; shell entry points remove ephemeral
     copies only on --dry-run (see run-mission-headless.sh).
     Returns (archive_dir, run_id, sorted primitive names).
     """
     from .emit_trace import TraceEmitter, iter_trace_file
+    import shutil
 
     source = progress_source_root if progress_source_root is not None else repo_root
     run_id = allocate_run_id(mission)
@@ -417,6 +432,12 @@ def write_headless_dryrun_archive(
     progress_parse = progress_text_for_mission(source, mission)
     progress_path = arch / "headless-dryrun-progress.md"
     progress_path.write_text(progress_archive, encoding="utf-8")
+
+    runtime_response_dest: Path | None = None
+    if runtime_response_path is not None and runtime_response_path.is_file():
+        dest_name = _runtime_response_archive_name(runtime_response_path)
+        runtime_response_dest = arch / dest_name
+        shutil.copy2(runtime_response_path, runtime_response_dest)
 
     with TraceEmitter(arch, mission=mission, run_id=run_id) as emitter:
         emit_dryrun_lifecycle_trace(
@@ -441,6 +462,21 @@ def write_headless_dryrun_archive(
                 producer="coordinator",
             ),
         ]
+        if runtime_response_dest is not None:
+            entries.append(
+                file_entry_for(
+                    runtime_response_dest,
+                    arch,
+                    kind="response",
+                    producer=f"headless-{runtime}",
+                )
+            )
+        notes = (
+            "Mechanical headless dry-run archive "
+            "(progress excerpt + fleet_run lifecycle trace)."
+        )
+        if runtime_response_dest is not None:
+            notes += f" Runtime capture: {runtime_response_dest.name}."
         write_manifest(
             arch,
             run_id=run_id,
@@ -448,10 +484,7 @@ def write_headless_dryrun_archive(
             files=entries,
             coordinator=f"headless-dryrun-{runtime}",
             base_branch="main",
-            notes=(
-                "Mechanical headless dry-run archive "
-                "(progress excerpt + fleet_run lifecycle trace)."
-            ),
+            notes=notes,
             emitter=emitter,
         )
 
@@ -465,6 +498,7 @@ def record_headless_run(
     mission: str,
     runtime: str = "grok",
     progress_source_root: Path | None = None,
+    runtime_response_path: Path | None = None,
 ) -> tuple[Path, str, list[str]]:
     """Persist a headless run archive (alias for write_headless_dryrun_archive)."""
     return write_headless_dryrun_archive(
@@ -472,6 +506,7 @@ def record_headless_run(
         mission=mission,
         runtime=runtime,
         progress_source_root=progress_source_root,
+        runtime_response_path=runtime_response_path,
     )
 
 
