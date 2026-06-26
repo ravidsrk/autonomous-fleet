@@ -207,6 +207,33 @@ And to go wider before you go deeper:
   right one for real work, and understand the headless-mode auth requirements.
 - [Your first mission](03-your-first-mission.md): the same `doc-sync` run, but walked through
   line by line, including every file that appears in the run archive.
+## Real-world use cases
+
+### Example — doc-sync on autonomous-fleet README
+
+Real run on `ravidsrk/autonomous-fleet`: `docs/doc-sync-progress.md` records a single serialized
+unit touching `README.md` after grep confirmed scripts/ layout drift (`run-sandboxed.sh`,
+`coupling-graph.py`, `render-dashboard.py` missing from docs).
+
+```bash
+npx skills add https://github.com/ravidsrk/autonomous-fleet   --skill doc-sync -y
+# then invoke doc-sync in Claude Code against a stale README
+```
+
+### Invocation — headless dry-run before first live run
+
+Mechanical preview (no runtime auth) from this repo:
+
+```bash
+./scripts/run-mission-headless.sh grok doc-sync --dry-run
+```
+
+Stdout contains `would run:` and `grok not invoked` — the wiring check from `validate-headless.sh`.
+
+### Worked example — fixture archive as proof shape
+
+`.fleet/runs/example-fixture/manifest.json` lists nine archived files including
+`p0-review-findings.json` and `trace.jsonl` — the same directory layout a live mission produces.
 
 ---
 

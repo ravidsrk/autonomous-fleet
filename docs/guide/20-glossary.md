@@ -512,6 +512,21 @@ See [Extending](13-extending.md).
 The skills marketplace and compliance standard the fleet's skills target, so a skill you add stays
 installable and discoverable the same way the shipped skills are. Keeping a new skill
 agentskills.io-compliant is part of the extending workflow. See [Extending](13-extending.md).
+## Real-world use cases
+
+### Example — T-FINAL in fixture
+
+Glossary term T-FINAL: example-fixture `evt-0009` with `details.files: 9`, `details.manifest:
+manifest.json`.
+
+### Invocation — SPOQ in doc-sync progress
+
+PLAN / DAG VALIDATION GATE (SPOQ): printed PASS before any worker spawn on README doc-sync dogfood.
+
+### Real run on DRIFT INDEX
+
+Doc-sync audit artifact `docs/doc-sync-audit.md` (referenced in mission README) freezes discrepancies
+before fixes — glossary entry DRIFT INDEX maps to a real file kind.
 
 ---
 

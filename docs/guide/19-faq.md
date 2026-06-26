@@ -12,6 +12,21 @@ chapter that covers it in depth. If a question here contradicts a chapter, the c
 chapters are written against the code, this page is a fast index.
 
 Nothing here depends on anything else in the guide. Read it out of order, search it, bookmark it.
+## Real-world use cases
+
+### Example — why no live bench numbers yet
+
+`adversarial-bench-2026-06.md` Results section: all targets ⬜ pending — honest PENDING operator
+status, not fabricated metrics.
+
+### Invocation — can I run without grok login?
+
+Yes for mechanical paths: `validate-headless.sh`, campaign `--dry-run`, `emit_representative_trace.py`.
+
+### Worked example — marketplace submit still human
+
+`docs/marketplace-submission/README.md`: Console form at platform.claude.com — packet refreshed,
+submission PENDING human action (gap G-market).
 
 ---
 

@@ -442,6 +442,27 @@ For the trace event that carries this outcome at T-FINAL, see [Trace schema](16-
 the on-disk artifacts the outcome's `archive_enabled` and `run_id` point at, see
 [Run-archive anatomy](15-run-archive.md). For how a campaign chains nodes on these edges, see
 [Missions vs campaigns](05-missions-vs-campaigns.md).
+## Real-world use cases
+
+### Example — fixture fleet-outcome.yaml
+
+Example-fixture manifest lists `fleet-outcome.yaml` (kind `readiness`, producer `t-final`, mtime last).
+
+### Invocation — validate-fleet-outcome on readiness trio
+
+Gemoji ship-with-proof:
+
+```bash
+./scripts/validate-fleet-outcome.sh \
+  /tmp/gemoji/docs/arch-build-readiness.md \
+  /tmp/gemoji/docs/test-coverage-readiness.md \
+  /tmp/gemoji/docs/doc-sync-readiness.md
+```
+
+### Worked example — doc-sync readiness fields
+
+Doc-sync readiness opens with `fleet-outcome` YAML (`drift_open`, `code_bug_findings`) per mission
+contract — see `skills/doc-sync/README.md`.
 
 ---
 

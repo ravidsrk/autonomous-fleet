@@ -41,6 +41,27 @@ engine leans on them; [The substrate](07-the-substrate.md) is the layer-by-layer
 [Anti-flap](#anti-flap) · [Evidence-hash](#evidence-hash) · [Plan/DAG validation](#plandag-validation-gate) ·
 [Trace first, ledger second](#trace-first-ledger-second) · [Write-lock discipline](#write-lock-discipline) ·
 [What is and isn't emitted today](#what-is-and-isnt-emitted-today)
+## Real-world use cases
+
+### Example — nine-primitive fixture trace
+
+`.fleet/runs/example-fixture/trace.jsonl` exercises DISPATCH → SPAWN_WORKER → … → T-FINAL with
+parent_event links on INSPECT and COMMIT. Validate:
+
+```bash
+python scripts/emit_trace.py validate .fleet/runs/example-fixture/trace.jsonl
+```
+
+### Invocation — representative emission without auth
+
+```bash
+python scripts/emit_representative_trace.py --mission doc-sync   --run-id 20260626T120000Z-doc-sync-dryrun01   --out /tmp/fleet-trace-demo
+```
+
+### Worked example — write-lock + archive ordering
+
+Example-fixture manifest enforces blind_fix mtime < findings mtime < verify_summary mtime;
+`load_and_validate_manifest` passes on the committed archive.
 
 ---
 

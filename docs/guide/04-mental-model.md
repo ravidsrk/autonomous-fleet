@@ -326,6 +326,23 @@ From here, follow the concepts in order:
   frozen DAG, in full mechanical detail.
 - [The substrate](07-the-substrate.md): the four verification layers that catch bad work.
 - [Roles and blindness](08-roles-and-blindness.md): why build-blind review is structural, in depth.
+## Real-world use cases
+
+### Example — SPOQ gate before spawn
+
+`docs/doc-sync-progress.md` PLAN / DAG VALIDATION GATE: frozen units U1+U2 both touch README.md →
+merged into ONE task. No worker spawns until the gate prints PASS.
+
+### Invocation — coupling graph on test-coverage dogfood
+
+`docs/test-coverage-progress.md` ran `scripts/coupling-graph.py .` and identified
+`fleet_outcome.py` as hub (in_degree 4). Placement followed the graph: three independent test files
+in parallel, hub untouched.
+
+### Worked example — signal reconciliation catch
+
+Test-coverage progress documents re-measuring coverage externally after subprocess-based tests showed
+0% on `eval-campaign-edge.py` — ledger claims overridden by measured truth.
 
 ---
 

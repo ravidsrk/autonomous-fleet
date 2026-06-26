@@ -677,6 +677,22 @@ mechanics.
 > can run is a mission someone has actually run on a real repo and archived the result of. If you
 > need one of the roster missions today, promote it through the gate above rather than trusting the
 > doctrine alone.
+## Real-world use cases
+
+### Example — three shipped missions
+
+Registry lint + `validate-headless.sh` iterate `doc-sync`, `test-coverage`,
+`adversarial-review-and-fix` × grok/claude/codex dry-runs.
+
+### Invocation — demoted missions stay exploratory
+
+Nine missions under `docs/exploratory/missions/` await external archive triple promotion —
+documented in `docs/roadmap-gap-matrix.md` gap M-promote.
+
+### Real run on adversarial fixture mission
+
+`.fleet/runs/example-fixture/manifest.json` mission field:
+`adversarial-review-and-fix` — canonical archive for the review-and-fix validators.
 
 ---
 
