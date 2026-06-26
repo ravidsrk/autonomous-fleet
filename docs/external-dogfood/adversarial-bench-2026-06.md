@@ -1,6 +1,6 @@
 # Adversarial bench (2026-06)
 
-**Status:** methodology shipped; results PENDING operator runs.
+**Status:** methodology + headless `--repo` + archive emission ready; results ⬜ pending operator runs.
 
 ## Mechanical reproduction (no runtime auth)
 
@@ -16,7 +16,9 @@ python scripts/emit_representative_trace.py --mission adversarial-review-and-fix
 python scripts/emit_trace.py validate /tmp/bench-trace-demo/trace.jsonl
 ```
 
-Live substrate A/B numbers require authenticated operator runs per target — see Methodology below.
+Headless driver (`run-mission-headless.sh`, `run-campaign.sh --repo`) unconditionally emits
+`.fleet/runs/<run_id>/` under the target checkout (Lane 2 gemoji baseline). Live substrate A/B
+numbers require authenticated operator runs per target — see Methodology below.
 
 # The falsifiable claim
 

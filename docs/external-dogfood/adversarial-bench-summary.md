@@ -1,6 +1,6 @@
 # Adversarial bench — public summary
 
-**Status:** ⬜ Results PENDING.
+**Status:** Infrastructure ready for operator runs to produce real A/B numbers; headline metrics ⬜ pending.
 
 # What this is
 
@@ -35,7 +35,7 @@ cd autonomous-fleet
 ./scripts/bench-adversarial.sh --target pallets/click --dry-run
 ```
 
-Live A/B (PENDING operator — requires authenticated adapter):
+Live A/B (ready for operator — headless `grok -p`, `--repo`, archive emission; metrics ⬜ pending):
 
 ```bash
 ./scripts/bench-adversarial.sh --target <name> --both
@@ -46,9 +46,9 @@ Each archive validates against the schemas in
 `skills/autonomous-fleet-core/assets/`. Auditors can re-score with
 their own weights via `scripts/analyze_seat.py`.
 
-# Status as of 2026-06-23
+# Status as of 2026-06-27
 
-Scaffolding shipped (driver script, targets YAML, methodology doc,
-per-target stubs). Real runs gated on a working coder-adapter session
-(Claude Code or Codex with credit) on an operator host. See plan
-§3 Commit C in `docs/plans/way-ahead-2026-06-23.md`.
+Driver, targets YAML, methodology, per-target stubs, headless `--repo` path, and unconditional
+archive emission (v0.2.0) are shipped. Lane 2 validated `run-campaign.sh` on
+`ravidsrk/gemoji`. Real A/B numbers gated on authenticated operator sessions per target.
+See `gemoji-headless-run.md` and plan §3 Commit C in `docs/plans/way-ahead-2026-06-23.md`.
