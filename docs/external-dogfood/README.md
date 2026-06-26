@@ -7,7 +7,8 @@ setup steps, and success criteria.
 |------|----------|-------|-----------------|
 | [repo-health on gemoji](repo-health-gemoji.md) | `repo-health-campaign.yaml` | doc-sync → test-coverage | None |
 | [ship-with-proof on gemoji](ship-with-proof-gemoji.md) | `ship-with-proof-campaign.yaml` | audit → tests → docs | Optional gstack post-gates |
-| [Evidence (interactive; headless pending)](ship-with-proof-evidence.md) | — | ravidsrk/gemoji @ `1541ce9` | Interactive dogfood 2026-06-20; headless path not yet validated |
+| [Evidence (interactive)](ship-with-proof-evidence.md) | — | ravidsrk/gemoji @ `1541ce9` | Interactive dogfood 2026-06-20 |
+| [Headless run (Lane 2)](gemoji-headless-run.md) | `ship-with-proof-campaign.yaml` | ravidsrk/gemoji fork | `grok -p` + `--repo` validation |
 
 ## Shared target
 
