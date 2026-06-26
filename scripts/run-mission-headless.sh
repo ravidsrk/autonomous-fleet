@@ -22,6 +22,7 @@ MAX_TURNS=50
 HANDOFF=""
 YOLO=0
 YOLO_ACK=0
+DRY_RUN=0
 REPO_ROOT=""
 
 usage() {
@@ -35,6 +36,7 @@ Options:
   --yolo            Auto-approve tools (Grok only; default: off)
   --no-yolo         Deprecated alias for default (no auto-approve)
   --yolo-untrusted-acknowledged  Required with --yolo when --repo is outside this clone (accepts RCE risk)
+  --dry-run           Validate preflight and print the agent command without invoking the runtime CLI
 
 Examples:
   ./scripts/run-mission-headless.sh grok doc-sync --max-turns 50
@@ -72,6 +74,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --yolo-untrusted-acknowledged)
       YOLO_ACK=1
+      shift
+      ;;
+    --dry-run)
+      DRY_RUN=1
       shift
       ;;
     -h|--help)
@@ -158,13 +164,28 @@ case "$RUNTIME" in
   grok)
     CMD=(grok -p "$PROMPT" --max-turns "$MAX_TURNS" --output-format json --cwd "$REPO_ROOT")
     [[ "$YOLO" -eq 1 ]] && CMD+=(--yolo)
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      printf 'would run: '; printf '%q ' "${CMD[@]}"; echo
+      echo "headless dry-run complete (grok not invoked; runtime auth not required)"
+      exit 0
+    fi
     "${CMD[@]}"
     ;;
   claude)
     # Claude /goal in non-interactive prompt (v2.1.139+); no --max-turns or --cwd support
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      echo "would run: (cd $(printf '%q' "$REPO_ROOT") && claude -p <prompt>)"
+      echo "headless dry-run complete (claude not invoked; runtime auth not required)"
+      exit 0
+    fi
     (cd "$REPO_ROOT" && claude -p "$PROMPT")
     ;;
   codex)
+    if [[ "$DRY_RUN" -eq 1 ]]; then
+      echo "would run: codex exec --cd $(printf '%q' "$REPO_ROOT") <prompt>"
+      echo "headless dry-run complete (codex not invoked; runtime auth not required)"
+      exit 0
+    fi
     if command -v codex >/dev/null 2>&1; then
       codex exec --cd "$REPO_ROOT" "$PROMPT"
     else

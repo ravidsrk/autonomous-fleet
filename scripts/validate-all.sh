@@ -152,6 +152,10 @@ if (( tr_status != 0 )); then
 fi
 
 echo ""
+echo "== validate-headless (mechanical dry-run wiring) =="
+./scripts/validate-headless.sh
+
+echo ""
 echo "== pytest + coverage (100% gate) =="
 "$VENV_PYTHON" -m coverage run --source=scripts -m pytest tests/ -q
 "$VENV_PYTHON" -m coverage report --fail-under=100
