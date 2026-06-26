@@ -424,8 +424,9 @@ proves the order, so that build-blindness is something the run _has_, not someth
 
 ### Example — blind-fix artifacts
 
-Example-fixture ships `reviewer-blind-fix-F-001.md` and `reviewer-blind-fix-F-002.md` (kind:
-`blind_fix`, producer `p0-reviewer-claude`) — reviewer never sees fixer patches before attestation.
+`.fleet/runs/example-fixture/` ships `reviewer-blind-fix-F-001.md` and `reviewer-blind-fix-F-002.md`
+(kind: `blind_fix`, producer `p0-reviewer-claude`) — reviewer never sees fixer patches before
+attestation.
 
 ### Invocation — cross-vendor review row
 

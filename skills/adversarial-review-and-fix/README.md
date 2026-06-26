@@ -97,7 +97,7 @@ Then activate in your agent (Claude Code, Cursor, Grok, Codex, or Orca) and refe
 ### Example — example-fixture archive
 
 `.fleet/runs/example-fixture/` is the canonical adversarial-review-and-fix archive: findings,
-blind-fixes, verify summary, nine-event trace, fleet-outcome readiness.
+blind-fixes, verify summary, eleven-event trace (all primitives), fleet-outcome readiness.
 
 ### Invocation — bench target list
 
