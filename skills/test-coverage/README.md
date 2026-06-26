@@ -81,11 +81,13 @@ Then activate it in your agent (Claude Code, Codex, Grok, or Orca) and reference
 
 ### Invocation — width-3 parallel test files
 
-Frozen units U1–U3 became `test_eval_campaign_cli.py`, `test_mission_registry.py`,
-`test_validate_fleet_outcome_cli.py` — coupling graph said hub `fleet_outcome.py` untouched.
+`docs/test-coverage-progress.md`: frozen units U1–U3 became `tests/test_eval_campaign_cli.py`,
+`tests/test_mission_registry.py`, `tests/test_validate_fleet_outcome_cli.py` — `scripts/coupling-graph.py`
+said hub `scripts/lib/fleet_outcome.py` untouched.
 
 ### Real run on signal reconciliation
 
-Worker claimed coverage gains; external re-measure showed subprocess tests did not move numbers —
-rewrote to in-process `main()` calls; total scripts coverage 74→86%.
+`docs/test-coverage-progress.md`: worker claimed coverage gains; `./scripts/validate-all.sh` re-measure
+showed subprocess tests did not move numbers — rewrote to in-process `main()` calls; scripts coverage
+74→86%.
 

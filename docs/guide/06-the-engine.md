@@ -43,10 +43,11 @@ engine leans on them; [The substrate](07-the-substrate.md) is the layer-by-layer
 [What is and isn't emitted today](#what-is-and-isnt-emitted-today)
 ## Real-world use cases
 
-### Example — nine-primitive fixture trace
+### Example — eleven-primitive fixture trace
 
-`.fleet/runs/example-fixture/trace.jsonl` exercises DISPATCH → SPAWN_WORKER → … → T-FINAL with
-parent_event links on INSPECT and COMMIT. Validate:
+`.fleet/runs/example-fixture/trace.jsonl` has 11 lines exercising every primitive enum
+(`DISPATCH`, `SPAWN_WORKER`, `WAIT`, `GOAL_BLOCKED`, `INSPECT`, `SYNC`, `MERGE`, `FREEZE`,
+`COMMIT`, `ABORT`, `T-FINAL`) with parent_event links on INSPECT and COMMIT. Validate:
 
 ```bash
 python scripts/emit_trace.py validate .fleet/runs/example-fixture/trace.jsonl
@@ -60,8 +61,9 @@ python scripts/emit_representative_trace.py --mission doc-sync   --run-id 202606
 
 ### Worked example — write-lock + archive ordering
 
-Example-fixture manifest enforces blind_fix mtime < findings mtime < verify_summary mtime;
-`load_and_validate_manifest` passes on the committed archive.
+`.fleet/runs/example-fixture/manifest.json` enforces blind_fix mtime < findings mtime <
+verify_summary mtime; `python scripts/validate_run_archive.py .fleet/runs/example-fixture` passes on
+the committed archive.
 
 ---
 

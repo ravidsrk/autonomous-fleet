@@ -429,13 +429,13 @@ Example-fixture ships `reviewer-blind-fix-F-001.md` and `reviewer-blind-fix-F-00
 
 ### Invocation — cross-vendor review row
 
-Doc-sync progress: coordinator Claude, worker Codex, reviewer Claude via container-use diff —
+`docs/doc-sync-progress.md`: coordinator Claude, worker Codex, reviewer Claude via container-use diff —
 recorded `reviewed_sha=5a4c3e0` in the TASK row.
 
 ### Worked example — fix attestation
 
-`p1-fix-attestation.json` in example-fixture closes the blind-fix loop for the adversarial mission
-archive.
+`.fleet/runs/example-fixture/p1-fix-attestation.json` closes the blind-fix loop for the adversarial
+mission archive (mission `adversarial-review-and-fix` in manifest).
 
 ---
 
