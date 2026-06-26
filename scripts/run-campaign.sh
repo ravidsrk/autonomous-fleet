@@ -280,7 +280,13 @@ while [[ -n "$CURRENT" ]]; do
     [[ "$YOLO" -eq 1 ]] && EXTRA+=(--yolo)
     # Propagate the acknowledgement so the child's RCE gate doesn't re-fire on an external repo.
     [[ "$YOLO_ACK" -eq 1 ]] && EXTRA+=(--yolo-untrusted-acknowledged)
-    "$ROOT/scripts/run-mission-headless.sh" "$RUNTIME" "$MISSION" --max-turns "$MAX_TURNS" "${EXTRA[@]}"
+    node_rc=0
+    "$ROOT/scripts/run-mission-headless.sh" "$RUNTIME" "$MISSION" --max-turns "$MAX_TURNS" "${EXTRA[@]}" || node_rc=$?
+    emit_campaign_node_archive "$MISSION"
+    if [[ "$node_rc" -ne 0 ]]; then
+      echo "warn: node $CURRENT runtime exited $node_rc (archives emitted under $REPO_ROOT/.fleet/runs/)" >&2
+      exit "$node_rc"
+    fi
     if [[ -f "$READINESS_ABS" ]]; then
       ./scripts/validate-fleet-outcome.sh "$READINESS_ABS"
       # A node that finished BLOCKED must halt the campaign (GOAL_BLOCKED -> status:blocked), not
@@ -297,7 +303,6 @@ while [[ -n "$CURRENT" ]]; do
     else
       echo "warn: $READINESS_ABS not found after node $CURRENT" >&2
     fi
-    emit_campaign_node_archive "$MISSION"
   fi
 
   VISITED="${VISITED:+$VISITED }$CURRENT"
