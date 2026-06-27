@@ -392,13 +392,28 @@ def emit_dryrun_lifecycle_trace(
     return ids
 
 
-def _runtime_response_archive_name(capture_path: Path) -> str:
-    """Pick archive filename for a captured runtime transcript."""
+def _runtime_response_has_content(capture_path: Path) -> bool:
+    """True when the capture file exists and has at least one byte."""
     try:
-        head = capture_path.read_text(encoding="utf-8", errors="replace")[:1]
+        return capture_path.is_file() and capture_path.stat().st_size > 0
+    except OSError:
+        return False
+
+
+def _runtime_response_archive_name(capture_path: Path) -> str:
+    """Pick archive filename for a captured runtime transcript.
+
+    Reads only the first byte (not the whole file). Leading BOM/newline before
+    JSON is stored as .txt — consumers must not assume every .json is valid JSON.
+    """
+    try:
+        with capture_path.open("rb") as handle:
+            head = handle.read(1)
     except OSError:
         return "headless-runtime-response.txt"
-    if head in "{[":
+    if not head:
+        return "headless-runtime-response.txt"
+    if head in (b"{", b"["):
         return "headless-runtime-response.json"
     return "headless-runtime-response.txt"
 
@@ -434,7 +449,9 @@ def write_headless_dryrun_archive(
     progress_path.write_text(progress_archive, encoding="utf-8")
 
     runtime_response_dest: Path | None = None
-    if runtime_response_path is not None and runtime_response_path.is_file():
+    if runtime_response_path is not None and _runtime_response_has_content(
+        runtime_response_path
+    ):
         dest_name = _runtime_response_archive_name(runtime_response_path)
         runtime_response_dest = arch / dest_name
         shutil.copy2(runtime_response_path, runtime_response_dest)

@@ -178,15 +178,21 @@ emit_headless_trace_archive() {
   fi
 }
 
-# Run a runtime command, tee stdout/stderr to a capture file, emit archive
-# unconditionally (even on non-zero exit). Returns the runtime exit code so
-# callers (e.g. run-campaign.sh) can emit their own archive before exiting.
+# Run a runtime command, stream output live via tee, and capture a merged transcript
+# for the archive (stdout+stderr interleaved as the runtime produced them).
+# Returns the runtime exit code so callers (e.g. run-campaign.sh) can emit before exiting.
 run_runtime_emit() {
   local -a cmd=("$@")
   local runtime_capture runtime_rc=0
-  runtime_capture="$(mktemp "${TMPDIR:-/tmp}/headless-runtime-XXXXXX")"
-  "${cmd[@]}" > "$runtime_capture" 2>&1 || runtime_rc=$?
-  cat "$runtime_capture"
+  runtime_capture="$(mktemp "${TMPDIR:-/tmp}/headless-runtime-XXXXXX")" || {
+    echo "error: mktemp failed for runtime capture" >&2
+    "${cmd[@]}"
+    return $?
+  }
+  set +e
+  "${cmd[@]}" 2>&1 | tee "$runtime_capture"
+  runtime_rc=${PIPESTATUS[0]}
+  set -e
   emit_headless_trace_archive "$(dryrun_emit_mission)" 0 "$runtime_capture"
   rm -f "$runtime_capture"
   return "$runtime_rc"

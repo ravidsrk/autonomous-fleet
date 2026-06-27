@@ -11,6 +11,11 @@ All notable changes to `autonomous-fleet` are recorded here. The format follows
 
 ### Fixed
 
+- `_runtime_response_archive_name` — empty capture no longer misclassified as `.json`; skip 0-byte
+  copies; sniff first byte via `read(1)` not full `read_text`.
+- `run_runtime_emit` — live streaming via `tee` + `PIPESTATUS[0]`; guarded `mktemp` fallback.
+- `run-campaign.sh` — `NODE_RC` naming, `emit_campaign_node_archive || true`, accurate failure warning
+  when no archives exist; documented dual-archive intent (synthetic campaign + runtime child).
 - `run-mission-headless.sh` — emit and keep `.fleet/runs/<run_id>/` even when grok/claude/codex
   exits non-zero; capture runtime stdout/stderr as `headless-runtime-response.{json,txt}` in the
   archive manifest (`kind=response`). `run_runtime_emit` returns the runtime rc (standalone script

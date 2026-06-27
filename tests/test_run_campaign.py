@@ -26,6 +26,20 @@ fleet-outcome:
 # ok
 """
 
+_TEST_COVERAGE_READINESS = """---
+fleet-outcome:
+  mission: test-coverage
+  status: done
+  repo: /tmp/r
+  base_branch: fleet/b
+  prs_merged: 1
+  metrics:
+    gaps_open: 0
+    coverage_regressed: false
+---
+# ok
+"""
+
 
 def _fake_grok_bin(tmp_path: Path, *, exit_code: int = 0, body: str = '{"stopReason":"EndTurn"}') -> Path:
     fake_bin = tmp_path / "bin"
@@ -40,6 +54,20 @@ def _single_node_campaign(tmp_path: Path) -> Path:
     campaign = tmp_path / "one-node.yaml"
     campaign.write_text(
         "campaign: one\nstart: docs\nnodes:\n  docs: { mission: doc-sync }\nedges:\n  docs: []\n",
+        encoding="utf-8",
+    )
+    return campaign
+
+
+def _two_node_campaign(tmp_path: Path) -> Path:
+    campaign = tmp_path / "two-node.yaml"
+    campaign.write_text(
+        "campaign: two\nstart: docs\nnodes:\n"
+        "  docs: { mission: doc-sync }\n"
+        "  tests: { mission: test-coverage }\n"
+        "edges:\n"
+        "  docs: [{ to: tests, if: always }]\n"
+        "  tests: []\n",
         encoding="utf-8",
     )
     return campaign
@@ -319,7 +347,7 @@ def test_run_campaign_non_dry_emits_campaign_archive_on_success(tmp_path: Path) 
     assert r.returncode == 0, r.stderr + r.stdout
     assert "campaign archive kept:" in r.stdout
     runs = sorted((external / ".fleet" / "runs").iterdir())
-    assert len(runs) >= 2, f"expected headless + campaign archives, got {runs}"
+    assert len(runs) == 2, f"expected exactly headless + campaign archives, got {runs}"
 
 
 def test_run_campaign_emits_campaign_archive_when_headless_fails(tmp_path: Path) -> None:
@@ -351,9 +379,47 @@ def test_run_campaign_emits_campaign_archive_when_headless_fails(tmp_path: Path)
     )
     assert r.returncode == 1, r.stderr + r.stdout
     assert "campaign archive kept:" in r.stdout
-    assert "archives emitted under" in r.stderr
+    assert "archives under" in r.stderr
     runs = sorted((external / ".fleet" / "runs").iterdir())
-    assert len(runs) >= 2, f"expected headless + campaign archives on failure, got {runs}"
+    assert len(runs) == 2, f"expected headless + campaign archives on failure, got {runs}"
+
+
+def test_two_node_campaign_emits_exactly_four_archives(tmp_path: Path) -> None:
+    """Each node: one headless archive + one campaign archive; no cumulative ballooning."""
+    external = tmp_path / "repo"
+    external.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=external, check=True)
+    (external / "docs").mkdir()
+    (external / "docs" / "doc-sync-readiness.md").write_text(_DOC_SYNC_READINESS, encoding="utf-8")
+    (external / "docs" / "test-coverage-readiness.md").write_text(
+        _TEST_COVERAGE_READINESS, encoding="utf-8"
+    )
+
+    fake_bin = _fake_grok_bin(tmp_path)
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env.get('PATH', '')}"
+
+    r = subprocess.run(
+        [
+            str(SCRIPT),
+            "grok",
+            "--campaign",
+            str(_two_node_campaign(tmp_path)),
+            "--repo",
+            str(external),
+            "--max-turns",
+            "1",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert r.stdout.count("campaign archive kept:") == 2
+    runs = sorted((external / ".fleet" / "runs").iterdir())
+    assert len(runs) == 4, f"expected 2 nodes x 2 archives, got {len(runs)}: {runs}"
 
 
 def test_blocked_node_halts_campaign(tmp_path: Path):
@@ -374,11 +440,18 @@ def test_blocked_node_halts_campaign(tmp_path: Path):
         "  audit: [{ to: deps, if: findings_open == 0 }]\n  deps: []\n"
     )
     e = _build_e2e_harness(tmp_path, stub, campaign)
+    import shutil
+
+    shutil.copy(ROOT / "scripts" / "emit_headless_dryrun_trace.py", e / "scripts" / "emit_headless_dryrun_trace.py")
+    shutil.copy(ROOT / "scripts" / "emit_trace.py", e / "scripts" / "emit_trace.py")
     r = subprocess.run(
         [str(e / "scripts" / "run-campaign.sh"), "codex", "--campaign", "scripts/campaigns/t.yaml", "--repo", str(e)],
         cwd=e, capture_output=True, text=True, check=False,
     )
     assert r.returncode == 2, (r.stdout, r.stderr)
     assert "BLOCKED" in r.stderr, r.stderr
+    assert "campaign archive kept:" in r.stdout
+    runs = list((e / ".fleet" / "runs").glob("*")) if (e / ".fleet" / "runs").is_dir() else []
+    assert len(runs) >= 1, "blocked path must emit campaign archive before halt"
     # And it must NOT have advanced to the deps node.
     assert "node=deps" not in (r.stdout + r.stderr)
