@@ -76,6 +76,37 @@ def test_gate_catches_a_known_real_mutation(tmp_path):
     )
 
 
+def test_invalidate_pycache_skips_non_python(tmp_path) -> None:
+    mc._invalidate_pycache(tmp_path / "readme.md")
+    mc._invalidate_pycache(tmp_path / "module.py")  # no __pycache__ yet
+
+
+def test_invalidate_pycache_removes_matching_bytecode(tmp_path) -> None:
+    mod = tmp_path / "mod.py"
+    mod.write_text("x = 1\n", encoding="utf-8")
+    cache = tmp_path / "__pycache__"
+    cache.mkdir()
+    pyc = cache / "mod.cpython-312.pyc"
+    pyc.write_bytes(b"fake")
+    mc._invalidate_pycache(mod)
+    assert not pyc.exists()
+
+
+def test_invalidate_pycache_swallows_unlink_oserror(tmp_path, monkeypatch) -> None:
+    mod = tmp_path / "mod.py"
+    mod.write_text("x = 1\n", encoding="utf-8")
+    cache = tmp_path / "__pycache__"
+    cache.mkdir()
+    pyc = cache / "mod.cpython-312.pyc"
+    pyc.write_bytes(b"fake")
+
+    def _boom(self):  # noqa: ANN001
+        raise OSError("simulated")
+
+    monkeypatch.setattr(type(pyc), "unlink", _boom)
+    mc._invalidate_pycache(mod)  # must not raise
+
+
 def test_restore_all_rewrites_active_files(tmp_path):
     f = tmp_path / "probe.txt"
     f.write_text("ORIGINAL", encoding="utf-8")

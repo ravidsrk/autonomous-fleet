@@ -31,10 +31,25 @@ ROOT = Path(__file__).resolve().parents[1]
 _ACTIVE: dict[Path, str] = {}  # file -> original text, for emergency restore
 
 
+def _invalidate_pycache(source: Path) -> None:
+    """Drop stale bytecode so restored source is not shadowed by a mutated .pyc."""
+    if source.suffix != ".py":
+        return
+    cache_dir = source.parent / "__pycache__"
+    if not cache_dir.is_dir():
+        return
+    for cached in cache_dir.glob(f"{source.stem}.*.pyc"):
+        try:
+            cached.unlink()
+        except OSError:
+            pass
+
+
 def _restore_all() -> None:
     for path, original in list(_ACTIVE.items()):
         try:
             path.write_text(original, encoding="utf-8")
+            _invalidate_pycache(path)
         except OSError:
             pass
     _ACTIVE.clear()
@@ -88,6 +103,7 @@ def run(manifest_path: Path, only: set[str] | None, quiet: bool) -> int:
             hit = _run_guards(m["guards"])
         finally:
             path.write_text(original, encoding="utf-8")
+            _invalidate_pycache(path)
             _ACTIVE.pop(path, None)
         if hit:
             caught += 1

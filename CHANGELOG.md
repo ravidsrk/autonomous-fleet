@@ -11,22 +11,20 @@ All notable changes to `autonomous-fleet` are recorded here. The format follows
 
 ### Fixed
 
-- `_runtime_response_archive_name` — empty capture no longer misclassified as `.json`; skip 0-byte
-  copies; sniff first byte via `read(1)` not full `read_text`.
+- `README.md` — version badge 0.2.0; test counts (53 files; count auto-guarded by `test_readme_drift.py`); layout reflects 12 skills.
+- `mutation_check.py` — invalidate `__pycache__` after each mutation restore (stale bytecode DX).
+- Orca headless documented as interactive-only (`run-*.sh`, adapter `SKILL.md`, guide FAQ).
+- `docs/doc-sync-audit.md`, `docs/plans/way-ahead-2026-06-23.md`, marketplace packet — metric/status drift closed.
+- `_runtime_response_archive_name` — empty capture no longer misclassified as `.json`; skip 0-byte copies.
 - `run_runtime_emit` — live streaming via `tee` + `PIPESTATUS[0]`; guarded `mktemp` fallback.
-- `run-campaign.sh` — `NODE_RC` naming, `emit_campaign_node_archive || true`, accurate failure warning
-  when no archives exist; documented dual-archive intent (synthetic campaign + runtime child).
-- `run-mission-headless.sh` — emit and keep `.fleet/runs/<run_id>/` even when grok/claude/codex
-  exits non-zero; capture runtime stdout/stderr as `headless-runtime-response.{json,txt}` in the
-  archive manifest (`kind=response`). `run_runtime_emit` returns the runtime rc (standalone script
-  exits); campaign callers can emit before propagating failure.
-- `run-campaign.sh` — capture `node_rc` from `run-mission-headless.sh`, emit campaign archive
-  unconditionally (including on runtime failure under `set -euo pipefail`), then exit with `node_rc`.
+- `run-campaign.sh` — `NODE_RC`, `emit_campaign_node_archive || true`, accurate failure warnings.
+- Headless archive path — unconditional emit on runtime failure; runtime capture in manifest.
 
 ### Added
 
-- `--runtime-response` on `emit_headless_dryrun_trace.py`; tests for failure-path emit and runtime
-  capture in `tests/test_headless_trace.py`.
+- `pyproject.toml` — minimal project metadata + pytest/coverage config (parallel to `requirements.txt`).
+- `tests/test_readme_drift.py` — CI guard for README vs `VERSION` / pytest collect / test file count.
+- `--runtime-response` on `emit_headless_dryrun_trace.py`; headless/campaign archive tests.
 
 ## [0.2.0] - 2026-06-27
 
