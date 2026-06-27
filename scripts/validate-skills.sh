@@ -49,4 +49,12 @@ if [[ "$ERRORS" -gt 0 ]]; then
   exit 1
 fi
 
-echo "All $(find "$SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ') skills passed validation."
+SHIPPED_COUNT="$(find "$SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
+echo "All ${SHIPPED_COUNT} shipped skills passed validation."
+
+echo ""
+echo "== validate-exploratory-missions =="
+if ! "$VENV_PYTHON" "$ROOT/scripts/validate_exploratory_missions.py"; then
+  echo "exploratory mission validation failed." >&2
+  exit 1
+fi
