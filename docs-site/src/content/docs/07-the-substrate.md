@@ -9,7 +9,7 @@ sidebar:
 
 **On this page:** [Why a substrate](#why-a-substrate) · [The four layers at a glance](#the-four-layers-at-a-glance) · [Layer 1: findings schema](#layer-1--findings-schema) · [Layer 2: stop-verify hook](#layer-2--stop-verify-hook) · [Layer 3: blind-fix mechanical guard](#layer-3--blind-fix-mechanical-guard) · [Layer 4: mutation gate](#layer-4--mutation-gate) · [How the layers compose](#how-the-layers-compose) · [Kill switches](#kill-switches) · [The standing validator suite](#the-standing-validator-suite) · [Why mutation testing beats coverage](#why-mutation-testing-beats-coverage) · [What is not yet enforced](#what-is-not-yet-enforced)
 
-The [engine](06-the-engine.md) decides what work to do and routes it to workers. The substrate is the
+The [engine](/06-the-engine/) decides what work to do and routes it to workers. The substrate is the
 other half: it decides whether the work that comes back is real. This chapter is about how the
 framework catches bad work, and why it catches it with running code instead of a prompt that says
 "please be careful."
@@ -53,7 +53,7 @@ The first three are runtime gates: they fire while a mission runs. The fourth is
 it fires in CI and makes the other three falsifiable. A verifier with no mutation pinning is a
 verifier you cannot trust, because nothing proves it would catch the bug it claims to catch.
 
-> The substrate is build-blindness made executable. The [Roles and blindness](08-roles-and-blindness.md)
+> The substrate is build-blindness made executable. The [Roles and blindness](/08-roles-and-blindness/)
 > chapter explains why a fresh-terminal reviewer is structurally blind. This chapter is about the code
 > that proves the reviewer stayed blind and that the builder produced evidence, rather than trusting
 > either to self-report.
@@ -726,7 +726,7 @@ kill switch is `FLEET_DISABLE_REGISTRY_LINT`, and the CLI (`scripts/registry_lin
 ### Reviewer-sandbox attribution
 
 The reviewer is read-only, and Layer-style enforcement of that is the subject of the
-[Roles and blindness](08-roles-and-blindness.md) chapter (the live `run-sandboxed.sh --role reviewer`
+[Roles and blindness](/08-roles-and-blindness/) chapter (the live `run-sandboxed.sh --role reviewer`
 placement). The standing gate here is its audit-side companion:
 `scripts/lib/reviewer_sandbox.py` reads a run-archive `manifest.json` and checks that no reviewer
 producer slug is attributed a write. A reviewer producer (detected by `reviewer` appearing in the
@@ -798,7 +798,7 @@ manifest write, per the engine's "trace first, ledger second" doctrine, and the 
 covered (`write-manifest-trace-emit-off`). The schema covers eleven primitives, and the stream is
 intentionally sparse while per-transition emission rolls out: the coordinator and adapters emit the
 rest per the engine TRACE EMISSION doctrine, but that rollout is in progress. See the
-[Trace schema](16-trace-schema.md) reference for the full contract and the "what's emitted today"
+[Trace schema](/16-trace-schema/) reference for the full contract and the "what's emitted today"
 section. This does not affect the four verification layers, which gate on artifacts on disk, not on the
 trace stream.
 
@@ -806,7 +806,7 @@ Headless campaign mode is not yet fully validated end-to-end. The campaign scrip
 drive each runtime's CLI in headless mode, which requires that CLI to be authenticated on the host. The
 interactive path (chat, or `/goal`) is the supported flow today. The substrate's layers behave the same
 either way; the caveat is about the campaign runner, not the verifiers. See the
-[Campaigns](10-campaigns.md) chapter and the [Safety and secrets](12-safety-and-secrets.md) chapter for
+[Campaigns](/10-campaigns/) chapter and the [Safety and secrets](/12-safety-and-secrets/) chapter for
 the headless-mode details.
 
 Layer 2 ships on the Claude Code adapter, where the Stop hook contract exists. Other adapters can adopt
@@ -837,4 +837,4 @@ the adversarial-review-and-fix archive shape.
 
 ---
 
-← [Previous: The Engine](06-the-engine.md) · [Guide Index](README.md) · [Next: Roles and Blindness →](08-roles-and-blindness.md)
+← [Previous: The Engine](/06-the-engine/) · [Guide Index](/) · [Next: Roles and Blindness →](/08-roles-and-blindness/)

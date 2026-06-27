@@ -142,6 +142,22 @@ gstack sources: `qa`, `qa-only`, `browse`, `health`.
 chain) with skeptic narrowing and one-PR-per-finding remediation. gstack sources: `cso`,
 `investigate`, `careful`.
 
+### `devex-audit/`
+
+[Tier 2] Live developer-experience walkthrough → frozen `docs/devex-scorecard.md` and
+`docs/devex-gaps-index.md`. gstack sources: `devex-review`, `plan-devex-review`,
+`document-generate`.
+
+### `release-document/`
+
+[Tier 2] Post-ship documentation sweep and deploy checklist after VERSION lands. gstack sources:
+`document-release`, `ship`, `land-and-deploy`, `canary`.
+
+### `incident-investigate/`
+
+[Tier 2] Root-cause analysis with frozen `docs/incident-rca.md` and mandatory regression test.
+gstack sources: `investigate`, `retro`, `learn`.
+
 ## Promotion process
 
 To re-promote a mission from `docs/exploratory/missions/<mission>/` back

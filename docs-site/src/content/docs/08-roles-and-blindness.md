@@ -16,7 +16,7 @@ sidebar:
 [The design-mission exception](#the-design-mission-exception) ·
 [What's enforced vs what's a default](#whats-enforced-vs-whats-a-default)
 
-If you have read [The engine](06-the-engine.md) and [The substrate](07-the-substrate.md), you
+If you have read [The engine](/06-the-engine/) and [The substrate](/07-the-substrate/), you
 know the framework spends a lot of effort making sure a piece of work is actually correct before it
 merges. This chapter answers the question underneath all of that machinery: why does the framework
 keep insisting on separate roles, separate terminals, and (when it can) separate model vendors?
@@ -30,7 +30,7 @@ filesystem that proves the discipline happened in the right order.
 This is a concepts chapter. It explains _why_ the topology looks the way it does. The exact commands
 each runtime uses to spawn these roles live in the adapter `SKILL.md` files (the Orca mapping is in
 `skills/autonomous-fleet-adapter-orca/SKILL.md`); the verification layers that back the discipline
-are in [The substrate](07-the-substrate.md).
+are in [The substrate](/07-the-substrate/).
 
 ## Three roles, three terminals
 
@@ -186,7 +186,7 @@ reviewer has its own opinion on the record, and the candidate has to earn agreem
 
 ### The filesystem proves the order
 
-This is where roles and blindness connect back to [The substrate](07-the-substrate.md). The
+This is where roles and blindness connect back to [The substrate](/07-the-substrate/). The
 discipline above is only real if the order it demands actually happened, and the fleet makes that
 auditable on disk. The engine:
 
@@ -206,8 +206,8 @@ So "the reviewer was build-blind and committed its fix first" is not a claim you
 is a property the archive validator checks. A blind-fix file with an mtime after the findings file
 fails validation even when every checksum matches, `because these orderings ARE the disciplines`.
 The role topology in this chapter is the _intent_; the manifest and its mtime invariants are the
-_proof_ that the intent was honored. See [Run-archive anatomy](15-run-archive.md) for the manifest
-fields and [The substrate](07-the-substrate.md) for how the four layers compose.
+_proof_ that the intent was honored. See [Run-archive anatomy](/15-run-archive/) for the manifest
+fields and [The substrate](/07-the-substrate/) for how the four layers compose.
 
 ## The read-only reviewer sandbox
 
@@ -251,7 +251,7 @@ detected condition, not a silent one.
 
 The live placement above stops the write while the reviewer runs. A second, standing gate audits the
 archive after the fact, and it is the same mechanism documented in
-[The substrate](07-the-substrate.md): `scripts/verify_reviewer_sandbox.py` (backed by the pure
+[The substrate](/07-the-substrate/): `scripts/verify_reviewer_sandbox.py` (backed by the pure
 `scripts/lib/reviewer_sandbox.py`) reads the run-archive `manifest.json` and asserts that no reviewer
 producer slug is attributed a write. A reviewer may only be the producer of `blind_fix`, `findings`, or
 `verify_summary` entries; a reviewer producer attributed a `diff` or `commit` on the candidate branch is
@@ -339,7 +339,7 @@ also better than no fresh review at all, which is why single-vendor mode is supp
 forbidden. The rule is just that you have to _say so_ in `DECISIONS.md`: the run records that it ran
 single-vendor, so anyone auditing the archive later knows the cross-vendor layer was not in play.
 
-If you can get a second vendor authenticated, do it. See [Installation](02-installation.md) for the
+If you can get a second vendor authenticated, do it. See [Installation](/02-installation/) for the
 per-runtime auth setup. The framework will use the cross-vendor default the moment a second vendor
 is available.
 
@@ -416,14 +416,14 @@ proves the order, so that build-blindness is something the run _has_, not someth
 
 ### Where to go next
 
-- [The engine](06-the-engine.md): the primitives that spawn and place these roles, and the
+- [The engine](/06-the-engine/): the primitives that spawn and place these roles, and the
   signal-reconciliation discipline that decides when a review-fix cycle is really done.
-- [The substrate](07-the-substrate.md): the four verification layers that back these roles,
+- [The substrate](/07-the-substrate/): the four verification layers that back these roles,
   including the blind-fix mechanical guard (Layer 3) that enforces the mtime ordering, and the
   standing validator suite (the reviewer-sandbox manifest audit, SHA-pin, round-budget, and more).
-- [Run-archive anatomy](15-run-archive.md): the `reviewer-blind-fix-*.md` file, the findings file,
+- [Run-archive anatomy](/15-run-archive/): the `reviewer-blind-fix-*.md` file, the findings file,
   and the manifest fields that make the order auditable.
-- [Installation](02-installation.md): getting a second vendor authenticated so you get cross-vendor
+- [Installation](/02-installation/): getting a second vendor authenticated so you get cross-vendor
   review by default.
 ## Real-world use cases
 
@@ -445,6 +445,6 @@ mission archive (mission `adversarial-review-and-fix` in manifest).
 
 ---
 
-← [Previous: The substrate](07-the-substrate.md) ·
-[Guide Index](README.md) ·
-[Next: Mission catalog](09-mission-catalog.md) →
+← [Previous: The substrate](/07-the-substrate/) ·
+[Guide Index](/) ·
+[Next: Mission catalog](/09-mission-catalog/) →

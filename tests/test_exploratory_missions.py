@@ -10,7 +10,14 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-GSTACK_SLUGS = ("product-framing", "browser-qa-fix", "security-cso-audit")
+GSTACK_SLUGS = (
+    "product-framing",
+    "browser-qa-fix",
+    "security-cso-audit",
+    "devex-audit",
+    "release-document",
+    "incident-investigate",
+)
 DESIGN_INTEGRATION_BANNER = (
     ROOT / "docs" / "exploratory" / "missions" / "design-integration" / "assets" / "banner.png"
 )
@@ -47,31 +54,17 @@ def test_gstack_banners_differ_from_design_integration() -> None:
     ref = _md5(DESIGN_INTEGRATION_BANNER)
     digests = {_md5(ROOT / "docs/exploratory/missions" / s / "assets" / "banner.png") for s in GSTACK_SLUGS}
     assert ref not in digests
-    assert len(digests) == 3
+    assert len(digests) == len(GSTACK_SLUGS)
 
 
 def test_gstack_banners_are_png_1200x600() -> None:
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from lib.png_banner import png_dimensions
+
     for slug in GSTACK_SLUGS:
         path = ROOT / "docs/exploratory/missions" / slug / "assets" / "banner.png"
         assert path.read_bytes()[:4] == b"\x89PNG", f"{slug}: expected PNG magic"
-        proc = subprocess.run(
-            ["sips", "-g", "pixelWidth", "-g", "pixelHeight", str(path)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        assert proc.returncode == 0, proc.stderr
-        w = next(
-            int(line.split()[-1])
-            for line in proc.stdout.splitlines()
-            if "pixelWidth" in line
-        )
-        h = next(
-            int(line.split()[-1])
-            for line in proc.stdout.splitlines()
-            if "pixelHeight" in line
-        )
-        assert (w, h) == (1200, 600), f"{slug}: got {w}x{h}"
+        assert png_dimensions(path) == (1200, 600), slug
 
 
 def test_sniff_and_normalize_banner_script() -> None:
@@ -99,6 +92,9 @@ def test_sniff_and_normalize_banner_script() -> None:
     ("product-framing", "skills/product-framing"),
     ("browser-qa-fix", "skills/browser-qa-fix"),
     ("security-cso-audit", "skills/security-cso-audit"),
+    ("devex-audit", "skills/devex-audit"),
+    ("release-document", "skills/release-document"),
+    ("incident-investigate", "skills/incident-investigate"),
 ])
 def test_banner_prompt_declares_skill_label(slug: str, label: str) -> None:
     prompt = (

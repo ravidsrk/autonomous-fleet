@@ -21,10 +21,10 @@ This chapter draws the line between a mission (the unit of work) and a campaign 
 missions with verification gates between them). It tells you which one to reach for, names the
 three campaigns that ship in the box, and shows you exactly where the "go to the next node" decision
 gets made. It does not teach you how to author your own campaign YAML from scratch. That is
-[Campaigns](10-campaigns.md). Here we stay at the level of "what are these two things, and when do I
+[Campaigns](/10-campaigns/). Here we stay at the level of "what are these two things, and when do I
 use each."
 
-> If you have not read [Mental model](04-mental-model.md) yet, read it first. This chapter assumes
+> If you have not read [Mental model](/04-mental-model/) yet, read it first. This chapter assumes
 > you already know that a run is a frozen plan plus a worker fleet plus a file ledger, and that the
 > readiness doc is the authoritative "done" record. Everything below builds on those three ideas.
 
@@ -57,7 +57,7 @@ There are nine more missions whose `fleet-outcome` shape is still known to the s
 whose SKILL.md has been demoted to `docs/exploratory/missions/` (`dependency-update`, `cleanup`,
 `bug-batch`, `targeted-migration`, `design-integration`, `landing-page-convergence`,
 `legacy-rebuild`, `take-product-to-completion`, `inference-cost`). They are not shipped: you cannot
-invoke them as a mission until they are promoted. The [Mission catalog](09-mission-catalog.md) covers
+invoke them as a mission until they are promoted. The [Mission catalog](/09-mission-catalog/) covers
 the shipped three in depth and explains what each exploratory one would do if promoted.
 
 The defining feature of a mission, the thing that makes the next section possible, is what it leaves
@@ -83,7 +83,7 @@ fleet-outcome:
 ```
 
 Hold onto `status`, `metrics`, and `deferred_missions`. Those three fields are what campaign edges
-branch on. The full field reference is [fleet-outcome schema](17-fleet-outcome-schema.md); here you
+branch on. The full field reference is [fleet-outcome schema](/17-fleet-outcome-schema/); here you
 just need to know the block exists and is the contract.
 
 ## A campaign is a DAG of missions
@@ -275,7 +275,7 @@ a single turn:
 > `fleet-program` skill in chat and let it bind to the runtime's `/goal` loop. Treat `run-campaign.sh`
 > as the mechanical reference driver, including `--dry-run` for planning, and reach for the
 > interactive flow when you actually want a campaign to run. The headless caveat is covered in full in
-> [Safety and secrets](12-safety-and-secrets.md).
+> [Safety and secrets](/12-safety-and-secrets/).
 
 ## Chain, sequence, or neither
 
@@ -344,7 +344,7 @@ If you genuinely need parallelism, parallelize across repos, not within one:
   aggregate the final reports at the end. There is no shared BASE across repos. This is the
   `parallel_repos` shape; it is separate sessions, not concurrent missions on one tree.
 - Inside a single mission, the workers do run in parallel. That is the mission's own concern, governed
-  by its hot-file rule and worker placement (see [The engine](06-the-engine.md)). The one-mission rule
+  by its hot-file rule and worker placement (see [The engine](/06-the-engine/)). The one-mission rule
   is about missions, not about the workers inside one.
 
 This rule is why a campaign is a chain and never a fan-out on a single repo. The DAG can branch (pick
@@ -410,7 +410,7 @@ This is the whole reason a mission's readiness doc must start with a valid `flee
 block is the gate's only input. A node that finishes without one strands the campaign: the
 coordinator has nothing to branch on, logs the gap, and cannot pick a next node. The three branchable
 surfaces (`status`, `metrics.*`, `deferred_missions`) are exactly the fields documented in
-[fleet-outcome schema](17-fleet-outcome-schema.md). Read that chapter when you are ready to write an
+[fleet-outcome schema](/17-fleet-outcome-schema/). Read that chapter when you are ready to write an
 edge against a specific metric.
 
 > Do not branch on `run` telemetry fields (`duration_min`, `coordinator_turns`, `worker_retries`).
@@ -443,8 +443,8 @@ all three presets must dry-run exit 0 before merge.
 That is the whole distinction. A mission is one job that leaves behind a validated `fleet-outcome`
 block. A campaign is a DAG of those jobs, gated mechanically on that block, one mission at a time per
 repo. The three shipped presets (`repo-health`, `ship-with-proof`, `quality-gate`) cover the common
-shapes; the next two how-to chapters get specific. [Mission catalog](09-mission-catalog.md) details
-every shipped mission. [Campaigns](10-campaigns.md) teaches you to author your own campaign YAML,
+shapes; the next two how-to chapters get specific. [Mission catalog](/09-mission-catalog/) details
+every shipped mission. [Campaigns](/10-campaigns/) teaches you to author your own campaign YAML,
 gates and conditional branches included.
 
-← [Mental model](04-mental-model.md) · [Guide Index](README.md) · [The engine](06-the-engine.md) →
+← [Mental model](/04-mental-model/) · [Guide Index](/) · [The engine](/06-the-engine/) →

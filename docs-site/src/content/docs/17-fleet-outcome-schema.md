@@ -15,7 +15,7 @@ sidebar:
 [Field reference table](#field-reference-table)
 
 The `fleet-outcome` block is the one piece of a run meant to be read by a machine. Every other
-artifact in a run-archive (see [Run-archive anatomy](15-run-archive.md)) is structured for a human or
+artifact in a run-archive (see [Run-archive anatomy](/15-run-archive/)) is structured for a human or
 a verifier; this block is structured for the next mission in a campaign. It is the contract a
 coordinator reads to decide what to do next, so it is small, typed, and validated. If you are
 validating that a run finished cleanly, this is the block you check. If you are writing a campaign and
@@ -24,8 +24,8 @@ need a conditional gate, this is the block your `if` expression evaluates agains
 ## What it is
 
 A `fleet-outcome` is YAML frontmatter at the top of a mission's readiness doc. When a mission reaches
-its final state, the coordinator emits the **T-FINAL** transition (see [The engine](06-the-engine.md)
-for the primitive, and [Trace schema](16-trace-schema.md) for the trace event). Part of that step is
+its final state, the coordinator emits the **T-FINAL** transition (see [The engine](/06-the-engine/)
+for the primitive, and [Trace schema](/16-trace-schema/) for the trace event). Part of that step is
 writing the readiness doc, and that doc begins with a `fleet-outcome:` mapping that answers four
 questions in a form a script can act on:
 
@@ -142,7 +142,7 @@ table in `fleet_outcome.py`. This is the exact table the validator enforces:
 
 > Three of these are shipped missions (`doc-sync`, `test-coverage`,
 > `adversarial-review-and-fix`); the rest are exploratory. The validator knows all of them so a
-> promotion run can land without schema churn. See the [Mission catalog](09-mission-catalog.md) for
+> promotion run can land without schema churn. See the [Mission catalog](/09-mission-catalog/) for
 > which are shipped today.
 
 Two rules govern the metrics mapping. First: a required metric that is absent produces
@@ -215,7 +215,7 @@ branchable. Unlike `archive_enabled`, this field does NOT gate `status: done` fr
 semantics depend on whether any such findings were filed, so that gating lives in the SKILL prose.
 
 `archive_enabled` is the ARCHIVE_ENABLED discipline assertion (see
-[Run-archive anatomy](15-run-archive.md)). When present it must be a bool. A mission that emitted any
+[Run-archive anatomy](/15-run-archive/)). When present it must be a bool. A mission that emitted any
 first-class artifact (findings JSON, verifier summary, blind-fix file) records `archive_enabled:
 true` only after `scripts/validate_run_archive.py .fleet/runs/<run_id>/` exits 0. That validator
 checks schema shape, on-disk integrity (sha256 plus size), and the mtime-ordering invariants from
@@ -395,7 +395,7 @@ python3 scripts/validate_fleet_outcome.py docs/doc-sync-readiness.md
 With no file arguments it globs `docs/*-readiness.md`. It prints `OK <name> mission=<m>` per passing
 doc, `FAIL <error>` per validation error, returns 0 when all pass and 1 when any fail. Malformed YAML
 in one doc fails that doc alone; it does not abort the batch. This validator runs as part of
-`scripts/validate-all.sh` (see [CLI reference](18-cli-reference.md)).
+`scripts/validate-all.sh` (see [CLI reference](/18-cli-reference/)).
 
 Evaluate a single edge expression, or pick the next campaign node, against one readiness doc:
 
@@ -443,10 +443,10 @@ other field is optional and omitted when not applicable.
                                                         for self-consistency
 ```
 
-For the trace event that carries this outcome at T-FINAL, see [Trace schema](16-trace-schema.md). For
+For the trace event that carries this outcome at T-FINAL, see [Trace schema](/16-trace-schema/). For
 the on-disk artifacts the outcome's `archive_enabled` and `run_id` point at, see
-[Run-archive anatomy](15-run-archive.md). For how a campaign chains nodes on these edges, see
-[Missions vs campaigns](05-missions-vs-campaigns.md).
+[Run-archive anatomy](/15-run-archive/). For how a campaign chains nodes on these edges, see
+[Missions vs campaigns](/05-missions-vs-campaigns/).
 ## Real-world use cases
 
 ### Example — fixture fleet-outcome.yaml
@@ -471,5 +471,5 @@ contract — see `skills/doc-sync/README.md`.
 
 ---
 
-← [Trace schema (v1)](16-trace-schema.md) · [Guide Index](README.md) ·
-[CLI reference](18-cli-reference.md) →
+← [Trace schema (v1)](/16-trace-schema/) · [Guide Index](/) ·
+[CLI reference](/18-cli-reference/) →

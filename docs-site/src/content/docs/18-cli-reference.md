@@ -22,7 +22,7 @@ sidebar:
 [Exit-code cheatsheet](#exit-code-cheatsheet)
 
 This chapter is the look-up table for everything under `scripts/`. It is reference, not a tutorial:
-read [Your first mission](03-your-first-mission.md) for the narrative, and come back here when you
+read [Your first mission](/03-your-first-mission/) for the narrative, and come back here when you
 need the exact flag, the exact exit code, or a copy-pasteable invocation.
 
 Two things to know before you start:
@@ -145,7 +145,7 @@ python3 scripts/analyze_seat.py --json aggregate
 
 Notes. A malformed archive still shows up as a row in `per-run` output (its `parsable` flag is
 false), but if every archive is malformed the tool exits 1. The `value_per_dollar` and
-`cost_estimate` columns are derived metrics; see [Run-archive anatomy](15-run-archive.md) for what
+`cost_estimate` columns are derived metrics; see [Run-archive anatomy](/15-run-archive/) for what
 each archive file contributes.
 
 ## emit_trace.py
@@ -203,7 +203,7 @@ prints a one-line tally at the end.
 > `fleet_run.write_manifest` BEFORE the manifest is written (trace first, ledger second). The schema
 > covers all 11 primitives and the stream is intentionally sparse while per-transition emission
 > rolls out across the coordinator and adapters. So `summary` on a real run will usually show a
-> single `T-FINAL` line. See the [Trace schema](16-trace-schema.md) reference for the full contract
+> single `T-FINAL` line. See the [Trace schema](/16-trace-schema/) reference for the full contract
 > and the rollout status.
 >
 > Causal lineage. `TraceEmitter.emit()` stamps every event with a unique `id` and RETURNS it, so a
@@ -257,7 +257,7 @@ Notes. The skills CLI is pinned (`skills@1.5.12`) for supply-chain integrity. An
 `npx skills` would fetch and run whatever the latest published release happens to be; the pin is
 bumped deliberately. The `-y -p` flags accept prompts and install in place. After install,
 `.agents/skills/` is populated (gitignored) and `skills-lock.json` is the committed record. See
-[Installation](02-installation.md) for the per-runtime walkthrough.
+[Installation](/02-installation/) for the per-runtime walkthrough.
 
 ## mutation-check.sh
 
@@ -265,7 +265,7 @@ What it does. Runs the standing mutation gate: it asserts that every mutation pi
 `tests/mutations.yaml` is caught by its guard test. A surviving mutation (a deliberate bug the
 tests fail to notice) or a stale manifest entry (a find-string that no longer matches the source)
 fails the gate. This is Layer 4 of the substrate; see
-[The substrate](07-the-substrate.md). There are 50 mutations in the manifest today.
+[The substrate](/07-the-substrate/). There are 50 mutations in the manifest today.
 
 Usage:
 
@@ -301,7 +301,7 @@ Examples:
 Notes. The wrapper best-effort bootstraps the venv, then `exec`s
 `scripts/mutation_check.py`. It always restores every mutated file on exit (the `finally:
 _restore_all()` in the Python entrypoint), so an interrupted run does not leave your tree mutated.
-Adding a mutation is covered in [Extending](13-extending.md).
+Adding a mutation is covered in [Extending](/13-extending/).
 
 ## preflight.sh
 
@@ -480,7 +480,7 @@ poll loop, and it exits with the terminal. The watched inputs are `docs/*-progre
 `docs/*-readiness.md`, and `.fleet/runs/*/trace.jsonl`; a change to any of their mtimes triggers one
 rebuild and prints a `rebuilt ... at <ts>` line to stderr. The Run-health panel is kept distinct
 from the zone counts on purpose (per-trace-event status vs per-task lifecycle). A malformed readiness
-doc is skipped, not fatal. See [Run-archive anatomy](15-run-archive.md) for what feeds each panel.
+doc is skipped, not fatal. See [Run-archive anatomy](/15-run-archive/) for what feeds each panel.
 
 ## run-campaign.sh
 
@@ -553,8 +553,8 @@ non-converging loop.
 > Headless validation status. The campaign driver is wired and useful for `--dry-run` planning, but
 > it is not yet fully validated end-to-end. It drives each runtime's CLI in headless mode, which
 > requires that CLI to be authenticated on the host. The supported path for running a mission today
-> is interactive (chat plus `/goal`). See [Missions vs campaigns](05-missions-vs-campaigns.md) and
-> [Campaigns](10-campaigns.md).
+> is interactive (chat plus `/goal`). See [Missions vs campaigns](/05-missions-vs-campaigns/) and
+> [Campaigns](/10-campaigns/).
 
 ## run-mission-headless.sh
 
@@ -713,7 +713,7 @@ runtime (`$(...)`, `eval` of a string, base64 payloads). It handles common evasi
 `sudo`, env-assignment prefixes (`CI=1 ...`), command chaining (`; && || |`), transparent wrappers
 (`env`, `xargs`, `timeout`, ...), `git -C <dir>` global options, split/combined `rm` flags, and
 `+`/`:` push refspecs. Pair it with real OS-level isolation (`container-use`); that, not this
-script, is the boundary. See [Safety and secrets](12-safety-and-secrets.md).
+script, is the boundary. See [Safety and secrets](/12-safety-and-secrets/).
 
 ## stop_verify.py
 
@@ -766,7 +766,7 @@ python3 scripts/stop_verify.py --strict-progress --min-kinds 2 --window-min 60
 Notes. The hook fails open: any internal error is rendered as ALLOW with a stderr warning, because
 trapping a worker mid-session is a worse failure than a missed gate. The kill switch is env-only so
 it survives subprocessing: set `FLEET_DISABLE_STOP_VERIFY=1` to return ALLOW immediately. See
-[The substrate](07-the-substrate.md) and [Strict mode](11-strict-mode.md).
+[The substrate](/07-the-substrate/) and [Strict mode](/11-strict-mode/).
 
 ## validate-all.sh
 
@@ -883,7 +883,7 @@ What it does. Validates one or more run-archive directories. Each archive must c
 `manifest.json` conforming to the run-manifest schema, with every listed file present, recorded
 sha256/size matching disk, and the mtime-ordering invariants from `engine.md` satisfied (blind-fix
 before findings, verify-summary after findings, readiness as the newest file). See
-[Run-archive anatomy](15-run-archive.md).
+[Run-archive anatomy](/15-run-archive/).
 
 Usage:
 
@@ -933,7 +933,7 @@ What it does. Layer 3 (anti-anchoring) verifier for a single run archive. For ea
 `<run_dir>/p0-review-findings.json` it checks the blind-fix protocol: a blind-fix file exists at
 the canonical (or multi-reviewer) location, its mtime is before the findings doc, it carries a
 point-of-creation statement and a pre-commit confidence (0-100), and it is not a stub. See
-`references/blind-fix.md` and [The substrate](07-the-substrate.md).
+`references/blind-fix.md` and [The substrate](/07-the-substrate/).
 
 Usage:
 
@@ -1188,8 +1188,8 @@ FLEET_DISABLE_REVIEWER_SANDBOX   verify_reviewer_sandbox.py likewise
 FLEET_DISABLE_NAMESPACING        validate_namespacing.py likewise
 ```
 
-See [The substrate](07-the-substrate.md) for what disabling each layer actually changes, and
-[Safety and secrets](12-safety-and-secrets.md) for the operator's view of the kill switches and the
+See [The substrate](/07-the-substrate/) for what disabling each layer actually changes, and
+[Safety and secrets](/12-safety-and-secrets/) for the operator's view of the kill switches and the
 sandbox wrapper.
 ## Real-world use cases
 
@@ -1214,5 +1214,5 @@ in-process — 67 scenario tests grounded in fixture + progress docs.
 
 ---
 
-← [fleet-outcome schema](17-fleet-outcome-schema.md) · [Guide Index](README.md) ·
-[FAQ](19-faq.md) →
+← [fleet-outcome schema](/17-fleet-outcome-schema/) · [Guide Index](/) ·
+[FAQ](/19-faq/) →

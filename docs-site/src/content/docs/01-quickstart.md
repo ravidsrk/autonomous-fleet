@@ -17,7 +17,7 @@ seeing the framework do something real on your own repo.
 
 > autonomous-fleet drives _your_ coding agent. It does not ship one. Everything below assumes you
 > already have Claude Code installed and authenticated. If you use Codex, Grok, or Orca instead,
-> finish this page conceptually then read [Installation](02-installation.md) for the per-runtime
+> finish this page conceptually then read [Installation](/02-installation/) for the per-runtime
 > details. The flow is the same; only the adapter skill and the chat-invoke step differ.
 
 ## Prerequisites
@@ -73,7 +73,7 @@ standard, which Claude Code, Grok, Codex, and Orca all read from the same place.
 
 > Using a different agent? Swap `autonomous-fleet-adapter-claude-code` for `-grok`, `-codex`, or
 > `-orca`. Want every skill at once, including the other missions? Use `--skill '*'` instead of the
-> individual `--skill` flags. The full breakdown is in [Installation](02-installation.md).
+> individual `--skill` flags. The full breakdown is in [Installation](/02-installation/).
 
 That is the whole install. There is nothing to compile and no server to start. The skills are just
 markdown and a handful of Python helper scripts that your agent reads as context.
@@ -163,7 +163,7 @@ cleanly. The ledger survives on disk, so you can resume in a new chat instead of
 > This quickstart uses the interactive chat path, which is the supported flow today. There is also a
 > headless campaign runner (`run-campaign.sh`) for scripting missions from a terminal, but it is not
 > yet fully validated end-to-end and needs your runtime's CLI authenticated on the host. Stick to
-> chat for your first run. See [Installation](02-installation.md) for the headless caveat.
+> chat for your first run. See [Installation](/02-installation/) for the headless caveat.
 
 ## What just happened
 
@@ -203,14 +203,14 @@ actually out of sync (an empty diff is a valid, honest result, not a failure). R
 
 You have seen _what_ a run feels like. Next, learn _why_ it works the way it does:
 
-- [Mental model](04-mental-model.md): what a "run" actually is. A frozen plan, a worker fleet, and
+- [Mental model](/04-mental-model/): what a "run" actually is. A frozen plan, a worker fleet, and
   an audit trail. This is the chapter that makes the rest of the guide click.
 
 And to go wider before you go deeper:
 
-- [Installation](02-installation.md): set up the other three runtimes (Codex, Grok, Orca), pick the
+- [Installation](/02-installation/): set up the other three runtimes (Codex, Grok, Orca), pick the
   right one for real work, and understand the headless-mode auth requirements.
-- [Your first mission](03-your-first-mission.md): the same `doc-sync` run, but walked through
+- [Your first mission](/03-your-first-mission/): the same `doc-sync` run, but walked through
   line by line, including every file that appears in the run archive.
 ## Real-world use cases
 
@@ -243,4 +243,4 @@ mechanical trace for validators.
 
 ---
 
-← [Prev: README](README.md) · [Guide Index](README.md) · [Next: Installation →](02-installation.md)
+← [Prev: README](/) · [Guide Index](/) · [Next: Installation →](/02-installation/)

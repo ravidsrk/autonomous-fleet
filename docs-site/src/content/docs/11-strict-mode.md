@@ -32,7 +32,7 @@ the Claude Code adapter on `main` today.
 
 > Strict mode is Claude Code only right now. The hook is a Claude Code Stop-hook,
 > so other runtime adapters (Codex, Grok, Orca) do not have it yet. Adding strict
-> mode to a new adapter is covered in [Extending](13-extending.md), not here.
+> mode to a new adapter is covered in [Extending](/13-extending/), not here.
 
 ## What strict mode is
 
@@ -332,7 +332,7 @@ any of them.
   three named flags and nothing else.
 
 For where strict mode sits among the four verification layers, see
-[The substrate](07-the-substrate.md). Strict mode is the operator-facing opt-in on
+[The substrate](/07-the-substrate/). Strict mode is the operator-facing opt-in on
 top of Layer 2 (the stop-verify hook).
 
 ## Disabling it for one-off sessions
@@ -380,6 +380,6 @@ mutations must stay caught.
 
 ---
 
-← [Campaigns](10-campaigns.md) ·
-[📖 Guide Index](README.md) ·
-[Safety and secrets](12-safety-and-secrets.md) →
+← [Campaigns](/10-campaigns/) ·
+[📖 Guide Index](/) ·
+[Safety and secrets](/12-safety-and-secrets/) →
