@@ -1,10 +1,10 @@
 {
   "name": "autonomous-fleet",
-  "description": "Portable multi-agent engineering framework for fully-autonomous coding runs. One tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and three shipped mission skills (doc-sync, test-coverage, adversarial-review-and-fix) composable into multi-step engineering campaigns via the fleet-program shell. A four-layer verification substrate (Layer 1 schema-checked review findings + reviewer source verifier; Layer 2 opt-in evidence-gating Stop hook; Layer 3 blind-fix anti-anchoring guard; Layer 4 manifest-audited run archive with sha256 + mtime ordering) moves \"done\" from self-attestation toward on-disk evidence. A versioned JSONL trace contract (fleet-trace.schema.json v1.0) defines the trace events vibe-kanban / Agent View / custom dashboards can consume (one event type wired in code today). Write-lock discipline (construction + request locks) is available for serializing shared-state mutations. Twelve additional missions ship as exploratory docs (docs/exploratory/missions/) pending real-run promotion evidence. Note: the verification substrate is new and not yet validated end-to-end on an external repo.",
+  "description": "Portable multi-agent engineering framework for fully-autonomous coding runs. One tool-agnostic core engine, per-runtime adapters (Claude Code, Codex, Grok, Orca), and three shipped mission skills (doc-sync, test-coverage, adversarial-review-and-fix) composable into multi-step engineering campaigns via the fleet-program shell. A four-layer verification substrate (Layer 1 schema-checked review findings + reviewer source verifier; Layer 2 opt-in evidence-gating Stop hook; Layer 3 blind-fix anti-anchoring guard; Layer 4 manifest-audited run archive with sha256 + mtime ordering) moves \"done\" from self-attestation toward on-disk evidence. A versioned JSONL trace contract (fleet-trace v1.0/v1.1) defines dashboard events; live coordinators emit via `emit_trace.py emit`. Lane 1/2 dogfood archives on main; adversarial bench numbers pending (issue #62). Twelve additional missions ship as exploratory docs (docs/exploratory/missions/) pending real-run promotion evidence.",
   "source": {
     "source": "url",
     "url": "https://github.com/ravidsrk/autonomous-fleet.git",
-    "sha": "4c107fe6dab2adf24929d6ed3c18f0c0cfe76f26"
+    "sha": "12a4e09abff8ff1a2a391bf4287e0e896b6a2461"
   },
   "homepage": "https://github.com/ravidsrk/autonomous-fleet"
 }

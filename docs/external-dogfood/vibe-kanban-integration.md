@@ -1,22 +1,24 @@
 # Vibe Kanban Trace Integration
 
-Status: planned Commit E external-dogfood integration note. This document
-describes the checked-in trace contract that vibe-kanban, Agent View, or a
-custom dashboard can consume. It does not claim that a dashboard adapter is
-already checked in.
+Status: integration contract (v0.2.1). Describes the JSONL stream vibe-kanban,
+Agent View, or a custom dashboard consumes. A checked-in dashboard renderer is
+not required — `scripts/render-dashboard.py` reads ledgers; trace is additive.
 
 ## Trace Stream
 
-The trace CONTRACT defines one JSONL event per ledger state transition; today `fleet_run.write_manifest` is the reference emitter (the T-FINAL event), and the coordinator/adapters emit the rest per the engine TRACE EMISSION doctrine (rollout in progress). to:
+The trace CONTRACT defines one JSONL event per ledger state transition. Live
+coordinators append events via `python scripts/emit_trace.py emit <run_dir> …`
+**before** each ledger write; `fleet_run.write_manifest` emits `T-FINAL`. Dry-run
+and headless paths reconstruct full lifecycles from progress docs. Stream path:
 
 ```text
 .fleet/runs/<run_id>/trace.jsonl
 ```
 
 Each line is one JSON object validated by
-`skills/autonomous-fleet-core/assets/fleet-trace.schema.json`. The schema is
-pinned at `schema_version: "1.0"` and has `$id`
-`https://autonomous-fleet.dev/schemas/fleet-trace.schema.json`.
+`skills/autonomous-fleet-core/assets/fleet-trace.schema.json` (v1.0 default) or
+`fleet-trace.schema-1.1.json` (optional `id` field formalized). Validators accept
+both `1.0` and `1.1` `schema_version` values.
 
 The required top-level fields are:
 
@@ -50,6 +52,8 @@ trace event to land before the corresponding ledger write commits.
 The checked-in CLI for the emitted stream is `scripts/emit_trace.py`:
 
 ```bash
+python scripts/emit_trace.py emit .fleet/runs/<run_id>/ \
+  --primitive DISPATCH --role COORDINATOR --status started --task-id T1 --id-only
 python scripts/emit_trace.py validate .fleet/runs/<run_id>/trace.jsonl
 python scripts/emit_trace.py summary .fleet/runs/<run_id>
 ```

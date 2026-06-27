@@ -1,0 +1,23 @@
+Horizontal banner image, 2:1 aspect ratio (about 1200×600 feel).
+
+PALETTE (strict):
+  - Background: deep midnight #0B1220 (subtle cool gradient toward #0F172A at edges)
+  - Primary accent: warm amber #F59E0B
+  - Secondary accent: cool slate / steel blue #94A3B8
+  - Highlight: white #FFFFFF (sparingly)
+  - Ink for any text: warm off-white #F8FAFC
+
+STYLE: Clean schematic / cockpit / control-room aesthetic. Engineering-serious, not cyberpunk. Linear.app + Vercel + GitHub-Actions dark-mode feel. Thin precise lines, generous spacing.
+
+COMMON RULES:
+  - Top-left corner: small monospace text exactly: "skills/product-framing"
+  - Bottom-center: thin horizontal amber accent line above a one-line caption: "office hours · frozen product spec"
+  - All visible text must be ONLY the labels explicitly listed below — every label appears EXACTLY ONCE
+  - No fake domain names, no garbled words
+
+COMPOSITION:
+  LEFT: three stacked speech-bubble outlines (slate-blue) representing forcing questions.
+  CENTER: amber arrow pointing right into a document card with a small lock icon (frozen spec).
+  RIGHT: three small role badges in a row labeled in monospace exactly: "CEO", "ENG", "UX" — each badge appears EXACTLY ONCE.
+
+These role labels are the ONLY mid-composition text besides top-left + caption.

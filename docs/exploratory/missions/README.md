@@ -40,6 +40,9 @@ Doctrine alone is not sufficient. Tests inherited from
 `autonomous-fleet-core` are not sufficient. The promotion PR must cite a
 real coding-agent run that produced the archive.
 
+Mechanical gate (CI): `./scripts/validate_mission_promotion.py --require-ready <slug>`
+must exit 0 before moving a mission back to `skills/`.
+
 ## Demoted missions (2026-06-23, Commit D)
 
 ### `bug-batch/`
@@ -116,6 +119,28 @@ everything else and keeping the suite green. If promoted, would handle
 the one-axis-at-a-time slot between `dependency-update` and full
 `legacy-rebuild`. Currently: no progress, no readiness, no external
 archive.
+
+## gstack-derived missions (2026-06-27)
+
+Mapped from [garrytan/gstack](https://github.com/garrytan/gstack) specialist skills into
+fleet frozen-ledger missions. Research: [`docs/gstack-missions-research.md`](../../gstack-missions-research.md).
+
+### `product-framing/`
+
+[Tier 2] Pre-build framing: office-hours forcing questions + CEO/design/eng plan reviews →
+frozen `docs/product-spec.md`. No implementation PRs. gstack sources: `office-hours`, `autoplan`,
+`plan-*`, `spec`.
+
+### `browser-qa-fix/`
+
+[Tier 2] Browser-grounded QA with screenshot EVID and fix loop until health threshold met.
+gstack sources: `qa`, `qa-only`, `browse`, `health`.
+
+### `security-cso-audit/`
+
+[Tier 2] Infrastructure-first CSO audit (secrets, supply chain, CI/CD, OWASP, STRIDE, LLM/skill
+chain) with skeptic narrowing and one-PR-per-finding remediation. gstack sources: `cso`,
+`investigate`, `careful`.
 
 ## Promotion process
 

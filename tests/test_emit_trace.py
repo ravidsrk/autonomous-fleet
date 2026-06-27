@@ -737,6 +737,121 @@ def test_cli_summary_missing_trace(tmp_path: Path) -> None:
     assert "trace file not found" in err
 
 
+def test_cli_emit_id_only(tmp_path: Path) -> None:
+    run_dir = tmp_path / "20260627T120000Z-doc-sync-abc123"
+    run_dir.mkdir()
+    rc, out, err = _run_cli(
+        "emit",
+        str(run_dir),
+        "--mission",
+        "doc-sync",
+        "--run-id",
+        "20260627T120000Z-doc-sync-abc123",
+        "--primitive",
+        "WAIT",
+        "--role",
+        "COORDINATOR",
+        "--status",
+        "started",
+        "--id-only",
+    )
+    assert rc == 0, err
+    assert out.strip()
+
+
+def test_cli_emit_happy_json_output(tmp_path: Path) -> None:
+    run_dir = tmp_path / "20260627T120000Z-doc-sync-abc123"
+    run_dir.mkdir()
+    (run_dir / "manifest.json").write_text(
+        json.dumps(
+            {
+                "run_id": "20260627T120000Z-doc-sync-abc123",
+                "mission": "doc-sync",
+            }
+        ),
+        encoding="utf-8",
+    )
+    rc, out, err = _run_cli(
+        "emit",
+        str(run_dir),
+        "--primitive",
+        "WAIT",
+        "--role",
+        "COORDINATOR",
+        "--status",
+        "started",
+        "--details",
+        '{"note":"live"}',
+    )
+    assert rc == 0, err
+    payload = json.loads(out.strip())
+    assert payload["event_id"]
+    assert payload["trace"].endswith("trace.jsonl")
+
+
+def test_cli_emit_invalid_details_json(tmp_path: Path) -> None:
+    run_dir = tmp_path / "20260627T120000Z-doc-sync-abc123"
+    run_dir.mkdir()
+    rc, _out, err = _run_cli(
+        "emit",
+        str(run_dir),
+        "--mission",
+        "doc-sync",
+        "--run-id",
+        "20260627T120000Z-doc-sync-abc123",
+        "--primitive",
+        "WAIT",
+        "--role",
+        "COORDINATOR",
+        "--status",
+        "started",
+        "--details",
+        "not-json",
+    )
+    assert rc == 2
+    assert "invalid --details JSON" in err
+
+
+def test_cli_emit_details_must_be_object(tmp_path: Path) -> None:
+    run_dir = tmp_path / "20260627T120000Z-doc-sync-abc123"
+    run_dir.mkdir()
+    rc, _out, err = _run_cli(
+        "emit",
+        str(run_dir),
+        "--mission",
+        "doc-sync",
+        "--run-id",
+        "20260627T120000Z-doc-sync-abc123",
+        "--primitive",
+        "WAIT",
+        "--role",
+        "COORDINATOR",
+        "--status",
+        "started",
+        "--details",
+        '["nope"]',
+    )
+    assert rc == 2
+    assert "--details must be a JSON object" in err
+
+
+def test_cli_emit_unresolvable_run_dir(tmp_path: Path) -> None:
+    run_dir = tmp_path / "scratch"
+    run_dir.mkdir()
+    rc, _out, err = _run_cli(
+        "emit",
+        str(run_dir),
+        "--primitive",
+        "WAIT",
+        "--role",
+        "COORDINATOR",
+        "--status",
+        "started",
+    )
+    assert rc == 2
+    assert "pass --mission and --run-id" in err
+
+
 def test_cli_requires_subcommand() -> None:
     cli = _load_cli()
     err = io.StringIO()

@@ -1,0 +1,32 @@
+name: docs-site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/guide/**"
+      - "docs-site/**"
+      - "scripts/sync_guide_starlight.py"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Sync guide markdown
+        run: python3 scripts/sync_guide_starlight.py
+      - name: Install and build
+        working-directory: docs-site
+        run: |
+          npm install
+          npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs-site-dist
+          path: docs-site/dist
+          retention-days: 14

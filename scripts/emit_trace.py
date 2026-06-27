@@ -8,6 +8,7 @@ Subcommands:
   2 = usage error (missing file, unreadable, etc.).
 - ``summary <run_dir>`` — read ``<run_dir>/trace.jsonl`` and print counts
   by primitive, role, and status. Same exit-code convention.
+- ``emit <run_dir>`` — append one live coordinator event (trace before ledger).
 
 Lineage: see ``skills/autonomous-fleet-core/references/engine.md`` § TRACE
 EMISSION and ``assets/fleet-trace.schema.json``.
@@ -22,7 +23,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib.emit_trace import health_rollup, iter_trace_file, validate_event  # noqa: E402
+from lib.coordinator_trace import emit_coordinator_event  # noqa: E402
+from lib.emit_trace import (  # noqa: E402
+    PRIMITIVES,
+    ROLES,
+    STATUSES,
+    health_rollup,
+    iter_trace_file,
+    validate_event,
+)
 
 
 def _cmd_validate(path: Path) -> int:
@@ -116,6 +125,43 @@ def _cmd_summary(run_dir: Path) -> int:
     return 0
 
 
+def _cmd_emit(args: argparse.Namespace) -> int:
+    details = None
+    if args.details:
+        try:
+            details = json.loads(args.details)
+        except json.JSONDecodeError as exc:
+            print(f"emit-trace: invalid --details JSON: {exc}", file=sys.stderr)
+            return 2
+        if not isinstance(details, dict):
+            print("emit-trace: --details must be a JSON object", file=sys.stderr)
+            return 2
+
+    try:
+        event_id = emit_coordinator_event(
+            args.run_dir,
+            primitive=args.primitive,
+            role=args.role,
+            status=args.status,
+            mission=args.mission,
+            run_id=args.run_id,
+            task_id=args.task_id,
+            evidence_hash=args.evidence_hash,
+            cost_delta=args.cost_delta,
+            parent_event=args.parent_event,
+            details=details,
+        )
+    except ValueError as exc:
+        print(f"emit-trace: {exc}", file=sys.stderr)
+        return 2
+
+    if args.id_only:
+        print(event_id)
+    else:
+        print(json.dumps({"event_id": event_id, "trace": str(args.run_dir / "trace.jsonl")}))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         description="Trace-emission validator/summary for a fleet run archive.",
@@ -132,10 +178,33 @@ def main(argv: list[str] | None = None) -> int:
         "run_dir", type=Path, help="Path to .fleet/runs/<run_id>/."
     )
 
+    p_emit = sub.add_parser(
+        "emit",
+        help="Append one live coordinator trace event (call before ledger write).",
+    )
+    p_emit.add_argument("run_dir", type=Path, help="Path to .fleet/runs/<run_id>/.")
+    p_emit.add_argument("--primitive", required=True, choices=list(PRIMITIVES))
+    p_emit.add_argument("--role", required=True, choices=list(ROLES))
+    p_emit.add_argument("--status", required=True, choices=list(STATUSES))
+    p_emit.add_argument("--mission", default=None, help="Mission slug if no manifest.")
+    p_emit.add_argument("--run-id", default=None, help="Run id if no manifest.")
+    p_emit.add_argument("--task-id", default=None)
+    p_emit.add_argument("--evidence-hash", default=None)
+    p_emit.add_argument("--cost-delta", type=float, default=None)
+    p_emit.add_argument("--parent-event", default=None)
+    p_emit.add_argument("--details", default=None, help="JSON object for details.")
+    p_emit.add_argument(
+        "--id-only",
+        action="store_true",
+        help="Print only the event id (for parent_event chaining).",
+    )
+
     args = p.parse_args(argv)
 
     if args.command == "validate":
         return _cmd_validate(args.path)
+    if args.command == "emit":
+        return _cmd_emit(args)
     return _cmd_summary(args.run_dir)
 
 

@@ -5,24 +5,41 @@
 All notable changes to `autonomous-fleet` are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Dates are merge dates in IST.
 
-**On this page:** [Unreleased](#unreleased) · [0.2.0](#020---2026-06-27) · [0.1.0](#010---2026-06-26) · [Conventions](#conventions)
+**On this page:** [Unreleased](#unreleased) · [0.2.1](#021---2026-06-27) · [0.2.0](#020---2026-06-27) · [0.1.0](#010---2026-06-26) · [Conventions](#conventions)
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-27
+
+Post-v0.2.0 polish: live trace CLI, promotion validator, Starlight scaffold, trace schema 1.1.
+
+### Added
+
+- `emit_trace.py emit` — live coordinator trace events before ledger writes (`scripts/lib/coordinator_trace.py`).
+- `scripts/poll-ledger.sh` — non-busy WAIT helper for Grok/Codex adapters.
+- `scripts/validate_mission_promotion.py` — archive-triple gate for exploratory missions.
+- `skills/autonomous-fleet-core/assets/fleet-trace.schema-1.1.json` — optional `id` formalized.
+- `docs-site/` — Astro Starlight scaffold + `scripts/sync_guide_starlight.py` + CI workflow.
+- Lane 3 tracking issue [#62](https://github.com/ravidsrk/autonomous-fleet/issues/62).
+
+### Changed
+
+- Grok/Codex adapter `SKILL.md` — TRACE EMISSION + `poll-ledger` WAIT patterns documented.
+- `docs/roadmap-gap-matrix.md`, `docs/plans/way-ahead-2026-06-23.md` §8 — stale status closed.
+- `docs/marketplace-submission/` — SHA pinned to current `main`.
+- `docs/guide/16-trace-schema.md` — v1.1 consumer notes + live `emit` CLI.
+- `docs/external-dogfood/vibe-kanban-integration.md` — live emit path wired (not rollout-in-progress).
+
 ### Fixed
 
-- `README.md` — version badge 0.2.0; test counts (53 files; count auto-guarded by `test_readme_drift.py`); layout reflects 12 skills.
+- `README.md` — version badge 0.2.1; test counts auto-guarded by `test_readme_drift.py`.
 - `mutation_check.py` — invalidate `__pycache__` after each mutation restore (stale bytecode DX).
 - Orca headless documented as interactive-only (`run-*.sh`, adapter `SKILL.md`, guide FAQ).
-- `docs/doc-sync-audit.md`, `docs/plans/way-ahead-2026-06-23.md`, marketplace packet — metric/status drift closed.
 - `_runtime_response_archive_name` — empty capture no longer misclassified as `.json`; skip 0-byte copies.
 - `run_runtime_emit` — live streaming via `tee` + `PIPESTATUS[0]`; guarded `mktemp` fallback.
 - `run-campaign.sh` — `NODE_RC`, `emit_campaign_node_archive || true`, accurate failure warnings.
 - Headless archive path — unconditional emit on runtime failure; runtime capture in manifest.
-
-### Added
-
-- `pyproject.toml` — minimal project metadata + pytest/coverage config (parallel to `requirements.txt`).
+- `pyproject.toml` — minimal project metadata + pytest/coverage config.
 - `tests/test_readme_drift.py` — CI guard for README vs `VERSION` / pytest collect / test file count.
 - `--runtime-response` on `emit_headless_dryrun_trace.py`; headless/campaign archive tests.
 

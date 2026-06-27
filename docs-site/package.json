@@ -1,0 +1,17 @@
+{
+  "name": "autonomous-fleet-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync": "python3 ../scripts/sync_guide_starlight.py",
+    "prebuild": "npm run sync",
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.32.0",
+    "astro": "^5.7.0",
+    "sharp": "^0.33.5"
+  }
+}

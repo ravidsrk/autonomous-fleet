@@ -365,12 +365,17 @@ manifest_path.write_text(
 )
 ```
 
-So in production today, a run's `trace.jsonl` typically contains one event: the `T-FINAL` archive seal.
-The stream is intentionally sparse while per-transition emission rolls out. The other 10 primitives are
-emitted by the coordinator and the adapters at their transitions per the engine TRACE EMISSION doctrine,
-and that wiring is in progress, not finished. This is by design: the enforcement boundary is the schema
-plus `validate_event` plus the schema-drift test plus the trace mutations, NOT auto-wiring, because the
-file ledger is coordinator-driven and each adapter calls `emit()` itself at the transitions it owns.
+Live coordinators append events with the `emit` subcommand (v0.2.1):
+
+```bash
+python scripts/emit_trace.py emit .fleet/runs/<run_id>/ \
+  --primitive DISPATCH --role COORDINATOR --status started --task-id T1 --id-only
+```
+
+Adapter `SKILL.md` files document when to call it. Until a coordinator does, a run's `trace.jsonl`
+may contain only `T-FINAL` from `write_manifest`. Dry-run and headless paths can still produce full
+11-primitive streams from progress docs. The enforcement boundary remains schema + `validate_event` +
+mutations — not auto-wiring — because the file ledger is coordinator-driven.
 
 A dashboard should therefore be built to render a stream that is correct but partial today, and grows
 denser as emission rolls out. Do not assume a fully-populated lifeline per worker yet. Do assume that
@@ -387,7 +392,9 @@ degraded telemetry, never as a run failure.
 
 ## Versioning and the `$id` policy
 
-`schema_version` is the constant string `"1.0"` for this release, and the `$id` is
+`schema_version` `"1.0"` is the default emitter pin; `"1.1"` is also accepted by
+`validate_event`. Schema files: `fleet-trace.schema.json` and `fleet-trace.schema-1.1.json`
+(formalizes optional `id` for causal lifelines). The `$id` for 1.0 is
 `https://autonomous-fleet.dev/schemas/fleet-trace.schema.json`. The versioning policy is strict and
 worth internalizing:
 

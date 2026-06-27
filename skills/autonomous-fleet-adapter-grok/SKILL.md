@@ -95,6 +95,12 @@ or long Shell-driven work, poll: re-read the FILE LEDGER and check the worktree'
 subagent still running = alive; do not abort it. There is no busy-wait daemon — the coordinator
 advances when a subagent returns or a polled ledger flag flips. Timeout = checkpoint, not failure.
 
+**Non-busy poll (mechanical):** between coordinator turns, prefer
+`./scripts/poll-ledger.sh --ledger docs/<mission>-progress.md --task <id> --expect '<flag>=t'`
+instead of tight spin loops. Emit trace **before** each ledger flag flip (see TRACE EMISSION).
+Landscape Gap 1 is **degraded but closed** for Grok: ledger-poll + `poll-ledger.sh` replaces a
+daemon WAIT; Claude Code/Orca have native notifications.
+
 ### INSPECT() — non-destructive
 Read the FILE LEDGER (`docs/<mission>-progress.md`) and `git worktree list` + `gh pr list --base
 BASE` via Shell. None of these consume anything.
@@ -156,6 +162,19 @@ Background shell: `background: true` on `run_terminal_command`; poll with
 - Coordinator context pressure: write the CONTEXT HANDOFF block into the ledger (per the core) so a
   fresh coordinator session resumes — critical in Grok, where the coordinator is itself a session
   with a context limit and there's no external daemon holding state.
+
+## TRACE EMISSION (live coordinator)
+
+Trace **before** ledger write on every transition (engine.md TRACE EMISSION). Append events with:
+
+```bash
+python scripts/emit_trace.py emit .fleet/runs/<run_id>/ \
+  --primitive DISPATCH --role COORDINATOR --status started \
+  --task-id <task> --id-only
+```
+
+Capture the printed event id; pass `--parent-event <id>` on worker `COMMIT`/`INSPECT` rows.
+If `manifest.json` is not present yet, add `--mission <slug> --run-id <run_id>`.
 
 ## GROK NOTES
 - Keep build units bounded so a subagent can finish one within its context; decompose large units

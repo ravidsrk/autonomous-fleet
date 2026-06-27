@@ -26,7 +26,7 @@ Both feed the same review pipeline. Use the Console form unless you already have
 
 # What's new since the last submission
 
-The submission packet was last refreshed at SHA `2a0f7b9664fac8c19f192bac26809ee9f7360fd4`.
+The submission packet was last refreshed at SHA `12a4e09abff8ff1a2a391bf4287e0e896b6a2461` (v0.2.1 prep).
 Since then (PRs #37, #38, and the `roadmap/post-substrate-impl` branch), the
 following substrate work has shipped and is reflected in the updated packet
 description:
@@ -61,6 +61,8 @@ substrate-off vs substrate-on comparator across 5 OSS targets. Methodology
 shipped at `docs/external-dogfood/adversarial-bench-2026-06.md`. Numbers will
 be cited in the next packet refresh once operator runs land.
 
+🟢 **v0.2.1 + live trace CLI** — `emit_trace.py emit` for coordinator transitions; Starlight docs-site scaffold.
+
 🟢 **v0.2.0 + headless archive path** — tagged release includes
 `scripts/emit_headless_dryrun_trace.py`, eleven-primitive example-fixture trace,
 `validate-headless.sh` gate, and 67+ real-world scenario tests. Mechanical
@@ -89,7 +91,7 @@ https://platform.claude.com/plugins/submit ; re-pin SHA to latest `main` at subm
 # Submission packet for `autonomous-fleet`
 
 **Repository:** https://github.com/ravidsrk/autonomous-fleet
-**Pinned SHA:** `2a0f7b9664fac8c19f192bac26809ee9f7360fd4` (the actual submission SHA bumps to the Commit-G merge commit; the four prior commits A–F precede it).
+**Pinned SHA:** `12a4e09abff8ff1a2a391bf4287e0e896b6a2461` (re-pin to latest `main` at Console submit time).
 **Category:** development
 **One-line pitch:** Multi-agent engineering framework for fully-autonomous coding runs. One portable engine. 4 runtime adapters. **3 shipped missions** + `fleet-program` campaign shell + a 4-layer verification substrate (schema-checked review findings, evidence-gating Stop hook, blind-fix anti-anchoring, manifest-audited run archive).
 
