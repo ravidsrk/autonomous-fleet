@@ -38,6 +38,10 @@ Options:
   --yolo-untrusted-acknowledged  Required with --yolo when --repo is outside this clone (accepts RCE risk)
   --dry-run           Validate preflight and print the agent command without invoking the runtime CLI
 
+Runtimes:
+  grok, claude, codex — supported headless drivers.
+  orca — interactive only (Orca app + /goal); not accepted by this script.
+
 Examples:
   ./scripts/run-mission-headless.sh grok doc-sync --max-turns 50
   ./scripts/run-mission-headless.sh claude fleet-program
