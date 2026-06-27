@@ -422,6 +422,83 @@ def test_runtime_response_archive_name_missing_file(tmp_path: Path) -> None:
     )
 
 
+def test_runtime_response_archive_name_empty_file(tmp_path: Path) -> None:
+    capture = tmp_path / "empty"
+    capture.write_bytes(b"")
+    assert fleet_run._runtime_response_archive_name(capture) == "headless-runtime-response.txt"
+    assert fleet_run._runtime_response_has_content(capture) is False
+
+
+def test_runtime_response_has_content_stat_failure(tmp_path: Path) -> None:
+    from unittest.mock import patch
+
+    capture = tmp_path / "f"
+    capture.write_bytes(b"x")
+    with patch.object(Path, "stat", side_effect=OSError("simulated stat failure")):
+        assert fleet_run._runtime_response_has_content(capture) is False
+
+
+def test_write_headless_archive_skips_empty_runtime_response(tmp_path: Path) -> None:
+    capture = tmp_path / "empty-capture"
+    capture.write_bytes(b"")
+    external = tmp_path / "repo"
+    external.mkdir()
+    arch, _run_id, _prims = fleet_run.write_headless_dryrun_archive(
+        external,
+        mission="doc-sync",
+        runtime="grok",
+        progress_source_root=REPO_ROOT,
+        runtime_response_path=capture,
+    )
+    try:
+        assert not (arch / "headless-runtime-response.json").exists()
+        assert not (arch / "headless-runtime-response.txt").exists()
+        payload, errs = fleet_run.load_and_validate_manifest(arch)
+        assert errs == []
+        kinds = {e["kind"] for e in payload["files"]}
+        assert "response" not in kinds
+    finally:
+        _cleanup_archive(arch)
+
+
+def test_run_mission_headless_merges_stderr_into_archive(tmp_path: Path) -> None:
+    """Runtime stderr is captured in the merged transcript (intentional for archive)."""
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_grok = fake_bin / "grok"
+    fake_grok.write_text('#!/bin/sh\necho \'{"error":"stderr-only"}\' >&2\nexit 1\n')
+    fake_grok.chmod(0o755)
+
+    external = tmp_path / "repo"
+    external.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=external, check=True)
+
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env.get('PATH', '')}"
+
+    r = subprocess.run(
+        [
+            str(REPO_ROOT / "scripts" / "run-mission-headless.sh"),
+            "grok",
+            "doc-sync",
+            "--repo",
+            str(external),
+            "--max-turns",
+            "1",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=REPO_ROOT,
+        env=env,
+    )
+    assert r.returncode == 1
+    assert '{"error":"stderr-only"}' in r.stdout
+    runs = list((external / ".fleet" / "runs").glob("*"))
+    assert len(runs) == 1
+    assert (runs[0] / "headless-runtime-response.json").is_file()
+
+
 def test_run_mission_headless_emits_archive_on_runtime_failure(tmp_path: Path) -> None:
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
