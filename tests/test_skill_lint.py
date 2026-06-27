@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -162,6 +163,165 @@ def test_lint_skill_dispatches_and_skips_non_structural_components() -> None:
     sl.lint_skill(ROOT / "skills" / "autonomous-fleet-adapter-codex")
     sl.lint_skill(ROOT / "skills" / "doc-sync")
     sl.lint_skill(ROOT / "skills" / "autonomous-fleet-core")
+
+
+def test_lint_gstack_mission_non_gstack_slug_returns_after_mission_lint(tmp_path: Path) -> None:
+    skill = _copy_skill(ROOT / "skills" / "doc-sync", tmp_path / "doc-sync")
+    sl.lint_gstack_mission(skill)
+
+
+def test_lint_gstack_value_error_wrapped(tmp_path: Path) -> None:
+    skill = tmp_path / "product-framing"
+    skill.mkdir()
+    (skill / "SKILL.md").write_text(
+        "---\nname: product-framing\nmetadata:\n  author: t\n  version: '1'\n"
+        "  tier: '2'\n  fleet-component: mission\n  recommended-bundle: b\n"
+        "status: exploratory\n---\n\n"
+        "# Mission\n\n## Required skills\n\n1. core\n\n"
+        "## Optional skills\n\n| a | b | c |\n\n## Worker skills\n\n| r | s | u |\n\n"
+        "## Deferred missions\n\n| a | b |\n\n## ROLE PIPELINE\n\nx\n\n"
+        "**`fleet-outcome` YAML**\n\n"
+        "```yaml community-recommends\nskills: [office-hours]\n```\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(sl.SkillLintError, match="non-empty bundle"):
+        sl.lint_gstack_mission(skill)
+
+
+def test_lint_gstack_invalid_recommends_block_fails(tmp_path: Path) -> None:
+    skill = _copy_skill(
+        ROOT / "docs" / "exploratory" / "missions" / "product-framing",
+        tmp_path / "product-framing",
+    )
+    path = skill / "SKILL.md"
+    text = path.read_text(encoding="utf-8")
+    text = re.sub(
+        r"metadata:\n(?:  .*\n)+status: exploratory",
+        "metadata:\n  author: test\n  fleet-component: mission\nstatus: exploratory",
+        text,
+        count=1,
+    )
+    text = re.sub(
+        r"```yaml community-recommends\n.*?^```\n",
+        "```yaml community-recommends\nskills: [office-hours]\n```\n",
+        text,
+        count=1,
+        flags=re.M | re.S,
+    )
+    path.write_text(text, encoding="utf-8")
+    with pytest.raises(sl.SkillLintError):
+        sl.lint_gstack_mission(skill)
+
+
+def test_lint_skill_dispatches_gstack_mission() -> None:
+    sl.lint_skill(ROOT / "docs" / "exploratory" / "missions" / "product-framing")
+
+
+def test_skill_lint_import_bootstrap_from_lib_dir() -> None:
+    import importlib.util
+    import sys
+
+    scripts_lib = ROOT / "scripts" / "lib"
+    path = scripts_lib / "skill_lint.py"
+    saved = list(sys.path)
+    try:
+        sys.path[:] = [str(scripts_lib)]
+        spec = importlib.util.spec_from_file_location("skill_lint_isolated", path)
+        assert spec and spec.loader
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        mod.lint_gstack_mission(ROOT / "docs" / "exploratory" / "missions" / "product-framing")
+    finally:
+        sys.path[:] = saved
+
+
+def test_skill_lint_dunder_main(tmp_path: Path) -> None:
+    bad = tmp_path / "bad-skill"
+    bad.mkdir()
+    (bad / "SKILL.md").write_text("# no frontmatter\n", encoding="utf-8")
+    assert sl.main([str(bad)]) == 1
+
+
+def test_skill_lint_script_entrypoint_runs(tmp_path: Path) -> None:
+    import subprocess
+    import sys
+
+    r = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "lib" / "skill_lint.py"), str(
+            ROOT / "docs" / "exploratory" / "missions" / "product-framing"
+        )],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+
+
+def test_gstack_exploratory_missions_pass_structural_lint() -> None:
+    gstack_dir = ROOT / "docs" / "exploratory" / "missions"
+    for slug in (
+        "product-framing",
+        "browser-qa-fix",
+        "security-cso-audit",
+        "devex-audit",
+        "release-document",
+        "incident-investigate",
+    ):
+        sl.lint_gstack_mission(gstack_dir / slug)
+
+
+def test_gstack_mission_wrong_mode_fails(tmp_path: Path) -> None:
+    skill = _copy_skill(
+        ROOT / "docs" / "exploratory" / "missions" / "product-framing",
+        tmp_path / "product-framing",
+    )
+    path = skill / "SKILL.md"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace("mode: warn", "mode: fail"),
+        encoding="utf-8",
+    )
+    with pytest.raises(sl.SkillLintError, match="mode must be warn"):
+        sl.lint_gstack_mission(skill)
+
+
+def test_gstack_mission_bundle_mismatch_fails(tmp_path: Path) -> None:
+    skill = _copy_skill(
+        ROOT / "docs" / "exploratory" / "missions" / "product-framing",
+        tmp_path / "product-framing",
+    )
+    path = skill / "SKILL.md"
+    path.write_text(
+        path.read_text(encoding="utf-8").replace(
+            "recommended-bundle: gstack-framing", "recommended-bundle: wrong"
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(sl.SkillLintError, match="recommended-bundle must match"):
+        sl.lint_gstack_mission(skill)
+
+
+def test_gstack_mission_missing_community_recommends_fails(tmp_path: Path) -> None:
+    skill = _copy_skill(
+        ROOT / "docs" / "exploratory" / "missions" / "product-framing",
+        tmp_path / "product-framing",
+    )
+    path = skill / "SKILL.md"
+    text = path.read_text(encoding="utf-8")
+    text = text.replace("```yaml community-recommends\n", "```yaml removed\n")
+    text = re.sub(
+        r"```yaml community-recommends\n.*?^```\n",
+        "",
+        text,
+        count=1,
+        flags=re.M | re.S,
+    )
+    path.write_text(text, encoding="utf-8")
+
+    with pytest.raises(sl.SkillLintError) as excinfo:
+        sl.lint_gstack_mission(skill)
+
+    assert "community-recommends" in str(excinfo.value)
 
 
 def test_main_reports_failures_and_success(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:

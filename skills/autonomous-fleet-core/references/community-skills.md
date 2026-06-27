@@ -39,6 +39,51 @@ npx skills@latest add mattpocock/skills
 
 Install **per bundle** — not all three repos unless you need them.
 
+```bash
+./scripts/install-community.sh gstack-browser --dry-run
+./scripts/install-community.sh gstack-framing --execute --host grok
+./scripts/install-skills.sh --all --with-community gstack-browser --execute
+```
+
+Record installs in `docs/agents/fleet-config.md` (see `setup-autonomous-fleet` Section D).
+
+---
+
+## Community bundles (gstack subsets)
+
+| Bundle id | gstack skill ids | Fleet missions / presets |
+|-----------|------------------|--------------------------|
+| `gstack-browser` | `browse`, `qa`, `qa-only`, `health` | `browser-qa-fix`; post-gate on `ship-with-proof` |
+| `gstack-framing` | `office-hours`, `autoplan`, `plan-ceo-review`, `plan-eng-review`, `plan-design-review` | `product-framing`; pre-gate on `gstack-quality` |
+| `gstack-security` | `cso`, `investigate` | `security-cso-audit`, `incident-investigate` |
+| `gstack-devex` | `plan-devex-review`, `devex-review` | `devex-audit` |
+| `gstack-ship` | `ship`, `review`, `document-release`, `health` | `release-document`; post-gates on ship presets |
+| `gstack` | full clone + `./setup` | All bundles above |
+
+Gstack-derived exploratory missions declare machine-readable recommends:
+
+```yaml community-recommends
+bundle: gstack-browser
+skills:
+  - browse
+  - qa
+mode: warn
+```
+
+`scripts/preflight-community.sh` prints install hints when skills are absent (warn tier);
+missions still complete via TASK fallbacks. See [composition.md](composition.md) dependency tiers.
+
+### Pre-gate table (gstack-derived missions)
+
+| Mission | Pre-gate (user-invoked) | gstack `benefits-from` analogue |
+|---------|-------------------------|----------------------------------|
+| `product-framing` | `office-hours` | `autoplan` chain |
+| `browser-qa-fix` | — | — |
+| `security-cso-audit` | — | — |
+| `devex-audit` | — | `plan-devex-review` optional |
+| `release-document` | — | `document-release` optional |
+| `incident-investigate` | — | `investigate` optional |
+
 ---
 
 ## Starter bundles
@@ -49,6 +94,7 @@ Install **per bundle** — not all three repos unless you need them.
 | Ship safely | preset `ship-with-proof` | gstack (`ship`, `qa`) optional |
 | Finish product | preset `align-then-ship` (ARCHIVED until `take-product-to-completion` is promoted) | mattpocock `grill-with-docs` or gstack `office-hours` |
 | Production readiness | preset `quality-gate` | gstack `qa-only`, `health` optional |
+| Gstack mission pack | preset `gstack-quality` | `gstack-framing` + `gstack-browser` + `gstack-security` + `gstack-devex` |
 | Greenfield feature | Human `/spec` + `/plan`, then one mission | agent-skills plugin |
 
 Headless:
@@ -128,6 +174,7 @@ and `validate-fleet-outcome.sh` passes.
 | `ship-with-proof` | audit → tests → docs | — | `ship`, `qa` |
 | `align-then-ship` | `take-product-to-completion` | `grill-with-docs`, `office-hours` | `qa` |
 | `quality-gate` | audit → tests | — | `qa-only`, `health` |
+| `gstack-quality` | framing → browser QA → security → devex | `office-hours` | `qa-only`, `health` |
 
 YAML: `scripts/campaigns/<preset>.yaml` and
 `skills/fleet-program/references/campaigns.md`.

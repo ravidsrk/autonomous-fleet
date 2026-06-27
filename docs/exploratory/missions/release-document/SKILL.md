@@ -13,6 +13,13 @@ metadata:
   version: "1.0.0"
   tier: "2"
   fleet-component: "mission"
+  recommended-bundle: gstack-ship
+  community-recommends:
+    bundle: gstack-ship
+    skills:
+      - document-release
+      - ship
+    mode: warn
 status: exploratory
 ---
 
@@ -29,6 +36,14 @@ Before executing, activate these skills and read their full instructions:
 1. `autonomous-fleet-core` — read `references/engine.md` and `references/composition.md`
 2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`,
    `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
+
+```yaml community-recommends
+bundle: gstack-ship
+skills:
+  - document-release
+  - ship
+mode: warn
+```
 
 ## Optional skills
 

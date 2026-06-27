@@ -164,6 +164,36 @@ edges:
 
 Headless: `./scripts/run-campaign.sh <runtime> --preset align-then-ship`
 
+## Preset: gstack-quality (gstack-derived exploratory chain)
+
+**When:** "run gstack missions", "product framing then browser QA", "gstack quality pack".
+
+Chains four gstack-derived exploratory missions. **Pre-gate:** `office-hours` (user-invoked).
+**Post-gates:** `qa-only`, `health`. Install bundles: `gstack-framing`, `gstack-browser`,
+`gstack-security`, `gstack-devex` via `./scripts/install-community.sh`.
+
+```yaml
+campaign: gstack-quality
+start: frame
+pre_gates:
+  - office-hours
+nodes:
+  frame: { mission: product-framing }
+  qa: { mission: browser-qa-fix }
+  security: { mission: security-cso-audit }
+  devex: { mission: devex-audit }
+post_gates:
+  - qa-only
+  - health
+edges:
+  frame: [{ to: qa, if: always }]
+  qa: [{ to: security, if: always }]
+  security: [{ to: devex, if: always }]
+  devex: []
+```
+
+Headless: `./scripts/run-campaign.sh <runtime> --preset gstack-quality --dry-run`
+
 ## Preset: quality-gate (linear + post-gates)
 
 **When:** "is this production-ready?", "quality gate before release", "acceptance check".
