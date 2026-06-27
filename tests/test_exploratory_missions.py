@@ -50,6 +50,51 @@ def test_gstack_banners_differ_from_design_integration() -> None:
     assert len(digests) == 3
 
 
+def test_gstack_banners_are_png_1200x600() -> None:
+    for slug in GSTACK_SLUGS:
+        path = ROOT / "docs/exploratory/missions" / slug / "assets" / "banner.png"
+        assert path.read_bytes()[:4] == b"\x89PNG", f"{slug}: expected PNG magic"
+        proc = subprocess.run(
+            ["sips", "-g", "pixelWidth", "-g", "pixelHeight", str(path)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert proc.returncode == 0, proc.stderr
+        w = next(
+            int(line.split()[-1])
+            for line in proc.stdout.splitlines()
+            if "pixelWidth" in line
+        )
+        h = next(
+            int(line.split()[-1])
+            for line in proc.stdout.splitlines()
+            if "pixelHeight" in line
+        )
+        assert (w, h) == (1200, 600), f"{slug}: got {w}x{h}"
+
+
+def test_sniff_and_normalize_banner_script() -> None:
+    sniff = ROOT / "scripts" / "banner" / "sniff_and_normalize_banner.sh"
+    assert sniff.is_file()
+    # Drive real entry point on a shipped PNG reference (already valid PNG).
+    ref = DESIGN_INTEGRATION_BANNER
+    tmp_out = ROOT / "tests" / "_banner_sniff_tmp.png"
+    try:
+        r = subprocess.run(
+            [str(sniff), str(ref), str(tmp_out)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert r.returncode == 0, r.stderr
+        assert "PNG" in r.stderr
+        assert tmp_out.read_bytes()[:4] == b"\x89PNG"
+    finally:
+        if tmp_out.exists():
+            tmp_out.unlink()
+
+
 @pytest.mark.parametrize("slug,label", [
     ("product-framing", "skills/product-framing"),
     ("browser-qa-fix", "skills/browser-qa-fix"),
