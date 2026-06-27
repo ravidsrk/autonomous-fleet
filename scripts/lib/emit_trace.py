@@ -34,6 +34,7 @@ from typing import Any, Callable, Iterator
 # fleet-trace.schema.json. The runtime-only optional ``id`` field is generated
 # for causal lifelines without bumping the pinned 1.0 schema.
 SCHEMA_VERSION = "1.0"
+SUPPORTED_SCHEMA_VERSIONS = frozenset({"1.0", "1.1"})
 
 PRIMITIVES = (
     "SPAWN_WORKER",
@@ -168,9 +169,9 @@ def validate_event(event: Any) -> list[str]:
     for field in sorted(extra):
         errors.append(f"additionalProperties not allowed: {field}")
 
-    if "schema_version" in event and event["schema_version"] != SCHEMA_VERSION:
+    if "schema_version" in event and event["schema_version"] not in SUPPORTED_SCHEMA_VERSIONS:
         errors.append(
-            f"schema_version must be {SCHEMA_VERSION!r}, got "
+            f"schema_version must be one of {sorted(SUPPORTED_SCHEMA_VERSIONS)!r}, got "
             f"{event['schema_version']!r}"
         )
 

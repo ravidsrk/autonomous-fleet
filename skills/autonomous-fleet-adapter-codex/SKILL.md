@@ -83,6 +83,10 @@ worktree and begin via shell.
 Subagents return when done — collect structured results. For sub-sessions, poll ledger + git state.
 Timeout = checkpoint, not failure. Active worker = alive; do not abort.
 
+**Non-busy poll:** use `./scripts/poll-ledger.sh --ledger docs/<mission>-progress.md --task <id>
+--expect '<flag>=t'` between `codex exec` invocations instead of tight loops. Emit trace before
+each ledger update (TRACE EMISSION below). Gap 1 status: ledger-poll + helper script (degraded OK).
+
 ### INSPECT() — non-destructive
 Read FILE LEDGER + `git worktree list` + `gh pr list --base BASE` via shell.
 
@@ -129,6 +133,18 @@ mission sequencing.
 
 - Worker returned without ledger write: re-read summary; relaunch if incomplete (idempotent).
 - Context pressure: CONTEXT HANDOFF block in ledger for fresh coordinator resume.
+
+## TRACE EMISSION (live coordinator)
+
+Before every ledger write, append one JSONL event:
+
+```bash
+python scripts/emit_trace.py emit .fleet/runs/<run_id>/ \
+  --primitive WAIT --role COORDINATOR --status started \
+  --task-id <task> --id-only
+```
+
+Chain worker events with `--parent-event`. See `docs/guide/16-trace-schema.md`.
 
 ## CODEX NOTES
 

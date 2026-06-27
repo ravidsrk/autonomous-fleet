@@ -1,4 +1,9 @@
-<!-- title: Trace schema (v1) | description: The fleet-trace JSONL contract every dashboard consumes: fields, primitives, roles, statuses, the redaction rule, and what is emitted today. | sidebar_order: 16 -->
+---
+title: "Trace schema (v1)"
+description: "The fleet-trace JSONL contract every dashboard consumes: fields, primitives, roles, statuses, the redaction rule, and what is emitted today."
+sidebar:
+  order: 16
+---
 
 # Trace schema (v1)
 

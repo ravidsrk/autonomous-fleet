@@ -40,6 +40,9 @@ Doctrine alone is not sufficient. Tests inherited from
 `autonomous-fleet-core` are not sufficient. The promotion PR must cite a
 real coding-agent run that produced the archive.
 
+Mechanical gate (CI): `./scripts/validate_mission_promotion.py --require-ready <slug>`
+must exit 0 before moving a mission back to `skills/`.
+
 ## Demoted missions (2026-06-23, Commit D)
 
 ### `bug-batch/`
