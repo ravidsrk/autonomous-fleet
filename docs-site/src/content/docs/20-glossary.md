@@ -42,27 +42,27 @@ each runtime adapter supplies the real command. There are 13 core primitives in 
 `OPEN_PR` / `MERGE_PR` / `CLEANUP`, `SYNC_TASK_STATE`, and the optional goal/loop set (`SET_GOAL`,
 `UPDATE_GOAL`, `GOAL_COMPLETE`, `GOAL_BLOCKED`, `LOOP_POLL`), plus an optional 14th, `CONTINUE_WORKER`
 (see its own entry). The core only ever calls primitives, so the same orchestration logic runs on
-Claude Code, Codex, Grok, or Orca without change. See [The engine](06-the-engine.md).
+Claude Code, Codex, Grok, or Orca without change. See [The engine](/06-the-engine/).
 
 > Note: the trace schema's primitive enum is a separate, smaller list of 11 transition labels
 > (the events a dashboard sees), not the same set as the 13 engine primitives. Do not conflate the
 > two: the engine primitives are what an adapter implements; the trace primitives are what the
-> stream reports. See [Trace schema](16-trace-schema.md).
+> stream reports. See [Trace schema](/16-trace-schema/).
 
 ### coordinator
 
 The single long-running agent loop that owns a run. It reads the ledger, decides the next action,
 calls primitives, and never ends its turn while work remains. It does not write code: it sequences
 builders, reviewers, and integrators and waits on them. The coordinator runs at the strong model
-tier because its judgment is high-leverage and low-volume. See [The engine](06-the-engine.md) and
-[Mental model](04-mental-model.md).
+tier because its judgment is high-leverage and low-volume. See [The engine](/06-the-engine/) and
+[Mental model](/04-mental-model/).
 
 ### runtime adapter
 
 The skill that maps the engine's abstract primitives to one tool's real commands: how Claude Code
 (or Codex, Grok, Orca) spawns a worker, dispatches a task, waits, inspects, places work in a
 worktree, and opens or merges a PR. Adapters are interchangeable because the engine only speaks
-primitives. See [Installation](02-installation.md) and [Extending](13-extending.md).
+primitives. See [Installation](/02-installation/) and [Extending](/13-extending/).
 
 ### ledger
 
@@ -70,15 +70,15 @@ The directory of files that is the run's memory, not a database. Per-task status
 flags, PR numbers, branch names, reviewed SHAs, worker handles, and the `DECISIONS.md` rationale
 all live as plain files the coordinator re-reads at the start of every turn. The file is
 authoritative; the coordinator's memory is not. A fresh coordinator with zero prior context can
-resume a run from the ledger alone. See [Mental model](04-mental-model.md) and
-[The engine](06-the-engine.md).
+resume a run from the ledger alone. See [Mental model](/04-mental-model/) and
+[The engine](/06-the-engine/).
 
 ### frozen DAG
 
 The task decomposition, fixed before the first worker spawns. "Frozen" means the run does not
 re-plan mid-flight: the freeze emits a directed acyclic graph of task units with dependency edges,
 and the engine builds exactly what is inside it. The frozen artifact caps the whole run's scope;
-reviewers fail any PR that adds work outside it. See [The engine](06-the-engine.md).
+reviewers fail any PR that adds work outside it. See [The engine](/06-the-engine/).
 
 ### plan/DAG validation gate
 
@@ -86,7 +86,7 @@ The cheap structural check the coordinator runs once, right before the first `SP
 the frozen DAG. It rejects three things: cycles in the dependency edges, edges that name a task not
 in the frozen set, and (informationally) a parallelism width of 1 on a multi-task mission, which is
 a smell that the decomposition over-serialized. It is `O(tasks+edges)`, spends no model budget, and
-catches a malformed plan before it costs a wave of workers. See [The engine](06-the-engine.md).
+catches a malformed plan before it costs a wave of workers. See [The engine](/06-the-engine/).
 
 ### signal reconciliation
 
@@ -95,7 +95,7 @@ they disagree in normal operation: worker liveness (`INSPECT`), the ledger flag 
 external SCM/CI fact (`gh pr view`, CI conclusion). The coordinator holds a contested task in a
 `DETECTING` state and only transitions after consistent polls or a timeout, and it re-verifies the
 external fact directly before writing any terminal flag (`MERGED` / `DONE`). The SCM wins when it
-disagrees with the ledger. See [The engine](06-the-engine.md).
+disagrees with the ledger. See [The engine](/06-the-engine/).
 
 ### anti-flap
 
@@ -104,15 +104,15 @@ between states. A contested task holds in `DETECTING` until N consecutive consis
 (default 3) or a hard timeout (default 5 min). The counter is keyed to a hash of the contested
 signals with volatile fields (timestamps, activity counters) stripped, so unchanged weak evidence
 re-presenting does not reset the counter and genuinely new evidence resets it to 1.
-See [The engine](06-the-engine.md).
+See [The engine](/06-the-engine/).
 
 ### T-FINAL
 
 The terminal transition of a run. It runs the worktree-orphan sweep, writes the run-archive
 manifest as its final step, and sets `archive_enabled: true` in the fleet-outcome. T-FINAL is also
 the one trace event wired in production code today (emitted by `fleet_run.write_manifest`, and
-emitted BEFORE the manifest write per the trace-first doctrine). See [The engine](06-the-engine.md),
-[Run-archive anatomy](15-run-archive.md), and [Trace schema](16-trace-schema.md).
+emitted BEFORE the manifest write per the trace-first doctrine). See [The engine](/06-the-engine/),
+[Run-archive anatomy](/15-run-archive/), and [Trace schema](/16-trace-schema/).
 
 ### CONTINUE_WORKER
 
@@ -124,7 +124,7 @@ is constrained to `live`-classified rows only (per `recovery_scan.py`): the engi
 a session whose PR merged or whose branch is gone. The resume budget is bounded: when a row's
 `RESUME_COUNT` reaches `MAX_RESUME_ATTEMPTS` (3), the recovery scanner recommends `ESCALATE_TO_DECISIONS`
 instead of another continue. Documented in all four adapters and the template.
-See [The engine](06-the-engine.md).
+See [The engine](/06-the-engine/).
 
 ### causal lineage
 
@@ -133,8 +133,8 @@ event with a unique `id` and RETURNS it; a worker's `COMMIT` (and `INSPECT` / `W
 `parent_event` to that worker's `SPAWN_WORKER` id, so a consumer can reconstruct one worker's
 lifeline. `id` is optional in the schema (a non-breaking addition, not a schema bump) but always
 generated, and the id factory is injectable so the fixture stays reproducible. `fleet_run` wires the
-reference `SPAWN_WORKER` -> `COMMIT` edge. See [The engine](06-the-engine.md) and
-[Trace schema](16-trace-schema.md).
+reference `SPAWN_WORKER` -> `COMMIT` edge. See [The engine](/06-the-engine/) and
+[Trace schema](/16-trace-schema/).
 
 ### sha-pin
 
@@ -145,7 +145,7 @@ The reviewer-emitted record that binds a PASS to the exact branch SHA inspected.
 verdict from REVIEWED to OUTDATED and demands a force re-review. Only `approve`/`PASS` records are
 enforced; a deleted-but-merged branch is N/A, not a failure. The kill switch is `FLEET_DISABLE_SHA_PIN`.
 The split is intentional: see TRACKER vs SCM, which does not relax this rule.
-See [Troubleshooting](14-troubleshooting.md) and [The engine](06-the-engine.md).
+See [Troubleshooting](/14-troubleshooting/) and [The engine](/06-the-engine/).
 
 ### TRACKER vs SCM
 
@@ -155,7 +155,7 @@ issue-facing verbs (read issue, derive branch name, mark issue done). `gh`/GitHu
 binding for both, NOT the contract: the contract is "open a PR against BASE and conflict-aware merge
 it", which a Linear-tracker + GitHub-SCM pairing also satisfies. An adapter declares its TRACKER and
 SCM bindings independently. The split does NOT relax the conflict-aware, never-squash, or sha-pin
-rules: those bind whatever SCM is used. See [The engine](06-the-engine.md).
+rules: those bind whatever SCM is used. See [The engine](/06-the-engine/).
 
 ## The run-archive
 
@@ -165,7 +165,7 @@ The per-run directory under `.fleet/runs/<run_id>/` that holds every first-class
 produced, with a manifest naming each file and its sha256. The `<run_id>` follows a fixed shape,
 `YYYYMMDDTHHMMSSZ-<mission>-<short-hash>` (UTC timestamp, mission slug, 6-char hex), and the
 run-archive validator rejects freeform ids. The fleet never garbage-collects archives; operators
-prune out of band. See [Run-archive anatomy](15-run-archive.md).
+prune out of band. See [Run-archive anatomy](/15-run-archive/).
 
 ### run_short
 
@@ -175,7 +175,7 @@ and `namespaced_worktree` produces `../<repo>-<slug>-<run_short>`, so two concur
 checkouts of the same slug) never collide on a branch name or a worktree path. `validate_namespacing.py`
 (wired into `validate-all`) reads each archive manifest and fails any recorded branch or worktree that
 does not carry the run's `-<run_short>` suffix; the kill switch is `FLEET_DISABLE_NAMESPACING`. All four
-adapters and the template emit namespaced placements. See [Troubleshooting](14-troubleshooting.md).
+adapters and the template emit namespaced placements. See [Troubleshooting](/14-troubleshooting/).
 
 ### manifest
 
@@ -184,7 +184,7 @@ entry carrying `path`, `kind` (one of `findings`, `verify_summary`, `blind_fix`,
 `response`, `diff`, `readiness`, `progress`, `other`), `sha256`, `mtime_utc`, `producer`, and
 `bytes`. The manifest is the audit trail: without it the directory is files with no provenance. Its
 schema ships at `skills/autonomous-fleet-core/assets/fleet-run-manifest.schema.json`.
-See [Run-archive anatomy](15-run-archive.md).
+See [Run-archive anatomy](/15-run-archive/).
 
 ### mtime ordering
 
@@ -193,13 +193,13 @@ the orderings ARE the substrate disciplines. A `blind_fix` must be mtime-before 
 file from the same reviewer in the same run; a `verify_summary` must be mtime-after the `findings`
 it audits; the `readiness` doc must have the latest mtime in the archive. A manifest whose files
 do not satisfy these fails validation even when every checksum matches.
-See [Run-archive anatomy](15-run-archive.md) and [The substrate](07-the-substrate.md).
+See [Run-archive anatomy](/15-run-archive/) and [The substrate](/07-the-substrate/).
 
 ### evidence-hash
 
 The `evidence_hash` field a trace event uses to reference sensitive evidence by hash instead of
 inlining it, because the trace stream is meant for publication to external dashboards and must not
-carry secrets or host-absolute paths. See [Trace schema](16-trace-schema.md).
+carry secrets or host-absolute paths. See [Trace schema](/16-trace-schema/).
 
 ### EVID
 
@@ -207,15 +207,15 @@ The standard close-test boolean for any item lifted from a frozen artifact (an a
 finding set). `EVID` is true only when the finding's own evidence reproduction, re-run, no longer
 reproduces, or the acceptance criterion the artifact states is demonstrated. Belief, green CI, and
 "the diff looks right" do not clear EVID; only the artifact's own repro does. A run terminates only
-when every ID in its close-index is closed. See [The engine](06-the-engine.md) and
-[Mission catalog](09-mission-catalog.md).
+when every ID in its close-index is closed. See [The engine](/06-the-engine/) and
+[Mission catalog](/09-mission-catalog/).
 
 ### attestation
 
 A self-attested completion claim a worker writes (for example EVID=true or status:done in a
 readiness doc). By default the engine trusts attestations; strict mode replaces that trust with a
 disk scan. The fix-attestation file is the specific attestation a fixer writes after closing a
-finding. See [Strict mode](11-strict-mode.md) and [Run-archive anatomy](15-run-archive.md).
+finding. See [Strict mode](/11-strict-mode/) and [Run-archive anatomy](/15-run-archive/).
 
 ### findings
 
@@ -223,21 +223,21 @@ The schema-verified output of a reviewer: a structured list of issues against a 
 category, a quoted line, and a verdict (`approve` / `request_changes`). The shape is pinned by
 `skills/autonomous-fleet-core/assets/fleet-review-findings.schema.json`, and a verifier rejects a
 finding whose `quoted_line` it cannot locate or whose category requires a missing field (a
-`root_cause_depth` finding without `cascade_impact`, for instance). See [The substrate](07-the-substrate.md)
-and [Mission catalog](09-mission-catalog.md).
+`root_cause_depth` finding without `cascade_impact`, for instance). See [The substrate](/07-the-substrate/)
+and [Mission catalog](/09-mission-catalog/).
 
 ### verify-summary
 
 The output of the findings verifier (`verify_findings.py`): a summary that audits a findings file
 and is archived with `kind: verify_summary`. By the mtime-ordering invariant it must be mtime-after
 the findings file it audits, because the verifier runs against an existing findings doc.
-See [Run-archive anatomy](15-run-archive.md) and [The substrate](07-the-substrate.md).
+See [Run-archive anatomy](/15-run-archive/) and [The substrate](/07-the-substrate/).
 
 ### fix-attestation
 
 The record a builder writes when it closes a finding: which finding, which PR, and the EVID repro
 result. It is the builder's claim that the finding's own reproduction no longer reproduces, which
-the build-blind reviewer then verifies against the same frozen artifact. See [Run-archive anatomy](15-run-archive.md).
+the build-blind reviewer then verifies against the same frozen artifact. See [Run-archive anatomy](/15-run-archive/).
 
 ### seat
 
@@ -245,7 +245,7 @@ The "earns its seat" lens: per-run contribution metrics computed from a run-arch
 `analyze_seat.py`, used to surface roles or models whose findings do not survive blind-fix at a
 meaningful rate. It answers "is this reviewer or model worth its cost on this run?". The library is
 runtime-dependency-free and reads `run_id`, `archive_enabled`, and `cost_estimate` from the
-fleet-outcome. See [CLI reference](18-cli-reference.md).
+fleet-outcome. See [CLI reference](/18-cli-reference/).
 
 ## The substrate
 
@@ -253,7 +253,7 @@ fleet-outcome. See [CLI reference](18-cli-reference.md).
 
 The four-layer verification stack that catches bad work: Layer 1 schema-enforced findings, Layer 2
 the stop-verify hook, Layer 3 the blind-fix mechanical guard, Layer 4 the mutation gate. The layers
-compose, each catching what the one below cannot. See [The substrate](07-the-substrate.md).
+compose, each catching what the one below cannot. See [The substrate](/07-the-substrate/).
 
 ### stop-verify hook
 
@@ -262,7 +262,7 @@ disk and emits `{decision:"block", reason:"..."}` so Claude Code refuses to end 
 until verifiable evidence exists in a freshness window. It is fail-open by design: any internal gate
 error allows session end with a stderr warning, because a broken gate trapping a worker is worse
 than a missed gate. It is the reference implementation behind strict mode.
-See [Strict mode](11-strict-mode.md) and [The substrate](07-the-substrate.md).
+See [Strict mode](/11-strict-mode/) and [The substrate](/07-the-substrate/).
 
 ### blind-fix
 
@@ -271,8 +271,8 @@ own independent proposed fix to `reviewer-blind-fix-<finding-id>.md` (point of c
 change, pre-commit confidence 0-100), and only then reads the patch. A candidate that agrees with
 the blind fix at the same call-stack depth earns weight; one at a different depth triggers the
 root-cause-depth rule. The filesystem must reflect the order: a blind-fix file mtime-after the
-findings is structurally suspect. See [The substrate](07-the-substrate.md) and
-[Run-archive anatomy](15-run-archive.md).
+findings is structurally suspect. See [The substrate](/07-the-substrate/) and
+[Run-archive anatomy](/15-run-archive/).
 
 ### mutation gate
 
@@ -280,14 +280,14 @@ The Layer 4 check: a manifest of code mutations (`tests/mutations.yaml`) where e
 specific behavior by asserting that flipping a line makes a test fail. It catches regressions across
 all three lower layers and is why mutation testing matters more than line coverage here: a passing
 test that does not actually exercise behavior is caught when the mutation does not fail it.
-See [The substrate](07-the-substrate.md).
+See [The substrate](/07-the-substrate/).
 
 ### schema-drift test
 
 The test that pins documentation and code against the shipped schemas: it fails if a primitive,
 role, or status named in the docs or in `emit_trace.py` no longer matches the trace schema's closed
 enums. It is how the docs that describe schemas stay enforceable rather than aspirational.
-See [Trace schema](16-trace-schema.md) and [The substrate](07-the-substrate.md).
+See [Trace schema](/16-trace-schema/) and [The substrate](/07-the-substrate/).
 
 ### kill switch
 
@@ -298,7 +298,7 @@ parsing, treating its verdict as PASS for the run. The registry is `FLEET_DISABL
 `FLEET_DISABLE_RUN_ARCHIVE`. The run-archive validator is a gate, but it is not substrate Layer 4.
 Layer 4 (the mutation gate) is intentionally undisableable. The strict truthy allow-list prevents a
 typo from silently disabling a layer. Full doctrine in `references/substrate-disable-knobs.md`.
-See [The substrate](07-the-substrate.md).
+See [The substrate](/07-the-substrate/).
 
 ### round budget
 
@@ -308,7 +308,7 @@ must not have shipped through a successful `MERGE`. `verify_round_budget.py` (wi
 counts failed reviewer rounds per task in `trace.jsonl` and fails a task that ran over budget but
 merged anyway, or ran over budget with no terminal BLOCKED. The kill switch is
 `FLEET_DISABLE_ROUND_BUDGET`. It stops a never-converging review loop from grinding a task to a
-forced merge. See [Troubleshooting](14-troubleshooting.md).
+forced merge. See [Troubleshooting](/14-troubleshooting/).
 
 ### reviewer sandbox
 
@@ -321,8 +321,8 @@ reviewer modified any tracked file outside the run dir). The audit companion is
 producer slug may only emit `blind_fix`, `findings`, and `verify_summary` entries, and is a hard
 failure if attributed any `diff` or `commit` on the candidate branch. The kill switch is
 `FLEET_DISABLE_REVIEWER_SANDBOX`. It enforces build-blindness structurally: the grader cannot write
-the code it grades. See [Troubleshooting](14-troubleshooting.md) and
-[Roles and blindness](08-roles-and-blindness.md).
+the code it grades. See [Troubleshooting](/14-troubleshooting/) and
+[Roles and blindness](/08-roles-and-blindness/).
 
 ### strict mode
 
@@ -330,7 +330,7 @@ The opt-in discipline level where the stop-verify hook is installed and enforcin
 worker cannot end its session without evidence on disk. Today it is Claude Code only and, at its
 strictest configured level, exits non-zero if `unverified_assumptions > 0` at run end. Loose (the
 default) is trust-based; strict requires one evidence kind in a freshness window; paranoid requires
-both progress flags and three distinct kinds. See [Strict mode](11-strict-mode.md).
+both progress flags and three distinct kinds. See [Strict mode](/11-strict-mode/).
 
 ## Roles and topology
 
@@ -339,14 +339,14 @@ both progress flags and three distinct kinds. See [Strict mode](11-strict-mode.m
 The builder / reviewer / integrator division of labor, each in its own terminal and usually its own
 model family. The shape is structural, not a suggestion: the reviewer never sees the build
 conversation, so build-blindness is enforced by separation rather than by instruction.
-See [Roles and blindness](08-roles-and-blindness.md).
+See [Roles and blindness](/08-roles-and-blindness/).
 
 ### builder
 
 The role that writes code: it implements one task unit on its own branch, commits in small logical
 increments authored as the maintainer with no agent trailers, adds the regression-catching test the
 mission calls for, and pushes. Bulk builders run at the mid model tier; build-failure triage runs at
-the cheap tier. See [Roles and blindness](08-roles-and-blindness.md).
+the cheap tier. See [Roles and blindness](/08-roles-and-blindness/).
 
 ### reviewer
 
@@ -354,27 +354,27 @@ The fresh, build-blind role that grades a PR against the unit's acceptance crite
 edit rights and no access to the builder's session or worktree. When more than one vendor is
 available it should be a different vendor than the builder, so a vendor's blind spot is not its own
 grader. It runs at the strong tier and actively tries to fail the PR.
-See [Roles and blindness](08-roles-and-blindness.md).
+See [Roles and blindness](/08-roles-and-blindness/).
 
 ### integrator
 
 The role that ships: it opens the PR, and on a passing review confirms the branch HEAD still equals
 the reviewed SHA, checks for conflicts against BASE, resolves them preserving both intents, merges
 with a merge commit (never squash, all commits preserved), deletes the branch, and cleans the
-checkout. See [Roles and blindness](08-roles-and-blindness.md).
+checkout. See [Roles and blindness](/08-roles-and-blindness/).
 
 ### build-blindness
 
 The property that the reviewer cannot see how the code was built, only the diff and the acceptance
 contract as text. It is the defense against a model rationalizing its own work, and it is structural
-(separate terminals, no shared session) rather than instructed. See [Roles and blindness](08-roles-and-blindness.md).
+(separate terminals, no shared session) rather than instructed. See [Roles and blindness](/08-roles-and-blindness/).
 
 ### single-vendor mode
 
 Running builder and reviewer on the same vendor because only one is installed. You lose cross-vendor
 blind-spot diversity (a vendor grading its own family); you keep a fresh, build-blind, same-vendor
 reviewer and every other discipline. The run records the single-vendor choice in `DECISIONS.md`.
-See [Roles and blindness](08-roles-and-blindness.md).
+See [Roles and blindness](/08-roles-and-blindness/).
 
 ## Missions and campaigns
 
@@ -383,7 +383,7 @@ See [Roles and blindness](08-roles-and-blindness.md).
 One discrete engineering job: a goal, a role pipeline, a phase/task structure, a ledger filename and
 flag set, a done condition, and decision defaults. The shipped missions are `doc-sync`,
 `test-coverage`, and `adversarial-review-and-fix`. A mission is the unit you invoke.
-See [Mission catalog](09-mission-catalog.md) and [Missions vs campaigns](05-missions-vs-campaigns.md).
+See [Mission catalog](/09-mission-catalog/) and [Missions vs campaigns](/05-missions-vs-campaigns/).
 
 ### mission registry
 
@@ -395,47 +395,47 @@ one place a mission is defined. `registry_lint.py` (wired into `validate-all`) c
 against reality three ways: every `shipped:true` row has its on-disk skill dir (and every on-disk
 mission skill has a `shipped:true` row), every shipped mission is named in the README and umbrella
 catalog, and the `skills-lock.json` dirs match the on-disk skills. The kill switch is
-`FLEET_DISABLE_REGISTRY_LINT`. See [Troubleshooting](14-troubleshooting.md) and
-[Extending](13-extending.md).
+`FLEET_DISABLE_REGISTRY_LINT`. See [Troubleshooting](/14-troubleshooting/) and
+[Extending](/13-extending/).
 
 ### campaign
 
 A DAG of missions with hard verification gates between nodes, where a later node can branch on the
 previous node's fleet-outcome. Use a campaign when one repo-health pass means chaining several
-missions with gates between them. See [Missions vs campaigns](05-missions-vs-campaigns.md) and
-[Campaigns](10-campaigns.md).
+missions with gates between them. See [Missions vs campaigns](/05-missions-vs-campaigns/) and
+[Campaigns](/10-campaigns/).
 
 ### campaign preset
 
 A shipped, ready-to-run campaign YAML under `scripts/campaigns/`. The presets on `main` include
 `repo-health`, `ship-with-proof`, and `quality-gate` (the three the guide treats as the active
 set), alongside others in the directory. A preset names the missions, their order, and the gates.
-See [Campaigns](10-campaigns.md).
+See [Campaigns](/10-campaigns/).
 
 ### fleet-program
 
 The skill that runs campaigns: it chains missions with gates, reading each node's fleet-outcome to
 decide whether the next node runs. It is the campaign-level counterpart to a single mission.
-See [Campaigns](10-campaigns.md).
+See [Campaigns](/10-campaigns/).
 
 ### fleet-outcome
 
 The `fleet-outcome.yaml` a run writes to report its result: status (`done` / `partial` / `blocked`),
 metrics like `e2e_verified`, `archive_enabled`, `unverified_assumptions`, `cost_estimate`, and
 `deferred_missions`. A campaign gate reads these fields to decide whether to proceed. It is the
-machine-readable "what happened". See [fleet-outcome schema](17-fleet-outcome-schema.md).
+machine-readable "what happened". See [fleet-outcome schema](/17-fleet-outcome-schema/).
 
 ### exploratory mission
 
 A mission that lives under `docs/exploratory/missions/` rather than `skills/`: it has the doctrine
 written but has not earned promotion to a shipped skill. It does nothing until promoted.
-See [Mission catalog](09-mission-catalog.md) and [Extending](13-extending.md).
+See [Mission catalog](/09-mission-catalog/) and [Extending](/13-extending/).
 
 ### promotion criteria
 
 The bar an exploratory mission must clear to move back into `skills/`: the three-artifact rule.
 Doctrine alone, and tests inherited from `autonomous-fleet-core`, are not enough; the promotion PR
-must cite a real coding-agent run. See [Extending](13-extending.md).
+must cite a real coding-agent run. See [Extending](/13-extending/).
 
 ### three-artifact rule
 
@@ -443,7 +443,7 @@ The exact promotion bar: a progress doc (`docs/<mission>-progress.md` from a rea
 a readiness doc (`docs/<mission>-readiness.md` with a `fleet-outcome` block), and an external
 archive (a `.fleet/runs/<run_id>/` the mission produced, or a referenced archive under
 `docs/external-dogfood/`). All three must exist and be referenced in the promotion PR.
-See [Extending](13-extending.md).
+See [Extending](/13-extending/).
 
 ## Running and safety
 
@@ -455,7 +455,7 @@ campaign runs without a chat session, which requires that CLI to be authenticate
 > This path is not yet validated end to end on `main`. The supported flow today is interactive:
 > chat, or the host's native `/goal`. Treat headless campaign mode as in-progress.
 
-See [Installation](02-installation.md) and [Campaigns](10-campaigns.md).
+See [Installation](/02-installation/) and [Campaigns](/10-campaigns/).
 
 ### sandbox wrapper
 
@@ -465,7 +465,7 @@ It scrubs credential-shaped env vars before exec and refuses classified command 
 `gh repo delete`, `gh release`, and `terraform` / `tofu` / `kubectl` / `helm` / `databricks` with
 `apply`, `deploy`, `destroy`, or `delete`. It is best-effort, not a general OS sandbox: it does not
 confine filesystem or network reach, so pair it with a real OS-level sandbox.
-See [Safety and secrets](12-safety-and-secrets.md).
+See [Safety and secrets](/12-safety-and-secrets/).
 
 ### recovery scan
 
@@ -477,20 +477,20 @@ It never shells out itself and never mutates the repo. It classifies each task r
 `ESCALATE_TO_DECISIONS`, or `ARCHIVE_ORPHAN`. It runs at resume so a fresh coordinator can decide what
 to do before touching anything; the coordinator, not the scanner, executes the action. A row whose
 `RESUME_COUNT` has reached `MAX_RESUME_ATTEMPTS` (3) is escalated rather than continued.
-See [FAQ](19-faq.md) and [The engine](06-the-engine.md).
+See [FAQ](/19-faq/) and [The engine](/06-the-engine/).
 
 ### blast radius
 
 The scope of damage a run can do. The framework limits it structurally: merge is not deploy, workers
 run on testnet/staging/fixtures only, infra changes are written as code but applied as ops out of
-band, and the sandbox wrapper plus optional containers cap reach. See [Safety and secrets](12-safety-and-secrets.md).
+band, and the sandbox wrapper plus optional containers cap reach. See [Safety and secrets](/12-safety-and-secrets/).
 
 ### `--yolo`
 
 The flag that makes agents auto-approve all tool calls against a repo (Grok only; default off). With
 `--yolo`, untrusted inputs become a full remote-code-execution surface, so `--yolo-untrusted-acknowledged`
 is required when `--repo` is outside the local clone. Never use it on a repo or inputs you do not
-trust. See [Safety and secrets](12-safety-and-secrets.md).
+trust. See [Safety and secrets](/12-safety-and-secrets/).
 
 ### container-use
 
@@ -498,7 +498,7 @@ The optional sandboxed variant of independent worker placement: when the contain
 configured (needs Docker), each independent worker runs in its own isolated Linux container on its
 own git branch (`container-use/<env>`), instead of a host `git worktree`. It closes the OS-sandbox
 gap and the isolation gap in one move. Absent it, placement falls back to plain host worktrees.
-See [Safety and secrets](12-safety-and-secrets.md) and [Installation](02-installation.md).
+See [Safety and secrets](/12-safety-and-secrets/) and [Installation](/02-installation/).
 
 ## Extending
 
@@ -510,13 +510,13 @@ naming the host capabilities it needs: `bins` (required binaries), `env` (requir
 checks, and `scripts/preflight.sh` is the CLI. The checks are intent-keyed: an `auth` entry (and its
 binary) marked `skip_if_intent: no_scm` is skipped unless the caller's intent actually needs SCM/PR
 writes, so a read-only run does not fail for a missing `gh` login it will never use.
-See [Extending](13-extending.md).
+See [Extending](/13-extending/).
 
 ### agentskills.io
 
 The skills marketplace and compliance standard the fleet's skills target, so a skill you add stays
 installable and discoverable the same way the shipped skills are. Keeping a new skill
-agentskills.io-compliant is part of the extending workflow. See [Extending](13-extending.md).
+agentskills.io-compliant is part of the extending workflow. See [Extending](/13-extending/).
 ## Real-world use cases
 
 ### Example — T-FINAL in fixture
@@ -535,5 +535,5 @@ before fixes — glossary entry DRIFT INDEX maps to a real file kind.
 
 ---
 
-← [Previous: FAQ](19-faq.md) ·
-[Guide Index](README.md)
+← [Previous: FAQ](/19-faq/) ·
+[Guide Index](/)

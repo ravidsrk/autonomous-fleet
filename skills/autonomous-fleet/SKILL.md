@@ -97,6 +97,9 @@ promoted.
 | frame the product, office hours, freeze spec before code | `product-framing` |
 | browser QA, test the site and fix, dogfood staging | `browser-qa-fix` |
 | CSO audit, OWASP, threat model, supply chain security | `security-cso-audit` |
+| DX audit, developer experience, score onboarding | `devex-audit` |
+| post-ship docs, document release, deploy checklist | `release-document` |
+| incident RCA, root cause, regression test for outage | `incident-investigate` |
 
 Research: [`docs/gstack-missions-research.md`](../../docs/gstack-missions-research.md).
 

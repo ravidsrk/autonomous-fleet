@@ -54,8 +54,11 @@ fi
 deadline=$(( $(date +%s) + TIMEOUT ))
 while [[ $(date +%s) -lt $deadline ]]; do
   row="$(awk -v task="$TASK" '
-    $0 ~ task { found=1 }
-    found { print; if ($0 ~ /^- / && $0 !~ task) exit }
+    /^TASK / {
+      if (found) exit
+      if ($2 == task) found = 1
+    }
+    found { print }
   ' "$LEDGER" 2>/dev/null || true)"
   if echo "$row" | grep -Eq "$EXPECT"; then
     echo "poll-ledger: matched --expect on task $TASK in $LEDGER"

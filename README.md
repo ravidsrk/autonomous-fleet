@@ -264,7 +264,7 @@ The framework has four component layers (distinct from the verification substrat
 ├──────────────────────────────────────────────────────────────┤
 │  missions × 3 (doc-sync, test-coverage,                      │
 │                adversarial-review-and-fix)                   │
-│  + 15 exploratory under docs/exploratory/missions/           │
+│  + 18 exploratory under docs/exploratory/missions/           │
 │  Tier 1 (recurring) → Tier 2 (campaign) → Tier 3 (ship)      │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -332,7 +332,7 @@ Individual validators:
 ./scripts/validate-fleet-outcome.sh                # readiness doc fleet-outcome YAML
 ./scripts/validate-goal-condition.sh --scan-docs   # /goal binding
 python scripts/validate_run_archive.py             # Layers 3 & 4: manifest + sha256 + mtime ordering (the blind-fix anti-anchoring ordering IS Layer 3)
-pytest tests/                                      # full suite (59 files, 1105 tests, 100% coverage gate)
+pytest tests/                                      # full suite (60 files, 1123 tests, 100% coverage gate)
 
 # Operator gates (run on a specific run-id)
 python scripts/verify_findings.py \
@@ -412,7 +412,7 @@ autonomous-fleet/
 │   └── doc-sync/, test-coverage/, adversarial-review-and-fix/  # 3 shipped missions (Commit D, 2026-06-23)
 ├── docs/
 │   ├── README.md                        # docs/ index — load-bearing files warning
-│   ├── exploratory/missions/            # 15 exploratory missions awaiting promotion
+│   ├── exploratory/missions/            # 18 exploratory missions awaiting promotion
 │   ├── external-dogfood/                # gemoji repo-health + ship-with-proof evidence
 │   ├── research-community-skills.md
 │   └── doc-sync-audit.md                # latest drift index
@@ -434,7 +434,7 @@ autonomous-fleet/
 │   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate, secure-ship, handoff-to-product
 │   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, emit_trace, analyze_seat, analyze_cost, locks, substrate_disable, stop_verify, mission_registry, venv-bootstrap
 │   └── install-skills.sh
-├── tests/                               # 59 test files, 1105 tests; validators + engine doctrine + 4-layer substrate
+├── tests/                               # 60 test files, 1123 tests; validators + engine doctrine + 4-layer substrate
 ├── .agents/skills/                      # installed skill copies (gitignored)
 └── skills-lock.json                     # lockfile for npx skills
 ```

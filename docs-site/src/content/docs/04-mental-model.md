@@ -7,7 +7,7 @@ sidebar:
 
 # Mental model
 
-You ran your first mission in [chapter 03](03-your-first-mission.md). You watched a plan file
+You ran your first mission in [chapter 03](/03-your-first-mission/). You watched a plan file
 appear, terminals spawn, PRs open, and a `.fleet/runs/<id>/` directory fill with artifacts. This
 chapter answers the question that always comes next: wait, what is this actually doing?
 
@@ -18,7 +18,7 @@ framework stops being magic and starts being obvious.
 
 This chapter is the map. It stays at the altitude of concepts. When you want the actual machinery
 (the primitive contracts, the validator code, the ledger field layouts), [chapter 06, The
-engine](06-the-engine.md) has it. Read this first so the engine chapter has somewhere to land.
+engine](/06-the-engine/) has it. Read this first so the engine chapter has somewhere to land.
 
 **On this page:** [A run is a frozen plan + a fleet + an audit trail](#a-run) ·
 [The ledger is files, not a database](#the-ledger) ·
@@ -77,7 +77,7 @@ what happened without trusting anyone's memory of it.
 > The discipline is not "files exist." It is "files exist in the order the discipline demands."
 > The manifest validator enforces causal ordering between artifact kinds (for example, a reviewer's
 > blind-fix file must be older than the findings file it precedes). That ordering IS the proof that
-> the protocol was followed. More on this in [run-archive anatomy](15-run-archive.md).
+> the protocol was followed. More on this in [run-archive anatomy](/15-run-archive/).
 
 The mental shorthand: a run is a plan you can't change, run by processes you can't see into, leaving
 a trail you can't fake. The constraints are the point.
@@ -137,7 +137,7 @@ files.
 > terminal moment (marking a task `MERGED` or `DONE`) the external fact overrides the file. The
 > coordinator re-checks the actual PR state directly before writing a terminal flag, and the SCM
 > wins when they disagree. The file is memory; GitHub is ground truth. This is signal
-> reconciliation, covered in [the engine](06-the-engine.md).
+> reconciliation, covered in [the engine](/06-the-engine/).
 
 <a id="workers-are-processes"></a>
 
@@ -169,7 +169,7 @@ The reviewer is a separate process that never saw the builder's conversation. It
 diff and the acceptance contract as TEXT ONLY. It does not get the build worktree, the builder's
 session, or any of the reasoning the builder used to convince itself the work was good. This is the
 single most important idea in the whole framework, so it gets its own section ([chapter
-08, Roles and blindness](08-roles-and-blindness.md)), but the mental-model version is short:
+08, Roles and blindness](/08-roles-and-blindness/)), but the mental-model version is short:
 
 Build-blindness is structural, not instructed. You cannot reliably tell an agent "review this as if
 you didn't write it." It wrote it. It is anchored on its own solution, and rationalizing an existing
@@ -270,7 +270,7 @@ A run is composed from three pieces, and only one of them is the agent:
 
 - The CORE is the method above. Tool-agnostic. It only ever calls primitives by name.
 - A MISSION is the work: the goal, the role pipeline, the task structure, the ledger filename and
-  flags, the done condition. ([Chapter 05](05-missions-vs-campaigns.md) covers missions in depth.)
+  flags, the done condition. ([Chapter 05](/05-missions-vs-campaigns/) covers missions in depth.)
 - An ADAPTER is the mechanics: how THIS tool spawns a worker, dispatches a task, waits, inspects
   state, places work in a worktree or branch, and opens or merges a PR. The adapter implements the
   primitives the core calls.
@@ -289,7 +289,7 @@ the same primitives. The protocol is the constant; the vendors are variables.
 > purpose: concurrent missions would race on the same files, the same branches, and the same ledger.
 > Chaining missions is a real thing, but it is done by sequencing them through a campaign with hard
 > gates between nodes, not by running them at once. That distinction is the whole of
-> [chapter 05](05-missions-vs-campaigns.md).
+> [chapter 05](/05-missions-vs-campaigns/).
 
 <a id="where-next"></a>
 
@@ -313,12 +313,12 @@ and your mental model should account for them:
   event is wired in production code today: the `T-FINAL` archive event emitted when a run writes its
   manifest. Per-transition emission across the coordinator and adapters is rolling out; the schema
   already covers all eleven of its trace-enum primitives, the stream does not fill them yet. The trace contract is
-  real; the full stream is in progress. Details in [trace schema](16-trace-schema.md).
+  real; the full stream is in progress. Details in [trace schema](/16-trace-schema/).
 
 - Headless campaign mode is not yet fully validated end-to-end. The supported path today is the
   interactive one: drive a mission from chat or via a `/goal`-style native goal loop. The
   `run-campaign.sh` headless driver exists but is not yet proven end-to-end, and it carries an auth
-  caveat. Run interactively for now. See [safety and secrets](12-safety-and-secrets.md) for the
+  caveat. Run interactively for now. See [safety and secrets](/12-safety-and-secrets/) for the
   headless caveat in full.
 
 Neither of these changes the mental model. They tell you where the edges are, which is exactly what
@@ -326,11 +326,11 @@ an honest map should do.
 
 From here, follow the concepts in order:
 
-- [Missions vs campaigns](05-missions-vs-campaigns.md): the unit of work, and when to chain several.
-- [The engine](06-the-engine.md): the primitives, the ledger layout, signal reconciliation, and the
+- [Missions vs campaigns](/05-missions-vs-campaigns/): the unit of work, and when to chain several.
+- [The engine](/06-the-engine/): the primitives, the ledger layout, signal reconciliation, and the
   frozen DAG, in full mechanical detail.
-- [The substrate](07-the-substrate.md): the four verification layers that catch bad work.
-- [Roles and blindness](08-roles-and-blindness.md): why build-blind review is structural, in depth.
+- [The substrate](/07-the-substrate/): the four verification layers that catch bad work.
+- [Roles and blindness](/08-roles-and-blindness/): why build-blind review is structural, in depth.
 ## Real-world use cases
 
 ### Example — SPOQ gate before spawn
@@ -351,6 +351,6 @@ in parallel, hub untouched.
 
 ---
 
-← [Your first mission](03-your-first-mission.md) ·
-[Guide Index](README.md) ·
-[Missions vs campaigns](05-missions-vs-campaigns.md) →
+← [Your first mission](/03-your-first-mission/) ·
+[Guide Index](/) ·
+[Missions vs campaigns](/05-missions-vs-campaigns/) →

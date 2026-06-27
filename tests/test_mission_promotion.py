@@ -67,13 +67,20 @@ def test_schema_11_event_validates() -> None:
     assert validate_event(event) == []
 
 
-def test_assess_all_exploratory_returns_fifteen() -> None:
+def test_assess_all_exploratory_returns_eighteen() -> None:
     from lib.mission_promotion import assess_all_exploratory
 
     reports = assess_all_exploratory(ROOT)
-    assert len(reports) == 15
+    assert len(reports) == 18
     slugs = {r.mission for r in reports}
-    for gstack in ("product-framing", "browser-qa-fix", "security-cso-audit"):
+    for gstack in (
+        "product-framing",
+        "browser-qa-fix",
+        "security-cso-audit",
+        "devex-audit",
+        "release-document",
+        "incident-investigate",
+    ):
         assert gstack in slugs
 
 

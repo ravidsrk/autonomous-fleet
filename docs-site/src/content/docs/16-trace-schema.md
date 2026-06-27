@@ -39,7 +39,7 @@ this is your contract. If you are extending the engine, this is what your adapte
 The engine writes a file-based ledger under `.fleet/runs/<run_id>/`. The ledger is derived state: it is
 the answer to "what is the current shape of this run". The trace is the source of truth for "what
 happened, in order". A dashboard wants the second thing. So the doctrine (see
-[The engine](06-the-engine.md), TRACE EMISSION) is: every state transition that writes to the ledger
+[The engine](/06-the-engine/), TRACE EMISSION) is: every state transition that writes to the ledger
 emits a trace event BEFORE the ledger write commits. Trace first, ledger second, never the reverse. If a
 coordinator crashes mid-transition, you are left with a trace event whose ledger row never landed, which
 is recoverable, instead of a ledger row with no externally-visible cause, which is not.
@@ -198,7 +198,7 @@ Notes that matter when you render these:
 
 `SYNC` is not the same as `INSPECT`. `INSPECT` is one observation. `SYNC` is the decision made from a set
 of observations. A single poll is not a decision, which is why the engine separates them (see
-[The engine](06-the-engine.md), signal reconciliation). On a timeline, expect several `INSPECT` events to
+[The engine](/06-the-engine/), signal reconciliation). On a timeline, expect several `INSPECT` events to
 precede one `SYNC`.
 
 `COMMIT` and `ABORT` are the two terminals of a worker's construction lifetime. `T-FINAL` is the terminal
@@ -308,7 +308,7 @@ The same payload, fixed:
 > only and left enforcement to good intentions. The framework's own review caught that the rule was not
 > enforced in code, and the fix wired `_scan_details` into both `validate_event` and `emit()`. The rule
 > is now a code path, not a comment. That is the review discipline working on the framework itself, see
-> [Roles and blindness](08-roles-and-blindness.md).
+> [Roles and blindness](/08-roles-and-blindness/).
 
 ## The health roll-up
 
@@ -389,7 +389,7 @@ whatever events you do see are schema-valid and ordered trace-first.
 One more honest note on robustness: a failure to emit a trace event is NOT a hard error. The run
 continues with degraded telemetry, and the coordinator records `trace_emission_degraded: true` in
 `fleet-outcome.yaml` so a post-hoc audit knows the stream is incomplete (see
-[fleet-outcome schema](17-fleet-outcome-schema.md)). Hard-failing on a telemetry I/O error would let the
+[fleet-outcome schema](/17-fleet-outcome-schema/)). Hard-failing on a telemetry I/O error would let the
 dashboard veto real work, which inverts the dependency. As a corollary, the reader
 `iter_trace_file()` tolerates malformed lines: a half-written trace from a crashed run is still partially
 renderable, and the count of skipped lines is recorded on the generator. Treat malformed lines as
@@ -494,5 +494,5 @@ Fixture trace: SPAWN_WORKER parent_event → DISPATCH evt-0001; COMMIT parent_ev
 
 ---
 
-← [Run-archive anatomy](15-run-archive.md) · [Guide Index](README.md) ·
-[fleet-outcome schema](17-fleet-outcome-schema.md) →
+← [Run-archive anatomy](/15-run-archive/) · [Guide Index](/) ·
+[fleet-outcome schema](/17-fleet-outcome-schema/) →

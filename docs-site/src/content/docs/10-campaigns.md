@@ -12,11 +12,11 @@ verification gates between them, so the next mission only runs once the previous
 clean. You point a campaign at one repo, it runs each node in turn, validates the outcome, and
 decides where to go next by reading the `fleet-outcome` block the finished mission wrote.
 
-If you have read [Missions vs campaigns](05-missions-vs-campaigns.md) you already know the shape.
+If you have read [Missions vs campaigns](/05-missions-vs-campaigns/) you already know the shape.
 This chapter is the operator's reference: the three presets that ship today, every flag on
 `run-campaign.sh`, how to write your own campaign YAML, how the `if` gates evaluate, what
 `--dry-run` shows you, and the honest state of headless mode. Pick the right mission first from
-the [Mission catalog](09-mission-catalog.md); a campaign is only as good as the nodes inside it.
+the [Mission catalog](/09-mission-catalog/); a campaign is only as good as the nodes inside it.
 
 > One rule before anything else: a campaign runs one mission at a time on one repo. It is not a
 > way to run missions in parallel. The gates between nodes are the whole point. If you want
@@ -221,7 +221,7 @@ campaign. It does not fall through to "Campaign complete". `status: done` and `s
 fall through to edge evaluation; `blocked` never does.
 
 The full `fleet-outcome` schema (every field, every status, what each metric means) is its own
-reference: [fleet-outcome schema](17-fleet-outcome-schema.md). The campaign driver reads four
+reference: [fleet-outcome schema](/17-fleet-outcome-schema/). The campaign driver reads four
 things from it: `status` (for the blocked halt) and whatever metrics your edge expressions name.
 
 ---
@@ -374,7 +374,7 @@ So a `docs -> bugs` edge can branch on `code_bug_findings > 0` (doc-sync emits i
 node can branch on `findings_open == 0` or `ops_queue_count > 0` (adversarial-review-and-fix emits
 those). An audit node cannot branch on `gaps_open`, because that metric belongs to test-coverage and
 will not be present in the audit's outcome. The full metric vocabulary, including the exploratory
-missions, lives in the [fleet-outcome schema](17-fleet-outcome-schema.md).
+missions, lives in the [fleet-outcome schema](/17-fleet-outcome-schema/).
 
 ### A conditional example, end to end
 
@@ -484,7 +484,7 @@ A few specifics from the script:
   campaign YAML are operator-supplied paths that can name arbitrary missions and repos, and yolo
   removes the approval prompt that would otherwise gate every shell command. The driver refuses
   `--yolo` against an external `--repo` unless you also pass `--yolo-untrusted-acknowledged` (or run
-  the whole thing under `scripts/run-sandboxed.sh`). See [Safety and secrets](12-safety-and-secrets.md)
+  the whole thing under `scripts/run-sandboxed.sh`). See [Safety and secrets](/12-safety-and-secrets/)
   for the threat model and the sandbox wrapper.
 
 ### The caveat: headless is not yet validated end to end
@@ -502,10 +502,10 @@ finish.
 > starting the next. That is the same campaign, just with you reading the gate instead of the driver.
 > The campaign YAML still documents the intended sequence and gates.
 
-The headless auth requirement is also covered in [Installation](02-installation.md) (the per-runtime
-CLI login step) and the caveat is restated in [Safety and secrets](12-safety-and-secrets.md). The
+The headless auth requirement is also covered in [Installation](/02-installation/) (the per-runtime
+CLI login step) and the caveat is restated in [Safety and secrets](/12-safety-and-secrets/). The
 flag-by-flag CLI reference for `run-campaign.sh` and the other scripts is
-[CLI reference](18-cli-reference.md).
+[CLI reference](/18-cli-reference/).
 
 ---
 
@@ -552,7 +552,7 @@ and have not earned the progress + readiness + external-archive triple required 
 > file. The restore path is in each file's header comment: re-promote the exploratory mission per
 > `docs/exploratory/missions/README.md`, then restore the campaign DAG from git history at the
 > commit just before the demotion. That is a contributor task, covered in CONTRIBUTING.md and
-> [Extending](13-extending.md), not something you do from the operator side.
+> [Extending](/13-extending/), not something you do from the operator side.
 
 When those missions promote, the presets come back with their original audit-gated DAGs. Until then,
 the three active presets above are the full shipped set, and a custom `--campaign` file is how you
@@ -560,6 +560,6 @@ build anything more conditional than they offer.
 
 ---
 
-← [Previous: Mission catalog](09-mission-catalog.md) ·
-[Guide Index](README.md) ·
-[Next: Strict mode](11-strict-mode.md) →
+← [Previous: Mission catalog](/09-mission-catalog/) ·
+[Guide Index](/) ·
+[Next: Strict mode](/11-strict-mode/) →

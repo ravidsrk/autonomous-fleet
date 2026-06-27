@@ -7,7 +7,7 @@ sidebar:
 
 # Installation
 
-The [Quickstart](01-quickstart.md) got you a green PR on Claude Code with the minimum number of
+The [Quickstart](/01-quickstart/) got you a green PR on Claude Code with the minimum number of
 commands. This chapter is the real install: every supported runtime, the auth each one needs,
 the optional sandboxing layer, and how to confirm the whole thing actually works before you point
 it at a repo you care about.
@@ -146,7 +146,7 @@ You never invoke the infrastructure skills directly. The umbrella routes vague r
 mission; `autonomous-fleet-core` is the engine every run loads automatically; `fleet-program`
 chains missions; `setup-autonomous-fleet` is the one-time config wizard you run next. Pick exactly
 one adapter for your runtime. The `template` adapter is only for people adding a new runtime (see
-[Extending](13-extending.md)).
+[Extending](/13-extending/)).
 
 ## Per-runtime setup
 
@@ -195,7 +195,7 @@ in every tier because the shared task list is per-session and its status can lag
 richest experience (native blocking message queues between agents), set
 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in your environment or `settings.json` before the run.
 
-Claude Code is also the only runtime that ships the optional [strict mode](11-strict-mode.md) Stop
+Claude Code is also the only runtime that ships the optional [strict mode](/11-strict-mode/) Stop
 hook, the reference implementation of the engine's runtime enforcement gate. The hook assets live
 in the adapter at `assets/hooks/stop-verify.sh` and `assets/hooks/hooks.json`. It is opt-in and
 fail-open: a broken gate degrades to loose mode rather than trapping a worker. Installing it is a
@@ -340,7 +340,7 @@ Orca          n/a (Orca uses its own worktree/terminal isolation model)
 ```
 
 > If you are running on a repo you do not fully trust, container-use placement is the right tool.
-> It is also the placement [Safety and secrets](12-safety-and-secrets.md) recommends for any run
+> It is also the placement [Safety and secrets](/12-safety-and-secrets/) recommends for any run
 > that touches untrusted input. You do not need it for a first run on your own repo.
 
 ## Headless mode auth
@@ -373,14 +373,14 @@ The headless invocation looks like this (per runtime, from `run-mission-headless
 Note that `--max-turns` applies to Grok and Codex only; Claude Code has no `--max-turns` flag and
 the script accounts for that. The `--yolo` flag (Grok only) auto-approves all tool calls and is a
 full RCE surface against the target repo; never use it on untrusted input, and never use it at all
-unless you understand exactly what it disables. [Safety and secrets](12-safety-and-secrets.md)
+unless you understand exactly what it disables. [Safety and secrets](/12-safety-and-secrets/)
 covers `--yolo` in full.
 
 > Honest caveat: headless campaign mode is **not yet fully validated end to end**. The campaign
 > scripts work mechanically, but the unattended CLI-auth path has not been proven across a full run
 > on every runtime. If a headless run cannot authenticate, drive the same missions interactively
 > from your agent's chat (the `/goal` path). The interactive path is the supported flow today. This
-> caveat is tracked in [Campaigns](10-campaigns.md) and [Safety and secrets](12-safety-and-secrets.md).
+> caveat is tracked in [Campaigns](/10-campaigns/) and [Safety and secrets](/12-safety-and-secrets/).
 
 ## Verifying the install
 
@@ -416,7 +416,7 @@ what it does, in order:
 
 The wizard never installs community skills without your consent, and it never writes config without
 showing you the draft first. If you want to understand the wizard's internals (what it reads, the
-exact template it writes), that is covered in [Extending](13-extending.md).
+exact template it writes), that is covered in [Extending](/13-extending/).
 
 After the wizard, you should have these files in your repo:
 
@@ -443,11 +443,11 @@ Swap `claude` for `grok`, `codex` per your runtime, and `repo-health` for whiche
 chose. The three shipped presets are `repo-health` (doc-sync then test-coverage),
 `ship-with-proof` (review-fix then test-coverage then doc-sync), and `quality-gate` (review-fix
 then test-coverage). Other preset files exist under `scripts/campaigns/` but are archived pending
-promotion of the missions they reference; [Campaigns](10-campaigns.md) covers which are live.
+promotion of the missions they reference; [Campaigns](/10-campaigns/) covers which are live.
 
 If the dry-run prints a plan without erroring, your install is sound: skills are on disk, the
 adapter resolves, and the campaign graph is valid. To actually run something end to end, head to
-[Your first mission](03-your-first-mission.md).
+[Your first mission](/03-your-first-mission/).
 
 ### Validate the framework itself
 
@@ -487,7 +487,7 @@ The two that matter most:
   same skill set when they reinstall. Treat it like `package-lock.json`.
 
 The run archives under `.fleet/runs/<run_id>/` appear only after you run a mission. Whether to
-commit them is a per-repo call; their full anatomy is in [Run-archive anatomy](15-run-archive.md).
+commit them is a per-repo call; their full anatomy is in [Run-archive anatomy](/15-run-archive/).
 
 One last sanity check on the gitignore. After installing, your `git status` should show
 `skills-lock.json` (and the config files the wizard wrote) as the only fleet-related changes. If
@@ -520,4 +520,4 @@ You now have a runtime authenticated, skills on disk, config written, and a clea
 chapter walks a real `doc-sync` run end to end so you can see what a mission actually does to a
 repo before you trust it on yours.
 
-← [Quickstart](01-quickstart.md) · [Guide Index](README.md) · [Your first mission](03-your-first-mission.md) →
+← [Quickstart](/01-quickstart/) · [Guide Index](/) · [Your first mission](/03-your-first-mission/) →

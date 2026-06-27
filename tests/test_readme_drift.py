@@ -51,7 +51,8 @@ def test_readme_lists_twelve_skills_in_layout() -> None:
     assert "3 shipped missions" in readme
     assert "docs/exploratory/missions/" in readme
     assert (
-        "15 exploratory" in readme
+        "18 exploratory" in readme
+        or "15 exploratory" in readme
         or "12 demoted missions" in readme
         or "12 exploratory" in readme
     )
