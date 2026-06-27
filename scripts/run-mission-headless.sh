@@ -263,7 +263,7 @@ run_preflight_stack() {
   if [[ ! -d "$adapter_dir" ]]; then
     echo "preflight: skip (no fleet adapter skills under $ROOT/skills)"
   elif [[ "$DRY_RUN" -eq 1 ]]; then
-    "$ROOT/scripts/preflight.sh" "$adapter"
+    "$ROOT/scripts/preflight.sh" "$adapter" --wiring-only
   else
     "$ROOT/scripts/preflight.sh" "$adapter" --scm
   fi

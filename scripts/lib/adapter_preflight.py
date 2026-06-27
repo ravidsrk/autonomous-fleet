@@ -24,6 +24,7 @@ class Intent:
     """Caller intent that decides whether SCM/PR-write checks are required."""
 
     scm: bool = False
+    wiring_only: bool = False
 
 
 def load_requires(adapter_dir: str | Path) -> dict[str, Any]:
@@ -43,6 +44,12 @@ def _scm_enabled(intent: Intent | Mapping[str, Any]) -> bool:
     if isinstance(intent, Intent):
         return intent.scm
     return bool(intent.get("scm", False))
+
+
+def _wiring_only(intent: Intent | Mapping[str, Any]) -> bool:
+    if isinstance(intent, Intent):
+        return intent.wiring_only
+    return bool(intent.get("wiring_only", False))
 
 
 def _active_intent(intent: Intent | Mapping[str, Any]) -> str:
@@ -80,6 +87,9 @@ def check(
     skipped when the caller did not request SCM/PR-write intent. The command
     runner is injectable so tests never need to invoke real host auth.
     """
+    if _wiring_only(intent):
+        return []
+
     intent_name = _active_intent(intent)
     skipped_bins = _bins_skipped_by_intent(requires, intent_name)
     failures: list[str] = []

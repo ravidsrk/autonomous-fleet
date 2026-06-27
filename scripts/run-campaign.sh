@@ -309,7 +309,7 @@ while [[ -n "$CURRENT" ]]; do
   if [[ ! -d "$ROOT/skills/autonomous-fleet-adapter-$adapter_rt" ]]; then
     echo "  preflight: skip (no fleet adapter skills under $ROOT/skills)"
   elif [[ "$DRY_RUN" -eq 1 ]]; then
-    "$ROOT/scripts/preflight.sh" "$adapter_rt"
+    "$ROOT/scripts/preflight.sh" "$adapter_rt" --wiring-only
   else
     "$ROOT/scripts/preflight.sh" "$adapter_rt" --scm
   fi
