@@ -379,9 +379,15 @@ but expect a sparse stream today. See [Trace schema](16-trace-schema.md) when it
 ### Is headless campaign mode production-ready?
 
 Not fully. The campaign scripts (`run-campaign.sh`) drive each runtime's CLI in headless mode, which
-requires that CLI to be authenticated on the host and is not yet fully validated end to end. The
-supported path today is interactive: drive missions from your agent's chat / `/goal`. If a headless
-run cannot authenticate, fall back to the interactive flow. See
+requires that CLI to be authenticated on the host and is not yet fully validated end to end with
+live agent sessions in CI. Mechanical paths are gated: `validate-headless.sh`, fake-runtime pytest
+(`tests/test_headless_trace.py`, `tests/test_run_campaign.py`), and archive emission under `--repo`.
+
+**Orca is interactive-only** — use the Orca app with `autonomous-fleet-adapter-orca` and `/goal`;
+`run-campaign.sh` does not accept `orca` as a runtime.
+
+The supported path today for production work is interactive: drive missions from your agent's chat
+/ `/goal`. If a headless run cannot authenticate, fall back to the interactive flow. See
 [Safety and secrets](12-safety-and-secrets.md).
 
 ---
