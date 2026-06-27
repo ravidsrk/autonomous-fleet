@@ -37,6 +37,10 @@ Options:
   --yolo              Auto-approve agent tools (Grok only; default: off)
   --no-yolo           Deprecated alias for default (no auto-approve)
   --yolo-untrusted-acknowledged  Required with --yolo when --repo is outside this clone (accepts RCE risk)
+
+Runtimes:
+  grok, claude, codex — supported headless drivers.
+  orca — interactive only (Orca orchestration + /goal); not accepted by this script.
 EOF
 }
 

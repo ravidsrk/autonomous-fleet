@@ -1,8 +1,19 @@
 # doc-sync audit — autonomous-fleet
 
-Latest audit: **community-skills pass** (2026-06-20, branch `fleet/community-skills-and-dogfood`).
+Latest audit: **v0.2.0 metrics pass** (2026-06-27, `main`).
 
-> Historical first trial: superseded section at bottom (pre-`fleet-outcome`).
+> Historical passes: 2026-06-20 community-skills (below); first trial at bottom.
+
+## DRIFT INDEX (2026-06-27)
+
+| ID | Area | Doc said | Code truth | Status |
+|----|------|----------|------------|--------|
+| D15 | README version badge | 0.1.0 | `VERSION` = 0.2.0 | **CLOSED** |
+| D16 | README test metrics | 37 files / 936 tests | 53 files (auto-guarded) | **CLOSED** |
+| D17 | README skill count (layout) | implied 20 | 12 under `skills/` + 12 exploratory | **CLOSED** |
+| D18 | Orca headless | unspecified | interactive-only; `run-*.sh` grok\|claude\|codex | **CLOSED** |
+
+Guard: `tests/test_readme_drift.py` fails CI if README counts drift again.
 
 ## DRIFT INDEX (2026-06-20)
 
@@ -23,7 +34,7 @@ No code-bug findings (`code_bug_findings: 0`).
 ## Verified
 
 ```bash
-./scripts/validate-all.sh                    # 20 skills, fleet-outcome, goals, pytest
+./scripts/validate-all.sh                    # 12 skills, fleet-outcome, goals, pytest
 ./scripts/run-campaign.sh grok --preset ship-with-proof --dry-run
 ./scripts/run-campaign.sh grok --preset repo-health --repo /tmp/gemoji --dry-run  # when gemoji cloned
 ```

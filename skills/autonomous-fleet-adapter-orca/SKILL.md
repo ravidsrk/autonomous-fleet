@@ -132,6 +132,13 @@ Orca has no `/goal` API. Primitives 9–12 map to the file ledger only:
 - **GOAL_COMPLETE:** `PHASE: DONE` in ledger + FINAL report after TERMINATE checks.
 - **GOAL_BLOCKED:** `escalation` message + `fleet-outcome.status: blocked`.
 
+## Headless driver compatibility
+
+`scripts/run-mission-headless.sh` and `scripts/run-campaign.sh` accept only `grok`, `claude`,
+and `codex`. **Orca is interactive-only:** drive missions from the Orca app with this adapter
+loaded and bind completion with `/goal` per `runtime-goals.md`. Orca's worktree/terminal model
+does not map to a single `CLI -p` invocation, so there is no headless driver entry point yet.
+
 ## ORCA NOTES
 - Coordinator mode: manual loop (NOT `orchestration run`) to keep file-ledger boolean-gate control.
   `orchestration run --max-concurrent N --worktree <sel>` is the fallback only if a long run
