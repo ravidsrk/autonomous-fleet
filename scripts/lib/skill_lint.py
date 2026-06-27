@@ -26,6 +26,12 @@ import yaml
 # sibling lib modules are unavailable.
 LOCAL_LOCK_SOURCE = "ravidsrk/autonomous-fleet"
 
+_SCRIPTS_ROOT = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_ROOT))
+
+from lib.community_preflight import GSTACK_MISSION_SLUGS, has_recommends_block, load_recommends  # noqa: E402
+
 ADAPTER_COMPONENTS = frozenset({"adapter", "adapter-template"})
 
 
@@ -246,6 +252,29 @@ def lint_lock_version_sync(skill_dir: Path | str, lock_path: Path | str) -> None
     )
 
 
+def lint_gstack_mission(path: Path | str) -> None:
+    """Lint gstack-derived exploratory missions (mission contract + community-recommends)."""
+    skill_path, text = _read_skill(path)
+    lint_mission(skill_path)
+    slug = skill_path.parent.name
+    if slug not in GSTACK_MISSION_SLUGS:
+        return
+    if not has_recommends_block(text):
+        raise SkillLintError([f"{skill_path}: missing fenced community-recommends block"])
+    try:
+        recommends = load_recommends(skill_path.parent)
+    except ValueError as exc:
+        raise SkillLintError([str(exc)]) from exc
+    assert recommends is not None  # fenced block present; load_recommends parses or raises
+    if recommends.mode != "warn":
+        raise SkillLintError([f"{skill_path}: gstack mission community-recommends mode must be warn"])
+    metadata = _frontmatter(text, skill_path).get("metadata")
+    if not isinstance(metadata, dict) or metadata.get("recommended-bundle") != recommends.bundle:
+        raise SkillLintError(
+            [f"{skill_path}: metadata.recommended-bundle must match community-recommends.bundle"]
+        )
+
+
 def lint_skill(path: Path | str) -> None:
     """Lint adapters and missions; other autonomous-fleet skill types are ignored."""
     skill_path, text = _read_skill(path)
@@ -254,7 +283,10 @@ def lint_skill(path: Path | str) -> None:
     if component in ADAPTER_COMPONENTS:
         lint_adapter(skill_path)
     elif component == "mission":
-        lint_mission(skill_path)
+        if skill_path.parent.name in GSTACK_MISSION_SLUGS:
+            lint_gstack_mission(skill_path)
+        else:
+            lint_mission(skill_path)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

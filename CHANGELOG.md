@@ -9,6 +9,23 @@ All notable changes to `autonomous-fleet` are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Community skill dependency tiers (warn-tier) documented in `composition.md` and `community-skills.md`.
+- `community-recommends` metadata on six gstack exploratory missions (`product-framing`, `browser-qa-fix`, `security-cso-audit`, `devex-audit`, `release-document`, `incident-investigate`).
+- `scripts/lib/community_preflight.py` and `scripts/preflight-community.sh` — advisory preflight with install hints (`COMMUNITY_PROBE_HOME` for isolated probes).
+- `scripts/install-community.sh` — bundle table (`gstack-browser`, `gstack-framing`, etc.); dry-run by default, `--execute` opt-in.
+- `scripts/campaigns/gstack-quality.yaml` — exploratory campaign preset (framing → qa → security → devex).
+- `tests/test_community_preflight.py` and headless integration tests for community hint emission.
+
+### Changed
+
+- `run-mission-headless.sh` and `run-campaign.sh` invoke community preflight after adapter preflight.
+- `install-skills.sh` accepts `--with-community BUNDLE` (opt-in).
+- `setup-autonomous-fleet` fleet-config template records community bundle choice.
+- `validate-headless.sh` includes `gstack-quality` preset and echoes community preflight output.
+- `skill_lint.py` validates `community-recommends` on gstack exploratory missions.
+
 ## [0.2.1] - 2026-06-27
 
 Post-v0.2.0 polish: live trace CLI, promotion validator, Starlight scaffold, trace schema 1.1.

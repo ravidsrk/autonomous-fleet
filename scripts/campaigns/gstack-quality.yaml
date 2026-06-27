@@ -1,0 +1,20 @@
+campaign: gstack-quality
+repo: single
+allow_exploratory_nodes: true
+base: fleet/gstack-quality-base
+start: frame
+pre_gates:
+  - office-hours
+nodes:
+  frame: { mission: product-framing }
+  qa: { mission: browser-qa-fix }
+  security: { mission: security-cso-audit }
+  devex: { mission: devex-audit }
+post_gates:
+  - qa-only
+  - health
+edges:
+  frame: [{ to: qa, if: always }]
+  qa: [{ to: security, if: always }]
+  security: [{ to: devex, if: always }]
+  devex: []

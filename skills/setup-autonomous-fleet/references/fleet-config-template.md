@@ -33,11 +33,17 @@ When intent is vague, suggest `fleet-program` preset: **`<preset-id>`**
 
 ## Community skills
 
-| Bundle | Installed | Notes |
-|--------|-----------|-------|
-| gstack | yes / no | ship, qa, office-hours, … |
-| agent-skills | yes / no | TDD, security, frontend-ui-engineering |
-| mattpocock | yes / no | grill, domain-modeling |
+| Bundle id | Installed | Mode | Notes |
+|-----------|-----------|------|-------|
+| gstack-browser | yes / no | warn | browse, qa, qa-only, health |
+| gstack-framing | yes / no | warn | office-hours, autoplan, plan-* |
+| gstack-security | yes / no | warn | cso, investigate |
+| gstack-devex | yes / no | warn | plan-devex-review, devex-review |
+| gstack-ship | yes / no | warn | ship, document-release, health |
+| agent-skills | yes / no | warn | TDD, security, frontend-ui-engineering |
+| mattpocock | yes / no | warn | grill, domain-modeling |
+
+Install: `./scripts/install-community.sh <bundle-id> --execute --host <adapter-host>`
 
 ## Campaign YAML paths
 
