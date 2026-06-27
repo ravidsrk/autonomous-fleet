@@ -19,7 +19,13 @@ VALID_VERDICTS = frozenset({"approve", "PASS", "request_changes", "partial", "fa
 
 _SHA_RE = re.compile(r"^[0-9a-fA-F]{40}$")
 _REVIEW_ID_RE = re.compile(r"^[a-zA-Z0-9._/-]+$")
-_BRANCH_RE = re.compile(r"^[a-zA-Z0-9._/-]+$")
+# Branch names MUST start with an alphanumeric character. The remaining chars
+# may include the documented separators, but a leading dash is rejected so a
+# record like {"branch": "--help"} can never flow into a `git rev-parse`
+# argv as an option (option-injection hardening). Git itself also forbids
+# leading-dash branch names, so this loses no legitimate branch.
+_BRANCH_PATTERN = r"^[a-zA-Z0-9][a-zA-Z0-9._/-]*$"
+_BRANCH_RE = re.compile(_BRANCH_PATTERN)
 
 
 def validate_sha_pin_record(record: Any, label: str = "sha-pin") -> list[str]:
@@ -56,7 +62,7 @@ def validate_sha_pin_record(record: Any, label: str = "sha-pin") -> list[str]:
     if branch is not None and (
         not isinstance(branch, str) or not _BRANCH_RE.match(branch)
     ):
-        errors.append(f"{label}: branch must match ^[a-zA-Z0-9._/-]+$, got {branch!r}")
+        errors.append(f"{label}: branch must match {_BRANCH_PATTERN}, got {branch!r}")
 
     verdict = record.get("verdict")
     if verdict is not None and verdict not in VALID_VERDICTS:

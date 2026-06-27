@@ -40,9 +40,12 @@ never hard-codes a tool command — it calls the primitive by name and lets the 
     restore command (Grok `sessionId`, Codex thread, opencode session) implement it; adapters
     without one ALIAS it to `SPAWN_WORKER` (the documented idempotent-relaunch fallback).
     OPTIONAL, like 9–13. Constrained to `live`-classified rows only (per `recovery_scan.py`): never
-    re-attach a session whose PR merged or whose branch is gone. Resume budget is bounded — when a
-    row's `RESUME_COUNT` reaches `MAX_RESUME_ATTEMPTS` (3), the scanner recommends
-    `ESCALATE_TO_DECISIONS` instead of another continue.
+    re-attach a session whose PR merged or whose branch is gone. Resume budget is bounded by a
+    coordinator-maintained `RESUME_COUNT` on the task row (incremented on every CONTINUE_WORKER) and
+    audited by `recovery_scan`: when a row's `RESUME_COUNT` reaches `MAX_RESUME_ATTEMPTS` (3), the
+    scanner recommends `ESCALATE_TO_DECISIONS` instead of another continue. The bound is only as
+    reliable as the increment — the coordinator MUST bump `RESUME_COUNT` (or call the increment
+    helper) on each re-attach, or the audited limit never trips.
 
 TRACKER vs SCM bindings: primitive 7's ship verbs are the SCM binding (`OPEN_PR` against BASE,
 conflict-aware `MERGE_PR`, `CLEANUP`); the issue-facing verbs (read issue, derive branch name, mark
@@ -210,9 +213,12 @@ instinct is a BUG. Suppress it mechanically:
   NOT increment on a WAIT timeout, a heartbeat gap, or a transient tool error (those are
   checkpoints), and it is SEPARATE from REVIEW's "max fix rounds" counter (a reviewer returning
   CHANGES is normal iteration, not a task failure). The counter RESETS to 0 on a clean WORKER_DONE
-  for that task. At 3, the breaker TRIPS: run the COMPENSATION rollback (close the orphan PR, delete
-  the dead branch, revert any partial commit on BASE) THEN reassign once more; if a reassigned task
-  trips again, defer it via `fleet-outcome.deferred_missions` rather than looping forever.
+  for that task. At 3, the breaker TRIPS: clean up the task's partial side-effects directly — close
+  the orphan PR, delete the dead branch, and revert any partial commit on BASE (each via the same
+  cleanup guard clauses: never touch an active/unmerged/dirty worktree) — THEN reassign once more;
+  if those side-effects can't be cleanly undone, record them in DECISIONS.md and escalate instead
+  of guessing. If a reassigned task trips again, defer it via `fleet-outcome.deferred_missions`
+  rather than looping forever.
 If about to message the user anything but the FINAL report (or a named hard-dependency gate):
 stop, re-read this block, read the ledger, take the orchestration action instead.
 
@@ -492,8 +498,14 @@ WRITE-LOCK DISCIPLINE — construction vs request locks.
 A worker that mutates shared state (the run-archive, a worktree branch, an external API) SHOULD
 acquire the correct lock before the mutation and release it after WHEN multiple coordinators or
 workers may write concurrently. (Status: the lock library is available and tested but has no
-single-coordinator call-site today — single-coordinator runs serialize through the file ledger.
-Wire it for parallel-coordinator or shared-archive multi-writer setups.) Two locks, two lifetimes:
+production call-site today — single-coordinator runs serialize through the file ledger. Wire it for
+parallel-coordinator or shared-archive multi-writer setups.) HONEST LIMITATION: the markdown ledger
+is keyed by MISSION (its filename), not by `run_id`, and the lock library has no production
+call-site, so two concurrent runs over the same `(repo, mission)` are NOT mutually exclusive today —
+nothing mechanically stops them sharing a ledger filename and racing. The `run_short` branch/worktree
+suffix keeps their BRANCHES and CHECKOUTS from colliding, but the ledger file itself is a shared
+write target. Until the lock is wired (or the ledger is keyed by `run_id`), do not launch two runs of
+the SAME mission against the SAME repo at once. Two locks, two lifetimes:
 - CONSTRUCTION LOCK: acquired before a worker starts BUILDING artifacts in its task slot
   (worktree, branch, attestation file). Released only on COMMIT or ABORT. Long-held. Prevents
   two workers racing to write the same artifact path under `.fleet/runs/<run_id>/`.
@@ -684,6 +696,14 @@ into each DISPATCH / task spec for matching pipeline roles (@claude builder, @gr
 - If a listed skill is not installed, use that row's "If unavailable" fallback from the mission.
 - Optional skills (coordinator-only) and worker skills are disjoint — see composition.md.
 
+HANDLE RESOLUTION — a mission's `@<vendor>` handle denotes a ROLE, not a hard vendor requirement.
+On a multi-vendor host, prefer the named vendor (it is what makes the cross-vendor build-blind
+review a mechanical guarantee — see the REVIEW step). On a SINGLE-VENDOR host, map every handle to a
+fresh same-vendor subagent for that role (a `@grok reviewer` on a Claude-only host becomes a fresh
+Claude subagent acting as reviewer). Record the substitution in DECISIONS.md. The role's discipline
+(fresh context, write isolation) is what binds; the vendor name is the preferred, not the required,
+binding — exactly as `gh` is the DEFAULT, not the contract, for the SCM binding above.
+
 ═══════════════════════════════════════════════════════════
 RESEARCH DISCIPLINE — verify external facts on demand; never code from stale memory.
 ═══════════════════════════════════════════════════════════
@@ -747,14 +767,16 @@ by role, not uniformly, and records a running cost estimate so a mission can sto
     fixes, log scans, status summarization, the dashboard render.
   Record the tier chosen per role in DECISIONS.md (alongside the launch flags).
 - BUDGET: a mission MAY set a `BUDGET` decision-default (a soft spend ceiling for the run). The
-  coordinator keeps a running `cost_estimate` in the ledger (sum of per-task estimates the adapter
-  exposes, or a coarse token-based estimate when it does not). As `cost_estimate` approaches BUDGET:
-  downgrade non-critical workers a tier, then defer remaining optional work via
-  `fleet-outcome.deferred_missions`, then GOAL_BLOCKED with a clear note. NEVER silently exceed a
-  stated BUDGET; surface it like any hard gate.
+  coordinator keeps a running `cost_estimate` in the ledger. `cost_estimate` is a DECLARED ESTIMATE
+  aggregation, NOT a measured spend: it is the sum of the per-task estimates the adapter exposes, or
+  a coarse token-based estimate when it does not — never a reconciled provider bill. As
+  `cost_estimate` approaches BUDGET: downgrade non-critical workers a tier, then defer remaining
+  optional work via `fleet-outcome.deferred_missions`, then GOAL_BLOCKED with a clear note. NEVER
+  silently exceed a stated BUDGET; surface it like any hard gate.
 - T-FINAL records `cost_estimate: <n>` in the readiness `fleet-outcome` (a non-negative number,
-  parallel to `unverified_assumptions`). It is reportable telemetry and a campaign edge MAY branch on
-  it; a coordinator with no cost signal omits it (it is optional).
+  parallel to `unverified_assumptions`). It is reportable telemetry — an ESTIMATE, not a billed
+  figure — and a campaign edge MAY branch on it; a coordinator with no cost signal omits it (it is
+  optional).
 
 ═══════════════════════════════════════════════════════════
 PR-PER-TASK PIPELINE — commits preserved, NEVER squash, conflict-aware, checkout cleaned.
@@ -780,14 +802,24 @@ Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
   when more than one worker vendor is available, the reviewer SHOULD be a DIFFERENT vendor than the
   builder (a Codex build reviewed by Claude, etc.) so a vendor's blind spot is not its own grader;
   hand the reviewer the diff + the acceptance contract as TEXT ONLY, never the build worktree or the
-  builder's session (build-blindness is structural, not just instructed). Single-vendor host: say so
-  in DECISIONS.md and use a fresh same-vendor reviewer. Actively try
+  builder's session. SCOPE of the "structural" claim: build-blindness is a MECHANICAL guarantee only
+  in the cross-vendor / separate-process / Orca case, where the builder and reviewer are distinct
+  processes (often distinct vendors) that never shared a session — there is no build conversation for
+  the reviewer to see. On a SINGLE-SESSION / single-vendor adapter it is NOT a mechanical guarantee:
+  the reviewer is a fresh same-vendor subagent with fresh context (instructed isolation + write
+  isolation), not a process that mechanically cannot have seen the build. `run-sandboxed.sh --role
+  reviewer` is a WRITE gate (candidate tree read-only, `.fleet/runs/<run_id>/` writable), NOT context
+  isolation — it stops the reviewer editing, it does not blind it to a shared session. Single-vendor
+  host: say so in DECISIONS.md and use a fresh same-vendor reviewer with fresh context. Actively try
   to FAIL it: real (not coverage-padding) tests, no lost behaviour, no secret leak, adheres to
   repo conventions, scoped/localized. Approve or request-changes with findings. WORKER_DONE
   PASS/FAIL. Set REVIEWED on pass. On FAIL → builder fixes on the SAME branch (dependent placement;
-  more commits; re-push), re-review. Max 3 rounds, then BLOCKED. ENFORCED:
-  `scripts/verify_round_budget.py` (validate-all) FAILs a task that ran more than 3 failed
-  review rounds then MERGED without a terminal GOAL_BLOCKED, so the budget is checkable.
+  more commits; re-push), re-review. Max 3 rounds, then BLOCKED. The 3-round cap is the
+  coordinator's runtime rule; it is AUDITED AFTER THE FACT (not enforced at runtime) by
+  `scripts/verify_round_budget.py` (validate-all), which FAILs a task that ran more than 3 failed
+  review rounds then MERGED without a terminal GOAL_BLOCKED. The audit is only as complete as the
+  emitted trace: a round the coordinator never recorded is invisible to it, so the script catches
+  recorded over-runs, it does not stop one mid-flight.
   SHA-PIN (from AO code-review-manager.ts): record the exact reviewed SHA (`git rev-parse HEAD` on
   the branch) in the task row alongside REVIEWED. A PASS is bound to THAT SHA, not the branch name.
   If a newer SHA lands on the branch before SHIP (a fix-round push, a rebase, any commit), the prior
@@ -887,9 +919,17 @@ or in the handoff document.
   executed.
 - For `--yolo` / auto-approved runs against untrusted targets, the prose rails above are now
   backed mechanically by `scripts/run-sandboxed.sh`, which scrubs credential-shaped env vars
-  before exec and refuses a deny-list of production/publish command lines (`terraform apply`,
-  `kubectl`, `aws `, `gcloud `, `npm publish`, `cargo publish`, `gh release`, `git push --tags`).
-  Operators SHOULD wrap untrusted-target headless runs with `run-sandboxed.sh`.
+  before exec and classifies the wrapped command line by blast radius before exec. It REFUSES
+  (DENY, exit non-zero) the obvious irreversible set — force-push (`git push --force`/`+refspec`/
+  `--mirror`), remote-branch delete, `rm -rf` of a critical path, `git reset --hard origin/*`,
+  `gh pr merge` / `gh repo delete`, and infra `apply`/`deploy`/`destroy`/`delete`
+  (terraform/tofu/kubectl/helm/databricks) — and ASKs (also refused, since the wrapper is
+  non-interactive) on the outward-but-recoverable set — ordinary `git push` (including
+  `git push --tags`), `gh release`, and `rm -rf` of a scoped path. It is NOT an exhaustive
+  allowlist: it blocks the obvious destructive set and ASKs on infra, but does NOT itself refuse
+  `aws`/`gcloud`/`npm publish`/`cargo publish` (those are caught by the SAFETY RAILS / Lane 0
+  REFUSE-and-surface discipline, model-honored, not by the classifier). Operators SHOULD wrap
+  untrusted-target headless runs with `run-sandboxed.sh`.
 
 RESIDUAL RISK: these mitigations are best-effort. The trust boundary is ultimately MODEL-HONORED
 — a sufficiently persuasive prompt-injection payload inside repo content could still cause a

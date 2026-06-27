@@ -249,3 +249,21 @@ def test_dashboard_main_rejects_repo_without_docs(tmp_path: Path, monkeypatch, c
 
     assert excinfo.value.code == 2
     assert f"{tmp_path}/docs not found" in capsys.readouterr().err
+
+
+def test_pipe_parser_skips_non_task_and_pipeless_lines():
+    rd = _load()
+    # Lines that are not `TASK ...` rows, or `TASK` rows without a pipe, are
+    # skipped by the pipe-format parser.
+    rows = rd._parse_pipe_rows(
+        "\n".join(
+            [
+                "not a task line",
+                "TASK pipeless-name has no pipe",
+                "",
+            ]
+        ),
+        "ledger.md",
+    )
+
+    assert rows == []

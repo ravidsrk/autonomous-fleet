@@ -1,0 +1,8 @@
+# Code owners for autonomous-fleet.
+#
+# This repo has a single maintainer (see "Maintenance status" in CONTRIBUTING.md).
+# The default owner reviews everything unless a more specific rule below overrides it.
+# GitHub uses the LAST matching pattern, so keep the catch-all first.
+
+# Default owner for the whole repository.
+*       @ravidsrk

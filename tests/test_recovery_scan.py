@@ -444,3 +444,134 @@ def test_global_coverage_dashboard_pipe_parser_non_task_line() -> None:
     dashboard = _load_dashboard()
 
     assert dashboard._parse_pipe_rows("not a task row\n", "fixture.md") == []
+
+
+# --- Finding 27: ledger parser must not double-count dual-format tasks --------
+
+
+def test_ledger_rows_deduplicate_task_present_in_both_pipe_and_table_form() -> None:
+    ledger = (
+        "TASK Dual | BRANCH=fleet/dual PR=30 MERGED=false RESUME_COUNT=2\n"
+        "\n"
+        "| TASK | BRANCH | MERGED |\n"
+        "| --- | --- | --- |\n"
+        "| Dual | fleet/dual | false |\n"
+        "| Solo | fleet/solo | false |\n"
+    )
+
+    rows = rs.parse_ledger_rows(ledger)
+
+    task_ids = [row.task_id for row in rows]
+    assert task_ids.count("Dual") == 1
+    assert sorted(task_ids) == ["Dual", "Solo"]
+    # The pipe shape wins the collision: its explicit flags survive.
+    dual = next(row for row in rows if row.task_id == "Dual")
+    assert dual.flags["RESUME_COUNT"] == "2"
+
+
+def test_scan_does_not_double_count_dual_format_row() -> None:
+    ledger = (
+        "TASK Dup | BRANCH=fleet/dup PR=31 MERGED=false\n"
+        "| TASK | BRANCH | MERGED |\n"
+        "| --- | --- | --- |\n"
+        "| Dup | fleet/dup | false |\n"
+    )
+    prs = _prs({"number": 31, "headRefName": "fleet/dup", "state": "OPEN", "mergedAt": None})
+
+    report = rs.scan_recovery(ledger, _wt("fleet/dup"), prs)
+
+    assert report["summary"]["live"] == 1
+    assert len([row for row in report["rows"] if row.get("task_id") == "Dup"]) == 1
+
+
+# --- Finding 26: malformed gh JSON must not crash the advisory scan -----------
+
+
+def test_parse_pr_list_tolerates_malformed_json() -> None:
+    assert rs.parse_pr_list("not json at all") == []
+    assert rs.parse_pr_list('[{"number": 1, ') == []  # truncated gh payload
+
+
+def test_scan_recovery_survives_unparseable_pr_list() -> None:
+    report = rs.scan_recovery(
+        "TASK T9 | BRANCH=fleet/scan MERGED=false\n",
+        _wt("fleet/scan"),
+        "}{ truncated gh output",
+    )
+
+    # The scan still classifies from ledger + worktree signals instead of crashing.
+    assert _first(report)["classification"] == rs.CLASS_LIVE
+    assert _first(report)["signals"]["scm_state"] == rs.SCM_ABSENT  # type: ignore[index]
+
+
+# --- Finding 11: the bounded resume budget must actually be written -----------
+
+
+def test_increment_resume_count_initializes_then_escalates(tmp_path: Path) -> None:
+    ledger = tmp_path / "progress.md"
+    ledger.write_text(
+        "noise line\nTASK Loop | BRANCH=fleet/loop PR=40 MERGED=false\n",
+        encoding="utf-8",
+    )
+    prs = _prs({"number": 40, "headRefName": "fleet/loop", "state": "CLOSED", "mergedAt": None})
+
+    # A row that has never been resumed re-drives.
+    before = _first(rs.scan_recovery(ledger.read_text(encoding="utf-8"), "", prs))
+    assert before["action"] == rs.ACTION_RE_DRIVE
+
+    counts = [rs.increment_resume_count(ledger, "Loop") for _ in range(rs.MAX_RESUME_ATTEMPTS)]
+    assert counts == [1, 2, 3]
+    assert "noise line\n" in ledger.read_text(encoding="utf-8")
+
+    # Once the budget is burned the same row escalates instead of looping.
+    after = _first(rs.scan_recovery(ledger.read_text(encoding="utf-8"), "", prs))
+    assert after["action"] == rs.ACTION_ESCALATE
+
+
+def test_increment_resume_count_bumps_existing_counter(tmp_path: Path) -> None:
+    ledger = tmp_path / "progress.md"
+    ledger.write_text(
+        "TASK Keep | BRANCH=fleet/keep RESUME_COUNT=1 MERGED=false\n",
+        encoding="utf-8",
+    )
+
+    assert rs.increment_resume_count(ledger, "Keep") == 2
+
+    rows = rs.parse_ledger_rows(ledger.read_text(encoding="utf-8"))
+    assert rows[0].flags["RESUME_COUNT"] == "2"
+
+
+def test_increment_resume_count_missing_task_leaves_ledger_untouched(tmp_path: Path) -> None:
+    ledger = tmp_path / "progress.md"
+    original = "TASK Other | BRANCH=fleet/other MERGED=false\n"
+    ledger.write_text(original, encoding="utf-8")
+
+    assert rs.increment_resume_count(ledger, "Absent") == -1
+    assert ledger.read_text(encoding="utf-8") == original
+    # No staging file is left behind by the no-op path.
+    assert list(tmp_path.glob(".progress.md.*.tmp")) == []
+
+
+def test_increment_resume_count_is_atomic_and_cleans_tmp_on_failure(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    ledger = tmp_path / "progress.md"
+    ledger.write_text("TASK Boom | BRANCH=fleet/boom MERGED=false\n", encoding="utf-8")
+
+    def explode(src: object, dst: object) -> None:
+        raise OSError("simulated rename failure")
+
+    monkeypatch.setattr(rs.os, "replace", explode)
+
+    with pytest.raises(OSError, match="simulated rename failure"):
+        rs.increment_resume_count(ledger, "Boom")
+
+    # Original is intact and the staging tmp was unlinked on the failure path.
+    assert ledger.read_text(encoding="utf-8") == "TASK Boom | BRANCH=fleet/boom MERGED=false\n"
+    assert list(tmp_path.glob(".progress.md.*.tmp")) == []
+
+
+def test_pipe_row_task_id_helper_rejects_non_task_lines() -> None:
+    assert rs._pipe_row_task_id("not a task | x=1\n") is None
+    assert rs._pipe_row_task_id("TASK NoPipe BRANCH=fleet/x\n") is None
+    assert rs._pipe_row_task_id("TASK Yes | BRANCH=fleet/x\n") == "Yes"

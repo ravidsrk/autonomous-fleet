@@ -8,7 +8,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-ACTIVE_PRESETS=(repo-health ship-with-proof quality-gate)
+ACTIVE_PRESETS=(repo-health ship-with-proof quality-gate audit-gated)
+# audit-gated ships a LIVE conditional edge (`if: findings_open == 0` / `> 0`), so it is the
+# only preset whose failure/blocked branch is reachable. Probe it twice: the benign all-zero
+# pass exercises the clean branch, and --probe-fail forces failure-shaped metrics so the
+# blocked branch is reachability-checked too (finding 56). The `if: always` presets only have
+# one branch, so the benign pass is sufficient for them.
+GATED_PRESETS=(audit-gated)
 SHIPPED_MISSIONS=(doc-sync test-coverage adversarial-review-and-fix)
 RUNTIMES=(grok claude codex)
 
@@ -16,6 +22,19 @@ echo "== validate-headless: campaign presets (grok dry-run) =="
 for preset in "${ACTIVE_PRESETS[@]}"; do
   echo "  preset: $preset"
   ./scripts/run-campaign.sh grok --preset "$preset" --dry-run >/dev/null
+done
+
+echo "== validate-headless: conditional-gate failure branch (--probe-fail) =="
+for preset in "${GATED_PRESETS[@]}"; do
+  echo "  preset: $preset (probe-fail)"
+  PROBE_OUT="$(./scripts/run-campaign.sh grok --preset "$preset" --dry-run --probe-fail 2>&1)"
+  # The failure branch must route somewhere OTHER than the benign target, proving the
+  # `findings_open > 0` edge is statically reachable (not a dead branch).
+  echo "$PROBE_OUT" | grep -q "node=remediate" || {
+    echo "validate-headless: --probe-fail did not reach the gated failure branch for $preset" >&2
+    echo "$PROBE_OUT" >&2
+    exit 1
+  }
 done
 
 echo "== validate-headless: runtime guard =="

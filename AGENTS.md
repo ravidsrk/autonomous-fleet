@@ -10,7 +10,7 @@ This file provides guidance to AI coding agents working with code in this reposi
 
 - 🟦 **Tier 1 · Infrastructure** (4) — engine, entry point, fleet-program campaign shell, setup
 - 🟪 **Tier 2 · Adapters** (5) — Grok, Claude Code, Codex, Orca, template
-- 🟧 **Tier 3 · Missions** (3 shipped) — doc-sync, test-coverage, adversarial-review-and-fix. Twelve missions live in `docs/exploratory/missions/`: the 9 demoted in this pass (dependency-update, cleanup, bug-batch, targeted-migration, design-integration, landing-page-convergence, legacy-rebuild, take-product-to-completion, inference-cost) plus 3 earlier (agents-layer, contract-first-build, scaffold-align).
+- 🟧 **Tier 3 · Missions** (3 shipped) — doc-sync, test-coverage, adversarial-review-and-fix. A further 18 exploratory missions live in `docs/exploratory/missions/` (documented but not yet proven end-to-end); see [`docs/exploratory/missions/README.md`](docs/exploratory/missions/README.md) for the canonical, up-to-date list and the three-artifact promotion gate.
 
 # Skill Discovery
 

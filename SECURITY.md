@@ -2,7 +2,7 @@
 
 # Security Policy
 
-**On this page:** [Supported versions](#supported-versions) · [Threat model](#threat-model) · [What we defend against](#what-we-defend-against) · [What we do not defend against](#what-we-do-not-defend-against) · [Reporting a vulnerability](#reporting-a-vulnerability) · [Track record](#track-record)
+**On this page:** [Supported versions](#supported-versions) · [Threat model](#threat-model) · [What we defend against](#what-we-defend-against) · [What we do not defend against](#what-we-do-not-defend-against) · [Privacy and data flow](#privacy-and-data-flow) · [Reporting a vulnerability](#reporting-a-vulnerability) · [Track record](#track-record)
 
 `autonomous-fleet` spawns autonomous agents that read your repo, write code, and open PRs. That is a
 real attack surface. This page is honest about where the boundaries are.
@@ -58,10 +58,11 @@ outward-facing actions before exec:
 
 ```
   DENY (exit 2)  force-push, remote-branch delete, rm -rf of a critical/system path,
-                 git reset --hard to a remote ref, gh pr merge, gh repo delete,
+                 git reset --hard to a remote ref, gh pr merge, gh repo delete
+  ASK  (exit 3)  ordinary git push, gh release, rm -rf of a scoped path,
                  terraform|tofu|kubectl|helm|databricks apply|deploy|destroy|delete
-  ASK  (exit 3)  ordinary git push, gh release, rm -rf of a scoped path
-  ALLOW          reads, tests, edits, local git (commit, merge, worktree)
+  ALLOW          everything else (reads, tests, edits, local git, and — by default —
+                 any command the wrapper does not specifically inspect; see below)
 ```
 
 The wrapper is non-interactive, so an ASK has no human to prompt: it refuses too, and you re-run the
@@ -78,6 +79,19 @@ worker inside its own Linux container on its own git branch, instead of a host `
 closes the OS-sandbox gap the wrapper cannot: the worker's filesystem and process reach are confined
 to the container.
 
+Kill switches. Each verification-substrate gate exposes a `FLEET_DISABLE_*` env var that, when set
+truthy, makes that gate's CLI early-exit. This is an operator escape hatch and the bench's
+substrate-off comparator — but every disabled gate is a defense you turned off, so audit them before
+a run against an untrusted target. The registry has grown past the original four substrate layers
+(`FLEET_DISABLE_VERIFY_FINDINGS`, `FLEET_DISABLE_STOP_VERIFY`, `FLEET_DISABLE_BLIND_FIX`,
+`FLEET_DISABLE_RUN_ARCHIVE`); the live set now also includes `FLEET_DISABLE_SHA_PIN`,
+`FLEET_DISABLE_ROUND_BUDGET`, `FLEET_DISABLE_REGISTRY_LINT`, `FLEET_DISABLE_REVIEWER_SANDBOX`, and
+`FLEET_DISABLE_NAMESPACING`. The canonical registry and per-knob semantics live in
+`skills/autonomous-fleet-core/references/substrate-disable-knobs.md`. The security-critical gates —
+the SHA-pin and reviewer-sandbox attribution checks — are being moved to fail closed (a missing or
+unreadable manifest fails the gate) rather than fail open, so a malformed run archive cannot silently
+pass them.
+
 ## What we do not defend against
 
 > `run-sandboxed.sh` is best-effort. It is NOT an OS sandbox. It does not confine filesystem, network,
@@ -86,9 +100,18 @@ to the container.
 Concretely, the framework does not protect you from:
 
 - A malicious or careless `--yolo` operator. If you auto-approve tool calls against an untrusted repo,
-  every defense above is something you chose to wave through. The classifier is a static heuristic over
-  tokens, not a security boundary: a command constructed at shell runtime (command substitution,
-  `eval` of a built string, base64 payloads) can evade it.
+  every defense above is something you chose to wave through.
+- Most destructive commands. The classifier is not an allowlist of safe commands — it is a small
+  best-effort blocklist of the most common destructive ones, and **everything it does not specifically
+  recognize is ALLOW by default**. Today the wrapper inspects only `rm`, `git push`/`git reset`, `gh`,
+  and a handful of infra tools (`terraform`/`tofu`/`kubectl`/`helm`/`databricks`). Plainly-written
+  destructive commands outside that set pass straight through — for example `curl … | bash`,
+  `find / -delete`, `dd of=/dev/sda`, and `chmod -R 000 /` all classify as ALLOW today. (Work is
+  underway to add several of these to the blocklist, but that does not change the shape: it is a
+  best-effort blocklist of common destructive commands, **NOT** a security boundary. Rely on OS-level
+  sandboxing — `container-use`, a VM, or a restricted account — for the boundary.) And even within the
+  set it inspects, it is a static heuristic over tokens: a command constructed at shell runtime
+  (command substitution, `eval` of a built string, base64 payloads) can evade it.
 - A compromised upstream agent CLI. The fleet drives Claude Code, Codex, Grok, and Orca. If one of
   those binaries is backdoored, it runs with your privileges and the wrapper cannot see inside it.
 - Supply-chain attacks on `npm` packages (the skills install path, your repo's own dependencies).
@@ -98,6 +121,28 @@ Concretely, the framework does not protect you from:
 
 For genuinely untrusted targets, run the fleet under `run-sandboxed.sh` AND inside a container, VM, or
 restricted user account, with no production credentials in the ambient environment.
+
+## Privacy and data flow
+
+Running a mission is not a local-only operation. A worker reads your repo and feeds that content to a
+third-party model to do its work, so be deliberate about what you point it at.
+
+- **Repo content leaves your machine.** File contents, diffs, and anything else the worker reads —
+  including any secrets that live in tracked files (`.env` checked into git, hard-coded keys,
+  credentials in fixtures) — are transmitted to whichever model provider your chosen agent uses:
+  Anthropic for Claude Code, OpenAI for Codex, or xAI for Grok. Scrub secrets out of the repo before
+  a run; env scrubbing in `run-sandboxed.sh` only covers the process environment, not file contents.
+- **Banner generation uses OpenRouter.** The exploratory-banner helper
+  (`scripts/banner/generate_exploratory_banner.sh`) sends its prompt and source image to OpenRouter
+  (via `OPENROUTER_API_KEY`) when generation is enabled. It is opt-in and unrelated to mission work.
+- **No first-party telemetry.** `autonomous-fleet` does not phone home. It adds no analytics,
+  telemetry, or data-collection endpoint of its own; it talks only to GitHub (via `gh`) and to the
+  model/banner providers above. Your data goes wherever those providers' terms say it goes — that is
+  between you and them, governed by their data-retention policies:
+  - Anthropic — <https://www.anthropic.com/legal/privacy>
+  - OpenAI — <https://openai.com/policies/privacy-policy>
+  - xAI — <https://x.ai/legal/privacy-policy>
+  - OpenRouter — <https://openrouter.ai/privacy>
 
 ## Reporting a vulnerability
 

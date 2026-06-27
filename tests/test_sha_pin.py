@@ -152,6 +152,32 @@ def test_schema_errors_cover_invalid_shapes() -> None:
     assert "merged must be boolean" in joined
 
 
+def test_leading_dash_branch_is_rejected() -> None:
+    """A branch name that begins with a dash (e.g. '--help') is the
+    option-injection vector into `git rev-parse <branch>`. The branch regex now
+    requires an alphanumeric first character, so such a record is a schema
+    error and never reaches the git argv. The head_resolver must not run."""
+    def explode(branch: str) -> str:
+        raise AssertionError("head_resolver must not run for a rejected branch")
+
+    for bad in ("--help", "-x", "--upload-pack=evil", ".hidden", "/abs", "-"):
+        errors = sp.verify_sha_pin([_record(branch=bad)], explode)
+        assert errors, bad
+        assert any("branch must match" in e for e in errors), (bad, errors)
+        assert any(repr(bad) in e for e in errors), (bad, errors)
+
+
+def test_branch_pattern_requires_alphanumeric_first_char() -> None:
+    """Pin the exact tightened pattern and its first-char anchor."""
+    assert sp._BRANCH_PATTERN == r"^[a-zA-Z0-9][a-zA-Z0-9._/-]*$"
+    assert sp._BRANCH_RE.match("fleet/sha-pin")
+    assert sp._BRANCH_RE.match("a")
+    assert sp._BRANCH_RE.match("9-release.x")
+    assert not sp._BRANCH_RE.match("-leading")
+    assert not sp._BRANCH_RE.match(".dot")
+    assert not sp._BRANCH_RE.match("")
+
+
 def test_missing_required_fields_are_schema_errors() -> None:
     errors = sp.validate_sha_pin_record({}, label="empty")
     assert errors == [f"empty: missing required field '{field}'" for field in sp.REQUIRED_FIELDS]
@@ -170,11 +196,46 @@ def test_schema_asset_matches_lib_contract() -> None:
     assert schema["additionalProperties"] is False
 
 
-def test_cli_disable_short_circuits_before_argparse() -> None:
+def test_cli_disable_without_ack_fails_closed() -> None:
+    """SHA-pin is a security gate, not an escape-hatch quality gate. A bare
+    FLEET_DISABLE_SHA_PIN=1 with no operator override must FAIL CLOSED so a
+    stray env var in CI cannot silently drop the integrity check."""
     rc, out, err = _run_cli(env={"FLEET_DISABLE_SHA_PIN": "1"})
+    assert rc == 1
+    assert out == ""
+    assert "REFUSING to disable a security check" in err
+    assert "FLEET_SECURITY_OVERRIDE_ACK=1" in err
+    # It must NOT print the escape-hatch no-op notice — that would imply PASS.
+    assert "no-op exit 0" not in err
+
+
+def test_cli_disable_with_ack_short_circuits_before_argparse() -> None:
+    """With the explicit operator override acked, the disable is honored: the
+    CLI no-ops to exit 0 with the standard notice, short-circuiting BEFORE
+    argparse (no positional target supplied)."""
+    rc, out, err = _run_cli(
+        env={"FLEET_DISABLE_SHA_PIN": "1", "FLEET_SECURITY_OVERRIDE_ACK": "1"}
+    )
     assert rc == 0
     assert out == ""
-    assert "SHA-pin: DISABLED via FLEET_DISABLE_SHA_PIN=1" in err
+    assert "SHA-pin: DISABLED via FLEET_DISABLE_SHA_PIN=1 (no-op exit 0)" in err
+
+
+def test_cli_disable_unset_runs_normally(tmp_path: Path) -> None:
+    """Counterfactual: with the disable knob falsy, the security gate runs.
+    Pointing at a nonexistent target makes main() reach its normal
+    target-not-found exit (1), proving neither the fail-closed branch nor the
+    no-op branch short-circuited a normally-enabled run."""
+    rc, out, err = _run_cli(
+        str(tmp_path / "missing"),
+        "--repo",
+        str(tmp_path),
+        env={"FLEET_DISABLE_SHA_PIN": "0"},
+    )
+    assert rc == 1
+    assert "target not found" in err
+    assert "REFUSING to disable a security check" not in err
+    assert "no-op exit 0" not in err
 
 
 def test_cli_rejects_bad_repo_and_missing_target(tmp_path: Path) -> None:
@@ -273,3 +334,48 @@ def test_git_head_empty_stdout_returns_none(monkeypatch: pytest.MonkeyPatch, tmp
 
     monkeypatch.setattr(cli.subprocess, "run", lambda *args, **kwargs: Result())
     assert cli._git_head(tmp_path, "fleet/empty") is None
+
+
+def test_git_head_resolves_real_branch_with_end_of_options(git_repo: Path) -> None:
+    """The hardened argv (`rev-parse --verify --end-of-options <branch>`) must
+    still resolve a legitimate branch to its single HEAD SHA — proving the
+    option-parsing guard didn't break normal resolution."""
+    cli = _load_cli()
+    head = _commit(git_repo, "a.txt", "one\n")
+    assert cli._git_head(git_repo, "fleet/sha-pin") == head
+
+
+def test_git_head_uses_end_of_options_guard(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Pin the exact rev-parse argv: option parsing must be terminated before
+    the branch so a crafted name can never be read as a git option."""
+    cli = _load_cli()
+    captured: dict[str, list[str]] = {}
+
+    class Result:
+        returncode = 0
+        stdout = "deadbeef\n"
+
+    def fake_run(argv, *args, **kwargs):
+        captured["argv"] = argv
+        return Result()
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    assert cli._git_head(tmp_path, "fleet/x") == "deadbeef"
+    argv = captured["argv"]
+    assert argv[:4] == ["git", "-C", str(tmp_path), "rev-parse"]
+    assert "--verify" in argv
+    assert "--end-of-options" in argv
+    # The branch is the final arg, AFTER the option-terminator.
+    assert argv[-1] == "fleet/x"
+    assert argv.index("--end-of-options") < len(argv) - 1
+
+
+def test_git_head_injection_branch_does_not_leak_option(git_repo: Path) -> None:
+    """Defense-in-depth at the git layer: even if an option-like name reached
+    `_git_head` directly (bypassing the lib regex), `--end-of-options` plus
+    `--verify` makes rev-parse fail rather than honor it as an option, so the
+    result is None (treated as unknown branch) — never an executed option."""
+    cli = _load_cli()
+    _commit(git_repo, "a.txt", "one\n")
+    assert cli._git_head(git_repo, "--upload-pack=evil") is None
+    assert cli._git_head(git_repo, "--help") is None

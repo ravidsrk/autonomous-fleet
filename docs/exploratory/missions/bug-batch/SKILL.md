@@ -1,7 +1,7 @@
 ---
 name: bug-batch
 description: >-
-  [Tier 2 · moderate autonomy ~0.82 merge · full review gate · reproduce-first required]
+  [Tier 2 · moderate autonomy · full review gate · reproduce-first required]
   Close a batch of bugs — from a list, an issue tracker, or a described set — one PR per
   bug, each gated by a FAILING TEST written first that reproduces the bug, then a fix that
   turns it green. Use for a backlog of bugs, a tracker label, or a known cluster of defects.
@@ -62,11 +62,14 @@ Record in `docs/bug-batch-readiness.md` under **Recommended next missions** and 
 | Root cause is architectural | `adversarial-review-and-fix` |
 | Area lacks regression tests | `test-coverage` |
 
-**Empirical note:** bug-fix tasks merge at ~0.82 and are among the two WEAKEST categories,
-because success depends on EXACT (not approximate) code changes and on correctly localizing the
-defect. The reproduce-first gate below is the specific countermeasure: a failing test that pins
-the bug forces an exact fix and proves it landed. This gate is MANDATORY — it is the reason this
-mission works.
+**Empirical note:** bug-fix is among the two WEAKEST task categories for AI agents — the
+cross-agent fix-PR merge rate is materially lower than docs/build work (arXiv 2601.15195,
+Ehsani et al., MSR 2026) — because success depends on EXACT (not approximate) code changes and
+on correctly localizing the defect. (There is no published category-level merge rate for this
+mission as scoped; per-task merge rates vary by agent, so treat the tier ordering as qualitative.)
+The reproduce-first gate below is the specific countermeasure: a failing test that pins the bug
+forces an exact fix and proves it landed. This gate is MANDATORY — it is the reason this mission
+works.
 
 ## GOAL
 Close every bug in the batch with a verified fix. The batch source is whatever the user supplies:

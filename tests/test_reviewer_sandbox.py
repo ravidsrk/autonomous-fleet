@@ -254,14 +254,34 @@ def test_reviewer_diff_on_candidate_branch_is_rejected() -> None:
     assert "candidate branch 'fleet/candidate'" in summary["violations"][0]["message"]
 
 
-def test_reviewer_commit_on_manifest_candidate_branch_is_rejected() -> None:
+def test_commit_kind_is_not_a_write_attribution_kind() -> None:
+    """``commit`` is NOT a write-attribution kind.
+
+    ``fleet_run.VALID_KINDS`` (the authoritative manifest-kind enum) has no
+    ``commit`` member, so a manifest can never carry ``kind: "commit"`` and the
+    old ``commit`` entry in WRITE_ATTRIBUTION_KINDS was a dead branch. Only the
+    one real write kind, ``diff``, remains.
+    """
+    assert "commit" not in WRITE_ATTRIBUTION_KINDS
+    assert WRITE_ATTRIBUTION_KINDS == frozenset({"diff"})
+
+
+def test_reviewer_unknown_kind_is_rejected_as_forbidden_kind() -> None:
+    """A reviewer producer emitting an unrecognized kind is still rejected.
+
+    With ``commit`` no longer special-cased as a write-attribution kind, a
+    synthetic ``commit`` entry falls through to the catch-all
+    ``kind not in ALLOWED_REVIEWER_KINDS`` check and is reported as a forbidden
+    kind — the check still fails closed on anything outside the reviewer-safe
+    set, so dropping the dead branch did not weaken it.
+    """
     summary = verify_reviewer_sandbox_manifest(
         _manifest(_entry(kind="commit", path="commit.txt"))
     )
 
     assert summary["ok"] is False
     assert summary["violations"][0]["kind"] == "commit"
-    assert "candidate branch" in summary["violations"][0]["message"]
+    assert "forbidden kind 'commit'" in summary["violations"][0]["message"]
 
 
 def test_explicit_reviewer_producer_catches_non_reviewer_slug_and_forbidden_kind() -> None:
@@ -380,8 +400,33 @@ def test_cli_missing_invalid_empty_and_disabled_paths(tmp_path: Path, monkeypatc
     assert rc_non_object == 1
     assert "manifest must be an object" in err_non_object
 
+    # FAIL-CLOSED: a bare FLEET_DISABLE_REVIEWER_SANDBOX=1 (no ack) must REFUSE, not no-op. It is a
+    # security check, so a stray disable in CI cannot silently skip it. Note --bad-arg never reaches
+    # argparse: the refusal short-circuits before arg parsing, so the nonzero exit is the refusal,
+    # not an argparse error.
     monkeypatch.setenv("FLEET_DISABLE_REVIEWER_SANDBOX", "1")
-    rc_disabled, out_disabled, err_disabled = _run_cli("--bad-arg")
-    assert rc_disabled == 0
-    assert out_disabled == ""
-    assert "FLEET_DISABLE_REVIEWER_SANDBOX=1" in err_disabled
+    rc_refused, out_refused, err_refused = _run_cli("--bad-arg")
+    assert rc_refused == 1
+    assert out_refused == ""
+    assert "REFUSED" in err_refused
+    assert "FLEET_SECURITY_OVERRIDE_ACK=1" in err_refused
+
+
+def test_cli_security_disable_requires_explicit_ack(tmp_path: Path, monkeypatch) -> None:
+    """The reviewer-sandbox kill switch only no-ops with an explicit, acknowledged override."""
+    monkeypatch.setenv("FLEET_DISABLE_REVIEWER_SANDBOX", "1")
+
+    # Ack present and truthy → documented escape hatch: standard disable notice, exit 0.
+    rc_ack, out_ack, err_ack = _run_cli(
+        "--bad-arg", env={"FLEET_SECURITY_OVERRIDE_ACK": "1"}
+    )
+    assert rc_ack == 0
+    assert out_ack == ""
+    assert "FLEET_DISABLE_REVIEWER_SANDBOX=1 (no-op exit 0)" in err_ack
+
+    # A falsy ack value is NOT an acknowledgement: still fails closed.
+    rc_falsy, _, err_falsy = _run_cli(
+        "--bad-arg", env={"FLEET_SECURITY_OVERRIDE_ACK": "0"}
+    )
+    assert rc_falsy == 1
+    assert "REFUSED" in err_falsy

@@ -20,6 +20,7 @@ CAMPAIGN_FILE=""
 PRESET=""
 REPO_ROOT=""
 DRY_RUN=0
+PROBE_FAIL=0
 MAX_TURNS=50
 YOLO=0
 YOLO_ACK=0
@@ -33,6 +34,9 @@ Options:
   --campaign PATH     Campaign YAML file
   --repo PATH         Target git repo for missions (default: autonomous-fleet clone)
   --dry-run           Print plan only; do not invoke agents
+  --probe-fail        With --dry-run: plan with FAILURE-shaped metrics (findings_open=1,
+                      p0_open=1, status=blocked) so the failure/blocked branch of every
+                      conditional gate is reachability-checked, not just the benign branch
   --max-turns N       Per-node turn budget (default: 50; Grok/Codex only)
   --yolo              Auto-approve agent tools (Grok only; default: off)
   --no-yolo           Deprecated alias for default (no auto-approve)
@@ -75,6 +79,10 @@ while [[ $# -gt 0 ]]; do
       DRY_RUN=1
       shift
       ;;
+    --probe-fail)
+      PROBE_FAIL=1
+      shift
+      ;;
     --max-turns)
       MAX_TURNS="${2:?}"
       shift 2
@@ -109,6 +117,13 @@ fi
 
 if [[ -z "$CAMPAIGN_FILE" || ! -f "$CAMPAIGN_FILE" ]]; then
   echo "error: campaign file not found (use --preset or --campaign)" >&2
+  exit 1
+fi
+
+# --probe-fail is a STATIC planning probe (failure-shaped metrics). It must never drive a
+# paid/real run — a real run derives metrics from the actual fleet-outcome, not a forced shape.
+if [[ "$PROBE_FAIL" -eq 1 && "$DRY_RUN" -ne 1 ]]; then
+  echo "error: --probe-fail only applies to --dry-run planning (it forces failure-shaped metrics)" >&2
   exit 1
 fi
 
@@ -178,7 +193,7 @@ readiness_for_mission() {
 
 dry_run_next_node() {
   local current="$1"
-  "$VENV_PYTHON" - <<'PY' "$CAMPAIGN_FILE" "$current" "$ROOT"
+  "$VENV_PYTHON" - <<'PY' "$CAMPAIGN_FILE" "$current" "$ROOT" "$PROBE_FAIL"
 import sys, yaml
 from pathlib import Path
 
@@ -187,17 +202,27 @@ from lib.fleet_outcome import MISSION_METRICS, pick_next_node
 
 campaign = yaml.safe_load(Path(sys.argv[1]).read_text(encoding="utf-8"))
 current = sys.argv[2]
-# Static dry-run: assume each node succeeds with benign metrics.
-# Pre-populate every known mission metric to 0 so edges that reference
-# metrics outside the current node's mission don't blow up with
+probe_fail = sys.argv[4] == "1"
+# Static dry-run: pre-populate every known mission metric so edges that
+# reference metrics outside the current node's mission don't blow up with
 # "metric not found" ValueError during dry-run planning.
-benign_metrics: dict[str, int] = {}
+metrics: dict[str, int] = {}
 for metric_set in MISSION_METRICS.values():
     for name in metric_set:
-        benign_metrics.setdefault(name, 0)
+        metrics.setdefault(name, 0)
+if probe_fail:
+    # FAILURE-shaped probe: drive the failure/blocked branch of conditional gates
+    # (e.g. `if: findings_open > 0`) that the benign all-zero pass can never reach.
+    # Override the open-finding axes; pick_next_node still skips edges whose
+    # metric is absent, so only edges keyed on these axes flip branch.
+    metrics["findings_open"] = 1
+    metrics["p0_open"] = 1
+    status = "blocked"
+else:
+    status = "done"
 outcome = {
-    "status": "done",
-    "metrics": benign_metrics,
+    "status": status,
+    "metrics": metrics,
     "deferred_missions": [],
 }
 nxt = pick_next_node(campaign, current, outcome)
@@ -235,6 +260,9 @@ echo "repo:     $REPO_ROOT"
 echo "campaign: $CAMPAIGN_FILE"
 echo "start:    $START"
 echo "dry-run:  $DRY_RUN"
+if [[ "$PROBE_FAIL" -eq 1 ]]; then
+  echo "probe:    fail (findings_open=1, p0_open=1, status=blocked)"
+fi
 echo ""
 
 CURRENT="$START"

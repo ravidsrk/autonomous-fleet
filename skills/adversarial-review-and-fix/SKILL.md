@@ -14,7 +14,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.0.0"
+  version: "1.0.1"
   tier: "2"
   fleet-component: "mission"
 ---
@@ -68,8 +68,10 @@ Record in `docs/arch-build-readiness.md` under **Recommended next missions** and
 | Doc/runbook drift after fixes | `doc-sync` |
 | Dependency-related finding | `dependency-update` |
 
-**Empirical note:** this mission's fixes span fix/refactor/security work (~0.80-0.82 merge) — the
-full review gate is essential. The structural key is that Phase 0 produces a FROZEN, richly-shaped
+**Empirical note:** this mission's fixes span fix/refactor/security work — categories AI agents
+are weaker at than docs/build, so the full review gate is essential. (There is no published
+category-level merge rate for this composite; per-task merge rates vary by agent, so treat the
+tier ordering as qualitative.) The structural key is that Phase 0 produces a FROZEN, richly-shaped
 review BEFORE any fixing begins, so Phase 1 executes against a finished spec rather than judging
 and fixing in one loop. The skeptic pass prevents fixing phantom findings.
 

@@ -1,6 +1,6 @@
 # Substrate kill-switch convention
 
-Each of the 4 verification-substrate layers exposes a `FLEET_DISABLE_*`
+Each verification/integrity layer exposes a `FLEET_DISABLE_*`
 env var that, when set truthy, makes the layer's CLI early-exit with
 code 0 and a one-line stderr notice.
 
@@ -16,6 +16,16 @@ This exists for two reasons:
 
 # Env-var registry
 
+The substrate ships **nine** live knobs across three classes. There is
+exactly ONE env var per layer, and the helper
+(`scripts/lib/substrate_disable.py`) is the only place the truthy rule
+and the stderr-notice format live.
+
+## Verification-substrate layers (operator escape hatch)
+
+These four are the original adversarial-bench comparator. A truthy knob
+treats the layer's verdict as PASS for that run.
+
 | Layer | Script | Env var |
 |---|---|---|
 | 1 — review-findings | `scripts/verify_findings.py` | `FLEET_DISABLE_VERIFY_FINDINGS` |
@@ -23,11 +33,36 @@ This exists for two reasons:
 | 3 — blind-fix | `scripts/verify_blind_fix.py` | `FLEET_DISABLE_BLIND_FIX` |
 | 4 — run-archive | `scripts/validate_run_archive.py` | `FLEET_DISABLE_RUN_ARCHIVE` |
 
-There is exactly ONE env var per layer. No legacy aliases, no
-fallbacks. The substrate has no installed-user base yet — shipping a
-back-compat surface now would lock us into immediate technical debt.
-If you find any other name in the codebase (e.g. `STOP_VERIFY_DISABLED`)
-it's stale; delete on sight.
+## Contract/budget verifiers (operator escape hatch)
+
+Same plain-disable semantics as the four above — a known false positive
+can be waved through for a single run.
+
+| Layer | Script | Env var |
+|---|---|---|
+| registry-lint | `scripts/registry_lint.py` | `FLEET_DISABLE_REGISTRY_LINT` |
+| round-budget | `scripts/verify_round_budget.py` | `FLEET_DISABLE_ROUND_BUDGET` |
+
+## Security / integrity knobs (FAIL-CLOSED — explicit operator override required)
+
+These three guard supply-chain and isolation invariants, not advisory
+quality gates. They do **not** silently no-op on a bare truthy value:
+disabling them requires an explicit operator override (per the integrity
+agents' fail-closed change), so a stray env var in CI cannot quietly
+drop a security check. Treat a request to disable one of these as an
+operator decision that must be recorded in `DECISIONS.md`.
+
+| Layer | Script | Env var |
+|---|---|---|
+| sha-pin | `scripts/verify_sha_pin.py` | `FLEET_DISABLE_SHA_PIN` |
+| reviewer-sandbox | `scripts/verify_reviewer_sandbox.py` | `FLEET_DISABLE_REVIEWER_SANDBOX` |
+| namespacing | `scripts/validate_namespacing.py` | `FLEET_DISABLE_NAMESPACING` |
+
+There is exactly ONE env var per layer; no legacy aliases, no fallbacks.
+Do not invent additional `FLEET_DISABLE_*` names — the registry above is
+the complete, authoritative set. (`FLEET_DISABLE_X` /
+`FLEET_DISABLE_MY_LAYER` that appear in the bench driver comment and the
+helper docstring are illustrative placeholders, not live knobs.)
 
 # Truthy semantics
 
@@ -42,7 +77,8 @@ running the substrate but quietly weren't."
 
 # Disable contract
 
-When the env var is truthy, the CLI must:
+For the **verification-substrate** and **contract/budget** classes
+(the six escape-hatch knobs), when the env var is truthy the CLI must:
 
 1. Exit code **0** (success / no-op).
 2. Print exactly `<layer-label>: DISABLED via <ENV_VAR>=1 (no-op exit 0)`
@@ -51,15 +87,27 @@ When the env var is truthy, the CLI must:
    produce a nonzero exit when the layer is disabled.
 
 The semantics: "disabled" means "treat the substrate's verdict as PASS
-for this run." If you want fail-closed behavior instead, do not use
-the disable knob — fix the upstream problem.
+for this run." If you want fail-closed behavior instead for one of these
+six, do not use the disable knob — fix the upstream problem.
+
+For the **security / integrity** class (`FLEET_DISABLE_SHA_PIN`,
+`FLEET_DISABLE_REVIEWER_SANDBOX`, `FLEET_DISABLE_NAMESPACING`) the
+contract is different — these knobs FAIL CLOSED. A bare truthy value is
+not sufficient to drop the check; the layer requires the integrity
+agents' explicit operator-override gate and records the decision rather
+than silently no-opping to PASS. (The runtime fail-closed behaviour is
+owned by those scripts under the integrity package; this doc states the
+contract, it does not implement it.)
 
 # Bench-driver wiring
 
 `scripts/bench-adversarial.sh` sets the env vars with `export` (not
 bare assignment) so they reach the child adapter process. On
 substrate-on mode it `unset`s them, so a stale value from a prior
-off-run doesn't leak into the on-run.
+off-run doesn't leak into the on-run. The driver toggles only the four
+verification-substrate layers below — the contract/budget verifiers and
+the fail-closed security/integrity knobs are not part of the bench's
+off/on comparator.
 
 ```bash
 # substrate-off mode (inside the per-target run loop)
