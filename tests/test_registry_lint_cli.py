@@ -206,5 +206,17 @@ def test_pinned_external_source_passes(tmp_path: Path):
         assert rl.lint_external_source_pins(tmp_path) == [], field
 
 
+def test_external_pins_reject_placeholder_values(tmp_path: Path) -> None:
+    lock = {
+        "version": 1,
+        "skills": {
+            "skill-creator": {"source": "anthropics/skills", "ref": "TODO-PIN-SHA"},
+        },
+    }
+    (tmp_path / "skills-lock.json").write_text(json.dumps(lock), encoding="utf-8")
+    errors = rl.lint_external_source_pins(tmp_path)
+    assert any("placeholder pin" in e for e in errors)
+
+
 def test_external_pins_propagates_load_errors(tmp_path: Path):
     assert rl.lint_external_source_pins(tmp_path) == ["skills-lock.json: missing"]

@@ -71,8 +71,7 @@
       "source": "anthropics/skills",
       "sourceType": "github",
       "skillPath": "skills/skill-creator/SKILL.md",
-      "ref": "TODO-PIN-SHA",
-      "refComment": "TODO: replace placeholder with a real anthropics/skills commit SHA or tag; cannot be resolved offline. Until then this records intent to pin (lint_external_source_pins is satisfied) but does not yet guarantee a reproducible upstream revision.",
+      "ref": "35414756ca55738e050562e272a6bbc6273aa926",
       "computedHash": "5ea13a6d9f0d4bb694405d79acd00cadec0d21bb138c4dd10fcf3c500cb835c2"
     },
     "test-coverage": {

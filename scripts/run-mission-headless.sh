@@ -139,7 +139,9 @@ ensure_archive_ignored() {
   fi
   echo "note: excluded .fleet/runs/ via $exclude so headless archives don't dirty --repo '$REPO_ROOT'"
 }
-ensure_archive_ignored
+if [[ "$DRY_RUN" -ne 1 ]]; then
+  ensure_archive_ignored
+fi
 
 # RCE guard: --yolo auto-approves every tool call. Against an external --repo that is a full
 # remote-code-execution surface, so require explicit acknowledgement (or run under the sandbox).
