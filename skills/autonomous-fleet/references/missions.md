@@ -44,6 +44,14 @@ for the promotion criteria.
 | — | `agents-layer` | `docs/exploratory/missions/agents-layer/` |
 | — | `contract-first-build` | `docs/exploratory/missions/contract-first-build/` |
 | — | `scaffold-align` | `docs/exploratory/missions/scaffold-align/` |
+| 2 | `product-framing` | `docs/exploratory/missions/product-framing/` |
+| 2 | `browser-qa-fix` | `docs/exploratory/missions/browser-qa-fix/` |
+| 2 | `security-cso-audit` | `docs/exploratory/missions/security-cso-audit/` |
+
+**gstack-derived (2026-06-27):** `product-framing`, `browser-qa-fix`, and
+`security-cso-audit` map gstack `office-hours`/`autoplan`, `qa`/`browse`, and
+`cso` flows into fleet frozen-ledger missions. Research:
+[`docs/gstack-missions-research.md`](../../../docs/gstack-missions-research.md).
 
 The three `—`-tier missions were demoted earlier (2026-06-22) and still carry
 placeholder `@builder`/`@reviewer` role handles; they must adopt canonical
