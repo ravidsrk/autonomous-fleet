@@ -139,6 +139,12 @@ case "$BUNDLE" in
     ;;
 esac
 
+if [[ "$EXECUTE" -eq 1 && "$BUNDLE" == "agent-skills" ]]; then
+  echo "install-community: agent-skills uses Claude Code slash commands (/plugin marketplace add, /plugin install)" >&2
+  echo "  Run those commands inside Claude Code; shell --execute is not supported for this bundle." >&2
+  exit 2
+fi
+
 echo "== install-community =="
 echo "bundle:  $BUNDLE"
 echo "host:    $HOST"

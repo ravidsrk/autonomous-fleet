@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 usage() {
-  echo "usage: scripts/preflight.sh <adapter|adapter-dir> [--scm]" >&2
+  echo "usage: scripts/preflight.sh <adapter|adapter-dir> [--scm] [--wiring-only]" >&2
 }
 
 if [[ $# -lt 1 ]]; then
@@ -17,11 +17,16 @@ fi
 adapter="$1"
 shift
 scm=0
+wiring_only=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --scm)
       scm=1
+      shift
+      ;;
+    --wiring-only)
+      wiring_only=1
       shift
       ;;
     -h|--help)
@@ -55,7 +60,7 @@ fi
 source "$ROOT/scripts/lib/venv-bootstrap.sh"
 bootstrap_validation_venv "$ROOT"
 
-"$VENV_PYTHON" - "$adapter_dir" "$scm" <<'PY'
+"$VENV_PYTHON" - "$adapter_dir" "$scm" "$wiring_only" <<'PY'
 from __future__ import annotations
 
 import sys
@@ -65,7 +70,7 @@ sys.path.insert(0, "scripts")
 from lib.adapter_preflight import Intent, check, load_requires
 
 adapter_dir = sys.argv[1]
-intent = Intent(scm=sys.argv[2] == "1")
+intent = Intent(scm=sys.argv[2] == "1", wiring_only=sys.argv[3] == "1")
 failures = check(load_requires(adapter_dir), intent)
 
 if failures:
