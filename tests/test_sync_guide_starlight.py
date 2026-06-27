@@ -192,6 +192,24 @@ def test_check_mode_reports_drift_for_missing_copy(tmp_path: Path, monkeypatch, 
     assert "drift:" in err
 
 
+def test_check_mode_reports_orphan_generated_copy(tmp_path: Path, monkeypatch, capsys) -> None:
+    """A dest file with no matching guide source makes --check exit 1."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import sync_guide_starlight as mod
+
+    out = tmp_path / "docs"
+    out.mkdir()
+    for src in sorted(mod.GUIDE.glob("*.md")):
+        name = "index.md" if src.name == "README.md" else src.name
+        (out / name).write_text(mod.render_file(src), encoding="utf-8")
+    (out / "deleted-guide-page.md").write_text("orphan\n", encoding="utf-8")
+    monkeypatch.setattr(mod, "OUT", out)
+
+    assert mod.main(["--check"]) == 1
+    err = capsys.readouterr().err
+    assert "deleted-guide-page.md" in err
+
+
 def test_check_mode_missing_guide_returns_two(tmp_path: Path, monkeypatch) -> None:
     """--check still honors the missing-guide guard (exit 2)."""
     sys.path.insert(0, str(ROOT / "scripts"))

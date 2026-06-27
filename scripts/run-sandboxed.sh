@@ -814,32 +814,23 @@ _exec_reviewer_sandbox() {
     tmp_q="$(_sbpl_string "$reviewer_tmp")"
     test_q="$(_sbpl_string "$reviewer_test_output")"
     home_q="$(_sbpl_string "$reviewer_home")"
-    local repo_q
-    repo_q="$(_sbpl_string "$repo_root")"
     # Reviewer role: deny by default, then grant only what a read-only reviewer needs.
     # Network is DROPPED — a reviewer reads a candidate tree and emits findings; it has no business
     # reaching the network, and an outbound channel is exactly the exfiltration path the sandbox is
-    # meant to close. file-read* is NARROWED to the repo, the run dir, and the system paths an
-    # interpreter / CA bundle resolves from (no blanket host read). file-write* stays scoped to the
-    # run dir (output, $TMPDIR, $HOME) plus /dev.
+    # meant to close.
+    #
+    # macOS note: on recent darwin builds, `(allow file-read* (subpath ...))` profiles abort at
+    # launch (SIGABRT) because dyld and system services need broader read reach than an enumerated
+    # subpath list can express. We therefore allow file-read* host-wide but keep file-write*
+    # scoped to the run dir ($TMPDIR, $HOME, test-output) plus /dev — the repo stays read-only in
+    # practice because writes outside those subpaths are denied.
     profile="$(cat <<EOF
 (version 1)
 (deny default)
 (allow process*)
 (allow sysctl*)
 (allow mach-lookup)
-(allow file-read*
-  (subpath $repo_q)
-  (subpath $run_q)
-  (subpath "/usr")
-  (subpath "/bin")
-  (subpath "/sbin")
-  (subpath "/System")
-  (subpath "/Library")
-  (subpath "/private/etc")
-  (subpath "/etc")
-  (subpath "/dev")
-)
+(allow file-read*)
 (allow file-write*
   (subpath $run_q)
   (subpath $tmp_q)
