@@ -73,10 +73,21 @@ Default: `repo-health`.
 **Section D — Community skills (optional).**
 
 > Third-party skills attach as Optional/Worker only — see `community-skills.md`. Install per
-> bundle, not the full catalog.
+> bundle, not the full catalog. Gstack-derived missions declare `community-recommends` with
+> `mode: warn`; `preflight-community.sh` prints hints when bundles are absent.
 
-Ask which bundles need community installs (gstack, agent-skills, mattpocock). Record choices;
-do not install without user consent.
+Ask which **bundle ids** apply (`gstack-browser`, `gstack-framing`, `gstack-security`,
+`gstack-devex`, `gstack-ship`, `gstack`, `agent-skills`, `mattpocock`). Map the default
+campaign preset (Section C) to bundles when obvious (e.g. `gstack-quality` → framing + browser +
+security + devex). Record choices in `fleet-config.md`; do not install without user consent.
+
+When the user confirms, print or run:
+
+```bash
+./scripts/install-community.sh <bundle-id> --dry-run
+# after explicit consent:
+./scripts/install-community.sh <bundle-id> --execute --host <adapter-host>
+```
 
 ### 3. Confirm draft
 

@@ -295,6 +295,33 @@ while [[ -n "$CURRENT" ]]; do
 
   READINESS_ABS="$REPO_ROOT/$READINESS"
 
+  adapter_for_runtime() {
+    case "$1" in
+      grok) echo "grok" ;;
+      claude) echo "claude-code" ;;
+      codex) echo "codex" ;;
+      *) echo "$1" ;;
+    esac
+  }
+
+  adapter_rt="$(adapter_for_runtime "$RUNTIME")"
+  echo "  == adapter preflight =="
+  if [[ ! -d "$ROOT/skills/autonomous-fleet-adapter-$adapter_rt" ]]; then
+    echo "  preflight: skip (no fleet adapter skills under $ROOT/skills)"
+  elif [[ "$DRY_RUN" -eq 1 ]]; then
+    "$ROOT/scripts/preflight.sh" "$adapter_rt"
+  else
+    "$ROOT/scripts/preflight.sh" "$adapter_rt" --scm
+  fi
+  echo "  == community preflight =="
+  if [[ ! -f "$ROOT/skills/$MISSION/SKILL.md" && ! -f "$ROOT/docs/exploratory/missions/$MISSION/SKILL.md" ]]; then
+    echo "  preflight-community: skip (mission SKILL.md not under $ROOT)"
+  elif [[ "$DRY_RUN" -eq 1 ]]; then
+    "$ROOT/scripts/preflight-community.sh" "$MISSION" --dry-run
+  else
+    "$ROOT/scripts/preflight-community.sh" "$MISSION"
+  fi
+
   if [[ "$DRY_RUN" -eq 1 ]]; then
     echo "  would run: run-mission-headless.sh $RUNTIME $MISSION --repo $REPO_ROOT --max-turns $MAX_TURNS --dry-run"
     echo "  expect:    $READINESS_ABS with fleet-outcome.status done"

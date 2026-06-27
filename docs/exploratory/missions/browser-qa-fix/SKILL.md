@@ -15,6 +15,14 @@ metadata:
   version: "1.0.0"
   tier: "2"
   fleet-component: "mission"
+  recommended-bundle: gstack-browser
+  community-recommends:
+    bundle: gstack-browser
+    skills:
+      - browse
+      - qa
+      - qa-only
+    mode: warn
 status: exploratory
 ---
 
@@ -31,6 +39,15 @@ Before executing, activate these skills and read their full instructions:
 1. `autonomous-fleet-core` — read `references/engine.md`, `references/composition.md`, EVID rules
 2. One runtime adapter: `autonomous-fleet-adapter-orca`, `autonomous-fleet-adapter-claude-code`,
    `autonomous-fleet-adapter-grok`, or `autonomous-fleet-adapter-codex`
+
+```yaml community-recommends
+bundle: gstack-browser
+skills:
+  - browse
+  - qa
+  - qa-only
+mode: warn
+```
 
 ## Optional skills
 

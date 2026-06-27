@@ -15,6 +15,13 @@ metadata:
   version: "1.0.0"
   tier: "2"
   fleet-component: "mission"
+  recommended-bundle: gstack-framing
+  community-recommends:
+    bundle: gstack-framing
+    skills:
+      - office-hours
+      - autoplan
+    mode: warn
 status: exploratory
 ---
 
@@ -35,6 +42,14 @@ Before executing, activate these skills and read their full instructions:
 Follow the core and your adapter in full, then apply the mission parameters below.
 
 Do not load a second mission skill in the same run. For chained missions, use `fleet-program`.
+
+```yaml community-recommends
+bundle: gstack-framing
+skills:
+  - office-hours
+  - autoplan
+mode: warn
+```
 
 ## Optional skills
 

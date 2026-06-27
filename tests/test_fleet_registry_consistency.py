@@ -54,6 +54,30 @@ EXPECTED_MISSION_DOCS = {
         "progress": "inference-cost-progress.md",
         "readiness": "inference-cost-readiness.md",
     },
+    "product-framing": {
+        "progress": "framing-progress.md",
+        "readiness": "framing-readiness.md",
+    },
+    "browser-qa-fix": {
+        "progress": "qa-progress.md",
+        "readiness": "qa-readiness.md",
+    },
+    "security-cso-audit": {
+        "progress": "security-progress.md",
+        "readiness": "security-readiness.md",
+    },
+    "devex-audit": {
+        "progress": "devex-progress.md",
+        "readiness": "devex-readiness.md",
+    },
+    "release-document": {
+        "progress": "release-doc-progress.md",
+        "readiness": "release-doc-readiness.md",
+    },
+    "incident-investigate": {
+        "progress": "incident-progress.md",
+        "readiness": "incident-readiness.md",
+    },
 }
 
 EXPECTED_MISSION_METRICS = {
@@ -75,6 +99,14 @@ EXPECTED_MISSION_METRICS = {
     "inference-cost": frozenset(
         {"cost_regressed", "quality_regressed", "levers_open"}
     ),
+    "product-framing": frozenset({"spec_frozen", "open_questions"}),
+    "browser-qa-fix": frozenset({"health_before", "health_after"}),
+    "security-cso-audit": frozenset(
+        {"findings_confirmed", "findings_closed", "findings_refuted", "audit_mode"}
+    ),
+    "devex-audit": frozenset({"dx_score", "doc_gaps_open"}),
+    "release-document": frozenset({"doc_gaps_closed", "deploy_verified"}),
+    "incident-investigate": frozenset({"rca_confirmed", "regression_tests_added"}),
 }
 
 
@@ -215,6 +247,35 @@ def test_consistent_registry_fixture_passes(tmp_path: Path) -> None:
     missions = {"doc-sync": {"shipped": True, "skill_dir": "doc-sync"}}
 
     assert registry_lint.lint_registry(tmp_path, missions) == []
+
+
+def test_lint_campaign_missions_exploratory_missing_skill_file(tmp_path: Path) -> None:
+    campaigns = tmp_path / "scripts" / "campaigns"
+    campaigns.mkdir(parents=True)
+    (campaigns / "gstack.yaml").write_text(
+        "campaign: gstack-quality\nallow_exploratory_nodes: true\n"
+        "nodes:\n  frame: { mission: product-framing }\n",
+        encoding="utf-8",
+    )
+    missions = {"product-framing": {"shipped": False, "skill_dir": "product-framing"}}
+    errors = registry_lint.lint_campaign_missions(tmp_path, missions)
+    assert len(errors) == 1
+    assert "SKILL.md is missing" in errors[0]
+
+
+def test_lint_campaign_missions_allows_exploratory_when_flagged(tmp_path: Path) -> None:
+    campaigns = tmp_path / "scripts" / "campaigns"
+    campaigns.mkdir(parents=True)
+    exploratory = tmp_path / "docs" / "exploratory" / "missions" / "product-framing"
+    exploratory.mkdir(parents=True)
+    (exploratory / "SKILL.md").write_text("---\nname: product-framing\n---\n", encoding="utf-8")
+    (campaigns / "gstack.yaml").write_text(
+        "campaign: gstack-quality\nallow_exploratory_nodes: true\n"
+        "nodes:\n  frame: { mission: product-framing }\n",
+        encoding="utf-8",
+    )
+    missions = {"product-framing": {"shipped": False, "skill_dir": "product-framing"}}
+    assert registry_lint.lint_campaign_missions(tmp_path, missions) == []
 
 
 def test_lint_campaign_missions_rejects_unshipped(tmp_path: Path) -> None:
