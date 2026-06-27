@@ -3,7 +3,7 @@
 
 For each run-archive ``manifest.json``, reviewer producer slugs may only emit
 ``blind_fix``, ``findings``, and ``verify_summary`` entries. A reviewer producer
-attributed a ``diff`` or ``commit`` on the candidate branch is a hard failure.
+attributed a write kind (``diff``) on the candidate branch is a hard failure.
 """
 from __future__ import annotations
 
@@ -41,12 +41,37 @@ def _load_json(path: Path) -> tuple[dict[str, Any] | None, str | None]:
 
 
 def main() -> int:
-    from lib.substrate_disable import announce_disabled, is_disabled
+    from lib.substrate_disable import (
+        SECURITY_OVERRIDE_ACK_ENV,
+        announce_disabled,
+        is_disabled,
+        is_security_disable_acknowledged,
+    )
 
+    # Reviewer-sandbox is a SECURITY / isolation invariant, not an advisory quality gate, so its
+    # kill switch FAILS CLOSED (per references/substrate-disable-knobs.md § Security/integrity
+    # knobs). A bare `FLEET_DISABLE_REVIEWER_SANDBOX=1` — a stray export in CI, a copy-pasted env
+    # block — must NOT silently turn a security check into a no-op. Disabling it requires the
+    # operator to ALSO acknowledge via SECURITY_OVERRIDE_ACK_ENV (FLEET_SECURITY_OVERRIDE_ACK=1),
+    # an explicit, auditable confirmation that they are knowingly dropping the guard for this run.
+    # is_security_disable_acknowledged() is the shared gate the other security knobs (sha-pin,
+    # namespacing) use, so the override contract stays identical across layers. Without the ack we
+    # refuse loudly and exit non-zero rather than wave the check through.
     if is_disabled("FLEET_DISABLE_REVIEWER_SANDBOX"):
-        return announce_disabled(
-            "verify-reviewer-sandbox", "FLEET_DISABLE_REVIEWER_SANDBOX"
+        if is_security_disable_acknowledged():
+            # Acknowledged override: emit the standard disable notice and no-op (exit 0). We reuse
+            # announce_disabled for the pinned stderr format (do not fork the message).
+            return announce_disabled(
+                "verify-reviewer-sandbox", "FLEET_DISABLE_REVIEWER_SANDBOX"
+            )
+        print(
+            "verify-reviewer-sandbox: REFUSED — FLEET_DISABLE_REVIEWER_SANDBOX is set but this is a "
+            "security check that fails closed. To override for this run you must ALSO set "
+            f"{SECURITY_OVERRIDE_ACK_ENV}=1 (an explicit, recorded operator decision). Refusing to "
+            "silently skip reviewer-sandbox verification.",
+            file=sys.stderr,
         )
+        return 1
 
     p = argparse.ArgumentParser(
         description="Verify reviewer-role sandbox manifest attribution.",

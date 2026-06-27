@@ -52,6 +52,37 @@ fleet-outcome:
 """
 
 
+REVIEWER_MODE_VALID = """---
+fleet-outcome:
+  mission: doc-sync
+  status: done
+  repo: /tmp/r
+  base_branch: fleet/b
+  prs_merged: 1
+  reviewer_mode: cross_vendor
+  metrics:
+    drift_open: 0
+    code_bug_findings: 0
+---
+# ok
+"""
+
+REVIEWER_MODE_INVALID = """---
+fleet-outcome:
+  mission: doc-sync
+  status: done
+  repo: /tmp/r
+  base_branch: fleet/b
+  prs_merged: 1
+  reviewer_mode: solo
+  metrics:
+    drift_open: 0
+    code_bug_findings: 0
+---
+# bad
+"""
+
+
 def test_valid_readiness_doc_returns_zero(tmp_path, monkeypatch, capsys):
     doc = tmp_path / "doc-sync-readiness.md"
     doc.write_text(VALID)
@@ -70,6 +101,39 @@ def test_invalid_status_returns_one_with_fail(tmp_path, monkeypatch, capsys):
     rc = vfo.main()
     assert rc == 1
     assert "FAIL" in capsys.readouterr().out
+
+
+def test_reviewer_mode_present_valid_returns_zero(tmp_path, monkeypatch, capsys):
+    doc = tmp_path / "doc-sync-readiness.md"
+    doc.write_text(REVIEWER_MODE_VALID)
+    monkeypatch.setattr(sys, "argv", ["validate", str(doc)])
+    rc = vfo.main()
+    assert rc == 0
+    assert "OK" in capsys.readouterr().out
+
+
+def test_reviewer_mode_present_invalid_returns_one_with_fail(
+    tmp_path, monkeypatch, capsys
+):
+    doc = tmp_path / "doc-sync-readiness.md"
+    doc.write_text(REVIEWER_MODE_INVALID)
+    monkeypatch.setattr(sys, "argv", ["validate", str(doc)])
+    rc = vfo.main()
+    assert rc == 1
+    out = capsys.readouterr().out
+    assert "FAIL" in out
+    assert "invalid reviewer_mode 'solo'" in out
+    assert "cross_vendor, single_vendor" in out
+
+
+def test_reviewer_mode_absent_still_validates(tmp_path, monkeypatch, capsys):
+    # The field is optional: existing archives without reviewer_mode must pass.
+    doc = tmp_path / "doc-sync-readiness.md"
+    doc.write_text(VALID)
+    monkeypatch.setattr(sys, "argv", ["validate", str(doc)])
+    rc = vfo.main()
+    assert rc == 0
+    assert "OK" in capsys.readouterr().out
 
 
 def test_default_scan_with_no_docs_returns_zero(monkeypatch, capsys):

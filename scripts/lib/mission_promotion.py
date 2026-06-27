@@ -30,13 +30,19 @@ class PromotionReport:
 
 
 def _fleet_outcome_valid(readiness: Path) -> bool:
-    text = readiness.read_text(encoding="utf-8")
+    try:
+        text = readiness.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return False
     if not text.startswith("---"):
         return False
     end = text.find("\n---", 3)
     if end < 0:
         return False
-    block = yaml.safe_load(text[3:end])
+    try:
+        block = yaml.safe_load(text[3:end])
+    except yaml.YAMLError:
+        return False
     if not isinstance(block, dict):
         return False
     fo = block.get("fleet-outcome")
@@ -47,7 +53,10 @@ def _fleet_outcome_valid(readiness: Path) -> bool:
 
 
 def _progress_substantive(progress: Path) -> bool:
-    text = progress.read_text(encoding="utf-8")
+    try:
+        text = progress.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return False
     if not _PROGRESS_RE.search(text):
         return False
     if "TASK" not in text and "task" not in text.lower():

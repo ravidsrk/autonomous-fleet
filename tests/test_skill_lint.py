@@ -173,3 +173,146 @@ def test_main_reports_failures_and_success(capsys: pytest.CaptureFixture[str], t
     (bad / "SKILL.md").write_text("# no frontmatter\n", encoding="utf-8")
     assert sl.main([str(bad)]) == 1
     assert "FAIL" in capsys.readouterr().err
+
+
+# --- lock/version sync rule (finding 66) ------------------------------------
+
+import json  # noqa: E402
+
+from lib import registry_lint as rl  # noqa: E402
+
+
+def _versioned_skill(root: Path, name: str, version: str, body: str = "body\n") -> Path:
+    skill_dir = root / "skills" / name
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(
+        f"---\nname: {name}\nmetadata:\n  version: \"{version}\"\n---\n{body}",
+        encoding="utf-8",
+    )
+    return skill_dir
+
+
+def _write_lock(root: Path, rows: dict) -> Path:
+    lock = root / "skills-lock.json"
+    lock.write_text(json.dumps({"version": 1, "skills": rows}), encoding="utf-8")
+    return lock
+
+
+def test_real_repo_lock_version_sync_passes() -> None:
+    lock = ROOT / "skills-lock.json"
+    for skill_dir in sorted((ROOT / "skills").glob("*/SKILL.md")):
+        sl.lint_lock_version_sync(skill_dir.parent, lock)
+
+
+def test_content_hash_matches_registry_lint_implementation() -> None:
+    # skill_lint inlines content_hash so it stays importable as a standalone
+    # script; this parity check guards the duplicate against silent drift.
+    assert sl.LOCAL_LOCK_SOURCE == rl.LOCAL_LOCK_SOURCE
+    for skill_dir in sorted((ROOT / "skills").glob("*/SKILL.md")):
+        assert sl.content_hash(skill_dir.parent) == rl.content_hash(skill_dir.parent)
+
+
+def test_frontmatter_version_extraction() -> None:
+    assert sl._frontmatter_version({"metadata": {"version": "1.2.3"}}) == "1.2.3"
+    assert sl._frontmatter_version({"metadata": {"version": 7}}) is None
+    assert sl._frontmatter_version({"metadata": "scalar"}) is None
+    assert sl._frontmatter_version({}) is None
+
+
+def test_lock_version_sync_in_sync_passes(tmp_path: Path) -> None:
+    skill = _versioned_skill(tmp_path, "doc-sync", "1.0.0")
+    lock = _write_lock(
+        tmp_path,
+        {
+            "doc-sync": {
+                "source": rl.LOCAL_LOCK_SOURCE,
+                "version": "1.0.0",
+                "computedHash": rl.content_hash(skill),
+            }
+        },
+    )
+    # Accepts a SKILL.md file path too (covers the not-a-dir normalisation).
+    sl.lint_lock_version_sync(skill / "SKILL.md", lock)
+
+
+def test_lock_version_sync_body_changed_without_bump_fails(tmp_path: Path) -> None:
+    skill = _versioned_skill(tmp_path, "doc-sync", "1.0.0")
+    stale_hash = rl.content_hash(skill)
+    (skill / "SKILL.md").write_text(
+        "---\nname: doc-sync\nmetadata:\n  version: \"1.0.0\"\n---\nMUTATED BODY\n",
+        encoding="utf-8",
+    )
+    lock = _write_lock(
+        tmp_path,
+        {"doc-sync": {"source": rl.LOCAL_LOCK_SOURCE, "version": "1.0.0", "computedHash": stale_hash}},
+    )
+    with pytest.raises(sl.SkillLintError) as excinfo:
+        sl.lint_lock_version_sync(skill, lock)
+    msg = str(excinfo.value)
+    assert "metadata.version is still '1.0.0'" in msg
+    assert "bump the version" in msg
+
+
+def test_lock_version_sync_stale_lock_after_bump_fails(tmp_path: Path) -> None:
+    skill = _versioned_skill(tmp_path, "doc-sync", "1.0.0")
+    stale_hash = rl.content_hash(skill)
+    # Author bumped the version (and thus changed the body) but did not refresh the lock.
+    (skill / "SKILL.md").write_text(
+        "---\nname: doc-sync\nmetadata:\n  version: \"1.1.0\"\n---\nbody\n",
+        encoding="utf-8",
+    )
+    lock = _write_lock(
+        tmp_path,
+        {"doc-sync": {"source": rl.LOCAL_LOCK_SOURCE, "version": "1.0.0", "computedHash": stale_hash}},
+    )
+    with pytest.raises(sl.SkillLintError) as excinfo:
+        sl.lint_lock_version_sync(skill, lock)
+    msg = str(excinfo.value)
+    assert "content hash drifted" in msg
+    assert "locked version '1.0.0'" in msg
+    assert "frontmatter version '1.1.0'" in msg
+
+
+def test_lock_version_sync_skips_unlocked_and_external(tmp_path: Path) -> None:
+    skill = _versioned_skill(tmp_path, "doc-sync", "1.0.0")
+    (skill / "SKILL.md").write_text(
+        "---\nname: doc-sync\nmetadata:\n  version: \"1.0.0\"\n---\nCHANGED\n",
+        encoding="utf-8",
+    )
+    # Absent row -> ignored.
+    lock = _write_lock(tmp_path, {"other": {"source": rl.LOCAL_LOCK_SOURCE}})
+    sl.lint_lock_version_sync(skill, lock)
+    # Bare-string row -> not a dict -> ignored.
+    lock = _write_lock(tmp_path, {"doc-sync": "local-row"})
+    sl.lint_lock_version_sync(skill, lock)
+    # External source -> ignored even though hash differs.
+    lock = _write_lock(
+        tmp_path,
+        {"doc-sync": {"source": "anthropics/skills", "computedHash": "0" * 64}},
+    )
+    sl.lint_lock_version_sync(skill, lock)
+
+
+def test_lock_version_sync_no_locked_hash_is_ignored(tmp_path: Path) -> None:
+    skill = _versioned_skill(tmp_path, "doc-sync", "1.0.0")
+    lock = _write_lock(
+        tmp_path, {"doc-sync": {"source": rl.LOCAL_LOCK_SOURCE, "version": "1.0.0"}}
+    )
+    sl.lint_lock_version_sync(skill, lock)
+
+
+def test_lock_version_sync_load_errors_raise(tmp_path: Path) -> None:
+    skill = _versioned_skill(tmp_path, "doc-sync", "1.0.0")
+
+    with pytest.raises(sl.SkillLintError, match="missing skills-lock.json"):
+        sl.lint_lock_version_sync(skill, tmp_path / "nope.json")
+
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not json", encoding="utf-8")
+    with pytest.raises(sl.SkillLintError, match="invalid JSON"):
+        sl.lint_lock_version_sync(skill, bad)
+
+    notmap = tmp_path / "notmap.json"
+    notmap.write_text("[]", encoding="utf-8")
+    with pytest.raises(sl.SkillLintError, match="missing skills mapping"):
+        sl.lint_lock_version_sync(skill, notmap)

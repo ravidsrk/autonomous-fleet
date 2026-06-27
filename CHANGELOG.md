@@ -39,7 +39,7 @@ Post-v0.2.0 polish: live trace CLI, promotion validator, Starlight scaffold, tra
 - `run_runtime_emit` — live streaming via `tee` + `PIPESTATUS[0]`; guarded `mktemp` fallback.
 - `run-campaign.sh` — `NODE_RC`, `emit_campaign_node_archive || true`, accurate failure warnings.
 - Headless archive path — unconditional emit on runtime failure; runtime capture in manifest.
-- `pyproject.toml` — minimal project metadata + pytest/coverage config.
+- `pyproject.toml` — version reconciled to 0.2.1; minimal project metadata + pytest/coverage config.
 - `tests/test_readme_drift.py` — CI guard for README vs `VERSION` / pytest collect / test file count.
 - `--runtime-response` on `emit_headless_dryrun_trace.py`; headless/campaign archive tests.
 

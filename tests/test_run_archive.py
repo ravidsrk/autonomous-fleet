@@ -259,7 +259,13 @@ def test_file_entry_for_computes_sha256_and_size(tmp_path):
     assert entry.path == "sub/file.bin"
     assert entry.bytes == len(content)
     assert entry.sha256 == hashlib.sha256(content).hexdigest()
-    assert re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$", entry.mtime_utc)
+    # Finding 25: mtime_utc now carries MICROSECOND precision so same-second
+    # artifacts no longer collide. The manifest schema (UTC_ISO_PATTERN)
+    # accepts the fractional-seconds form.
+    assert re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$", entry.mtime_utc)
+    from lib.fleet_run import UTC_ISO_PATTERN
+
+    assert UTC_ISO_PATTERN.match(entry.mtime_utc)
 
 
 # ───────────────────────────────────────────────────────────────────────
@@ -464,6 +470,74 @@ def test_per_producer_ordering_isolation(tmp_path):
     # No ordering errors for reviewer-a's blind_fix-vs-findings-b cross-pair.
     # reviewer-a's own findings ARE after reviewer-a's blind_fix, so clean.
     assert not any("ANTI-ANCHORING" in e for e in errs), errs
+
+
+def _ordering_payload(rid: str, mission: str, files: list[dict]) -> dict:
+    """Minimal manifest payload for exercising _validate_ordering on exact
+    mtime strings (no filesystem mutation, so we control sub-second values)."""
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "run_id": rid,
+        "mission": mission,
+        "created_utc": "2026-06-23T14:18:00Z",
+        "files": files,
+    }
+
+
+def _ofile(path: str, kind: str, producer: str, mtime: str) -> dict:
+    return {
+        "path": path,
+        "kind": kind,
+        "sha256": "0" * 64,
+        "mtime_utc": mtime,
+        "producer": producer,
+        "bytes": 0,
+    }
+
+
+def test_validate_same_second_blind_fix_and_findings_pass(tmp_path):
+    """Finding 25: a blind_fix and its findings written in the SAME wall-clock
+    second (identical mtime_utc) MUST validate. Pre-fix, _utc_from_mtime
+    rounded to whole seconds and the strict comparison flagged this as an
+    ANTI-ANCHORING / stale-audit false positive. The tie-break treats an exact
+    tie as compliant; same-microsecond writes pass for all three invariants."""
+    rid = allocate_run_id("adversarial-review-and-fix")
+    same = "2026-06-23T14:18:33.412900Z"
+    payload = _ordering_payload(
+        rid,
+        "adversarial-review-and-fix",
+        [
+            _ofile("blind-fix.md", "blind_fix", "reviewer-a", same),
+            _ofile("findings.json", "findings", "reviewer-a", same),
+            _ofile("verify-summary.json", "verify_summary", "reviewer-a", same),
+            _ofile("readiness.md", "readiness", "t-final", same),
+        ],
+    )
+    errs = validate_manifest_payload(payload, check_files_on_disk=False)
+    assert errs == [], errs
+
+
+def test_validate_subsecond_ordering_still_catches_violation(tmp_path):
+    """The tie-break only forgives an EXACT tie. A blind_fix one MICROSECOND
+    strictly after its findings is still an ANTI-ANCHORING violation, and a
+    verify_summary one microsecond strictly before findings is still stale —
+    genuinely-out-of-order artifacts continue to fail at sub-second resolution."""
+    rid = allocate_run_id("adversarial-review-and-fix")
+    payload = _ordering_payload(
+        rid,
+        "adversarial-review-and-fix",
+        [
+            # blind_fix AFTER findings by 1 microsecond — violation.
+            _ofile("blind-fix.md", "blind_fix", "reviewer-a", "2026-06-23T14:18:33.000002Z"),
+            _ofile("findings.json", "findings", "reviewer-a", "2026-06-23T14:18:33.000001Z"),
+            # verify_summary BEFORE findings by 1 microsecond — stale.
+            _ofile("verify.json", "verify_summary", "reviewer-a", "2026-06-23T14:18:33.000000Z"),
+            _ofile("readiness.md", "readiness", "t-final", "2026-06-23T14:18:40.000000Z"),
+        ],
+    )
+    errs = validate_manifest_payload(payload, check_files_on_disk=False)
+    assert any("ANTI-ANCHORING" in e for e in errs), errs
+    assert any("stale-audit" in e for e in errs), errs
 
 
 def test_validate_detects_missing_manifest(tmp_path):

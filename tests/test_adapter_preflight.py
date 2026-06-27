@@ -96,6 +96,47 @@ def test_failures_are_aggregated_for_bins_env_and_auth() -> None:
     assert calls == [["gh", "auth", "status"]]
 
 
+def test_scalar_auth_entry_reports_failure_without_raising() -> None:
+    calls: list[list[str]] = []
+    failures = check(
+        {"bins": [], "env": [], "auth": ["gh auth status"]},
+        Intent(scm=True),
+        which=_which_factory(set()),
+        run=_runner(0, calls),
+    )
+
+    assert failures == ["malformed auth entry (expected mapping): 'gh auth status'"]
+    assert calls == []
+
+
+def test_auth_entry_missing_check_key_reports_failure() -> None:
+    calls: list[list[str]] = []
+    failures = check(
+        {"bins": [], "env": [], "auth": [{"skip_if_intent": "no_scm"}]},
+        Intent(scm=True),
+        which=_which_factory(set()),
+        run=_runner(0, calls),
+    )
+
+    assert failures == [
+        "malformed auth entry (missing 'check'): {'skip_if_intent': 'no_scm'}"
+    ]
+    assert calls == []
+
+
+def test_auth_entry_with_empty_check_reports_failure() -> None:
+    calls: list[list[str]] = []
+    failures = check(
+        {"bins": [], "env": [], "auth": [{"check": ""}]},
+        Intent(scm=True),
+        which=_which_factory(set()),
+        run=_runner(0, calls),
+    )
+
+    assert failures == ["malformed auth entry (missing 'check'): {'check': ''}"]
+    assert calls == []
+
+
 def test_load_requires_reads_fenced_yaml_requires_block(tmp_path: Path) -> None:
     adapter = tmp_path / "adapter"
     adapter.mkdir()

@@ -536,6 +536,172 @@ def test_run_mission_headless_emits_archive_on_runtime_failure(tmp_path: Path) -
     assert (runs[0] / "headless-runtime-response.json").is_file()
 
 
+def _fake_grok_on_path(tmp_path: Path) -> dict[str, str]:
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_grok = fake_bin / "grok"
+    fake_grok.write_text('#!/bin/sh\necho \'{"stopReason":"EndTurn","text":"ok"}\'\n')
+    fake_grok.chmod(0o755)
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env.get('PATH', '')}"
+    return env
+
+
+def _git_porcelain(repo: Path) -> str:
+    return subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+
+
+def test_external_repo_comes_back_clean_after_real_run(tmp_path: Path) -> None:
+    """Finding 55: a real run writes .fleet/runs/<id> INTO --repo. The driver must
+    exclude it via .git/info/exclude (untracked) so the operator's tree stays clean
+    AND no tracked .gitignore is touched."""
+    external = tmp_path / "target-repo"
+    external.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=external, check=True)
+    subprocess.run(["git", "config", "user.email", "t@t.co"], cwd=external, check=True)
+    subprocess.run(["git", "config", "user.name", "t"], cwd=external, check=True)
+    (external / "README.md").write_text("# x\n")
+    subprocess.run(["git", "add", "-A"], cwd=external, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=external, check=True)
+
+    env = _fake_grok_on_path(tmp_path)
+    r = subprocess.run(
+        [
+            str(REPO_ROOT / "scripts" / "run-mission-headless.sh"),
+            "grok",
+            "doc-sync",
+            "--repo",
+            str(external),
+            "--max-turns",
+            "1",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=REPO_ROOT,
+        env=env,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "excluded .fleet/runs/ via" in r.stdout
+    # The archive is kept (audit trail) but the working tree is CLEAN.
+    runs = list((external / ".fleet" / "runs").glob("*"))
+    assert len(runs) == 1
+    assert _git_porcelain(external) == "", "external repo must come back clean"
+    # Exclude went into the UNTRACKED per-clone exclude, not a tracked .gitignore.
+    assert not (external / ".gitignore").exists()
+    exclude = external / ".git" / "info" / "exclude"
+    assert "/.fleet/runs/" in exclude.read_text()
+
+
+def test_external_repo_exclude_is_idempotent(tmp_path: Path) -> None:
+    """Two real runs must not append duplicate exclude lines, and the second run
+    must short-circuit (no repeated 'excluded' note since it is already ignored)."""
+    external = tmp_path / "target-repo"
+    external.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=external, check=True)
+    subprocess.run(["git", "config", "user.email", "t@t.co"], cwd=external, check=True)
+    subprocess.run(["git", "config", "user.name", "t"], cwd=external, check=True)
+
+    env = _fake_grok_on_path(tmp_path)
+    args = [
+        str(REPO_ROOT / "scripts" / "run-mission-headless.sh"),
+        "grok",
+        "doc-sync",
+        "--repo",
+        str(external),
+        "--max-turns",
+        "1",
+    ]
+    r1 = subprocess.run(args, capture_output=True, text=True, check=False, cwd=REPO_ROOT, env=env)
+    assert r1.returncode == 0, r1.stderr
+    assert "excluded .fleet/runs/ via" in r1.stdout
+    r2 = subprocess.run(args, capture_output=True, text=True, check=False, cwd=REPO_ROOT, env=env)
+    assert r2.returncode == 0, r2.stderr
+    # Already ignored -> the guard returns early, no second "excluded" note.
+    assert "excluded .fleet/runs/ via" not in r2.stdout
+    exclude = external / ".git" / "info" / "exclude"
+    assert exclude.read_text().count("/.fleet/runs/") == 1
+
+
+def test_external_repo_with_existing_gitignore_not_touched(tmp_path: Path) -> None:
+    """If the target repo already gitignores .fleet/runs/ via a tracked .gitignore,
+    the guard must do nothing (no exclude write, no note) — check-ignore short-circuits."""
+    external = tmp_path / "target-repo"
+    external.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=external, check=True)
+    subprocess.run(["git", "config", "user.email", "t@t.co"], cwd=external, check=True)
+    subprocess.run(["git", "config", "user.name", "t"], cwd=external, check=True)
+    (external / ".gitignore").write_text(".fleet/runs/\n")
+    subprocess.run(["git", "add", "-A"], cwd=external, check=True)
+    subprocess.run(["git", "commit", "-qm", "init"], cwd=external, check=True)
+
+    env = _fake_grok_on_path(tmp_path)
+    r = subprocess.run(
+        [
+            str(REPO_ROOT / "scripts" / "run-mission-headless.sh"),
+            "grok",
+            "doc-sync",
+            "--repo",
+            str(external),
+            "--max-turns",
+            "1",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=REPO_ROOT,
+        env=env,
+    )
+    assert r.returncode == 0, r.stderr
+    assert "excluded .fleet/runs/ via" not in r.stdout
+    # Untracked exclude must NOT have been written (tracked .gitignore already covers it).
+    exclude_text = (external / ".git" / "info" / "exclude").read_text()
+    assert "/.fleet/runs/" not in exclude_text
+    assert _git_porcelain(external) == "", "tree stays clean (archive already ignored)"
+
+
+def test_self_repo_exclude_untouched(tmp_path: Path) -> None:
+    """When --repo IS the autonomous-fleet clone (REPO_ROOT == ROOT), the guard must
+    short-circuit and never modify the fleet clone's own .git/info/exclude."""
+    exclude_path = Path(
+        subprocess.run(
+            ["git", "rev-parse", "--git-path", "info/exclude"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    )
+    if not exclude_path.is_absolute():
+        exclude_path = REPO_ROOT / exclude_path
+    before = exclude_path.read_text() if exclude_path.exists() else None
+
+    r = subprocess.run(
+        [
+            str(REPO_ROOT / "scripts" / "run-mission-headless.sh"),
+            "grok",
+            "doc-sync",
+            "--dry-run",
+            "--repo",
+            str(REPO_ROOT),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=REPO_ROOT,
+    )
+    assert r.returncode == 0, r.stderr
+    assert "excluded .fleet/runs/ via" not in r.stdout
+    after = exclude_path.read_text() if exclude_path.exists() else None
+    assert before == after, "self-repo exclude must be unchanged"
+
+
 def test_run_mission_headless_keeps_archive_after_runtime(tmp_path: Path) -> None:
     """Real run-mission-headless.sh path: fake grok on PATH, archive kept under --repo."""
     fake_bin = tmp_path / "bin"

@@ -114,3 +114,88 @@ def test_convert_file_rejects_missing_frontmatter(tmp_path: Path) -> None:
     src.write_text("# no frontmatter\n", encoding="utf-8")
     with pytest.raises(ValueError, match="missing guide frontmatter"):
         mod.convert_file(src, tmp_path / "out.md")
+
+
+def test_render_file_returns_text_without_writing(tmp_path: Path) -> None:
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import sync_guide_starlight as mod
+
+    src = tmp_path / "01-quickstart.md"
+    src.write_text(
+        "<!-- title: Quickstart | description: Start here | sidebar_order: 1 -->\n\n# Body\n",
+        encoding="utf-8",
+    )
+    rendered = mod.render_file(src)
+    assert rendered.startswith("---\n")
+    assert 'title: "Quickstart"' in rendered
+    # render_file is pure: it must not create any sibling output file.
+    assert list(tmp_path.iterdir()) == [src]
+
+
+def test_check_mode_passes_when_in_sync() -> None:
+    """The committed docs-site copy is kept in sync, so --check exits 0."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import sync_guide_starlight as mod
+
+    # Materialize the canonical copy first so the committed tree is current,
+    # then assert --check agrees (read-only, no mutation).
+    assert mod.main([]) == 0
+    assert mod.main(["--check"]) == 0
+
+
+def test_check_mode_passes_via_default_argv(monkeypatch) -> None:
+    """argv=None falls back to sys.argv[1:]; inject --check there."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import sync_guide_starlight as mod
+
+    assert mod.main([]) == 0
+    monkeypatch.setattr(sys, "argv", [str(SYNC), "--check"])
+    assert mod.main() == 0
+
+
+def test_check_mode_reports_drift_for_modified_copy(tmp_path: Path, monkeypatch, capsys) -> None:
+    """A stale committed copy (different content) makes --check exit 1."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import sync_guide_starlight as mod
+
+    out = tmp_path / "docs"
+    out.mkdir()
+    # Seed every expected dest from the real render, then corrupt one so the
+    # diff is exactly one drifted file (exercises the content-differs branch).
+    first = True
+    for src in sorted(mod.GUIDE.glob("*.md")):
+        name = "index.md" if src.name == "README.md" else src.name
+        rendered = mod.render_file(src)
+        if first:
+            rendered += "DRIFT\n"
+            first = False
+        (out / name).write_text(rendered, encoding="utf-8")
+    monkeypatch.setattr(mod, "OUT", out)
+
+    assert mod.main(["--check"]) == 1
+    err = capsys.readouterr().err
+    assert "stale" in err
+    assert "drift:" in err
+
+
+def test_check_mode_reports_drift_for_missing_copy(tmp_path: Path, monkeypatch, capsys) -> None:
+    """A missing committed dest (current is None) counts as drift -> exit 1."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import sync_guide_starlight as mod
+
+    out = tmp_path / "empty-docs"
+    out.mkdir()
+    monkeypatch.setattr(mod, "OUT", out)
+
+    assert mod.main(["--check"]) == 1
+    err = capsys.readouterr().err
+    assert "drift:" in err
+
+
+def test_check_mode_missing_guide_returns_two(tmp_path: Path, monkeypatch) -> None:
+    """--check still honors the missing-guide guard (exit 2)."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import sync_guide_starlight as mod
+
+    monkeypatch.setattr(mod, "GUIDE", tmp_path / "missing")
+    assert mod.main(["--check"]) == 2

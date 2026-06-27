@@ -232,7 +232,12 @@ def test_mtime_after_findings(tmp_path: Path) -> None:
     assert any("mtime" in r for r in reasons)
 
 
-def test_mtime_equal_to_findings_fails_strict_precedence(tmp_path: Path) -> None:
+def test_mtime_equal_to_findings_passes_tie_break(tmp_path: Path) -> None:
+    """Finding 25: a blind-fix and its findings written in the SAME instant
+    (identical mtime — the same-second / same-microsecond case) must NOT be
+    flagged. An exact tie cannot prove the blind-fix came after findings, so
+    the tie-break treats equal mtimes as compliant. The content checks still
+    apply, so this blind-fix verifies clean."""
     findings_path = _write_findings(tmp_path, ["BF-201"])
     bf = _bf_path(tmp_path, "BF-201", GOOD_BLIND_FIX)
     _set_mtime(bf, findings_path.stat().st_mtime)
@@ -244,7 +249,27 @@ def test_mtime_equal_to_findings_fails_strict_precedence(tmp_path: Path) -> None
     )
 
     reasons = summary["results"][0]["reasons"]
-    assert any("strictly precede findings" in r for r in reasons)
+    assert not any("precede findings" in r for r in reasons), reasons
+    assert summary["results"][0]["ok"] is True
+    assert summary["verified_blind_fix"] == 1
+
+
+def test_mtime_strictly_after_findings_by_microsecond_fails(tmp_path: Path) -> None:
+    """The tie-break only forgives an EXACT tie. A blind-fix that is even one
+    microsecond strictly after its findings is still an ANTI-ANCHORING
+    violation — same-instant passes, genuinely-later fails."""
+    findings_path = _write_findings(tmp_path, ["BF-202"])
+    bf = _bf_path(tmp_path, "BF-202", GOOD_BLIND_FIX)
+    _set_mtime(bf, findings_path.stat().st_mtime + 0.000_001)
+
+    summary = verify_blind_fix_doc(
+        json.loads(findings_path.read_text()),
+        run_dir=tmp_path,
+        findings_path=findings_path,
+    )
+
+    reasons = summary["results"][0]["reasons"]
+    assert any("precede findings" in r for r in reasons), reasons
 
 
 def test_diff_marker_means_post_anchoring(tmp_path: Path) -> None:

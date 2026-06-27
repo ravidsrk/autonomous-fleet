@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""CLI: cost analysis across fleet readiness docs.
+"""CLI: declared cost-estimate aggregation across fleet readiness docs.
+
+The ``cost_estimate`` field is operator-declared (no token/price model), so
+this tool reports a DECLARED-ESTIMATE aggregation, not a measured spend.
 
 Subcommands:
-  per-run    — one row per readiness doc under --docs-root
-  aggregate  — total spend + per-mission totals across readiness docs
+  per-run    — one declared-estimate row per readiness doc under --docs-root
+  aggregate  — total declared estimate + per-mission estimates across docs
 
 Exit codes:
   0 — at least one readiness doc found and analyzed
@@ -36,7 +39,7 @@ def _print_per_run(rows: list[dict], as_json: bool) -> None:
     if as_json:
         print(json.dumps(rows, indent=2))
         return
-    header = f"{'source':<60} {'mission':<30} {'status':<8} {'cost':>10}"
+    header = f"{'source':<60} {'mission':<30} {'status':<8} {'cost_est':>10}"
     print(header)
     print("-" * len(header))
     for r in rows:
@@ -53,11 +56,13 @@ def _print_aggregate(agg: dict, as_json: bool) -> None:
     if as_json:
         print(json.dumps(agg, indent=2))
         return
+    print(f"basis: {agg['basis']} (operator-declared estimate, not measured spend)")
     print(f"runs: {agg['runs']}")
     print(f"missing_cost: {agg['missing_cost']}")
-    print(f"total_cost: {agg['total_cost']:.2f}")
-    print("by_mission:")
-    for mission, total in agg["by_mission"].items():
+    print(f"estimates_without_provenance: {agg['estimates_without_provenance']}")
+    print(f"total_cost_estimate: {agg['total_cost_estimate']:.2f}")
+    print("by_mission_estimate:")
+    for mission, total in agg["by_mission_estimate"].items():
         print(f"  {mission}: {total:.2f}")
 
 

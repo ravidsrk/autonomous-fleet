@@ -43,6 +43,7 @@ from lib.emit_trace import (  # noqa: E402
     SCHEMA_VERSION,
     STATUSES,
     TraceEmitter,
+    TraceScanStats,
     emit_full_primitive_trace,
     _ALLOWED_FIELDS,
     _EVIDENCE_HASH_RE,
@@ -509,9 +510,69 @@ def test_iter_trace_yields_events_and_skips_malformed(tmp_path: Path) -> None:
         + "\n",
         encoding="utf-8",
     )
-    events = list(iter_trace_file(path))
+    stats = TraceScanStats()
+    events = list(iter_trace_file(path, stats=stats))
     assert [e["primitive"] for e in events] == ["DISPATCH", "MERGE"]
-    assert iter_trace_file.last_skipped == 2  # type: ignore[attr-defined]
+    assert stats.skipped == 2
+
+
+def test_iter_trace_skipped_defaults_to_zero_without_stats(tmp_path: Path) -> None:
+    """A fresh TraceScanStats reads zero, and stats is optional: callers that
+    only want events (the common case) can omit it entirely."""
+    path = tmp_path / "trace.jsonl"
+    path.write_text(json.dumps(_valid_event()) + "\n", encoding="utf-8")
+    assert TraceScanStats().skipped == 0
+    # No stats arg: still yields events, no shared attribute is written.
+    assert [e["primitive"] for e in iter_trace_file(path)] == ["DISPATCH"]
+
+
+def test_iter_trace_two_file_interleave_keeps_counts_separate(tmp_path: Path) -> None:
+    """Regression for finding 28: the skipped count must be per-call, not a
+    shared function attribute. Interleave two iterations over two files with
+    different malformed-line counts and assert neither clobbers the other."""
+    file_a = tmp_path / "a.jsonl"
+    file_a.write_text(
+        "\n".join(
+            [
+                json.dumps(_valid_event()),
+                "{broken",  # 1 malformed line
+                json.dumps(_valid_event(primitive="MERGE")),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    file_b = tmp_path / "b.jsonl"
+    file_b.write_text(
+        "\n".join(
+            [
+                "{also broken",  # 3 malformed lines
+                json.dumps(_valid_event(primitive="SYNC")),
+                "[1, 2, 3]",  # not an object
+                "{still broken",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    stats_a = TraceScanStats()
+    stats_b = TraceScanStats()
+    iter_a = iter_trace_file(file_a, stats=stats_a)
+    iter_b = iter_trace_file(file_b, stats=stats_b)
+
+    # Interleave: advance each generator one event at a time. The old
+    # function-attribute design would have left a single shared count that the
+    # second full consumption overwrote.
+    events_a = [next(iter_a)]
+    events_b = [next(iter_b)]
+    events_a.extend(iter_a)
+    events_b.extend(iter_b)
+
+    assert [e["primitive"] for e in events_a] == ["DISPATCH", "MERGE"]
+    assert [e["primitive"] for e in events_b] == ["SYNC"]
+    assert stats_a.skipped == 1
+    assert stats_b.skipped == 3
 
 
 def test_lifeline_parent_points_at_real_spawn(tmp_path: Path) -> None:

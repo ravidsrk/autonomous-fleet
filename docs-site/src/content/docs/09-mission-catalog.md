@@ -235,10 +235,12 @@ mission.
 Trigger phrases: "add tests", "raise coverage", "this module has no tests", "write tests for X",
 "improve test coverage", "lock current behaviour with tests".
 
-Tier 1, but with a caveat. Test tasks merge at a lower rate than documentation and build-update
-tasks (same arXiv 2601.15195 dataset), so the reviewer gate matters more here. The one failure
-mode to guard is hollow tests written to move a number. The reviewer's explicit job is to reject
-those.
+Tier 1, but with a real caveat. Test PRs merge at a materially lower cross-agent rate than
+documentation and build-update tasks — roughly 61.5% versus ~84% for docs (same arXiv 2601.15195
+dataset) — so the reviewer gate matters more here and this is not as hands-off as `doc-sync`: glance
+at the result rather than leaving it fully unattended. Per-task merge rates vary by agent, so treat
+the tier ordering as qualitative. The one failure mode to guard is hollow tests written to move a
+number. The reviewer's explicit job is to reject those.
 
 ### Input contract
 
@@ -367,9 +369,12 @@ fixes. It never reinterprets beyond them and never fixes a refuted non-issue.
 Trigger phrases: "adversarial review and fix", "audit and remediate", "review the whole app and
 fix the issues", "harden this before production", "find and fix the architecture problems".
 
-This mission's fixes span fix / refactor / security work, which merge in the ~0.80–0.82 range, so
-the full review gate is essential. It is Tier 2 because it touches application logic, unlike the
-two Tier 1 missions which are documentation and tests.
+This mission's fixes span fix / refactor / security work — categories AI agents merge at a lower
+rate than documentation and build-update work (arXiv 2601.15195, Ehsani et al., MSR 2026) — so the
+full review gate is essential. There is no published category-level merge rate for this composite,
+and per-task merge rates vary by agent, so treat the tier ordering as qualitative. It is Tier 2
+because it touches application logic, unlike the two Tier 1 missions which are documentation and
+tests.
 
 ### Input contract
 
@@ -554,7 +559,10 @@ multiple missions or a conditional flow ("if the audit finds P0s, then…"), use
 ```
 
 Two reasons to reach for the Tier 1 missions first on a repo you have not run the fleet on before:
-they merge at the highest cross-agent rates, and they are safe to run unattended. Save
+they sit among the higher-merging cross-agent task categories, and they are the lowest-risk to run
+with little supervision. `doc-sync` is the safest (documentation merges highest, ~84% cross-agent);
+`test-coverage` merges lower (~61.5%), so glance at its result rather than leaving it fully
+unattended. Per-task merge rates vary by agent, so treat the tier ordering as qualitative. Save
 `adversarial-review-and-fix` for when you specifically want code changes behind a full review gate.
 
 ## The exploratory roster

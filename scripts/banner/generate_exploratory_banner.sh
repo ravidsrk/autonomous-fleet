@@ -4,6 +4,13 @@
 # Preferred: Nano Banana via generate.sh when OPENROUTER_API_KEY is set.
 # Fallback: normalize an existing schematic source image with sniff_and_normalize_banner.sh.
 #
+# EXTERNAL DEPENDENCY (not shipped in this repo): the OpenRouter generation path
+# shells out to terminal-poster/scripts/generate.sh, which lives in a SIBLING
+# skills repo (the terminal-poster skill) and is intentionally NOT vendored here.
+# We do not try to bundle it; instead the caller points at it explicitly. Without
+# it (and an OPENROUTER_API_KEY) this script degrades to the source-image fallback
+# below, and schematic banners can still be produced via scripts/lib/png_banner.py.
+#
 # Portable contract:
 #   GENERATE_SH  — explicit path to terminal-poster/scripts/generate.sh (required for OpenRouter gen)
 #   AGENT_SKILLS_ROOT — optional; if GENERATE_SH unset, tries $AGENT_SKILLS_ROOT/skills/terminal-poster/scripts/generate.sh
