@@ -30,6 +30,8 @@ def _readiness(
     mission: str = "doc-sync",
     status: str = "done",
     cost: float | None | object = _MISSING,
+    cost_source: str | None = None,
+    cost_date: str | None = None,
 ) -> Path:
     docs.mkdir(parents=True, exist_ok=True)
     metrics = {
@@ -43,6 +45,11 @@ def _readiness(
         cost_line = "  cost_estimate:\n"
     else:
         cost_line = f"  cost_estimate: {cost}\n"
+    if cost_source is not None:
+        cost_line += f"  cost_estimate_source: {cost_source}\n"
+    if cost_date is not None:
+        # quote so YAML keeps it a string, not a datetime.date
+        cost_line += f'  cost_estimate_date: "{cost_date}"\n'
     path = docs / name
     path.write_text(
         "---\n"
@@ -66,7 +73,14 @@ def _readiness(
 
 def test_per_run_rows_correct_and_missing_cost_is_none(tmp_path: Path) -> None:
     docs = tmp_path / "docs"
-    a = _readiness(docs, "a-readiness.md", mission="doc-sync", cost=1.25)
+    a = _readiness(
+        docs,
+        "a-readiness.md",
+        mission="doc-sync",
+        cost=1.25,
+        cost_source="operator log",
+        cost_date="2026-06-27",
+    )
     b = _readiness(
         docs,
         "b-readiness.md",
@@ -79,12 +93,16 @@ def test_per_run_rows_correct_and_missing_cost_is_none(tmp_path: Path) -> None:
             "source": str(a),
             "mission": "doc-sync",
             "cost_estimate": 1.25,
+            "cost_estimate_source": "operator log",
+            "cost_estimate_date": "2026-06-27",
             "status": "done",
         },
         {
             "source": str(b),
             "mission": "test-coverage",
             "cost_estimate": None,
+            "cost_estimate_source": None,
+            "cost_estimate_date": None,
             "status": "partial",
         },
     ]
@@ -99,22 +117,37 @@ def test_per_run_null_cost_estimate_is_counted_missing(tmp_path: Path) -> None:
     assert aggregate(rows)["missing_cost"] == 1
 
 
-def test_aggregate_total_by_mission_and_missing_values() -> None:
+def test_aggregate_labels_estimates_and_counts_provenance_gap() -> None:
     result = aggregate(
         [
+            # non-zero, no provenance -> counted as a provenance gap
             {"mission": "doc-sync", "cost_estimate": 1.0},
-            {"mission": "doc-sync", "cost_estimate": 2.25},
-            {"mission": "test-coverage", "cost_estimate": 0.75},
+            # non-zero, has a source -> NOT a provenance gap
+            {
+                "mission": "doc-sync",
+                "cost_estimate": 2.25,
+                "cost_estimate_source": "operator log",
+            },
+            # non-zero, has a date -> NOT a provenance gap
+            {
+                "mission": "test-coverage",
+                "cost_estimate": 0.75,
+                "cost_estimate_date": "2026-06-27",
+            },
+            # zero -> never a provenance gap even without source/date
+            {"mission": "cleanup", "cost_estimate": 0.0},
             {"mission": "cleanup", "cost_estimate": None},
             {"mission": "cleanup", "cost_estimate": "bad"},
         ]
     )
 
     assert result == {
-        "total_cost": 4.0,
-        "by_mission": {"doc-sync": 3.25, "test-coverage": 0.75},
-        "runs": 5,
+        "basis": "declared-estimate",
+        "total_cost_estimate": 4.0,
+        "by_mission_estimate": {"cleanup": 0.0, "doc-sync": 3.25, "test-coverage": 0.75},
+        "runs": 6,
         "missing_cost": 2,
+        "estimates_without_provenance": 1,
     }
 
 
@@ -180,6 +213,8 @@ def test_cli_per_run_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
     data = json.loads(out)
     assert data[0]["mission"] == "doc-sync"
     assert data[0]["cost_estimate"] == 1.0
+    assert data[0]["cost_estimate_source"] is None
+    assert data[0]["cost_estimate_date"] is None
 
 
 def test_cli_per_run_table(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -190,6 +225,8 @@ def test_cli_per_run_table(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> N
 
     assert rc == 0
     assert "source" in out
+    # header labels the column as an estimate, not a measured cost
+    assert "cost_est" in out
     assert "doc-sync" in out
     assert "MISSING" in out
 
@@ -204,21 +241,36 @@ def test_cli_aggregate_json(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
 
     assert rc == 0
     data = json.loads(out)
+    assert data["basis"] == "declared-estimate"
     assert data["runs"] == 2
-    assert data["total_cost"] == 1.5
-    assert data["by_mission"] == {"doc-sync": 1.0, "test-coverage": 0.5}
+    assert data["total_cost_estimate"] == 1.5
+    assert data["by_mission_estimate"] == {"doc-sync": 1.0, "test-coverage": 0.5}
+    # both non-zero estimates lack source+date -> flagged, not hidden
+    assert data["estimates_without_provenance"] == 2
 
 
 def test_cli_aggregate_table(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    _readiness(tmp_path, "a-readiness.md", mission="doc-sync", cost=1.0)
+    _readiness(
+        tmp_path,
+        "a-readiness.md",
+        mission="doc-sync",
+        cost=1.0,
+        cost_source="operator log",
+        cost_date="2026-06-27",
+    )
     _readiness(tmp_path, "b-readiness.md", mission="cleanup")
 
     rc, out, _ = _run_cli(monkeypatch, "--docs-root", str(tmp_path), "aggregate")
 
     assert rc == 0
+    # the basis line keeps the "declared estimate, not measured spend" framing
+    assert "basis: declared-estimate" in out
+    assert "not measured spend" in out
     assert "runs: 2" in out
     assert "missing_cost: 1" in out
-    assert "total_cost: 1.00" in out
+    assert "estimates_without_provenance: 0" in out
+    assert "total_cost_estimate: 1.00" in out
+    assert "by_mission_estimate:" in out
     assert "  doc-sync: 1.00" in out

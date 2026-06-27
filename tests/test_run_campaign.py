@@ -90,6 +90,70 @@ def test_repo_health_dry_run():
     assert "cleanup" not in r.stdout
 
 
+def test_audit_gated_preset_dry_run_benign_branch():
+    """Finding 54: the shipped audit-gated preset has a LIVE conditional edge.
+    Benign dry-run (all metrics 0) takes `audit -> tests if findings_open == 0`."""
+    r = subprocess.run(
+        [str(SCRIPT), "grok", "--preset", "audit-gated", "--dry-run"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    assert "node=audit mission=adversarial-review-and-fix" in r.stdout
+    # benign metrics -> clean branch -> tests; remediate is NOT reached.
+    assert "node=tests mission=test-coverage" in r.stdout
+    assert "node=remediate" not in r.stdout
+
+
+def test_audit_gated_preset_probe_fail_reaches_failure_branch():
+    """Finding 56: --probe-fail forces failure-shaped metrics so the
+    `findings_open > 0` branch (audit -> remediate) is reachability-checked."""
+    r = subprocess.run(
+        [str(SCRIPT), "grok", "--preset", "audit-gated", "--dry-run", "--probe-fail"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    assert "probe:    fail (findings_open=1, p0_open=1, status=blocked)" in r.stdout
+    # failure metrics -> the gated branch -> remediate, NOT the benign `tests` target.
+    assert "node=remediate mission=adversarial-review-and-fix" in r.stdout
+    assert "node=tests" not in r.stdout
+
+
+def test_probe_fail_requires_dry_run():
+    """--probe-fail is a planning-only probe; without --dry-run it must error,
+    never silently force failure-shaped metrics onto a real (paid) run."""
+    r = subprocess.run(
+        [str(SCRIPT), "grok", "--preset", "audit-gated", "--probe-fail"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode != 0
+    assert "--probe-fail only applies to --dry-run" in r.stderr
+
+
+def test_probe_fail_benign_preset_terminates_cleanly():
+    """--probe-fail on an `if: always` preset (single branch) still terminates;
+    failure-shaped metrics do not strand the always-edge or loop."""
+    r = subprocess.run(
+        [str(SCRIPT), "grok", "--preset", "repo-health", "--dry-run", "--probe-fail"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert r.returncode == 0, r.stderr
+    assert "Campaign dry-run complete" in r.stdout
+    assert "node=docs" in r.stdout
+    assert "node=tests" in r.stdout
+
+
 def test_unknown_runtime_rejected():
     """H2c: unsupported runtime values must exit non-zero before any work."""
     r = subprocess.run(

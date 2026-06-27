@@ -16,6 +16,8 @@ def main() -> int:
         rl.lint_shipped_mission_dirs(root)
         + rl.lint_catalog_mentions(root)
         + rl.lint_skills_lock(root)
+        + rl.lint_lock_hashes(root)
+        + rl.lint_external_source_pins(root)
         + rl.lint_campaign_missions(root)
     )
     for e in errors:

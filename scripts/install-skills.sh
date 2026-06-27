@@ -22,7 +22,15 @@ if [[ $# -gt 0 ]]; then
   exec npx "$SKILLS_CLI" add "$SOURCE" --skill "$@" -y -p
 fi
 
-# Default starter set for Grok-based runs
+# Default: the "Grok starter set".
+#
+# This intentionally differs from the README's quickstart in two ways, and that is fine —
+# they target different defaults (the README agent calls out the difference):
+#   1. Adapter: this set installs `autonomous-fleet-adapter-grok`; the README quickstart
+#      installs `-claude-code`. Swap `-grok` below for your chosen runtime.
+#   2. `-p`: this set passes `-p` (install into the project, not the user-global skills dir),
+#      so a clone's local skills win; the README quickstart omits it for a fresh project.
+# Both install the same six-skill set from this repo and pin `skills@1.5.12`.
 exec npx "$SKILLS_CLI" add "$SOURCE" \
   --skill setup-autonomous-fleet \
   --skill autonomous-fleet \

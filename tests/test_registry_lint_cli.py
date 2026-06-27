@@ -84,3 +84,139 @@ def test_external_source_skill_on_disk_is_not_drift(tmp_path: Path):
     (tmp_path / "skills-lock.json").write_text(json.dumps(lock))
     errors = rl.lint_skills_lock(tmp_path)
     assert not any("skill-creator" in e for e in errors), errors
+
+
+# --- lockfile content-hash integrity (finding 58) ---------------------------
+
+
+def _make_skill(root: Path, name: str, body: str = "hello\n") -> Path:
+    skill_dir = root / "skills" / name
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text(f"---\nname: {name}\n---\n{body}", encoding="utf-8")
+    (skill_dir / "extra.txt").write_text("aux\n", encoding="utf-8")
+    return skill_dir
+
+
+def test_content_hash_is_deterministic_and_path_sensitive(tmp_path: Path):
+    a = _make_skill(tmp_path, "alpha")
+    first = rl.content_hash(a)
+    assert first == rl.content_hash(a)
+    assert len(first) == 64
+    # Renaming a file changes the digest even when bytes are identical.
+    (a / "extra.txt").rename(a / "renamed.txt")
+    assert rl.content_hash(a) != first
+    # Changing content changes the digest.
+    (a / "renamed.txt").write_text("different\n", encoding="utf-8")
+    assert rl.content_hash(a) != first
+
+
+def test_real_repo_lock_hashes_are_verified():
+    # Self-consistency: the committed lock's computedHash values must match the
+    # content hashes recomputed from the shipped skill dirs on disk.
+    assert rl.lint_lock_hashes(REPO_ROOT) == []
+    assert rl.lint_external_source_pins(REPO_ROOT) == []
+
+
+def test_lock_hash_mismatch_is_flagged(tmp_path: Path):
+    skill = _make_skill(tmp_path, "doc-sync")
+    good = rl.content_hash(skill)
+    lock = {
+        "version": 1,
+        "skills": {
+            "doc-sync": {"source": rl.LOCAL_LOCK_SOURCE, "computedHash": good},
+        },
+    }
+    (tmp_path / "skills-lock.json").write_text(json.dumps(lock), encoding="utf-8")
+    assert rl.lint_lock_hashes(tmp_path) == []
+
+    # Mutate the body so the on-disk hash drifts from the locked value.
+    (skill / "SKILL.md").write_text("---\nname: doc-sync\n---\nMUTATED\n", encoding="utf-8")
+    errors = rl.lint_lock_hashes(tmp_path)
+    assert len(errors) == 1
+    assert "doc-sync computedHash mismatch" in errors[0]
+
+
+def test_lock_hash_skips_non_verifiable_rows(tmp_path: Path):
+    # A bare-string row, an external row, and a local row without computedHash
+    # are all skipped by the hash verifier (no false positives).
+    creator = tmp_path / "skills" / "skill-creator"
+    creator.mkdir(parents=True)
+    (creator / "SKILL.md").write_text("---\nname: skill-creator\n---\n", encoding="utf-8")
+    lock = {
+        "version": 1,
+        "skills": {
+            "bare": "local-row",
+            "skill-creator": {
+                "source": "anthropics/skills",
+                "computedHash": "0" * 64,
+            },
+            "no-hash": {"source": rl.LOCAL_LOCK_SOURCE},
+        },
+    }
+    (tmp_path / "skills-lock.json").write_text(json.dumps(lock), encoding="utf-8")
+    assert rl.lint_lock_hashes(tmp_path) == []
+
+
+def test_lock_hash_local_row_with_hash_but_missing_dir_is_flagged(tmp_path: Path):
+    lock = {
+        "version": 1,
+        "skills": {
+            "ghost": {"source": rl.LOCAL_LOCK_SOURCE, "computedHash": "0" * 64},
+        },
+    }
+    (tmp_path / "skills-lock.json").write_text(json.dumps(lock), encoding="utf-8")
+    errors = rl.lint_lock_hashes(tmp_path)
+    assert errors == [
+        "skills-lock.json: ghost has computedHash but no skills/ghost/ on disk"
+    ]
+
+
+def test_lock_hash_propagates_load_errors(tmp_path: Path):
+    # No lock file at all -> the shared loader's error surfaces unchanged.
+    assert rl.lint_lock_hashes(tmp_path) == ["skills-lock.json: missing"]
+
+
+# --- external-source pinning (finding 58) -----------------------------------
+
+
+def test_unpinned_external_source_is_flagged(tmp_path: Path):
+    lock = {
+        "version": 1,
+        "skills": {
+            "local": {"source": rl.LOCAL_LOCK_SOURCE},
+            "bare": "local-row",
+            "skill-creator": {"source": "anthropics/skills", "sourceType": "github"},
+        },
+    }
+    (tmp_path / "skills-lock.json").write_text(json.dumps(lock), encoding="utf-8")
+    errors = rl.lint_external_source_pins(tmp_path)
+    assert len(errors) == 1
+    assert "external source 'anthropics/skills' for skill-creator is not pinned" in errors[0]
+
+
+def test_pinned_external_source_passes(tmp_path: Path):
+    for field in ("ref", "commit", "tag", "sha"):
+        lock = {
+            "version": 1,
+            "skills": {
+                "skill-creator": {"source": "anthropics/skills", field: "abc123"},
+            },
+        }
+        (tmp_path / "skills-lock.json").write_text(json.dumps(lock), encoding="utf-8")
+        assert rl.lint_external_source_pins(tmp_path) == [], field
+
+
+def test_external_pins_reject_placeholder_values(tmp_path: Path) -> None:
+    lock = {
+        "version": 1,
+        "skills": {
+            "skill-creator": {"source": "anthropics/skills", "ref": "TODO-PIN-SHA"},
+        },
+    }
+    (tmp_path / "skills-lock.json").write_text(json.dumps(lock), encoding="utf-8")
+    errors = rl.lint_external_source_pins(tmp_path)
+    assert any("placeholder pin" in e for e in errors)
+
+
+def test_external_pins_propagates_load_errors(tmp_path: Path):
+    assert rl.lint_external_source_pins(tmp_path) == ["skills-lock.json: missing"]

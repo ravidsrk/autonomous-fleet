@@ -7,6 +7,7 @@ frontmatter Starlight expects.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -48,7 +49,13 @@ def _yaml_scalar(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
 
-def convert_file(src: Path, dest: Path) -> None:
+def _display_path(path: Path) -> str:
+    """Render ``path`` relative to ROOT for messages (never raises)."""
+    return os.path.relpath(path, ROOT)
+
+
+def render_file(src: Path) -> str:
+    """Convert a guide source into the Starlight document text (in-memory)."""
     text = src.read_text(encoding="utf-8")
     m = _FRONTMATTER_RE.match(text)
     if not m:
@@ -61,14 +68,47 @@ def convert_file(src: Path, dest: Path) -> None:
         f"sidebar:\n  order: {m.group('order').strip()}\n"
         "---\n\n"
     )
+    return front + body
+
+
+def convert_file(src: Path, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(front + body, encoding="utf-8")
+    dest.write_text(render_file(src), encoding="utf-8")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    check = "--check" in (argv if argv is not None else sys.argv[1:])
     if not GUIDE.is_dir():
         print(f"sync_guide_starlight: missing {GUIDE}", file=sys.stderr)
         return 2
+    if check:
+        drifted: list[str] = []
+        expected_names = {
+            "index.md" if src.name == "README.md" else src.name
+            for src in GUIDE.glob("*.md")
+        }
+        for src in sorted(GUIDE.glob("*.md")):
+            name = "index.md" if src.name == "README.md" else src.name
+            dest = OUT / name
+            rendered = render_file(src)
+            current = dest.read_text(encoding="utf-8") if dest.is_file() else None
+            if current != rendered:
+                drifted.append(_display_path(dest))
+        if OUT.is_dir():
+            for dest in sorted(OUT.glob("*.md")):
+                if dest.name not in expected_names:
+                    drifted.append(_display_path(dest))
+        if drifted:
+            print(
+                "sync_guide_starlight: committed docs-site copy is stale; "
+                "run scripts/sync_guide_starlight.py and commit:",
+                file=sys.stderr,
+            )
+            for path in drifted:
+                print(f"  drift: {path}", file=sys.stderr)
+            return 1
+        print("sync_guide_starlight: docs-site copy is in sync")
+        return 0
     OUT.mkdir(parents=True, exist_ok=True)
     for src in sorted(GUIDE.glob("*.md")):
         name = "index.md" if src.name == "README.md" else src.name

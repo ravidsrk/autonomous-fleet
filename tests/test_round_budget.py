@@ -183,3 +183,10 @@ def test_cli_kill_switch_short_circuits_before_argparse(monkeypatch) -> None:
     assert rc == 0
     assert out == ""
     assert "verify-round-budget: DISABLED via FLEET_DISABLE_ROUND_BUDGET=1" in err
+
+
+def test_event_without_task_id_is_ignored():
+    # Covers the guard that skips events lacking a valid task_id: the verifier
+    # only tracks named tasks, so an event with no task_id registers no state
+    # and the summary must equal that of an empty event stream.
+    assert verify_round_budget([_event(None)]) == verify_round_budget([])

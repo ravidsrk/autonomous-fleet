@@ -5,6 +5,24 @@ research catalog. Every concept in `engine.md` and every mission in
 `skills/` exists because a specific run exposed a specific failure
 mode that the concept prevents.
 
+## Maintenance status
+
+autonomous-fleet is a single-maintainer, pre-1.0 project. There is one
+maintainer (@ravidsrk), and there is no fixed release cadence — fixes
+and features land on `main` as they are ready.
+
+There are no tagged releases yet, so **pinning to a commit is the
+stability story**: pin to a specific commit if you need stability, then
+re-pin forward when a fix you need merges. (See also "Supported
+versions" in `SECURITY.md`.) Cutting a tagged release once the headless
+path has a real end-to-end run behind it is on the roadmap, and is the
+recommended next step for anyone who wants a more stable pin than a raw
+commit SHA.
+
+Because it is pre-1.0 and single-maintainer, review latency varies and
+APIs/mission contracts can change between commits without a deprecation
+window. File issues and PRs anyway — they are read.
+
 ## The Distillation Discipline
 
 The single rule that protects the framework's credibility:
@@ -59,9 +77,18 @@ Research citations look like:
 - `arXiv 2601.15195` (MSR 2026 AIDev dataset, 33,596 PRs) — this is
   legitimate and is the only research citation in `engine.md`.
 
+Mind which paper a number actually comes from. `arXiv 2601.15195`
+(the 33,596-PR AIDev dataset) supports the directional ranking of
+task categories (docs/CI/build merge best, performance/fix worst). It
+does **not** source the per-task merge-rate *decimals*: per
+`docs/adversarial-audit-2026-06-20.md`, those per-task figures come
+from Pinna et al. (`arXiv 2602.08915`, 7,156 PRs), a different and
+smaller paper. Attaching the "33k PRs" provenance to a per-task decimal
+is exactly the misattribution the audit flagged.
+
 If you cite a paper, the paper must contain the claim. The repo's
-adversarial-audit-2026-06-20.md flagged misattribution as a class of
-problem; do not reintroduce it.
+`docs/adversarial-audit-2026-06-20.md` flagged misattribution as a
+class of problem; do not reintroduce it.
 
 ## Anti-patterns to avoid
 

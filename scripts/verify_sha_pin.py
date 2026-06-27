@@ -65,8 +65,18 @@ def _load_records(paths: list[Path]) -> tuple[list[dict[str, Any]], list[str]]:
 
 
 def _git_head(repo: Path, branch: str) -> str | None:
+    # Terminate option parsing before the branch so a branch name can never be
+    # interpreted as a git option (e.g. "--upload-pack=...", "--help"). We use
+    # `--end-of-options` rather than a bare `--`: for `git rev-parse`, `--`
+    # switches the remaining args to *paths* (which would NOT resolve the
+    # branch), whereas `--end-of-options` ends option parsing while still
+    # treating the next argument as a revision. `--verify` makes rev-parse emit
+    # exactly one clean SHA line (and fail non-zero on anything else), so a
+    # crafted name yields None rather than leaking an injected option. This is
+    # belt-and-suspenders with lib._BRANCH_RE's alphanumeric-first-char rule,
+    # which already rejects leading-dash names like "--help" upstream.
     result = subprocess.run(
-        ["git", "-C", str(repo), "rev-parse", branch],
+        ["git", "-C", str(repo), "rev-parse", "--verify", "--end-of-options", branch],
         capture_output=True,
         text=True,
         check=False,
@@ -78,9 +88,28 @@ def _git_head(repo: Path, branch: str) -> str | None:
 
 
 def main() -> int:
-    from lib.substrate_disable import announce_disabled, is_disabled
+    from lib.substrate_disable import (
+        SECURITY_OVERRIDE_ACK_ENV,
+        announce_disabled,
+        is_disabled,
+        is_security_disable_acknowledged,
+    )
 
     if is_disabled("FLEET_DISABLE_SHA_PIN"):
+        # SHA-pin is a security/integrity gate, NOT an operator escape-hatch
+        # quality gate: it must FAIL CLOSED. A bare FLEET_DISABLE_SHA_PIN=1 is
+        # not enough to drop a supply-chain check — a stray env var in CI must
+        # not silently disable it. Require an explicit, recorded operator ack.
+        if not is_security_disable_acknowledged():
+            print(
+                "SHA-pin: REFUSING to disable a security check via "
+                "FLEET_DISABLE_SHA_PIN without explicit operator override. "
+                f"Set {SECURITY_OVERRIDE_ACK_ENV}=1 to acknowledge that "
+                "dropping the SHA-pin integrity gate is a deliberate, recorded "
+                "decision (see DECISIONS.md); failing closed.",
+                file=sys.stderr,
+            )
+            return 1
         return announce_disabled("SHA-pin", "FLEET_DISABLE_SHA_PIN")
 
     p = argparse.ArgumentParser(

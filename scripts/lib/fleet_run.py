@@ -542,12 +542,20 @@ def _sha256_file(path: Path) -> str:
 
 
 def _utc_from_mtime(mtime: float) -> str:
-    """Round to second resolution (matches manifest schema pattern; sub-second
-    drift is irrelevant for our ordering invariants which are minutes apart)."""
+    """Format an mtime to UTC ISO 8601 with MICROSECOND precision.
+
+    The manifest schema (UTC_ISO_PATTERN) allows fractional seconds, and we
+    keep them: rounding to whole seconds made two artifacts written in the
+    SAME wall-clock second collide on an identical timestamp, which then
+    tripped the strict mtime-ordering invariants in ``_validate_ordering``
+    ("blind_fix must strictly precede findings") as a false positive. Carrying
+    sub-second precision keeps sequentially-written artifacts strictly ordered.
+    Genuine ties (identical mtimes — coarse-granularity filesystems, or files
+    that share an mtime) are handled by the non-strict tie-break in
+    ``_validate_ordering``."""
     return (
         datetime.fromtimestamp(mtime, tz=timezone.utc)
-        .replace(microsecond=0)
-        .strftime("%Y-%m-%dT%H:%M:%SZ")
+        .strftime("%Y-%m-%dT%H:%M:%S.%fZ")
     )
 
 
@@ -784,17 +792,25 @@ def _validate_ordering(files: list[dict[str, Any]], where: str) -> list[str]:
             continue
         by_kind.setdefault(kind, []).append((path, str(producer), mt))
 
+    # Tie-break (finding 25): mtimes are compared at MICROSECOND resolution
+    # (see _utc_from_mtime). Two artifacts written in the same instant produce
+    # EQUAL mtimes; an equal timestamp cannot prove "out of order", so we treat
+    # an exact tie as compliant and only flag a STRICTLY wrong order. This makes
+    # same-second (or same-microsecond) writes pass while a genuinely-later
+    # blind_fix / earlier verify_summary still fails. Invariant 3 (readiness)
+    # already used this strict-only convention; 1 and 2 now match it.
+
     # Invariant 1: blind_fix before findings, per producer.
     findings_by_producer: dict[str, list[tuple[str, datetime]]] = {}
     for path, producer, mt in by_kind.get("findings", []):
         findings_by_producer.setdefault(producer, []).append((path, mt))
     for path, producer, blind_mt in by_kind.get("blind_fix", []):
         for findings_path, findings_mt in findings_by_producer.get(producer, []):
-            if blind_mt >= findings_mt:
+            if blind_mt > findings_mt:
                 errors.append(
                     f"{where}: ANTI-ANCHORING violation: blind_fix "
                     f"{path!r} (producer={producer!r}) mtime "
-                    f"{blind_mt.isoformat()} is not strictly before findings "
+                    f"{blind_mt.isoformat()} is after findings "
                     f"{findings_path!r} mtime {findings_mt.isoformat()}"
                 )
 
@@ -804,11 +820,11 @@ def _validate_ordering(files: list[dict[str, Any]], where: str) -> list[str]:
     # the reviewer it audits). Same producer-pairing as Invariant 1.
     for path, producer, summary_mt in by_kind.get("verify_summary", []):
         for findings_path, findings_mt in findings_by_producer.get(producer, []):
-            if summary_mt <= findings_mt:
+            if summary_mt < findings_mt:
                 errors.append(
                     f"{where}: stale-audit violation: verify_summary "
                     f"{path!r} (producer={producer!r}) mtime "
-                    f"{summary_mt.isoformat()} is not strictly after findings "
+                    f"{summary_mt.isoformat()} is before findings "
                     f"{findings_path!r} mtime {findings_mt.isoformat()}"
                 )
 

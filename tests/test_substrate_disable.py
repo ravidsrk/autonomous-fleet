@@ -138,8 +138,10 @@ def test_no_legacy_alias_exported() -> None:
     import lib.substrate_disable as sd
 
     assert sorted(sd.__all__) == [
+        "SECURITY_OVERRIDE_ACK_ENV",
         "announce_disabled",
         "is_disabled",
+        "is_security_disable_acknowledged",
         "is_truthy",
     ]
     # Belt-and-suspenders: the legacy shim must not exist as an
@@ -185,6 +187,65 @@ def test_announce_disabled_writes_to_stderr_and_returns_zero(capsys):
     captured = capsys.readouterr()
     assert captured.out == ""
     assert "my-layer: DISABLED via FLEET_DISABLE_MY_LAYER=1 (no-op exit 0)" in captured.err
+
+
+# --------------------------------------------------------------------
+# Security/integrity override-ack helper (fail-closed knob class).
+#
+# Operator escape-hatch knobs no-op to PASS on a bare truthy value; the
+# security/integrity knobs (sha-pin, reviewer-sandbox, namespacing) must
+# additionally see FLEET_SECURITY_OVERRIDE_ACK before they may be dropped.
+# These tests pin that the helper distinguishes the two classes and reuses
+# the canonical truthy rule — without changing announce_disabled's signature
+# (the sandbox agent depends on it).
+# --------------------------------------------------------------------
+
+
+def test_security_override_ack_env_name_is_canonical() -> None:
+    sys.path.insert(0, str(SCRIPTS))
+    from lib.substrate_disable import SECURITY_OVERRIDE_ACK_ENV
+
+    assert SECURITY_OVERRIDE_ACK_ENV == "FLEET_SECURITY_OVERRIDE_ACK"
+
+
+def test_security_disable_unacknowledged_when_unset(monkeypatch) -> None:
+    sys.path.insert(0, str(SCRIPTS))
+    from lib.substrate_disable import (
+        SECURITY_OVERRIDE_ACK_ENV,
+        is_security_disable_acknowledged,
+    )
+
+    monkeypatch.delenv(SECURITY_OVERRIDE_ACK_ENV, raising=False)
+    assert is_security_disable_acknowledged() is False
+
+
+def test_security_disable_acknowledged_only_for_truthy(monkeypatch) -> None:
+    sys.path.insert(0, str(SCRIPTS))
+    from lib.substrate_disable import (
+        SECURITY_OVERRIDE_ACK_ENV,
+        is_security_disable_acknowledged,
+    )
+
+    for truthy in ("1", "true", "TRUE", "yes", "on"):
+        monkeypatch.setenv(SECURITY_OVERRIDE_ACK_ENV, truthy)
+        assert is_security_disable_acknowledged() is True, truthy
+
+    for falsy in ("0", "false", "no", "off", "", "  ", "maybe"):
+        monkeypatch.setenv(SECURITY_OVERRIDE_ACK_ENV, falsy)
+        assert is_security_disable_acknowledged() is False, repr(falsy)
+
+
+def test_announce_disabled_signature_unchanged_for_sandbox_agent() -> None:
+    """The reviewer-sandbox agent calls announce_disabled(label, env_var).
+    Pin the two-positional-parameter signature so the fail-closed work above
+    can't have silently broken its dependent."""
+    import inspect
+
+    sys.path.insert(0, str(SCRIPTS))
+    from lib.substrate_disable import announce_disabled
+
+    params = list(inspect.signature(announce_disabled).parameters)
+    assert params == ["layer_label", "env_var"]
 
 
 # --------------------------------------------------------------------

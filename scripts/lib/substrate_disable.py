@@ -19,6 +19,14 @@ from typing import Final
 
 _TRUTHY: Final = frozenset({"1", "true", "yes", "on"})
 
+# Explicit operator override required to drop a security/integrity check.
+# Unlike the operator-escape-hatch knobs (which silently no-op to PASS), the
+# security/integrity layers (sha-pin, reviewer-sandbox, namespacing) FAIL CLOSED:
+# a bare `FLEET_DISABLE_*=1` is not enough — the operator must additionally set
+# this ack to record that dropping a supply-chain/isolation invariant was a
+# deliberate decision (see references/substrate-disable-knobs.md §Security knobs).
+SECURITY_OVERRIDE_ACK_ENV: Final = "FLEET_SECURITY_OVERRIDE_ACK"
+
 
 def is_truthy(value: str | None) -> bool:
     """Return True iff value is a recognized truthy string."""
@@ -61,8 +69,34 @@ def announce_disabled(layer_label: str, env_var: str) -> int:
     return 0
 
 
+def is_security_disable_acknowledged() -> bool:
+    """Return True iff the operator explicitly acked a security-knob override.
+
+    This distinguishes the two knob classes:
+
+    * **Operator escape-hatch knobs** (verify-findings, stop-verify, blind-fix,
+      run-archive, registry-lint, round-budget) treat a bare truthy
+      ``FLEET_DISABLE_*`` as "no-op to PASS" via :func:`announce_disabled`.
+    * **Security / integrity knobs** (sha-pin, reviewer-sandbox, namespacing)
+      FAIL CLOSED. A bare truthy ``FLEET_DISABLE_*`` is NOT sufficient to drop
+      the check — the operator must *also* set
+      ``FLEET_SECURITY_OVERRIDE_ACK`` truthy to confirm that dropping a
+      supply-chain / isolation invariant is a deliberate, recorded decision.
+
+    Security layers call ``is_disabled("FLEET_DISABLE_<X>")`` to detect the
+    request, then this helper to decide whether the request is authorized:
+    acknowledged -> proceed with the documented disabled behavior; not
+    acknowledged -> fail closed (non-zero exit) so a stray env var in CI
+    cannot quietly drop the gate. See ``references/substrate-disable-knobs.md``
+    §Security/integrity knobs for the full contract.
+    """
+    return is_truthy(os.environ.get(SECURITY_OVERRIDE_ACK_ENV))
+
+
 __all__ = [
+    "SECURITY_OVERRIDE_ACK_ENV",
     "announce_disabled",
     "is_disabled",
+    "is_security_disable_acknowledged",
     "is_truthy",
 ]

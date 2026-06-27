@@ -57,6 +57,8 @@ def _first_command_token(command: str) -> str | None:
 def _bins_skipped_by_intent(requires: Mapping[str, Any], intent_name: str) -> set[str]:
     skipped: set[str] = set()
     for entry in requires.get("auth") or []:
+        if not isinstance(entry, Mapping):
+            continue
         if entry.get("skip_if_intent") == intent_name:
             token = _first_command_token(entry.get("check", ""))
             if token:
@@ -93,7 +95,13 @@ def check(
             failures.append(f"missing required env var: {env_name}")
 
     for entry in requires.get("auth") or []:
-        command = entry["check"]
+        if not isinstance(entry, Mapping):
+            failures.append(f"malformed auth entry (expected mapping): {entry!r}")
+            continue
+        command = entry.get("check")
+        if not command:
+            failures.append(f"malformed auth entry (missing 'check'): {entry!r}")
+            continue
         if entry.get("skip_if_intent") == intent_name:
             continue
         result = run(shlex.split(command), capture_output=True, text=True, check=False)

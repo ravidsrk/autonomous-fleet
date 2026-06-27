@@ -9,14 +9,42 @@ revise explanatory wording without weakening the contract.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import re
 import sys
+from json import JSONDecodeError
 from pathlib import Path
 from typing import Any, Sequence
 
 import yaml
 
+# Source slug marking a lock row as fleet-owned (vendored from this repo). Kept in
+# sync with ``registry_lint.LOCAL_LOCK_SOURCE`` by a test; duplicated rather than
+# imported because this module is also run as a standalone script
+# (``python3 scripts/lib/skill_lint.py <path>``), where package-relative imports of
+# sibling lib modules are unavailable.
+LOCAL_LOCK_SOURCE = "ravidsrk/autonomous-fleet"
+
 ADAPTER_COMPONENTS = frozenset({"adapter", "adapter-template"})
+
+
+def content_hash(skill_dir: Path) -> str:
+    """Deterministic sha256 over a skill directory's tracked content.
+
+    Byte-for-byte identical to ``registry_lint.content_hash`` (a parity test
+    guards the two against drift); inlined so this module stays importable when
+    executed as a standalone script.
+    """
+    digest = hashlib.sha256()
+    files = sorted(p for p in skill_dir.rglob("*") if p.is_file())
+    for path in files:
+        rel = path.relative_to(skill_dir).as_posix()
+        digest.update(rel.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 ADAPTER_REQUIRED_HEADINGS: tuple[tuple[str, str, str], ...] = (
     ("##", "PRECONDITIONS", "PRECONDITIONS"),
@@ -141,6 +169,81 @@ def lint_mission(path: Path | str) -> None:
         errors.append(f"{skill_path}: missing fleet-outcome YAML readiness reference")
     if errors:
         raise SkillLintError(errors)
+
+
+def _frontmatter_version(data: dict[str, Any]) -> str | None:
+    metadata = data.get("metadata")
+    if not isinstance(metadata, dict):
+        return None
+    version = metadata.get("version")
+    return version if isinstance(version, str) else None
+
+
+def _load_lock_rows(lock_path: Path) -> dict[str, Any]:
+    if not lock_path.is_file():
+        raise SkillLintError([f"{lock_path}: missing skills-lock.json"])
+    try:
+        data = json.loads(lock_path.read_text(encoding="utf-8"))
+    except JSONDecodeError as exc:
+        raise SkillLintError([f"{lock_path}: invalid JSON: {exc.msg}"]) from exc
+    skills = data.get("skills") if isinstance(data, dict) else None
+    if not isinstance(skills, dict):
+        raise SkillLintError([f"{lock_path}: missing skills mapping"])
+    return skills
+
+
+def lint_lock_version_sync(skill_dir: Path | str, lock_path: Path | str) -> None:
+    """Flag a skill whose body changed (content hash drifted from the lock) without a version bump.
+
+    The lock records, per local skill, the content hash AND the frontmatter
+    ``metadata.version`` captured when the lock was last refreshed. If the skill
+    body has since changed, :func:`content_hash` no longer matches the locked
+    hash. When that happens this rule fails:
+
+    * if ``metadata.version`` still equals the version recorded in the lock, the
+      body moved silently under a stale version — the author must bump it; or
+    * if the version *was* bumped, the lock itself is stale and must be
+      refreshed so the recorded hash/version pair matches disk again.
+
+    Either way the lock and the shipped body are forced to move together, so a
+    content change can never slip out under an unchanged version undetected.
+    Skills absent from the lock (or external, non-local rows) are ignored.
+    """
+    skill_path = Path(skill_dir)
+    if not skill_path.is_dir():
+        skill_path = skill_path.parent
+    name = skill_path.name
+
+    rows = _load_lock_rows(Path(lock_path))
+    row = rows.get(name)
+    if not isinstance(row, dict):
+        return
+    if row.get("source") not in (None, LOCAL_LOCK_SOURCE):
+        return
+
+    _, text = _read_skill(skill_path)
+    data = _frontmatter(text, skill_path / "SKILL.md")
+    fm_version = _frontmatter_version(data)
+
+    locked_hash = row.get("computedHash")
+    locked_version = row.get("version")
+    actual_hash = content_hash(skill_path)
+    if not isinstance(locked_hash, str) or actual_hash == locked_hash:
+        return
+
+    if isinstance(locked_version, str) and fm_version == locked_version:
+        raise SkillLintError(
+            [
+                f"{skill_path}: content changed (hash drifted from skills-lock.json) but "
+                f"metadata.version is still {fm_version!r}; bump the version and refresh the lock"
+            ]
+        )
+    raise SkillLintError(
+        [
+            f"{skill_path}: content hash drifted from skills-lock.json; refresh the lock "
+            f"(locked version {locked_version!r}, frontmatter version {fm_version!r})"
+        ]
+    )
 
 
 def lint_skill(path: Path | str) -> None:

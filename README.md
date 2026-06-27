@@ -1,13 +1,13 @@
 <h1 align="center">autonomous-fleet</h1>
 
 <p align="center">
-  <strong>You describe the work. A team of AI agents ships the PRs.</strong><br/>
+  <strong>You describe the work. A team of AI agents is designed to ship the PRs.</strong><br/>
   Drop-in skills for Claude Code, Grok, Codex, and Orca.
 </p>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-amber.svg?color=F59E0B" alt="MIT License"></a>
-  <a href="https://agentskills.io/"><img src="https://img.shields.io/badge/spec-agentskills.io-amber.svg?color=F59E0B" alt="agentskills.io spec"></a>
+  <a href="https://agentskills.io/"><img src="https://img.shields.io/badge/format-agentskills.io-amber.svg?color=F59E0B" alt="agentskills.io format"></a>
   <a href="https://github.com/ravidsrk/autonomous-fleet/stargazers"><img src="https://img.shields.io/github/stars/ravidsrk/autonomous-fleet.svg?style=flat" alt="Stars"></a>
   <a href="https://github.com/ravidsrk/autonomous-fleet/releases"><img src="https://img.shields.io/badge/version-0.2.1-amber.svg?color=F59E0B" alt="Version 0.2.1"></a>
   <a href="https://github.com/ravidsrk/autonomous-fleet/commits/main"><img src="https://img.shields.io/github/last-commit/ravidsrk/autonomous-fleet.svg" alt="Last commit"></a>
@@ -31,7 +31,7 @@ A library of skills you install into your coding agent (Claude Code, Grok, Codex
 
 # How it ships work — the role topology
 
-Inside a run, the workers aren't a homogeneous swarm. Each task moves through three distinct roles, and the framework deliberately uses **different terminals — often different model families — for each**, so review isn't self-marking:
+Inside a run, the workers aren't a homogeneous swarm. Each task moves through three distinct roles, and the framework is designed to use **different sessions — often different model families — for each**, so review isn't self-marking:
 
 | Role | What it does | Default staffing |
 |---|---|---|
@@ -41,11 +41,11 @@ Inside a run, the workers aren't a homogeneous swarm. Each task moves through th
 
 This topology came out of the **Aula run** — the framework's defining Stage-9 finding (`prompts.md L3013` in the source corpus). A previous run had committed *"DONE — all 15 features ready for main"* while the end-to-end demo aborted at step 5, with two untested cross-tenant security leaks and the entire front half of the product missing. Root cause: the same model that built the work was marking its own homework. The fix became a structural rule, not a stylistic preference.
 
-**Build-blindness is structural, not instructed.** The reviewer is spawned in a separate terminal with **no access to the builder's session, scratchpads, or prior context** — so it can only judge the artifact (the diff + `EVID`), not the intent. If you can read your own commit message while reviewing your own diff, that's not review.
+**Build-blindness is structural in the cross-vendor case; instructed otherwise.** When builder and reviewer run as separate processes — different vendors, or Orca's process-per-role topology — the reviewer is spawned with **no access to the builder's session, scratchpads, or prior context**, so the isolation is a mechanical property: it can only judge the artifact (the diff + `EVID`), not the intent. The shipped headless path, however, runs **one agent process per mission**; there's no second terminal there, so build-blindness on single-session adapters is **fresh-context isolation the run instructs** (the reviewer pass is told to read only the diff + `EVID`), not a guarantee the runtime enforces. If you can read your own commit message while reviewing your own diff, that's not review — and the cross-vendor topology is the only one that makes that mechanically impossible.
 
 **Design missions stay on `@grok`.** For `design-integration` and `landing-page-convergence`, the corpus showed `@grok` with the `frontend-design` specialization produces materially better visual fidelity than `@codex`. The Stage-9 builder retirement applies to general-purpose builds only; design missions explicitly carry the exception in their `SKILL.md`.
 
-**Single-vendor hosts are honest about the trade-off.** If you only have one model family available (e.g. running everything on Claude Code), the framework still enforces **terminal separation** — the reviewer gets a fresh session with no context inheritance — but it loses the cross-vendor blind-spot diversity. Every run's `fleet-outcome` records which mode it ran in, so it's never silent.
+**Single-vendor hosts are honest about the trade-off.** If you only have one model family available (e.g. running everything on Claude Code), the framework still **instructs terminal separation** — the reviewer gets a fresh session with no context inheritance — but it loses the cross-vendor blind-spot diversity, and on the single-process headless path the separation is an instructed discipline rather than a separate-process guarantee. Recording which mode a run took in its `fleet-outcome` is a convention, not yet a schema-enforced field, so don't treat its presence as a machine-checked audit trail.
 
 > **A note on the `prompts.md` citations.** Throughout this repo you'll see provenance markers like `<!-- Corpus: prompts.md L… -->` and references to `prompts.md` / `directives.md` "in the source corpus." That corpus — the raw multi-stage run logs and directives this framework was distilled from — is private upstream and **not shipped here**; the distilled, public record *is* this repo. The citations trace provenance (which run a rule came from), not files you can open in the tree. See [CONTRIBUTING.md](CONTRIBUTING.md)'s Distillation Discipline.
 
@@ -80,7 +80,8 @@ autonomous-fleet drives *your* coding agent — it doesn't ship one. You'll need
 
 - **A supported agent, installed and authenticated** — [Claude Code](https://claude.com/claude-code), Codex, Grok, or Orca.
 - **[Node.js](https://nodejs.org/) ≥ 18** — for `npx skills` (the [agentskills.io](https://agentskills.io/) installer).
-- **`git` and an authenticated [`gh`](https://cli.github.com/)** — every task ships as a GitHub PR.
+- **[Python](https://www.python.org/) ≥ 3.12** — used by the headless campaign and `validate-*` tooling (`scripts/*.py`); not needed for the interactive Step 3 path.
+- **`git` and an authenticated [`gh`](https://cli.github.com/)** — run `gh auth status` to confirm; every task ships as a GitHub PR.
 - **CLI auth for your chosen runtime** only if you use the headless campaign scripts (`grok login`, etc.). The interactive path in Step 3 needs just the agent itself.
 
 ### Step 1 — Install the skills into your repo
@@ -88,10 +89,11 @@ autonomous-fleet drives *your* coding agent — it doesn't ship one. You'll need
 **In a terminal,** in your project's root directory:
 
 ```bash
-npx skills add https://github.com/ravidsrk/autonomous-fleet \
+npx skills@1.5.12 add https://github.com/ravidsrk/autonomous-fleet \
   --skill setup-autonomous-fleet \
   --skill autonomous-fleet \
   --skill autonomous-fleet-core \
+  --skill fleet-program \
   --skill autonomous-fleet-adapter-claude-code \
   --skill doc-sync \
   -y
@@ -133,17 +135,17 @@ To stop a run mid-flight, close the chat (workers check in with the ledger and e
 That's it. The rest of this README is for going deeper.
 
 > 📖 **Going deeper?** The [Guide](docs/guide/README.md) walks through every
-> concept; a [Starlight docs-site](docs-site/README.md) build (`docs-site/dist`) adds search and nav.
 > concept, mission, and reference, from your first PR to writing a custom
-> adapter.
+> adapter; a [Starlight docs-site](docs-site/README.md) build
+> (`docs-site/dist`) adds search and nav.
 
 ---
 
 # The full menu
 
-> Three proven missions today (`doc-sync`, `test-coverage`,
+> Three shipped missions today (`doc-sync`, `test-coverage`,
 > `adversarial-review-and-fix`) plus the `fleet-program` shell for chaining
-> them. Twelve more missions are documented but exploratory — see
+> them. Eighteen more missions are documented but exploratory — see
 > [`docs/exploratory/missions/`](docs/exploratory/missions/). Install the
 > ones you need with `--skill <name>`, or grab everything with
 > `--skill '*'`.
@@ -155,7 +157,7 @@ That's it. The rest of this README is for going deeper.
 | [`doc-sync`](skills/doc-sync/) | Sync README, CI files, and build scripts to match the code |
 | [`test-coverage`](skills/test-coverage/) | Raise coverage on a specific module or file |
 
-> 💡 Why start with `doc-sync`? It has the **highest merge-success rate** of any AI-agent PR category in the AIDev dataset (~33k PRs across major repos). [arXiv:2601.15195](https://arxiv.org/abs/2601.15195), Ehsani et al., MSR 2026.
+> 💡 Why start with `doc-sync`? Documentation sits among the **higher-merging AI-agent PR categories** — the cross-agent aggregate is ~84% in the AIDev dataset (~33k agent-authored PRs across major repos): [arXiv:2601.15195](https://arxiv.org/abs/2601.15195), Ehsani et al., MSR 2026. (Per-task merge rates vary widely by agent; treat the tier ordering as qualitative, not a per-skill guarantee.)
 
 ### Audit-and-fix
 
@@ -165,14 +167,16 @@ That's it. The rest of this README is for going deeper.
 
 ### Exploratory (not yet shipped end-to-end)
 
-`agents-layer`, `bug-batch`, `cleanup`, `contract-first-build`,
-`dependency-update`, `design-integration`, `inference-cost`,
-`landing-page-convergence`, `legacy-rebuild`, `scaffold-align`,
-`take-product-to-completion`, and `targeted-migration` live under
-[`docs/exploratory/missions/`](docs/exploratory/missions/). They're
-documented in full but lack the progress + readiness + external-archive
-triple required to ship — see the promotion criteria in the exploratory
-README.
+`agents-layer`, `browser-qa-fix`, `bug-batch`, `cleanup`,
+`contract-first-build`, `dependency-update`, `design-integration`,
+`devex-audit`, `incident-investigate`, `inference-cost`,
+`landing-page-convergence`, `legacy-rebuild`, `product-framing`,
+`release-document`, `scaffold-align`, `security-cso-audit`,
+`take-product-to-completion`, and `targeted-migration` — 18 in all —
+live under [`docs/exploratory/missions/`](docs/exploratory/missions/).
+They're documented in full but lack the progress + readiness +
+external-archive triple required to ship — see the promotion criteria in
+the exploratory README.
 
 ### Run a campaign (chain skills together)
 
@@ -233,7 +237,7 @@ These are the disciplines the engine builds into every run — you don't have to
 
 - External facts get verified against real sources (logged to `docs/research-notes.md`)
 - Runs don't complete with `unverified_assumptions > 0` (strict mode can enforce this on disk)
-- Every run reports `cost_estimate` (USD) in its outcome
+- Every run reports a declared `cost_estimate` (USD) in its outcome — an aggregated estimate, not a metered spend
 - Shell commands go through a sandboxed wrapper that scrubs env vars
 - Optional `container-use` placement gives each worker an isolated container
 
@@ -302,7 +306,7 @@ fleet-outcome:
   unverified_assumptions: 0      # research-discipline gate; must be 0 to progress
   archive_enabled: true          # run left a validated .fleet/runs/<run_id>/ trail
   run_id: 20260623T141522Z-test-coverage-3a9c2f
-  cost_estimate: 1.84            # running spend estimate (USD)
+  cost_estimate: 1.84            # declared estimate (USD), aggregated — not a metered spend
   metrics:                       # mission-specific (under fleet-outcome.metrics)
     e2e_verified: true           # real end-to-end state, not exit codes
     gaps_open: 0
@@ -320,7 +324,7 @@ If you're hacking on the framework itself:
 
 ```bash
 ./scripts/bootstrap.sh                             # first-time contributor setup: venv + deps + validate-all
-./scripts/validate-all.sh                          # everything: skills + fleet-outcome + goals + run-archive + blind-fix + trace + pytest (100% coverage gate)
+./scripts/validate-all.sh                          # everything: skills + fleet-outcome + goals + run-archive + blind-fix + trace + pytest (100% line coverage of scripts/*.py)
 ./scripts/run-campaign.sh grok --preset repo-health --dry-run
 ./scripts/run-mission-headless.sh grok doc-sync --max-turns 50
 ```
@@ -332,7 +336,7 @@ Individual validators:
 ./scripts/validate-fleet-outcome.sh                # readiness doc fleet-outcome YAML
 ./scripts/validate-goal-condition.sh --scan-docs   # /goal binding
 python scripts/validate_run_archive.py             # Layers 3 & 4: manifest + sha256 + mtime ordering (the blind-fix anti-anchoring ordering IS Layer 3)
-pytest tests/                                      # full suite (60 files, 1142 tests, 100% coverage gate)
+pytest tests/                                      # full suite (60 files, 1271 tests; 100% line coverage of the Python tooling, scripts/*.py — shell is validated by behavioral + mutation tests, not line coverage)
 
 # Operator gates (run on a specific run-id)
 python scripts/verify_findings.py \
@@ -434,7 +438,7 @@ autonomous-fleet/
 │   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate, secure-ship, handoff-to-product
 │   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, emit_trace, analyze_seat, analyze_cost, locks, substrate_disable, stop_verify, mission_registry, venv-bootstrap
 │   └── install-skills.sh
-├── tests/                               # 60 test files, 1142 tests; validators + engine doctrine + 4-layer substrate
+├── tests/                               # 60 test files, 1271 tests; validators + engine doctrine + 4-layer substrate
 ├── .agents/skills/                      # installed skill copies (gitignored)
 └── skills-lock.json                     # lockfile for npx skills
 ```

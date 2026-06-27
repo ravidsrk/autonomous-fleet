@@ -218,10 +218,16 @@ def _check_file(
     if require_findings_mtime and findings_mtime is None:
         reasons.append("findings mtime missing from manifest")
 
-    if findings_mtime is not None and mtime is not None and mtime >= findings_mtime:
+    # Tie-break (finding 25): compare at full precision and treat an EXACT tie
+    # as compliant. Manifest mtimes carry microsecond precision (see fleet_run
+    # _utc_from_mtime), so two files written in the same wall-clock second no
+    # longer collide. When mtimes are genuinely equal (coarse filesystem
+    # granularity, or a shared mtime) we cannot prove the blind-fix came after
+    # findings, so only a STRICTLY later blind-fix is a violation.
+    if findings_mtime is not None and mtime is not None and mtime > findings_mtime:
         reasons.append(
-            f"mtime({path.name})={mtime:.0f} >= findings.mtime={findings_mtime:.0f} "
-            "(blind-fix must strictly precede findings)"
+            f"mtime({path.name})={mtime:.6f} > findings.mtime={findings_mtime:.6f} "
+            "(blind-fix must precede findings)"
         )
 
     try:

@@ -13,7 +13,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.0.0"
+  version: "1.0.1"
   tier: "1"
   fleet-component: "mission"
 ---
@@ -56,10 +56,13 @@ Record in `docs/test-coverage-readiness.md` under **Recommended next missions** 
 | Refactor required for testability | `cleanup` (light) or `targeted-migration` |
 | Hollow coverage tooling only | Use repo's existing test/coverage commands |
 
-**Empirical note:** Documentation, CI, and build-update tasks show the highest merge-success
-rate among AI-agent PRs (arXiv 2601.15195 — Ehsani et al., MSR 2026, AIDev dataset of ~33k PRs);
-test tasks merge at a lower rate than those categories, so the reviewer gate matters. The ONE
-failure mode to guard is hollow tests written to move a number; the reviewer rejects those.
+**Empirical note:** test-PR tasks merge at a materially LOWER cross-agent rate than documentation
+or build-update work — roughly 61.5% across agents (arXiv 2601.15195 — Ehsani et al., MSR 2026),
+versus ~84% for docs. So this is Tier 1 only with a caveat: the reviewer gate matters here, and the
+38%-or-so not-merged rate means it is NOT as hands-off as doc-sync — do not leave it fully
+unattended without glancing at the result. (Per-task merge rates vary by agent; treat the tier
+ordering as qualitative, not a per-skill guarantee.) The ONE failure mode to guard is hollow tests
+written to move a number; the reviewer rejects those.
 
 ## GOAL
 Increase MEANINGFUL test coverage on the target (whole repo, or an area the user named). Every

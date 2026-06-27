@@ -1,7 +1,7 @@
 ---
 name: cleanup
 description: >-
-  [Tier 1 · high autonomous success ~0.80-0.84 merge · safe to run unattended] Targeted
+  [Tier 1 · merge-friendly chore-category work · lower-risk when scoped] Targeted
   code-health pass — remove dead code, kill duplication, fix a named anti-pattern, tidy
   structure — WITHOUT re-architecting. The light counterpart to legacy-rebuild: improves the
   code as it is, preserves all behaviour, no big structural change. Use for "clean up this
@@ -62,9 +62,11 @@ Record in `docs/cleanup-readiness.md` under **Recommended next missions** and in
 | Bug exposed by deletion risk | `bug-batch` |
 | Untested risky area | `test-coverage` first |
 
-**Empirical note:** chore/refactor-light tasks merge at ~0.80-0.84 — high-trust when scoped and
-behaviour-preserving. The risk is scope creep into a rewrite; this mission explicitly does NOT
-re-architect (that's legacy-rebuild).
+**Empirical note:** chore/refactor-light sits among the higher-merging cross-agent task
+categories (chore ~84% in arXiv 2601.15195, Ehsani et al., MSR 2026) — lower-risk when scoped and
+behaviour-preserving. There is no published category-level merge rate for this mission as scoped,
+and per-task merge rates vary by agent, so treat the tier ordering as qualitative. The risk is
+scope creep into a rewrite; this mission explicitly does NOT re-architect (that's legacy-rebuild).
 
 ## GOAL
 Improve code health while preserving ALL behaviour: remove dead/unreachable code, eliminate

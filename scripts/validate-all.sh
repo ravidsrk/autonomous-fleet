@@ -157,7 +157,14 @@ echo "== validate-mission-promotion (exploratory archive triple) =="
 
 echo ""
 echo "== sync-guide-starlight (docs-site source sync) =="
-"$VENV_PYTHON" scripts/sync_guide_starlight.py >/dev/null
+# --check regenerates the Starlight copy in-memory and fails (printing the
+# drifted files) if the committed docs-site/src/content/docs/ copy is stale,
+# instead of silently mutating the working tree. Keeps the generated copy
+# honest in CI: a stale committed copy now fails the build.
+if ! "$VENV_PYTHON" scripts/sync_guide_starlight.py --check; then
+  echo "sync-guide-starlight: docs-site copy drifted; run scripts/sync_guide_starlight.py and commit" >&2
+  exit 1
+fi
 
 echo ""
 echo "== validate-headless (mechanical dry-run wiring) =="

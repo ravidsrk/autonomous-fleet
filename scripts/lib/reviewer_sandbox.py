@@ -15,7 +15,17 @@ from collections.abc import Iterable, Mapping
 from typing import Any
 
 ALLOWED_REVIEWER_KINDS = frozenset({"blind_fix", "findings", "verify_summary"})
-WRITE_ATTRIBUTION_KINDS = frozenset({"diff", "commit"})
+# Write-attribution kinds: artifact kinds that mean a reviewer producer authored a CHANGE to the
+# candidate (not a read-only review note). Attributing one of these to a reviewer on the candidate
+# branch is the violation this module exists to catch.
+#
+# Only ``diff`` lives here. ``commit`` was previously listed too, but ``fleet_run.VALID_KINDS`` (the
+# authoritative manifest-kind enum, mirrored from the schema) has no ``commit`` member — a manifest
+# can never carry ``kind: "commit"``, so the branch was DEAD: unreachable in production and
+# untestable against a real manifest. Dropping it removes the dead code without weakening the check
+# (the catch-all ``kind not in ALLOWED_REVIEWER_KINDS`` below still rejects any unexpected kind a
+# reviewer emits). If a ``commit`` kind is ever added to the schema + VALID_KINDS, re-add it here.
+WRITE_ATTRIBUTION_KINDS = frozenset({"diff"})
 _BRANCH_FIELDS = ("candidate_branch", "branch", "head_branch", "headRefName")
 
 
@@ -89,8 +99,8 @@ def verify_reviewer_sandbox_manifest(
     """Verify reviewer producer slugs only emitted reviewer-safe artifacts.
 
     Returns a summary dict. ``ok`` is false when a reviewer producer emitted a
-    non-review artifact kind, especially ``diff`` or ``commit`` on the candidate
-    branch.
+    non-review artifact kind, especially a write-attribution kind (``diff``) on
+    the candidate branch.
     """
     if not isinstance(manifest, Mapping):
         violation = {
