@@ -152,6 +152,14 @@ if (( tr_status != 0 )); then
 fi
 
 echo ""
+echo "== validate-mission-promotion (exploratory archive triple) =="
+"$VENV_PYTHON" scripts/validate_mission_promotion.py
+
+echo ""
+echo "== sync-guide-starlight (docs-site source sync) =="
+"$VENV_PYTHON" scripts/sync_guide_starlight.py >/dev/null
+
+echo ""
 echo "== validate-headless (mechanical dry-run wiring) =="
 ./scripts/validate-headless.sh
 

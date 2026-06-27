@@ -9,5 +9,9 @@ __pycache__/
 .coverage
 htmlcov/
 .tmp-images/
+docs-site/node_modules/
+docs-site/dist/
+docs-site/.astro/
+
 .DS_Store
 *.pyc

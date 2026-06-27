@@ -89,6 +89,17 @@ back to `skills/`, route those intents to `adversarial-review-and-fix`
 back to a manual operator pass. Re-route directly once a mission is
 promoted.
 
+**gstack-derived exploratory missions (2026-06-27)** — documented in
+`docs/exploratory/missions/`, not active until promoted:
+
+| User says | Exploratory mission |
+|-----------|---------------------|
+| frame the product, office hours, freeze spec before code | `product-framing` |
+| browser QA, test the site and fix, dogfood staging | `browser-qa-fix` |
+| CSO audit, OWASP, threat model, supply chain security | `security-cso-audit` |
+
+Research: [`docs/gstack-missions-research.md`](../../docs/gstack-missions-research.md).
+
 Full tier notes and merge-rate guidance: [references/missions.md](references/missions.md).
 Community skill bundles: `autonomous-fleet-core` → `references/community-skills.md`.
 
