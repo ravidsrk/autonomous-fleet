@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from json import JSONDecodeError
@@ -14,6 +15,32 @@ from .fleet_registry import MISSIONS
 
 LOCAL_LOCK_SOURCE = "ravidsrk/autonomous-fleet"
 _MISSION_COMPONENT_RE = re.compile(r"fleet-component:\s*[\"']?mission[\"']?")
+
+# Fields that, if present on a lock row, count as pinning an external source to a
+# concrete revision. The external `npx skills` installer records a bare repo slug
+# ("anthropics/skills") with no revision, so without one of these the vendored copy
+# is unpinned and can drift silently against upstream.
+_PIN_FIELDS = ("ref", "commit", "tag", "sha")
+
+
+def content_hash(skill_dir: Path) -> str:
+    """Deterministic sha256 over a skill directory's tracked content.
+
+    Hashes every regular file under ``skill_dir`` in sorted POSIX-relative-path
+    order, mixing in the path itself so a rename changes the digest. This is the
+    canonical hash the lock's ``computedHash`` values are reconciled against; it
+    is self-consistent (recomputable offline) rather than a reproduction of the
+    external installer's opaque hashing.
+    """
+    digest = hashlib.sha256()
+    files = sorted(p for p in skill_dir.rglob("*") if p.is_file())
+    for path in files:
+        rel = path.relative_to(skill_dir).as_posix()
+        digest.update(rel.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
 
 
 def shipped_missions(
@@ -133,6 +160,70 @@ def lint_skills_lock(root: Path) -> list[str]:
     return errors
 
 
+def lint_lock_hashes(root: Path) -> list[str]:
+    """Verify each locked ``computedHash`` matches the on-disk skill content.
+
+    Recomputes :func:`content_hash` for every locally-sourced skill row that
+    carries a ``computedHash`` and fails on any drift. Rows without a hash (e.g.
+    externally-vendored skills or minimal synthetic fixtures) are skipped here;
+    directory-name reconciliation is handled by :func:`lint_skills_lock`.
+    """
+    skills, errors = _load_lock_skills(root)
+    if errors:
+        return errors
+
+    for name in sorted(skills):
+        row = skills[name]
+        if not isinstance(row, dict):
+            continue
+        if row.get("source") not in (None, LOCAL_LOCK_SOURCE):
+            continue
+        expected = row.get("computedHash")
+        if not isinstance(expected, str):
+            continue
+        skill_dir = root / "skills" / name
+        if not (skill_dir / "SKILL.md").is_file():
+            errors.append(
+                f"skills-lock.json: {name} has computedHash but no skills/{name}/ on disk"
+            )
+            continue
+        actual = content_hash(skill_dir)
+        if actual != expected:
+            errors.append(
+                f"skills-lock.json: {name} computedHash mismatch "
+                f"(locked {expected[:12]}…, on disk {actual[:12]}…); "
+                f"refresh the lock or revert the content change"
+            )
+
+    return errors
+
+
+def lint_external_source_pins(root: Path) -> list[str]:
+    """Flag external lock rows that are not pinned to a concrete revision.
+
+    A bare ``"anthropics/skills"`` slug tracks a moving branch; require a
+    ``ref``/``commit``/``tag``/``sha`` so the vendored copy is reproducible.
+    """
+    skills, errors = _load_lock_skills(root)
+    if errors:
+        return errors
+
+    for name in sorted(skills):
+        row = skills[name]
+        if not isinstance(row, dict):
+            continue
+        source = row.get("source")
+        if source in (None, LOCAL_LOCK_SOURCE):
+            continue
+        if not any(isinstance(row.get(field), str) and row[field] for field in _PIN_FIELDS):
+            errors.append(
+                f"skills-lock.json: external source {source!r} for {name} is not pinned "
+                f"(add one of {', '.join(_PIN_FIELDS)})"
+            )
+
+    return errors
+
+
 def _campaign_yaml_paths(root: Path) -> list[Path]:
     paths: list[Path] = []
     campaigns_dir = root / "scripts" / "campaigns"
@@ -195,5 +286,7 @@ def lint_registry(
         lint_shipped_mission_dirs(root, missions)
         + lint_catalog_mentions(root, missions)
         + lint_skills_lock(root)
+        + lint_lock_hashes(root)
+        + lint_external_source_pins(root)
         + lint_campaign_missions(root, missions)
     )

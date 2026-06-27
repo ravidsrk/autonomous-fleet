@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterator
@@ -252,13 +253,31 @@ def validate_event(event: Any) -> list[str]:
     return errors
 
 
-def iter_trace_file(path: Path) -> Iterator[dict]:
+@dataclass
+class TraceScanStats:
+    """Per-call counters for one ``iter_trace_file`` traversal.
+
+    Pass an instance as ``iter_trace_file(path, stats=...)`` to recover how
+    many malformed lines were skipped. Each call owns its own object, so two
+    interleaved iterations (or two threads) never clobber each other's count
+    — the failure mode of the old shared ``iter_trace_file.last_skipped``
+    function attribute. ``skipped`` is only final once the generator has been
+    fully consumed.
+    """
+
+    skipped: int = field(default=0)
+
+
+def iter_trace_file(
+    path: Path, stats: TraceScanStats | None = None
+) -> Iterator[dict]:
     """Yield parsed events from a trace.jsonl file.
 
-    Tolerates malformed lines (logs them on the generator's ``skipped``
-    attribute as a count). A half-written trace from a crashed run remains
-    partially renderable; this matches the "trace failure is degraded
-    telemetry, not a hard error" doctrine.
+    Tolerates malformed lines. Pass a :class:`TraceScanStats` as ``stats`` to
+    receive the skipped-malformed-line count for *this* call; the counter is
+    final once the generator is fully consumed. A half-written trace from a
+    crashed run remains partially renderable; this matches the "trace failure
+    is degraded telemetry, not a hard error" doctrine.
     """
     skipped = 0
     with path.open("r", encoding="utf-8") as fh:
@@ -275,7 +294,8 @@ def iter_trace_file(path: Path) -> Iterator[dict]:
                 skipped += 1
                 continue
             yield event
-    iter_trace_file.last_skipped = skipped  # type: ignore[attr-defined]
+    if stats is not None:
+        stats.skipped = skipped
 
 
 def health_rollup(events) -> dict:

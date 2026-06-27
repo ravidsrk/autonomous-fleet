@@ -45,6 +45,14 @@ jobs:
           python3 -m venv .venv
           .venv/bin/pip install -r requirements.txt
 
+      - name: Docs-site sync gate (committed generated copy must not drift)
+        # docs-site/src/content/docs/ is a committed generated copy of
+        # docs/guide/. --check regenerates in-memory and fails (listing the
+        # drifted files) if the committed copy is stale, so a forgotten
+        # `sync_guide_starlight.py` run can't slip a stale copy past CI.
+        run: |
+          .venv/bin/python scripts/sync_guide_starlight.py --check
+
       - name: Run all validators and tests
         run: ./scripts/validate-all.sh
 

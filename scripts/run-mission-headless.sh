@@ -107,6 +107,40 @@ if ! git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 1
 fi
 
+# Archive-leak guard: real runs write .fleet/runs/<id>/ INTO --repo's working tree. For an
+# external --repo that leaves it dirty (`?? .fleet/`) and the operator's repo never comes back
+# clean. Ensure .fleet/runs/ is ignored for the target clone via .git/info/exclude — a per-clone,
+# UNTRACKED exclude (so we don't dirty the operator's tracked .gitignore either). The autonomous-fleet
+# clone already ignores .fleet/runs/* in its tracked .gitignore, so we only touch EXTERNAL repos.
+ensure_archive_ignored() {
+  [[ "$REPO_ROOT" == "$ROOT" ]] && return 0
+  # Already covered by a tracked .gitignore (or a prior exclude)? Nothing to do.
+  if git -C "$REPO_ROOT" check-ignore -q .fleet/runs/.probe 2>/dev/null; then
+    return 0
+  fi
+  local exclude
+  exclude="$(git -C "$REPO_ROOT" rev-parse --git-path info/exclude 2>/dev/null)" || exclude=""
+  if [[ -z "$exclude" ]]; then
+    echo "warning: cannot resolve .git/info/exclude for --repo '$REPO_ROOT'; .fleet/runs/ archives will dirty its working tree" >&2
+    return 0
+  fi
+  # rev-parse --git-path may return a path relative to REPO_ROOT.
+  [[ "$exclude" != /* ]] && exclude="$REPO_ROOT/$exclude"
+  if ! mkdir -p "$(dirname "$exclude")" 2>/dev/null; then
+    echo "warning: cannot create $(dirname "$exclude") for --repo '$REPO_ROOT'; .fleet/runs/ archives will dirty its working tree" >&2
+    return 0
+  fi
+  if [[ -f "$exclude" ]] && grep -qxF '/.fleet/runs/' "$exclude" 2>/dev/null; then
+    return 0
+  fi
+  if ! printf '/.fleet/runs/\n' >>"$exclude" 2>/dev/null; then
+    echo "warning: cannot write $exclude for --repo '$REPO_ROOT'; .fleet/runs/ archives will dirty its working tree" >&2
+    return 0
+  fi
+  echo "note: excluded .fleet/runs/ via $exclude so headless archives don't dirty --repo '$REPO_ROOT'"
+}
+ensure_archive_ignored
+
 # RCE guard: --yolo auto-approves every tool call. Against an external --repo that is a full
 # remote-code-execution surface, so require explicit acknowledgement (or run under the sandbox).
 if [[ "$YOLO" -eq 1 && "$REPO_ROOT" != "$ROOT" && "$YOLO_ACK" -ne 1 ]]; then

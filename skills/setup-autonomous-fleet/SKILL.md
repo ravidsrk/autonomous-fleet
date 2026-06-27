@@ -99,7 +99,30 @@ Append a one-line setup record to `DECISIONS.md` with adapter, prefix, bundle, d
 
 ### 5. Install skills (if missing)
 
-If fleet skills are not installed in the active host, run or print:
+First **detect install mode** — the helper scripts only exist in a framework clone, not in a
+skills-installed repo (`npx skills` copies only `skills/` into `.agents/skills/`, never
+`scripts/`):
+
+```bash
+if [ -f ./scripts/install-skills.sh ]; then echo clone; else echo skills-install; fi
+```
+
+**Skills-install mode (no `./scripts/`)** — the common case. Print `npx skills` commands; do
+not reference `./scripts/*`, which is not shipped here:
+
+```bash
+npx skills@1.5.12 add https://github.com/ravidsrk/autonomous-fleet \
+  --skill setup-autonomous-fleet \
+  --skill autonomous-fleet \
+  --skill autonomous-fleet-core \
+  --skill fleet-program \
+  --skill autonomous-fleet-adapter-<chosen> \
+  --skill doc-sync \
+  -y
+# or every skill: --skill '*'
+```
+
+**Clone mode (`./scripts/install-skills.sh` present)** — contributor path:
 
 ```bash
 ./scripts/install-skills.sh --all
@@ -113,7 +136,12 @@ For community bundles, print install commands from
 
 ### 6. Verify
 
-Suggest dry-run:
+**Skills-install mode (no `./scripts/`)** — there is no `./scripts/run-campaign.sh` to call.
+Confirm the install instead: the listed skills now resolve under `.agents/skills/`, and the
+chosen adapter is among them. Drive the first run interactively from the agent's chat
+(`/setup-autonomous-fleet` is done; invoke a mission or `fleet-program` next).
+
+**Clone mode** — suggest a headless dry-run:
 
 ```bash
 ./scripts/run-campaign.sh <adapter-runtime> --preset <bundle> --dry-run

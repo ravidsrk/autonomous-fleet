@@ -13,6 +13,7 @@ from .fleet_registry import MISSIONS
 
 REQUIRED_TOP = frozenset({"mission", "status", "repo", "base_branch", "prs_merged"})
 VALID_STATUSES = frozenset({"done", "partial", "blocked"})
+VALID_REVIEWER_MODES = frozenset({"cross_vendor", "single_vendor"})
 
 MISSION_METRICS: dict[str, frozenset[str]] = {
     mission_id: frozenset(str(metric) for metric in row["metrics"])
@@ -251,6 +252,22 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
         ):
             errors.append(
                 f"{prefix}: cost_estimate must be a non-negative finite number, got {cval!r}"
+            )
+
+    # Reviewer-mode disclosure (optional, cross-cutting): which review topology
+    # the run actually ran under. cross_vendor = the reviewer ran as a separate
+    # process / different model family (a mechanical context barrier, e.g. the
+    # Orca case); single_vendor = a single-session adapter where reviewer
+    # blindness is fresh-context isolation (instructed), not a separate process.
+    # Optional so existing archives without the field still validate; when
+    # present it must be one of the two disclosed modes. Lives at the top level
+    # (not in metrics) because it's a disclosure assertion, not a count.
+    if "reviewer_mode" in outcome:
+        rmode = outcome["reviewer_mode"]
+        if rmode not in VALID_REVIEWER_MODES:
+            errors.append(
+                f"{prefix}: invalid reviewer_mode {rmode!r}, "
+                "must be one of cross_vendor, single_vendor"
             )
 
     # Optional flat-ledger row invariants. The markdown ledger remains the

@@ -9,7 +9,7 @@ missions.
 |-------|-------|--------|
 | Engine | 1 | `autonomous-fleet-core` (+ `references/engine.md` when coordinating) |
 | Adapter | 1 | `autonomous-fleet-adapter-{orca,claude-code,grok,codex}` |
-| Mission | 1 | Exactly one mission skill (`doc-sync`, `test-coverage`, `adversarial-review-and-fix`; nine more exploratory under `docs/exploratory/missions/`) |
+| Mission | 1 | Exactly one mission skill (`doc-sync`, `test-coverage`, `adversarial-review-and-fix`; 18 more exploratory under `docs/exploratory/missions/`) |
 
 **Do not** activate two mission skills in the same coordinator session. Conflicting ledgers,
 BASE branches, and DONE conditions will corrupt the run.

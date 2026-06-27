@@ -1,7 +1,14 @@
 # External dogfood
 
-Prove autonomous-fleet beyond self-dogfood on small OSS repos. Each pack has a campaign YAML,
-setup steps, and success criteria.
+Exercise autonomous-fleet's gates on small OSS repos beyond the self-dogfood. Each pack has a
+campaign YAML, setup steps, and success criteria.
+
+> **Status — gate-validation only.** No external run-archive with autonomously-landed PRs
+> (`prs_merged > 0`) exists yet. The gemoji "external dogfood" below **re-validated pre-existing
+> `PHASE: DONE` ledgers** (landed by hand during the 2026-06-20 interactive session), and the
+> headless path **failed auth and was completed by hand**. These runs validate orchestration and
+> gates against an external checkout — they are **not** evidence of autonomous PR landing or of
+> build-blindness beyond the self-dogfood.
 
 | Pack | Campaign | Nodes | Community hooks |
 |------|----------|-------|-----------------|
@@ -23,9 +30,12 @@ setup steps, and success criteria.
 ./scripts/bench-adversarial.sh --help
 ```
 
-**Operator runs:** Headless driver + `--repo` + archive emission are ready (v0.2.0). Gemoji
-ship-with-proof has interactive evidence (`1541ce9`) and headless validation (Lane 2, 2026-06-27).
-Adversarial bench A/B **numbers** remain ⬜ pending authenticated operator sessions.
+**Operator runs:** Headless driver + `--repo` + archive emission are wired (v0.2.0). Gemoji
+ship-with-proof has interactive evidence (`1541ce9`) and a headless **gate-validation** pass
+(Lane 2, 2026-06-27) that **re-validated pre-existing `DONE` ledgers** — the headless attempt hit
+an auth failure and the landing work was completed by hand, so no PR was autonomously landed
+(`prs_merged = 0`). Independent adversarial bench A/B **numbers**, and any external run-archive with
+`prs_merged > 0`, remain ⬜ pending authenticated operator sessions.
 
 ## Before first run on any external repo
 

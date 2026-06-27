@@ -214,6 +214,68 @@ def test_mission_promotion_readiness_and_archive_branches(
     assert _archive_evidence(tmp_path, "demo") == []
 
 
+def test_promotion_gate_tolerates_unreadable_docs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Malformed/non-UTF8 readiness or progress docs mark the mission not-ready
+    instead of crashing assess_all_exploratory with a raw traceback."""
+    from lib.mission_promotion import _fleet_outcome_valid, _progress_substantive
+
+    # Broken YAML frontmatter -> yaml.YAMLError -> not valid (not a crash).
+    broken_yaml = tmp_path / "broken-readiness.md"
+    broken_yaml.write_text(
+        "---\nfleet-outcome:\n  status: done\n :\n - [unbalanced\n---\n",
+        encoding="utf-8",
+    )
+    assert not _fleet_outcome_valid(broken_yaml)
+
+    # Non-UTF8 bytes -> UnicodeDecodeError -> not valid (readiness + progress).
+    non_utf8_readiness = tmp_path / "binary-readiness.md"
+    non_utf8_readiness.write_bytes(b"---\nfleet-outcome:\n  status: \xff\xfe\n---\n")
+    assert not _fleet_outcome_valid(non_utf8_readiness)
+
+    non_utf8_progress = tmp_path / "binary-progress.md"
+    non_utf8_progress.write_bytes(b"PHASE: DONE\nTASK \xff\xfe\n")
+    assert not _progress_substantive(non_utf8_progress)
+
+    # OSError on read (e.g. transient I/O failure) -> not valid, no traceback.
+    real_read = Path.read_text
+
+    def boom_read(self, *args, **kwargs):
+        if self in (non_utf8_readiness, non_utf8_progress):
+            raise OSError("transient read failure")
+        return real_read(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", boom_read)
+    assert not _fleet_outcome_valid(non_utf8_readiness)
+    assert not _progress_substantive(non_utf8_progress)
+
+
+def test_promotion_gate_survives_one_broken_mission(tmp_path: Path) -> None:
+    """One unreadable mission doc must not abort the whole exploratory scan."""
+    from lib.mission_promotion import assess_all_exploratory
+
+    missions = tmp_path / "docs" / "exploratory" / "missions"
+    good = missions / "good"
+    bad = missions / "bad"
+    good.mkdir(parents=True)
+    bad.mkdir(parents=True)
+    (good / "SKILL.md").write_text("x", encoding="utf-8")
+    (bad / "SKILL.md").write_text("x", encoding="utf-8")
+
+    # The "bad" mission has non-UTF8 readiness/progress; assess must not raise.
+    (tmp_path / "docs" / "bad-readiness.md").write_bytes(b"---\n\xff\xfe\n---\n")
+    (tmp_path / "docs" / "bad-progress.md").write_bytes(b"PHASE: DONE\n\xff\xfe\n")
+
+    reports = assess_all_exploratory(tmp_path)
+    by_mission = {r.mission for r in reports}
+    assert {"good", "bad"} <= by_mission
+    bad_report = next(r for r in reports if r.mission == "bad")
+    assert not bad_report.ready
+    assert "readiness" in bad_report.missing
+    assert "progress" in bad_report.missing
+
+
 def test_validate_mission_promotion_ready_paths(tmp_path: Path) -> None:
     sys.path.insert(0, str(ROOT / "scripts"))
     import validate_mission_promotion as mod

@@ -1,0 +1,27 @@
+campaign: audit-gated
+repo: single
+base: fleet/audit-gated-base
+start: audit
+# Gated DAG: the audit node's outbound edges are CONDITIONAL on the
+# adversarial-review-and-fix outcome metric `findings_open`, so the two
+# branches diverge on a real fleet-outcome value rather than `if: always`.
+#   findings_open == 0 -> proceed to test-coverage (clean audit, keep shipping)
+#   findings_open  > 0 -> divert to a remediation hold node (do NOT ship past
+#                         an audit with open findings)
+# This is the only --preset-invokable campaign that exercises the conditional
+# edge path; the `if: always` presets never do. Keep both branches present so
+# validate-headless.sh's dry-run reachability probes hit each one.
+nodes:
+  audit: { mission: adversarial-review-and-fix }
+  remediate: { mission: adversarial-review-and-fix }
+  tests: { mission: test-coverage }
+edges:
+  audit:
+    - { to: tests, if: "findings_open == 0" }
+    - { to: remediate, if: "findings_open > 0" }
+  # remediate loops back into audit to re-confirm the findings closed before the
+  # campaign can advance; the per-node revisit budget in run-campaign.sh caps the
+  # loop, and a node that finishes status:blocked halts the campaign regardless.
+  remediate:
+    - { to: audit, if: "findings_open == 0" }
+  tests: []

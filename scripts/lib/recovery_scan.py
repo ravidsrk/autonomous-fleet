@@ -13,8 +13,11 @@ classifications that a coordinator can inspect before deciding what to do.
 from __future__ import annotations
 
 import json
+import os
 import re
+import time
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any
 
 CLASS_LIVE = "live"
@@ -171,8 +174,17 @@ def _parse_task_table_rows(text: str) -> list[LedgerRow]:
 
 
 def parse_ledger_rows(text: str) -> list[LedgerRow]:
-    """Parse supported markdown ledger task rows."""
-    return _parse_task_pipe_rows(text) + _parse_task_table_rows(text)
+    """Parse supported markdown ledger task rows.
+
+    A task may be expressed in either the ``TASK <id> | KEY=VALUE`` pipe shape
+    or a markdown table; de-duplicate by ``task_id`` so a task that appears in
+    both forms is classified once. The pipe shape wins on collision because it
+    carries explicit ``KEY=VALUE`` flags that the column table cannot.
+    """
+    rows_by_task: dict[str, LedgerRow] = {}
+    for row in _parse_task_pipe_rows(text) + _parse_task_table_rows(text):
+        rows_by_task.setdefault(row.task_id, row)
+    return list(rows_by_task.values())
 
 
 def parse_worktrees(text: str) -> list[WorktreeRecord]:
@@ -215,10 +227,19 @@ def parse_worktrees(text: str) -> list[WorktreeRecord]:
 
 
 def parse_pr_list(text: str) -> list[PullRequest]:
-    """Parse ``gh pr list`` JSON."""
+    """Parse ``gh pr list`` JSON.
+
+    Malformed JSON is tolerated the same way the ledger and worktree parsers
+    swallow junk lines: a truncated or non-JSON ``gh`` payload yields ``[]``
+    rather than aborting the whole advisory scan. A well-formed payload of the
+    wrong top-level shape is still a contract breach and raises ``ValueError``.
+    """
     if not text.strip():
         return []
-    data = json.loads(text)
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        return []
     if not isinstance(data, list):
         raise ValueError("pr list JSON must be a list")
     prs: list[PullRequest] = []
@@ -288,6 +309,87 @@ def _resume_count(row: LedgerRow) -> int | None:
 def _resume_budget_exhausted(row: LedgerRow) -> bool:
     resume_count = _resume_count(row)
     return resume_count is not None and resume_count >= MAX_RESUME_ATTEMPTS
+
+
+def _pipe_row_task_id(line: str) -> str | None:
+    """Return the task id of a ``TASK <id> | ...`` pipe row, else ``None``.
+
+    Mirrors the extraction in :func:`_parse_task_pipe_rows` so the ledger row
+    the resume budget reads is the same row this helper rewrites.
+    """
+    stripped = line.strip()
+    if not stripped.startswith("TASK ") or "|" not in stripped:
+        return None
+    first_cell = stripped.split("|", 1)[0]
+    return first_cell[len("TASK ") :].strip("`* ")
+
+
+def _bump_resume_count_in_line(line: str) -> tuple[str, int]:
+    """Return ``(rewritten_line, new_count)`` with ``RESUME_COUNT`` incremented.
+
+    An absent counter is treated as ``0`` and appended as a flag, so a row that
+    has never been resumed becomes ``RESUME_COUNT=1``. The line's trailing
+    newline (if any) is preserved.
+    """
+    newline = "\n" if line.endswith("\n") else ""
+    body = line[: -len(newline)] if newline else line
+    current = _resume_count(_row_from_parts("", _parse_kv(body))) or 0
+    new_count = current + 1
+
+    def _replace(match: "re.Match[str]") -> str:
+        return f"{match.group('key')}={new_count}"
+
+    rewritten, replaced = re.subn(
+        r"(?P<key>RESUME_COUNT)\s*(?:=|:)\s*(?:`[^`]*`|'[^']*'|\"[^\"]*\"|[^|\s]+)",
+        _replace,
+        body,
+        count=1,
+    )
+    if not replaced:
+        # Append to the LAST cell, never the first: the first cell holds the
+        # task id (``TASK <id>``) and the pipe parser would otherwise fold the
+        # new flag into the id on the next read.
+        cells = rewritten.split("|")
+        cells[-1] = f"{cells[-1].rstrip()} RESUME_COUNT={new_count} "
+        rewritten = "|".join(cells)
+    return rewritten + newline, new_count
+
+
+def increment_resume_count(ledger_path: str | os.PathLike[str], task_id: str) -> int:
+    """Atomically bump a task's ``RESUME_COUNT`` in the ledger file.
+
+    The bounded resume budget is only real if something writes the counter the
+    scan reads. A recovery path that re-drives a task calls this before the
+    re-drive so the next scan sees the escalated count and stops looping once
+    ``MAX_RESUME_ATTEMPTS`` is reached.
+
+    Writes follow the tmp + ``os.replace`` discipline used by the lock and
+    round-budget modules: the new ledger is staged beside the target and swapped
+    in with a single atomic rename, so a crash mid-write never leaves a
+    half-written ledger. Returns the task's new count, or ``-1`` if no matching
+    pipe row was found (the ledger is left untouched).
+    """
+    path = Path(ledger_path)
+    text = path.read_text(encoding="utf-8")
+    new_count = -1
+    out_lines: list[str] = []
+    for line in text.splitlines(keepends=True):
+        if new_count == -1 and _pipe_row_task_id(line) == task_id:
+            rewritten, new_count = _bump_resume_count_in_line(line)
+            out_lines.append(rewritten)
+        else:
+            out_lines.append(line)
+    if new_count == -1:
+        return -1
+
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.{time.monotonic_ns()}.tmp")
+    try:
+        tmp.write_text("".join(out_lines), encoding="utf-8")
+        os.replace(tmp, path)
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        raise
+    return new_count
 
 
 def _classified_entry(

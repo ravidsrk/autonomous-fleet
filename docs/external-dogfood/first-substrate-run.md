@@ -10,6 +10,30 @@ The substrate validators and `example-fixture` prove the **mechanics**. This run
 **field-hours** archive from a live coding-agent session with all four layers engaged on post-v0.1.0
 code (headless trace, `fleet_run` orchestration, validate-headless).
 
+## Disclosure — what this run is and is not
+
+This is a **self-dogfood (Lane 1)**: autonomous-fleet running `adversarial-review-and-fix` against
+**its own repo** (`ravidsrk/autonomous-fleet`, `main`). It validates the substrate end-to-end. It is
+**not** proof of independent cross-pass review or of build-blindness, and it should not be cited as
+either. Concretely, in this run:
+
+- **Reviewer and skeptic artifacts are byte-identical.** `p0-review-findings.json` and
+  `p0-skeptic-findings.json` share one sha256
+  (`5de7255673c5b84e48e1f2900e213edeaec8cc16f4c556ec60107cec926c3306`), so the run does **not**
+  demonstrate an independent skeptic pass distinct from the reviewer.
+- **The metadata is internally inconsistent** (illustrative, not authoritative): `trace.jsonl`
+  spans ~87s of events while `fleet-outcome.yaml` reports `duration_min: 45`; the trace records a
+  `MERGE` with `status: succeeded` while `prs_merged: 0` (no PR landed); and most `manifest.json`
+  mtimes are dated a day after `created_utc`.
+- **Build-blindness is structural only in the cross-vendor / separate-process (Orca) case.** The
+  shipped headless path runs one agent process per mission; on a single session it is fresh-context
+  isolation (instructed), not a mechanical guarantee. No external run-archive with `prs_merged > 0`
+  exists yet.
+
+Treat this archive as gate-validation evidence (validators, trace emission, and `fleet_run`
+orchestration over a live session) — not as independent-review or autonomous-landing proof. See the
+fuller disclosure in `.fleet/runs/<run_id>/README.md`.
+
 ## Reproduction (operator)
 
 ### Prerequisites

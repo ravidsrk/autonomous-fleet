@@ -1,14 +1,23 @@
 # Lane 2 — headless ship-with-proof on gemoji
 
-**Status:** DONE (2026-06-27)  
-**Closes gap:** external dogfood headless path (`grok -p` + `--repo` validated)  
+**Status:** Gate-validation only (2026-06-27)  
+**Exercises:** external dogfood headless path (`grok -p` + `--repo`)  
 **Duration:** ~163s (3 nodes × verification pass on pre-completed fork)
 **Fork:** [ravidsrk/gemoji](https://github.com/ravidsrk/gemoji) @ `fleet/gemoji-ship-with-proof-base`
 
+> **Disclosure — gate-validation only.** No external run-archive with autonomously-landed PRs
+> (`prs_merged > 0`) exists yet. This run **re-validated the fork's pre-existing `PHASE: DONE`
+> ledgers** (landed by hand in the 2026-06-20 interactive session), and the headless invocation
+> **failed auth and was completed by hand**. It validates `--repo` orchestration and the gates
+> against an external checkout — it does **not** demonstrate autonomous PR landing or
+> build-blindness beyond the self-dogfood.
+
 ## Why this run
 
-Lane 1 proved substrate + headless auth on **autonomous-fleet**. Lane 2 proves the same headless
-driver against an **external** checkout via `run-campaign.sh --repo`.
+Lane 1 exercised the substrate + headless auth on **autonomous-fleet** (a self-dogfood; see its
+disclosure in `first-substrate-run.md`). Lane 2 exercises the same headless driver against an
+**external** checkout via `run-campaign.sh --repo` — as a gate-validation pass, not an autonomous
+landing.
 
 ## Reproduction
 
@@ -65,8 +74,10 @@ Campaign complete. Nodes visited: audit tests docs
 ./scripts/validate-fleet-outcome.sh (all three readiness docs) → All passed
 ```
 
-**Note:** Fork ledgers were already `PHASE: DONE` from interactive dogfood (2026-06-20). This run
-proved headless orchestration end-to-end; nodes re-validated gates rather than re-landing PRs.
+**Note:** Fork ledgers were already `PHASE: DONE` from the interactive dogfood (2026-06-20). The
+headless invocation failed auth and the work was completed by hand; the nodes above re-validated
+the existing gates rather than re-landing PRs (`prs_merged = 0`). This validates `--repo`
+orchestration and the gates against an external checkout — it is not an autonomous PR landing.
 Lane 2 follow-up closed: unconditional archive emission is now wired in
 `run-mission-headless.sh` / `run-campaign.sh` (kept under target `--repo` after real invocations).
 

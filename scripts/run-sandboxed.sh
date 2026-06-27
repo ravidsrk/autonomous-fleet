@@ -8,10 +8,12 @@
 #   2. Classifies the wrapped command line by blast radius (ported from omnigent's nessie
 #      blast_radius policy) and REFUSES (exit non-zero) before exec when the verdict is DENY
 #      (irreversible: force-push, rm -rf of a critical path, hard-reset to a remote ref,
-#      gh pr merge, terraform/tofu apply|destroy) or ASK (outward/destructive-but-recoverable:
-#      ordinary git push, gh release, rm -rf of a scoped path). This wrapper is non-interactive,
-#      so an ASK has no human to prompt: it refuses too, and the operator re-runs the command by
-#      hand once they've eyeballed it.
+#      gh pr merge, terraform/tofu apply|destroy, shred, dd to a device, chmod/chown -R of a
+#      system path, find <system-path> -delete/-exec) or ASK (outward/destructive-but-recoverable:
+#      ordinary git push, gh release, rm -rf of a scoped path, npm/cargo publish, aws/gcloud
+#      destructive verbs, curl|wget piped to a shell). This wrapper is non-interactive, so an ASK
+#      has no human to prompt: it refuses too, and the operator re-runs the command by hand once
+#      they've eyeballed it.
 #   3. With `--role reviewer`, runs the command after classification with the candidate git tree
 #      read-only and `.fleet/runs/<run_id>/` writable. It prefers macOS sandbox-exec, then Linux
 #      bwrap. If neither exists, it falls back to a post-exec tracked-file hash assertion.
@@ -60,17 +62,22 @@ Best-effort safety wrapper. Scrubs credential-shaped env vars and classifies the
 blast radius (ported from omnigent nessie blast_radius) before exec.
 
 Env scrub: strips AWS_*, *_TOKEN, *_KEY, *_SECRET, *_PASSWORD, GH_TOKEN, GITHUB_TOKEN,
-  XAI_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY. Keeps PATH, HOME, USER, SHELL, LANG,
-  LC_*, TERM, TMPDIR.
+  XAI_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, and FLEET_DISABLE_* (substrate kill switches —
+  a stray one must not ride into a sandboxed child and silently no-op its guard). Keeps PATH, HOME,
+  USER, SHELL, LANG, LC_*, TERM, TMPDIR.
 
 Blast-radius verdicts:
   DENY (refused, exit 2)  — irreversible: force-push (--force / -f / +refspec / --mirror),
                             remote-branch delete (--delete / --prune / -d / :refspec),
                             rm -rf of / ~ $HOME or a system dir (any flag spelling),
                             git reset --hard origin/*, gh pr merge / gh repo delete,
-                            terraform|tofu|kubectl|helm|databricks apply|deploy|destroy|delete.
+                            terraform|tofu|kubectl|helm|databricks apply|deploy|destroy|delete,
+                            shred, dd of=/dev/*, chmod|chown|chgrp -R of an absolute system path,
+                            find <abs-system-path> with -delete / -exec / -ok.
   ASK  (refused, exit 3)  — outward / recoverable: ordinary git push, gh release,
-                            rm -rf of a scoped path. Non-interactive: re-run by hand.
+                            rm -rf of a scoped path, npm|pnpm|yarn|cargo publish,
+                            aws|gcloud destructive verbs (delete/rm/terminate/...),
+                            curl|wget piped into a shell. Non-interactive: re-run by hand.
   ALLOW                   — reads, tests, edits, local git (commit/merge/worktree): exec.
 
 Evasions handled: leading sudo (incl. value-taking options and a `--` terminator), shell env
@@ -81,7 +88,8 @@ split rm flags (-rf, -r -f, --recursive --force), and +/: push refspecs.
 --role reviewer
             after blast-radius classification, run with the candidate git tree read-only and only
             .fleet/runs/<run_id>/ writable. Uses sandbox-exec on macOS, bwrap on Linux, else a
-            best-effort post-exec tracked-file hash assertion.
+            best-effort post-exec tracked-file hash assertion. The bwrap mount binds ONLY the repo
+            (ro), the run dir (rw), and minimal system paths (ro) — no host RW of $HOME or /.
 --run-id    run archive id for reviewer writable output. Defaults to FLEET_RUN_ID, then a generated
             reviewer-sandbox id.
 
@@ -340,6 +348,134 @@ _classify_statement_tokens() {
     return 0
   fi
 
+  # 3a') shred: irreversible by design — it overwrites then (usually) unlinks, with no recovery.
+  #      DENY unconditionally; there is no recoverable spelling worth an ASK tier.
+  if [[ "$cmd" == "shred" ]]; then
+    echo DENY
+    return 0
+  fi
+
+  # 3a'') dd writing to a device node: `dd of=/dev/sda ...` overwrites a raw disk — catastrophic and
+  #       irreversible. Match `of=/dev/...` in any argument position (dd takes `key=value` operands
+  #       in any order). A plain `of=file` (no /dev/) is an ordinary write → not flagged here.
+  if [[ "$cmd" == "dd" ]]; then
+    local j=$((i + 1)) t
+    while [[ $j -lt $n ]]; do
+      t="${argv[$j]}"
+      case "$t" in
+        of=/dev/*) echo DENY; return 0 ;;
+      esac
+      j=$((j + 1))
+    done
+    return 0
+  fi
+
+  # 3a''') chmod / chown -R on an absolute system path: a recursive ownership/permission rewrite of
+  #        /, /etc, /usr, … (or a path under one) bricks the host as surely as rm -rf does. DENY when
+  #        BOTH the recursive flag and an absolute-system-path operand are present; otherwise no
+  #        verdict (a scoped `chmod -R 755 build/` is ordinary). Reuses _rm_target_is_catastrophic
+  #        for the same critical-dir / system-parent set rm uses, so the two stay consistent.
+  if [[ "$cmd" == "chmod" || "$cmd" == "chown" || "$cmd" == "chgrp" ]]; then
+    local recursive=0 positional_only=0 catastrophic=0 t
+    local j=$((i + 1))
+    while [[ $j -lt $n ]]; do
+      t="${argv[$j]}"
+      if [[ $positional_only -eq 1 ]]; then
+        _rm_target_is_catastrophic "$t" && catastrophic=1
+      elif [[ "$t" == "--" ]]; then
+        positional_only=1
+      elif [[ "$t" == "--recursive" ]]; then
+        recursive=1
+      elif [[ "$t" == --* ]]; then
+        :
+      elif [[ "$t" == -?* ]]; then
+        case "$t" in *[rR]*) recursive=1 ;; esac
+      else
+        # Test EVERY non-flag operand (mode/owner AND path). A mode like 000 / u+x or an owner like
+        # root:root can never be an absolute system path, so _rm_target_is_catastrophic never matches
+        # it — no need to single out the first operand, which would mis-handle `chmod -R+x /usr`.
+        _rm_target_is_catastrophic "$t" && catastrophic=1
+      fi
+      j=$((j + 1))
+    done
+    if [[ $recursive -eq 1 && $catastrophic -eq 1 ]]; then echo DENY; fi
+    return 0
+  fi
+
+  # 3a'''') find <abs-path> ... with -delete / -exec / -execdir: `find / -delete`, `find /etc -exec
+  #         rm {} +` walk an absolute system tree and destroy it. DENY when the starting path is an
+  #         absolute system path AND a destructive action (-delete / -exec / -execdir) is present.
+  #         A relative root (`find . -delete`) or a pure query (`find / -name x`) is not flagged.
+  if [[ "$cmd" == "find" ]]; then
+    local has_action=0 abs_system=0 seen_expr=0 t
+    local j=$((i + 1))
+    while [[ $j -lt $n ]]; do
+      t="${argv[$j]}"
+      case "$t" in
+        # Destructive actions: -delete removes matches; -exec/-execdir/-ok/-okdir RUN a command per
+        # match (the interactive -ok* still runs it). A write-a-listing primary like -fprint is NOT
+        # destructive, so it is deliberately excluded.
+        -delete|-exec|-execdir|-ok|-okdir) has_action=1; seen_expr=1 ;;
+        -*) seen_expr=1 ;;  # any other primary/option marks the start of the expression
+        *)
+          # Path operands precede the expression. Flag if any starting path is absolute-system.
+          if [[ $seen_expr -eq 0 ]]; then
+            _rm_target_is_catastrophic "$t" && abs_system=1
+          fi
+          ;;
+      esac
+      j=$((j + 1))
+    done
+    if [[ $has_action -eq 1 && $abs_system -eq 1 ]]; then echo DENY; fi
+    return 0
+  fi
+
+  # 3a''''') Package publish: npm publish / cargo publish / yarn publish / pnpm publish push an
+  #          artifact to a public registry — outward and effectively irreversible (a published
+  #          version can be deprecated but not un-published cleanly). ASK so a human re-runs it
+  #          deliberately. Structural per resolved command so `echo "npm publish"` does not match.
+  case "$cmd" in
+    npm|pnpm|yarn|cargo)
+      local jp=$((i + 1)) tp
+      while [[ $jp -lt $n ]]; do
+        tp="${argv[$jp]}"
+        [[ "$tp" == -* ]] && { jp=$((jp + 1)); continue; }
+        case "$tp" in
+          publish) echo ASK; return 0 ;;
+          *) break ;;   # first non-flag subcommand is not publish → no verdict here
+        esac
+      done
+      ;;
+  esac
+
+  # 3a'''''') Cloud CLIs: aws / gcloud destructive verbs. These reach a LIVE account, so the wrapper
+  #           refuses (ASK) rather than ALLOW even though some are individually recoverable. Matched
+  #           on the resolved command + a destructive verb token, not by substring.
+  if [[ "$cmd" == "aws" ]]; then
+    local ja=$((i + 1)) ta
+    while [[ $ja -lt $n ]]; do
+      ta="${argv[$ja]}"
+      case "$ta" in
+        # aws <service> <verb>: rm/delete-*/terminate-*/destroy verbs hit live resources.
+        rm|delete|delete-*|terminate-instances|remove-*|reset-*|empty)
+          echo ASK; return 0 ;;
+      esac
+      ja=$((ja + 1))
+    done
+    return 0
+  fi
+  if [[ "$cmd" == "gcloud" ]]; then
+    local jg=$((i + 1)) tg
+    while [[ $jg -lt $n ]]; do
+      tg="${argv[$jg]}"
+      case "$tg" in
+        delete|destroy|remove) echo ASK; return 0 ;;
+      esac
+      jg=$((jg + 1))
+    done
+    return 0
+  fi
+
   # 3b) git push severity. Resolve the subcommand past git global options.
   if [[ "$cmd" == "git" ]]; then
     local j=$((i + 1))
@@ -458,14 +594,15 @@ _classify_statement_tokens() {
   #     hiding the real binary. Scan the tail for a dangerous command head and re-classify there.
   #     The data-consumer skip is what keeps `env echo rm -rf /` (safe) from false-positiving.
   case "$cmd" in
-    rm|git|gh|kubectl|helm|terraform|tofu|databricks|sh|bash|zsh|dash|ash) ;;
+    rm|shred|dd|chmod|chown|chgrp|find|npm|pnpm|yarn|cargo|aws|gcloud) ;;
+    git|gh|kubectl|helm|terraform|tofu|databricks|sh|bash|zsh|dash|ash) ;;
     echo|printf|:|true|false|test|'['|export|unset|read|cd|pwd|alias|set|source|.) ;;
     *)
       local p worst="" s b
       for (( p = i + 1; p < n; p++ )); do
         b="${argv[$p]##*/}"
         case "$b" in
-          rm|git|gh|kubectl|helm|terraform|tofu|databricks|sh|bash|zsh|dash|ash)
+          rm|shred|dd|chmod|chown|chgrp|find|npm|pnpm|yarn|cargo|aws|gcloud|git|gh|kubectl|helm|terraform|tofu|databricks|sh|bash|zsh|dash|ash)
             s="$(_classify_statement_tokens "${argv[@]:p}")"
             [[ "$s" == "DENY" ]] && { echo DENY; return 0; }
             [[ "$s" == "ASK" ]] && worst="ASK"
@@ -489,6 +626,15 @@ _regex_deny() {
 }
 _regex_ask() {
   local line="$1"
+  # curl|wget piped into a shell: `curl https://x | bash`, `wget -qO- u | sh`, `curl u | sudo bash`.
+  # This is the classic remote-code-execution one-liner: a downloaded script runs unreviewed. It is
+  # cross-statement (the `|` splits it into `curl …` and `bash`, neither dangerous alone), so it
+  # cannot be caught per-statement and lives here as a backstop over the JOINED line. ASK: the
+  # operator must fetch, READ, then run by hand. The pipe target may be sh/bash/zsh/dash/ash,
+  # optionally via sudo and with a trailing `-` / `-s` arg.
+  printf '%s' "$line" \
+    | grep -Eq '(curl|wget)[[:space:]].*\|[[:space:]]*(sudo[[:space:]]+)?(sh|bash|zsh|dash|ash)([[:space:]]|$)' \
+    && return 0
   # gh (pr merge / repo delete / release) and infra tools (terraform/tofu/kubectl/helm/databricks
   # apply|destroy|...) are classified STRUCTURALLY per resolved command in _classify_statement_tokens
   # (3c/3c'), not by substring, so a string merely mentioning them no longer false-positives.
@@ -568,7 +714,8 @@ fi
 if [[ "$verdict" == "DENY" ]]; then
   echo "run-sandboxed: REFUSED (DENY): irreversible command — ${*}" >&2
   echo "run-sandboxed: force-push, rm -rf of a critical path, hard-reset to remote, gh pr merge," >&2
-  echo "run-sandboxed: and infra destroy are blocked. This wrapper will not run them." >&2
+  echo "run-sandboxed: infra destroy, shred, dd to a device, recursive chmod/chown of a system" >&2
+  echo "run-sandboxed: path, and find -delete/-exec on a system path are blocked. Will not run." >&2
   exit 2
 fi
 
@@ -667,14 +814,32 @@ _exec_reviewer_sandbox() {
     tmp_q="$(_sbpl_string "$reviewer_tmp")"
     test_q="$(_sbpl_string "$reviewer_test_output")"
     home_q="$(_sbpl_string "$reviewer_home")"
+    local repo_q
+    repo_q="$(_sbpl_string "$repo_root")"
+    # Reviewer role: deny by default, then grant only what a read-only reviewer needs.
+    # Network is DROPPED — a reviewer reads a candidate tree and emits findings; it has no business
+    # reaching the network, and an outbound channel is exactly the exfiltration path the sandbox is
+    # meant to close. file-read* is NARROWED to the repo, the run dir, and the system paths an
+    # interpreter / CA bundle resolves from (no blanket host read). file-write* stays scoped to the
+    # run dir (output, $TMPDIR, $HOME) plus /dev.
     profile="$(cat <<EOF
 (version 1)
 (deny default)
 (allow process*)
 (allow sysctl*)
 (allow mach-lookup)
-(allow network*)
-(allow file-read*)
+(allow file-read*
+  (subpath $repo_q)
+  (subpath $run_q)
+  (subpath "/usr")
+  (subpath "/bin")
+  (subpath "/sbin")
+  (subpath "/System")
+  (subpath "/Library")
+  (subpath "/private/etc")
+  (subpath "/etc")
+  (subpath "/dev")
+)
 (allow file-write*
   (subpath $run_q)
   (subpath $tmp_q)
@@ -688,8 +853,40 @@ EOF
   fi
 
   if command -v bwrap >/dev/null 2>&1; then
-    exec bwrap \
-      --bind / / \
+    # Narrowed reviewer mount. The old form `--bind / /` handed the child the WHOLE host
+    # read-write (only the repo was re-bound read-only afterwards), so a reviewer could scribble
+    # over $HOME, /etc, sibling worktrees — anything outside the repo. Instead, build the namespace
+    # from nothing and bind ONLY what a read-only reviewer legitimately needs:
+    #   - the candidate repo, READ-ONLY (the artifact under review must not be mutated);
+    #   - the run dir, READ-WRITE (the one place reviewer output, $TMPDIR and $HOME live — see
+    #     _reviewer_env, which points HOME/TMPDIR/FLEET_TEST_OUTPUT_DIR inside it);
+    #   - a minimal set of system paths READ-ONLY (/usr /bin /sbin /lib* /etc) so interpreters and
+    #     CA certs resolve. `--ro-bind-try` skips any that are absent on this host.
+    # No host RW of $HOME and no blanket RW of /. /proc and a minimal /dev are synthesized rather
+    # than bound from the host. Run-dir binds come LAST so they layer over the read-only repo even
+    # when the run dir lives under it (.fleet/runs/<id> is inside the repo).
+    #
+    # Drop ambient/inheritable capabilities before entering bwrap. A reviewer namespace that
+    # inherited CAP_SYS_ADMIN et al. would be a weaker boundary, not a stronger one; and bwrap
+    # itself refuses to start ("Unexpected capabilities but not setuid") when launched with an
+    # ambient cap set, which is exactly the posture inside a privileged CI container. `setpriv`
+    # (util-linux) is preferred, `capsh` (libcap) is the fallback; if neither is present we exec
+    # bwrap directly (hosts without an ambient cap set need no prefix).
+    local -a cap_drop=()
+    if command -v setpriv >/dev/null 2>&1; then
+      cap_drop=(setpriv --inh-caps=-all --ambient-caps=-all --)
+    elif command -v capsh >/dev/null 2>&1; then
+      cap_drop=(capsh --inh= --drop=all --)
+    fi
+    exec "${cap_drop[@]}" bwrap \
+      --ro-bind /usr /usr \
+      --ro-bind /bin /bin \
+      --ro-bind-try /sbin /sbin \
+      --ro-bind-try /lib /lib \
+      --ro-bind-try /lib64 /lib64 \
+      --ro-bind-try /etc /etc \
+      --proc /proc \
+      --dev /dev \
       --ro-bind "$repo_root" "$repo_root" \
       --bind "$reviewer_run_dir" "$reviewer_run_dir" \
       --chdir "$PWD" \
@@ -736,11 +933,21 @@ done
 
 # Sanity: explicitly drop credential-shaped vars from the preserved list (defense in depth — the
 # allowlist above already excludes them, but be explicit for readers / future edits).
+#
+# FLEET_DISABLE_* are the substrate kill switches (see references/substrate-disable-knobs.md). They
+# are NOT credentials, but they are just as dangerous to forward: a single truthy value silently
+# turns a verification layer into a no-op. If one rode into a sandboxed child (e.g. a nested fleet
+# run the wrapped command spawns) it would quietly drop that child's guard. The allowlist already
+# excludes them — they are not in keep_vars — but scrub them EXPLICITLY so a future widening of the
+# allowlist (say, a `FLEET_*` keep rule) can never let a disable knob ride into the sandbox.
 filtered=()
 for kv in "${preserved[@]}"; do
   name="${kv%%=*}"
   case "$name" in
     GH_TOKEN|GITHUB_TOKEN|XAI_API_KEY|OPENAI_API_KEY|ANTHROPIC_API_KEY|AWS_*|*_TOKEN|*_KEY|*_SECRET|*_PASSWORD)
+      continue
+      ;;
+    FLEET_DISABLE_*)
       continue
       ;;
   esac

@@ -3,7 +3,7 @@ name: autonomous-fleet-core
 description: >-
   The portable, tool-agnostic ENGINE for running fully-autonomous multi-agent engineering
   jobs. Shipped mission skills (doc-sync, test-coverage, adversarial-review-and-fix) invoke
-  THIS engine plus exactly one ADAPTER (orca, claude-code, grok, or another runtime). Twelve
+  THIS engine plus exactly one ADAPTER (orca, claude-code, grok, or another runtime). Eighteen
   additional missions are documented under docs/exploratory/missions/ and re-promote on
   real-run evidence. This core holds
   everything that does NOT depend on orchestration tool: self-orientation, fully-autonomous
@@ -63,3 +63,6 @@ The active adapter must implement: `PLACE`, `SPAWN_WORKER`, `DISPATCH`, `WAIT`, 
 `WORKER_DONE` / `ASK` / `REPLY`, `OPEN_PR` / `MERGE_PR` / `CLEANUP`, `SYNC_TASK_STATE`.
 When the host supports goal mode, also implement: `SET_GOAL`, `UPDATE_GOAL`, `GOAL_COMPLETE`,
 `GOAL_BLOCKED`, and `LOOP_POLL` (host-native scheduler; Orca exempt — see `runtime-goals.md`).
+Optional primitive 14, `CONTINUE_WORKER` (re-attach an existing resumable session for an in-flight
+task), is implemented by adapters whose runtime exposes a restore command and ALIASED to
+`SPAWN_WORKER` (idempotent relaunch) otherwise — see `engine.md`.
