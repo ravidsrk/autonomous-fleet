@@ -245,6 +245,16 @@ def _campaign_yaml_paths(root: Path) -> list[Path]:
     return paths
 
 
+def _campaign_allows_exploratory_nodes(spec: Mapping[str, Any]) -> bool:
+    return spec.get("allow_exploratory_nodes") is True or spec.get("exploratory") is True
+
+
+def _exploratory_mission_skill_exists(root: Path, mission: str) -> bool:
+    return (
+        root / "docs" / "exploratory" / "missions" / mission / "SKILL.md"
+    ).is_file()
+
+
 def _campaign_is_archived(spec: Mapping[str, Any]) -> bool:
     status = spec.get("status")
     if isinstance(status, str) and "archived" in status.lower():
@@ -282,10 +292,18 @@ def lint_campaign_missions(
                     f"{path.relative_to(root)}: node {node_id!r} references unknown mission {mission!r}"
                 )
             elif mission not in shipped_ids:
-                errors.append(
-                    f"{path.relative_to(root)}: node {node_id!r} references unshipped mission {mission!r} "
-                    f"(campaign {campaign_id!r}; archive the campaign or promote the mission)"
-                )
+                if _campaign_allows_exploratory_nodes(spec):
+                    if not _exploratory_mission_skill_exists(root, mission):
+                        errors.append(
+                            f"{path.relative_to(root)}: node {node_id!r} references exploratory "
+                            f"mission {mission!r} but docs/exploratory/missions/{mission}/SKILL.md "
+                            f"is missing"
+                        )
+                else:
+                    errors.append(
+                        f"{path.relative_to(root)}: node {node_id!r} references unshipped mission {mission!r} "
+                        f"(campaign {campaign_id!r}; archive the campaign or promote the mission)"
+                    )
     return errors
 
 

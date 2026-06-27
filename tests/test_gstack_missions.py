@@ -38,6 +38,9 @@ def test_gstack_mission_dirs_have_skill_and_banner() -> None:
         body = skill.read_text(encoding="utf-8")
         assert "status: exploratory" in body
         assert "fleet-component: \"mission\"" in body or 'fleet-component: "mission"' in body
+        assert "community-recommends" in body
+        assert "mode: warn" in body
+        assert "recommended-bundle:" in body
         assert "## GOAL" in body
         assert "## ROLE PIPELINE" in body
         assert "## LEDGER" in body

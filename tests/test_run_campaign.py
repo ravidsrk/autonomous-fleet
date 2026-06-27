@@ -219,6 +219,7 @@ def _build_e2e_harness(tmp_path: Path, stub_body: str, campaign: str) -> Path:
     for f in (
         "run-campaign.sh", "eval-campaign-edge.sh", "eval-campaign-edge.py",
         "validate-fleet-outcome.sh", "validate_fleet_outcome.py",
+        "preflight.sh", "preflight-community.sh",
     ):
         shutil.copy(ROOT / "scripts" / f, e / "scripts" / f)
     for f in (ROOT / "scripts" / "lib").glob("*"):
@@ -284,6 +285,8 @@ def test_run_campaign_dry_run_self_heals_broken_real_venv(tmp_path: Path):
     (repo / "scripts" / "campaigns").mkdir()
 
     shutil.copy(ROOT / "scripts" / "run-campaign.sh", repo / "scripts" / "run-campaign.sh")
+    for f in ("preflight.sh", "preflight-community.sh"):
+        shutil.copy(ROOT / "scripts" / f, repo / "scripts" / f)
     for path in (ROOT / "scripts" / "lib").glob("*"):
         if path.is_file():
             shutil.copy(path, repo / "scripts" / "lib" / path.name)

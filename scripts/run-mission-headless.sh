@@ -246,11 +246,55 @@ dryrun_emit_mission() {
   "$VENV_PYTHON" -c 'import sys; sys.path.insert(0, sys.argv[1]+"/scripts"); from lib.mission_registry import headless_emit_mission; print(headless_emit_mission(sys.argv[2]))' "$ROOT" "$MISSION"
 }
 
+adapter_for_runtime() {
+  case "$1" in
+    grok) echo "grok" ;;
+    claude) echo "claude-code" ;;
+    codex) echo "codex" ;;
+    *) echo "$1" ;;
+  esac
+}
+
+run_preflight_stack() {
+  local adapter adapter_dir
+  adapter="$(adapter_for_runtime "$RUNTIME")"
+  adapter_dir="$ROOT/skills/autonomous-fleet-adapter-$adapter"
+  echo "== adapter preflight =="
+  if [[ ! -d "$adapter_dir" ]]; then
+    echo "preflight: skip (no fleet adapter skills under $ROOT/skills)"
+  elif [[ "$DRY_RUN" -eq 1 ]]; then
+    "$ROOT/scripts/preflight.sh" "$adapter" --wiring-only
+  else
+    "$ROOT/scripts/preflight.sh" "$adapter" --scm
+  fi
+  if [[ "$MISSION" != "fleet-program" ]]; then
+    echo "== community preflight =="
+    if [[ ! -f "$ROOT/skills/$MISSION/SKILL.md" && ! -f "$ROOT/docs/exploratory/missions/$MISSION/SKILL.md" ]]; then
+      echo "preflight-community: skip (mission SKILL.md not under $ROOT)"
+    elif [[ "$DRY_RUN" -eq 1 ]]; then
+      "$ROOT/scripts/preflight-community.sh" "$MISSION" --dry-run
+    else
+      "$ROOT/scripts/preflight-community.sh" "$MISSION"
+    fi
+  fi
+}
+
+case "$RUNTIME" in
+  grok|claude|codex) ;;
+  *)
+    echo "error: unsupported runtime '$RUNTIME' (use grok, claude, or codex)" >&2
+    exit 1
+    ;;
+esac
+
 echo "== run-mission-headless =="
 echo "runtime:  $RUNTIME"
 echo "mission:  $MISSION"
 echo "repo:     $REPO_ROOT"
 echo "turns:    $MAX_TURNS"
+echo ""
+
+run_preflight_stack
 echo ""
 
 case "$RUNTIME" in

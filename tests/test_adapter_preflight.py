@@ -30,6 +30,20 @@ def _runner(returncode: int, calls: list[list[str]]):
     return run
 
 
+def test_wiring_only_skips_all_checks() -> None:
+    failures = check(
+        {
+            "bins": ["definitely-not-a-real-bin-xyz"],
+            "env": ["NEEDED_TOKEN"],
+            "auth": [{"check": "gh auth status"}],
+        },
+        Intent(wiring_only=True),
+        which=_which_factory(set()),
+        environ={},
+    )
+    assert failures == []
+
+
 def test_missing_bin_failure_names_binary() -> None:
     failures = check(
         {"bins": ["definitely-not-a-real-bin-xyz"], "env": [], "auth": []},

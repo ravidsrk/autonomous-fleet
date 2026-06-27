@@ -89,12 +89,31 @@ Use `fleet-program` for sequential chains **and** conditional DAGs (campaigns). 
 
 Keep mission `SKILL.md` under ~500 lines; move bulky reference material to `references/`.
 
+## Dependency tiers
+
+Fleet missions declare dependencies at five tiers. Machine-readable `community-recommends`
+blocks (see [community-skills.md](community-skills.md)) drive warn-tier preflight; missions
+remain runnable via TASK fallbacks when community skills are absent.
+
+| Tier | Name | Example | On missing |
+|------|------|---------|------------|
+| 0 | Required stack | `autonomous-fleet-core` + adapter + one mission | Block — invalid run |
+| 1 | Environment | `gh` auth, TARGET URL, MCP connector | HARD EXTERNAL DEPENDENCY — pause ledger |
+| 2 | Recommended community | gstack `qa` on `browser-qa-fix` | Warn + mission TASK fallback; `preflight-community.sh` prints install hint |
+| 3 | Pre-gate community | `office-hours` before `product-framing` | Skip pre-gate; mission T-* phases run |
+| 4 | Worker community | `browse` on DISPATCH | Worker uses adapter browser tools |
+
+**Enforcement:** Tier 0–1 are hard. Tier 2–4 are advisory unless the operator opts into
+`mode: fail` on a mission block (not used on shipped missions). Install community bundles
+with `./scripts/install-community.sh <bundle>` or `./scripts/install-skills.sh --all
+--with-community gstack` (opt-in only).
+
 ## Community skills (third-party)
 
 Attach gstack, agent-skills, mattpocock/skills, and other catalogs **only** as Optional
 (coordinator) or Worker (DISPATCH) — never as a second mission skill. Use `fleet-program`
-presets (`ship-with-proof`, `align-then-ship`, `quality-gate`) for multi-step runs that
-optionally call community **pre-gates** and **post-gates**.
+presets (`ship-with-proof`, `align-then-ship`, `quality-gate`, `gstack-quality`) for
+multi-step runs that optionally call community **pre-gates** and **post-gates**.
 
 Full install matrix, bundles, and anti-patterns: [community-skills.md](community-skills.md).
 Research: `docs/research-community-skills.md`.
