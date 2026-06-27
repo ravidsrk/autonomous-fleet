@@ -205,6 +205,9 @@ if [[ "$YOLO" -eq 1 ]]; then
   echo "warning: --yolo auto-approves all agent tool calls; untrusted --repo/--campaign + yolo = full RCE surface" >&2
 fi
 
+# Campaign-level synthetic archive (progress excerpt + lifecycle trace, no runtime
+# transcript). Complements run-mission-headless.sh which keeps the capture with
+# headless-runtime-response.* — AC1 requires both entry points to emit; distinct run_ids.
 emit_campaign_node_archive() {
   local mission="$1"
   local emit_mission out archive
@@ -219,6 +222,7 @@ emit_campaign_node_archive() {
   if [[ -n "$archive" && -d "$archive" ]]; then
     echo "  campaign archive kept: $archive"
   fi
+  return 0
 }
 
 echo "== run-campaign =="
@@ -280,12 +284,16 @@ while [[ -n "$CURRENT" ]]; do
     [[ "$YOLO" -eq 1 ]] && EXTRA+=(--yolo)
     # Propagate the acknowledgement so the child's RCE gate doesn't re-fire on an external repo.
     [[ "$YOLO_ACK" -eq 1 ]] && EXTRA+=(--yolo-untrusted-acknowledged)
-    node_rc=0
-    "$ROOT/scripts/run-mission-headless.sh" "$RUNTIME" "$MISSION" --max-turns "$MAX_TURNS" "${EXTRA[@]}" || node_rc=$?
-    emit_campaign_node_archive "$MISSION"
-    if [[ "$node_rc" -ne 0 ]]; then
-      echo "warn: node $CURRENT runtime exited $node_rc (archives emitted under $REPO_ROOT/.fleet/runs/)" >&2
-      exit "$node_rc"
+    NODE_RC=0
+    "$ROOT/scripts/run-mission-headless.sh" "$RUNTIME" "$MISSION" --max-turns "$MAX_TURNS" "${EXTRA[@]}" || NODE_RC=$?
+    emit_campaign_node_archive "$MISSION" || true
+    if [[ "$NODE_RC" -ne 0 ]]; then
+      if [[ -d "$REPO_ROOT/.fleet/runs" ]] && compgen -G "$REPO_ROOT/.fleet/runs/*" >/dev/null; then
+        echo "warn: node $CURRENT runtime exited $NODE_RC (archives under $REPO_ROOT/.fleet/runs/)" >&2
+      else
+        echo "warn: node $CURRENT runtime exited $NODE_RC" >&2
+      fi
+      exit "$NODE_RC"
     fi
     if [[ -f "$READINESS_ABS" ]]; then
       ./scripts/validate-fleet-outcome.sh "$READINESS_ABS"
