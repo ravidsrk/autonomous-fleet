@@ -67,6 +67,24 @@ def test_gstack_banners_are_png_1200x600() -> None:
         assert png_dimensions(path) == (1200, 600), slug
 
 
+def test_gstack_new_mission_banners_are_schematic_not_placeholders() -> None:
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from lib.png_banner import (
+        MIN_BANNER_BYTES,
+        banner_has_label_ink,
+        is_placeholder_banner,
+        png_unique_color_count,
+    )
+
+    new_slugs = ("devex-audit", "release-document", "incident-investigate")
+    for slug in new_slugs:
+        path = ROOT / "docs/exploratory/missions" / slug / "assets" / "banner.png"
+        assert path.stat().st_size >= MIN_BANNER_BYTES, f"{slug}: banner too small"
+        assert png_unique_color_count(path, sample=4) >= 10, f"{slug}: too few colors"
+        assert not is_placeholder_banner(path), f"{slug}: still placeholder"
+        assert banner_has_label_ink(path), f"{slug}: missing top-left label ink"
+
+
 def test_sniff_and_normalize_banner_script() -> None:
     sniff = ROOT / "scripts" / "banner" / "sniff_and_normalize_banner.sh"
     assert sniff.is_file()
@@ -82,10 +100,19 @@ def test_sniff_and_normalize_banner_script() -> None:
         )
         assert r.returncode == 0, r.stderr
         assert "PNG" in r.stderr
+        assert "xxd" not in r.stderr
         assert tmp_out.read_bytes()[:4] == b"\x89PNG"
     finally:
         if tmp_out.exists():
             tmp_out.unlink()
+
+
+def test_sniff_script_uses_python_magic_probe_not_xxd() -> None:
+    sniff = ROOT / "scripts" / "banner" / "sniff_and_normalize_banner.sh"
+    text = sniff.read_text(encoding="utf-8")
+    assert "xxd" not in text
+    assert "png_banner.py" in text
+    assert 'magic "$1"' in text or "magic \"$1\"" in text
 
 
 @pytest.mark.parametrize("slug,label", [

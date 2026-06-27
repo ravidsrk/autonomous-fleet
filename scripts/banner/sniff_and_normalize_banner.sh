@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Sniff banner magic bytes, convert JPEG-as-PNG to real PNG, enforce 2:1 (1200x600).
 # AGENTS.md: Nano Banana often returns JPEG when written to .png — sniff and fix.
-# Dimension checks use scripts/lib/png_banner.py (stdlib); sips is optional macOS resize only.
+# Magic + dimensions use scripts/lib/png_banner.py (stdlib); sips optional for resize/JPEG.
 set -euo pipefail
 
 if [[ $# -ne 2 ]]; then
@@ -19,7 +19,11 @@ if [[ ! -f "$INPUT" ]]; then
   exit 2
 fi
 
-MAGIC="$(xxd -l 4 -p "$INPUT" | tr '[:upper:]' '[:lower:]')"
+_read_magic() {
+  python3 "$PNG_PY" magic "$1"
+}
+
+MAGIC="$(_read_magic "$INPUT")"
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
@@ -56,7 +60,7 @@ else
   exit 1
 fi
 
-OUT_MAGIC="$(xxd -l 4 -p "$OUTPUT" | tr '[:upper:]' '[:lower:]')"
+OUT_MAGIC="$(_read_magic "$OUTPUT")"
 if [[ "$OUT_MAGIC" != 89504e47 ]]; then
   echo "sniff_and_normalize_banner.sh: output is not PNG ($OUT_MAGIC)" >&2
   exit 1
