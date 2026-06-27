@@ -47,10 +47,13 @@ for the promotion criteria.
 | 2 | `product-framing` | `docs/exploratory/missions/product-framing/` |
 | 2 | `browser-qa-fix` | `docs/exploratory/missions/browser-qa-fix/` |
 | 2 | `security-cso-audit` | `docs/exploratory/missions/security-cso-audit/` |
+| 2 | `devex-audit` | `docs/exploratory/missions/devex-audit/` |
+| 2 | `release-document` | `docs/exploratory/missions/release-document/` |
+| 2 | `incident-investigate` | `docs/exploratory/missions/incident-investigate/` |
 
-**gstack-derived (2026-06-27):** `product-framing`, `browser-qa-fix`, and
-`security-cso-audit` map gstack `office-hours`/`autoplan`, `qa`/`browse`, and
-`cso` flows into fleet frozen-ledger missions. Research:
+**gstack-derived (2026-06-27):** all six — `product-framing`, `browser-qa-fix`,
+`security-cso-audit`, `devex-audit`, `release-document`, `incident-investigate` — map
+gstack specialist flows into fleet frozen-ledger missions. Research:
 [`docs/gstack-missions-research.md`](../../../docs/gstack-missions-research.md).
 
 The three `—`-tier missions were demoted earlier (2026-06-22) and still carry

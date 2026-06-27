@@ -14,7 +14,7 @@ sidebar:
 The `README.md` pitches the framework. This is the book. It walks a developer from a first
 green PR all the way to writing a custom runtime adapter, with every concept, mission, and
 schema documented against the code on `main`. If you only have ten minutes, read the
-[Quickstart](01-quickstart.md). If you want to understand the thing, read tier by tier.
+[Quickstart](/01-quickstart/). If you want to understand the thing, read tier by tier.
 
 ## How to read this guide
 
@@ -36,51 +36,51 @@ Twenty chapters, four tiers. The tiers are an order, not a menu: each builds on 
   dense ones (the engine, then the 4-layer substrate).
 - Need to do one specific thing? Jump straight into Tier 3. Each how-to chapter stands alone
   and links back to the concepts it assumes.
-- Looking up a field, a flag, or a term? Tier 4. The [Glossary](20-glossary.md) defines every
+- Looking up a field, a flag, or a term? Tier 4. The [Glossary](/20-glossary/) defines every
   framework-specific word and links to the chapter that explains it.
 
 Two honest limitations are surfaced where they live, not hidden:
 
 > The trace stream emits exactly one event in production today, `T-FINAL`, written by
 > `scripts/lib/fleet_run.py` (before the manifest, per the engine doctrine). The schema covers
-> its 11-value trace primitive enum; per-transition emission is rolling out. See [Trace schema](16-trace-schema.md).
+> its 11-value trace primitive enum; per-transition emission is rolling out. See [Trace schema](/16-trace-schema/).
 
 > Headless campaign mode (`run-campaign.sh`) is not yet validated end-to-end. The interactive
 > path (your agent's chat, `/goal`) is the supported flow today. See
-> [Safety and secrets](12-safety-and-secrets.md).
+> [Safety and secrets](/12-safety-and-secrets/).
 
 ## 🚀 Get started
 
-- [Quickstart](01-quickstart.md), your first PR in 10 minutes
-- [Installation](02-installation.md), full setup across all 4 runtimes
-- [Your first mission](03-your-first-mission.md), running doc-sync end-to-end
+- [Quickstart](/01-quickstart/), your first PR in 10 minutes
+- [Installation](/02-installation/), full setup across all 4 runtimes
+- [Your first mission](/03-your-first-mission/), running doc-sync end-to-end
 
 ## 🧠 Concepts
 
-- [Mental model](04-mental-model.md), what a "run" actually is
-- [Missions vs campaigns](05-missions-vs-campaigns.md), when to chain
-- [The engine](06-the-engine.md), primitives, ledger, frozen DAG
-- [The substrate](07-the-substrate.md), 4-layer verification
-- [Roles and blindness](08-roles-and-blindness.md), why review is structural
+- [Mental model](/04-mental-model/), what a "run" actually is
+- [Missions vs campaigns](/05-missions-vs-campaigns/), when to chain
+- [The engine](/06-the-engine/), primitives, ledger, frozen DAG
+- [The substrate](/07-the-substrate/), 4-layer verification
+- [Roles and blindness](/08-roles-and-blindness/), why review is structural
 
 ## 🛠️ How-to
 
-- [Mission catalog](09-mission-catalog.md)
-- [Campaigns](10-campaigns.md)
-- [Strict mode](11-strict-mode.md)
-- [Safety and secrets](12-safety-and-secrets.md)
-- [Extending](13-extending.md)
-- [Troubleshooting](14-troubleshooting.md)
+- [Mission catalog](/09-mission-catalog/)
+- [Campaigns](/10-campaigns/)
+- [Strict mode](/11-strict-mode/)
+- [Safety and secrets](/12-safety-and-secrets/)
+- [Extending](/13-extending/)
+- [Troubleshooting](/14-troubleshooting/)
 
 ## 📚 Reference
 
-- [Run-archive anatomy](15-run-archive.md)
-- [Trace schema (v1)](16-trace-schema.md)
-- [fleet-outcome schema](17-fleet-outcome-schema.md)
-- [CLI reference](18-cli-reference.md)
-- [FAQ](19-faq.md)
-- [Glossary](20-glossary.md)
+- [Run-archive anatomy](/15-run-archive/)
+- [Trace schema (v1)](/16-trace-schema/)
+- [fleet-outcome schema](/17-fleet-outcome-schema/)
+- [CLI reference](/18-cli-reference/)
+- [FAQ](/19-faq/)
+- [Glossary](/20-glossary/)
 
 ---
 
-[📖 Guide Index](README.md) · [Next: Quickstart →](01-quickstart.md)
+[📖 Guide Index](/) · [Next: Quickstart →](/01-quickstart/)

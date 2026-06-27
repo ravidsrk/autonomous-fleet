@@ -12,8 +12,8 @@ want to know how the sausage is made: what the coordinator actually does between
 PR, why nothing happens by magic, and why the framework keeps insisting on files over memory.
 
 This is the densest chapter in the guide. Read it once end-to-end, then keep it open as a reference
-while you read [The substrate](07-the-substrate.md) and
-[Roles and blindness](08-roles-and-blindness.md).
+while you read [The substrate](/07-the-substrate/) and
+[Roles and blindness](/08-roles-and-blindness/).
 
 The engine is tool-agnostic. It never types a CLI command. It calls a small set of named
 PRIMITIVES, and an ADAPTER for your runtime (Claude Code, Codex, Grok, Orca) resolves each one into
@@ -39,7 +39,7 @@ re-verified against source), L2 is the opt-in strict-mode runtime gate that refu
 without fresh evidence, L3 is the anti-anchoring blind-fix (the reviewer commits its own fix before
 reading the candidate patch), and L4 is the manifest-audited run-archive. Each layer has a library,
 a validator, and a `FLEET_DISABLE_*` kill-switch. This chapter references those layers where the
-engine leans on them; [The substrate](07-the-substrate.md) is the layer-by-layer reference.
+engine leans on them; [The substrate](/07-the-substrate/) is the layer-by-layer reference.
 
 **On this page:** [Primitives](#primitives) · [The ledger](#the-ledger-a-directory-not-a-database) ·
 [Coordinator vs adapter](#coordinator-vs-adapter) · [Signal reconciliation](#signal-reconciliation) ·
@@ -92,7 +92,7 @@ treating them as one list. They are not. Keep them straight from the start:
   describes them.
 - The **trace primitives** are a SEPARATE, closed eleven-value enum the observability stream uses to
   name a ledger transition. That list lives in `scripts/lib/emit_trace.py` and belongs to the
-  [Trace schema](16-trace-schema.md) reference, not here.
+  [Trace schema](/16-trace-schema/) reference, not here.
 
 The two enums overlap but neither is a subset of the other. The trace records ledger
 state-transition verbs the coordinator never dispatches as primitives (`SYNC`, `MERGE`, `FREEZE`,
@@ -100,7 +100,7 @@ state-transition verbs the coordinator never dispatches as primitives (`SYNC`, `
 trace never emits (`PLACE`, `WORKER_DONE`, `OPEN_PR`, `CLEANUP`, `LOOP_POLL`, `CONTINUE_WORKER`). So
 do not read the eleven trace values as "the engine's primitives": the engine has thirteen core
 coordinator primitives plus the optional `CONTINUE_WORKER`; the trace enum is its own vocabulary,
-covered field-by-field in [Trace schema](16-trace-schema.md).
+covered field-by-field in [Trace schema](/16-trace-schema/).
 
 > Both enums are closed on purpose. For the trace side, adding a value is a breaking change to the
 > dashboard contract (see [Trace first, ledger second](#trace-first-ledger-second)). The mapping
@@ -108,7 +108,7 @@ covered field-by-field in [Trace schema](16-trace-schema.md).
 > `MERGE_PR`, and `FREEZE` / `COMMIT` / `ABORT` / `T-FINAL` name coordinator lifecycle transitions
 > with no one-to-one primitive.
 
-The [Trace schema](16-trace-schema.md) reference covers the trace enum field-by-field; this section
+The [Trace schema](/16-trace-schema/) reference covers the trace enum field-by-field; this section
 gives you the conceptual meaning of each coordinator primitive and what an adapter has to implement.
 
 ### SPAWN_WORKER(role, placement)
@@ -165,7 +165,7 @@ dependent placement reuses the checkout but always starts a clean worker session
 
 The optional sandboxed variant of `PLACE(independent)` runs the worker inside a `container-use`
 environment instead of a host `git worktree`, closing the OS-sandbox gap. See
-[Safety and secrets](12-safety-and-secrets.md) for when to reach for it.
+[Safety and secrets](/12-safety-and-secrets/) for when to reach for it.
 
 ### WORKER_DONE / ASK / REPLY
 
@@ -295,7 +295,7 @@ ids. The run-archive validator accepts only this shape; operator pet names break
 auditability and are rejected. The same pattern is pinned in code as a regex (`_RUN_ID_RE` in
 `emit_trace.py`), so a trace event carrying a malformed run-id fails validation.
 
-For the full anatomy of every file in a run-archive, see [Run-archive anatomy](15-run-archive.md).
+For the full anatomy of every file in a run-archive, see [Run-archive anatomy](/15-run-archive/).
 
 ### Per-task rows and boolean exit gates
 
@@ -379,7 +379,7 @@ The cleanest way to understand the engine is to separate who decides from who ac
 
 The coordinator is the same code regardless of runtime. The adapter is the only thing that changes
 between Claude Code, Codex, Grok, and Orca. This is why a new runtime is "write an adapter," not
-"fork the engine." The adapter chapter of [Extending](13-extending.md) walks the primitive-by-
+"fork the engine." The adapter chapter of [Extending](/13-extending/) walks the primitive-by-
 primitive mapping.
 
 The coordinator operates fully autonomous. It does not ask you anything except (a) the single FINAL
@@ -487,7 +487,7 @@ from the substrate layers made physical:
 A manifest whose files do not satisfy these orderings fails validation even when every checksum
 matches. The discipline is not "files exist"; it is "files exist in the order the discipline
 demands." The hash proves the file was unmodified; the mtime ordering proves it was produced in the
-right sequence. See [Run-archive anatomy](15-run-archive.md) for the manifest field reference.
+right sequence. See [Run-archive anatomy](/15-run-archive/) for the manifest field reference.
 
 ---
 
@@ -644,7 +644,7 @@ matches this posture: `iter_trace_file()` tolerates malformed lines so a half-wr
 crashed run is still partially renderable.
 
 For the full field-by-field schema, the role and status enums, and the consumer guide, see the
-[Trace schema](16-trace-schema.md) reference.
+[Trace schema](/16-trace-schema/) reference.
 
 ---
 
@@ -710,13 +710,13 @@ same way.
 The `docs/external-dogfood/vibe-kanban-integration.md` integration doc describes this contract plus
 the rollout-in-progress, not a shipped full stream. When you read it, read it as "here is the format
 a dashboard can consume, and here is what is wired so far," not "here is a live firehose." The
-[Trace schema](16-trace-schema.md) reference has the authoritative "what's emitted today vs the
+[Trace schema](/16-trace-schema/) reference has the authoritative "what's emitted today vs the
 roadmap" section.
 
 One more current limitation worth naming here because it touches the engine's invocation path:
 headless campaign mode (`run-campaign.sh`, which drives each runtime's CLI in headless mode) is not
 yet fully validated end-to-end. The supported path today is interactive: chat, or the `/goal`
-binding. See [Safety and secrets](12-safety-and-secrets.md) for the headless-mode caveat and the
+binding. See [Safety and secrets](/12-safety-and-secrets/) for the headless-mode caveat and the
 auth requirement it carries.
 
 ---
@@ -726,19 +726,19 @@ auth requirement it carries.
 You now know how the engine sequences work and proves what it did. Two chapters build directly on
 this one:
 
-- [The substrate](07-the-substrate.md) covers the four verification layers that catch bad work. The
+- [The substrate](/07-the-substrate/) covers the four verification layers that catch bad work. The
   mtime orderings in [Evidence-hash](#evidence-hash) above are those layers made physical in the
   manifest.
-- [Roles and blindness](08-roles-and-blindness.md) covers why the reviewer never sees the build
+- [Roles and blindness](/08-roles-and-blindness/) covers why the reviewer never sees the build
   conversation, why workers run in separate terminals, and why cross-vendor review is structural
   rather than instructed.
 
-And for the formats this chapter referenced: [Run-archive anatomy](15-run-archive.md) for every file
-in `.fleet/runs/<id>/`, and [Trace schema](16-trace-schema.md) for the event ledger format
+And for the formats this chapter referenced: [Run-archive anatomy](/15-run-archive/) for every file
+in `.fleet/runs/<id>/`, and [Trace schema](/16-trace-schema/) for the event ledger format
 field-by-field.
 
 ---
 
-← [Previous: Missions vs campaigns](05-missions-vs-campaigns.md) ·
-[Guide Index](README.md) ·
-[Next: The substrate →](07-the-substrate.md)
+← [Previous: Missions vs campaigns](/05-missions-vs-campaigns/) ·
+[Guide Index](/) ·
+[Next: The substrate →](/07-the-substrate/)

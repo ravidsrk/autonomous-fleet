@@ -10,7 +10,14 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 RESEARCH = ROOT / "docs" / "gstack-missions-research.md"
-GSTACK_SLUGS = ("product-framing", "browser-qa-fix", "security-cso-audit")
+GSTACK_SLUGS = (
+    "product-framing",
+    "browser-qa-fix",
+    "security-cso-audit",
+    "devex-audit",
+    "release-document",
+    "incident-investigate",
+)
 
 
 def test_gstack_research_doc_exists_and_names_missions() -> None:
@@ -19,6 +26,8 @@ def test_gstack_research_doc_exists_and_names_missions() -> None:
     assert "gstack architecture" in text.lower() or "gstack architecture (observed)" in text
     for slug in GSTACK_SLUGS:
         assert slug in text
+    assert "(deferred)" not in text
+    assert "all six" in text.lower() or "all **six**" in text
 
 
 def test_gstack_mission_dirs_have_skill_and_banner() -> None:

@@ -18,8 +18,8 @@ roles** (`@codex` build, fresh `@claude` review), **frozen ledgers** on disk, an
 SKILL bodies verbatim, but **distilling gstack's specialist flows into fleet missions**
 with frozen artifacts, EVID-grade repros, and promotion gates.
 
-This pass implements **three** new exploratory missions (research lists six candidates;
-three ship now to keep acceptance checkable).
+This pass implements **all six** candidate missions as exploratory skills under
+`docs/exploratory/missions/`.
 
 ## gstack architecture (observed)
 
@@ -39,7 +39,8 @@ Key docs read: `ARCHITECTURE.md` (daemon browser, security model), `ETHOS.md`,
 Representative skills deep-read: `office-hours`, `autoplan`, `qa`, `qa-only`, `browse`,
 `cso`, `plan-ceo-review`, `plan-eng-review`, `plan-design-review`, `design-review`,
 `investigate`, `document-generate`, `document-release`, `health`, `benchmark`,
-`design-html`, `ship`, `review`, `spec`.
+`design-html`, `ship`, `review`, `spec`, `devex-review`, `plan-devex-review`,
+`land-and-deploy`, `canary`, `retro`, `learn`.
 
 ## gstack vs fleet contrast
 
@@ -84,38 +85,43 @@ gap for web products before ship.
 adds infrastructure-first passes (secrets archaeology, CI/CD, LLM/skill supply chain, OWASP,
 STRIDE, daily vs comprehensive confidence gates) as a dedicated mission shape.
 
-### 4. `devex-audit` (deferred)
+### 4. `devex-audit` ✅ **implemented**
 
 | gstack source | Fleet mapping |
 |---------------|---------------|
-| `devex-review`, `plan-devex-review`, `document-generate` | Frozen DX scorecard + doc gaps |
+| `devex-review`, `plan-devex-review`, `document-generate` | @claude: live DX walkthrough + scorecard → frozen `docs/devex-scorecard.md` + `docs/devex-gaps-index.md` |
 
-**Rationale defer:** Valuable but overlaps `doc-sync` + future Starlight site; promote
-after `product-framing` proves frozen-spec pattern.
+**Why meaningful:** gstack `/devex-review` and `/plan-devex-review` time real onboarding
+flows and score friction; fleet `doc-sync` fixes drift but does not produce a ranked DX
+scorecard with evidence screenshots and doc-generation gaps before a release push.
 
-### 5. `release-document` (deferred)
-
-| gstack source | Fleet mapping |
-|---------------|---------------|
-| `document-release`, `ship`, `land-and-deploy`, `canary` | Post-ship doc sweep + deploy checklist |
-
-**Rationale defer:** Needs live deploy credentials; better as `fleet-program` tail after
-`ship-with-proof`.
-
-### 6. `incident-investigate` (deferred)
+### 5. `release-document` ✅ **implemented**
 
 | gstack source | Fleet mapping |
 |---------------|---------------|
-| `investigate`, `retro`, `learn` | Root-cause doc + regression test mission |
+| `document-release`, `ship`, `land-and-deploy`, `canary` | @claude: post-ship doc sweep + deploy checklist → frozen `docs/release-doc-checklist.md` + `docs/release-doc-readiness.md` |
 
-**Rationale defer:** Strong fit but duplicates `bug-batch` + `investigate` overlap;
-narrow after `browser-qa-fix` field hours.
+**Why meaningful:** gstack `/document-release` closes the loop after `/ship` — changelog,
+user-facing docs, deploy verification, canary notes. Fleet missions stop at merge; this
+mission captures the documentation tail as a frozen checklist with fleet-outcome.
+
+### 6. `incident-investigate` ✅ **implemented**
+
+| gstack source | Fleet mapping |
+|---------------|---------------|
+| `investigate`, `retro`, `learn` | @claude: root-cause analysis; @codex: regression test; frozen `docs/incident-rca.md` + `docs/incident-close-index.md` |
+
+**Why meaningful:** gstack `/investigate` plus `/retro` and `/learn` turn production
+incidents into durable RCA docs and regression tests. `bug-batch` fixes listed bugs but
+does not mandate RCA structure or learnings persistence.
 
 ## Implementation decision
 
-Ship **product-framing**, **browser-qa-fix**, **security-cso-audit** first — they cover
-the three gstack clusters (pre-build framing, browser QA, security CSO) without
-overlapping the three shipped missions or the demoted design/legacy missions.
+Ship **all six** as exploratory missions under `docs/exploratory/missions/`. They cover
+gstack's specialist clusters (pre-build framing, browser QA, security CSO, developer
+experience, post-ship documentation, incident RCA) without overlapping the three shipped
+missions. Promotion to `skills/` requires the standard triple: progress doc, readiness
+doc with fleet-outcome, and external run archive.
 
 ## Evidence pointer
 

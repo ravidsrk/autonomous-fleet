@@ -12,7 +12,7 @@ sidebar:
 [The PRs appear](#the-prs-appear) · [The run-archive](#the-run-archive) ·
 [What "done" means](#what-done-means) · [Where to go next](#where-to-go-next)
 
-The [Quickstart](01-quickstart.md) got you a green PR. The [Installation](02-installation.md)
+The [Quickstart](/01-quickstart/) got you a green PR. The [Installation](/02-installation/)
 chapter got the skills onto whichever runtime you picked. This chapter is the one that builds
 trust: we run `doc-sync` on a small repo and stop at every step so you can see what the fleet is
 doing, what it writes to disk, and how to read it back. By the end you will recognize every file
@@ -26,8 +26,8 @@ calls it "safe to run unattended." If you are going to watch a mission once befo
 is the one.
 
 > This chapter walks the mission as a reader and an observer. It does not explain how the engine
-> decides what to do under the hood, that is the [Mental model](04-mental-model.md) chapter and
-> [The engine](06-the-engine.md). Here we stay on the surface: what you type, what you see, what
+> decides what to do under the hood, that is the [Mental model](/04-mental-model/) chapter and
+> [The engine](/06-the-engine/). Here we stay on the surface: what you type, what you see, what
 > lands on disk.
 
 ```
@@ -92,7 +92,7 @@ run produces only doc PRs.
 
 > Build the example or not, your choice. If you want a real run to follow along with, `git init` a
 > throwaway repo with a few of these planted disagreements, install the skills per
-> [Installation](02-installation.md), and run the kickoff below. If you would rather just read, the
+> [Installation](/02-installation/), and run the kickoff below. If you would rather just read, the
 > rest of this chapter shows you the real artifacts from the autonomous-fleet repo's own dogfood
 > run of `doc-sync`, so every path and field below is true of the repo on `main` today.
 
@@ -434,7 +434,7 @@ a prose rule.
 > (and emitted BEFORE the manifest write, per the "trace first, ledger second" doctrine). The schema
 > covers 11 primitives and the stream is intentionally sparse while per-transition emission rolls
 > out across the coordinator and adapters. So on a real run, do not expect a dense trace yet, expect
-> the `T-FINAL` event and the rest of the archive. We say more in the [Trace schema](16-trace-schema.md)
+> the `T-FINAL` event and the rest of the archive. We say more in the [Trace schema](/16-trace-schema/)
 > reference. This is the contract being shipped ahead of the full emission, not a broken stream.
 
 Retention. The fleet never garbage-collects run-archives. You decide retention out of band (delete
@@ -506,17 +506,17 @@ done" but "the files on disk prove it is done."
 
 You have now watched a mission from kickoff to archive and you can read every file it leaves behind.
 The natural next question is the one this chapter deliberately did not answer: _what is the engine
-actually doing under the hood, and why is it built this way?_ That is the [Mental model](04-mental-model.md)
+actually doing under the hood, and why is it built this way?_ That is the [Mental model](/04-mental-model/)
 chapter, what a "run" really is, why workers are separate processes, why the reviewer is build-blind,
 and why it is one PR per unit instead of one giant blob. Read that next.
 
 For the surrounding reference material this chapter touched:
 
-- [Run-archive anatomy](15-run-archive.md), every file kind and the manifest schema field by field.
-- [Trace schema (v1)](16-trace-schema.md), the full dashboard contract and what is emitted today.
-- [fleet-outcome schema](17-fleet-outcome-schema.md), every outcome field and what downstream
+- [Run-archive anatomy](/15-run-archive/), every file kind and the manifest schema field by field.
+- [Trace schema (v1)](/16-trace-schema/), the full dashboard contract and what is emitted today.
+- [fleet-outcome schema](/17-fleet-outcome-schema/), every outcome field and what downstream
   campaigns check.
-- [Troubleshooting](14-troubleshooting.md), when a run does not reach `done`.
+- [Troubleshooting](/14-troubleshooting/), when a run does not reach `done`.
 ## Real-world use cases
 
 ### Example — doc-sync TASK row
@@ -548,6 +548,6 @@ two missions, one external checkout, dry-run today via:
 
 ---
 
-← [Previous: Installation](02-installation.md) ·
-[Guide Index](README.md) ·
-[Next: Mental model](04-mental-model.md) →
+← [Previous: Installation](/02-installation/) ·
+[Guide Index](/) ·
+[Next: Mental model](/04-mental-model/) →

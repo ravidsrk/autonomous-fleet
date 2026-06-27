@@ -17,7 +17,7 @@ and the `fleet-outcome.yaml` that says whether the run is done. At the center si
 This chapter is the reference for that directory. It walks every file kind, then the
 manifest schema field-by-field, then the integrity gates the validator enforces. If you
 want to know how the archive is _produced_ (who calls what, in what order), that is
-[The engine](06-the-engine.md), not here. This chapter is about reading an archive that
+[The engine](/06-the-engine/), not here. This chapter is about reading an archive that
 already exists on disk.
 
 **On this page:** [Why an archive exists](#why-an-archive-exists) ·
@@ -278,14 +278,14 @@ Each event carries a `primitive`, a `role`, a `status`, the `run_id`, the `missi
 `schema_version`, a `ts`, and (for worker-scoped events) a `task_id`. The fixture's stream
 walks `SPAWN_WORKER` (started) to `INSPECT` (succeeded) to `FREEZE` (succeeded) to `COMMIT`
 (succeeded). This file is the subject of the next chapter,
-[Trace schema (v1)](16-trace-schema.md).
+[Trace schema (v1)](/16-trace-schema/).
 
 > What's emitted today: in production code, exactly one trace event is wired, the `T-FINAL`
 > event emitted by `fleet_run.write_manifest`. The schema covers all 11 primitives, and the
 > fixture's richer stream shows the contract, but the live stream is intentionally sparse
 > while per-transition emission rolls out across the coordinator and adapters. Do not expect
 > a full event-per-transition stream in a real run yet. See
-> [Trace schema (v1)](16-trace-schema.md) for the rollout detail.
+> [Trace schema (v1)](/16-trace-schema/) for the rollout detail.
 
 ### SHA-pin record (`sha-pin.json`)
 
@@ -305,7 +305,7 @@ human-readable body. The frontmatter carries `mission`, `status`, `repo`, `base_
 (`p0_open`, `p1_open`, `findings_open`, `ops_queue_count`, `unverified_findings`,
 `e2e_verified`), and a `run` block (`duration_min`, `note`). Campaign gates read these
 fields from the previous node. The full field reference for this file is
-[fleet-outcome schema](17-fleet-outcome-schema.md). Because it is the `readiness` kind, it
+[fleet-outcome schema](/17-fleet-outcome-schema/). Because it is the `readiness` kind, it
 must hold the latest mtime in the archive.
 
 ## The SHA-pin record
@@ -509,7 +509,7 @@ FAIL .fleet/runs/<id>
 ```
 
 For the human-readable mapping of failure to fix, see
-[Troubleshooting](14-troubleshooting.md).
+[Troubleshooting](/14-troubleshooting/).
 
 ## The example fixture
 
@@ -574,8 +574,8 @@ failures only         python scripts/validate_run_archive.py --quiet
 exit 0 pass · exit 1 one or more failed
 ```
 
-Related reference chapters: [Trace schema (v1)](16-trace-schema.md) for `trace.jsonl`, and
-[fleet-outcome schema](17-fleet-outcome-schema.md) for `fleet-outcome.yaml`.
+Related reference chapters: [Trace schema (v1)](/16-trace-schema/) for `trace.jsonl`, and
+[fleet-outcome schema](/17-fleet-outcome-schema/) for `fleet-outcome.yaml`.
 ## Real-world use cases
 
 ### Example — example-fixture manifest
@@ -595,4 +595,4 @@ surface is checksum-bound.
 
 ---
 
-← [Troubleshooting](14-troubleshooting.md) · [Guide Index](README.md) · [Trace schema (v1)](16-trace-schema.md) →
+← [Troubleshooting](/14-troubleshooting/) · [Guide Index](/) · [Trace schema (v1)](/16-trace-schema/) →

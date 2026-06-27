@@ -21,8 +21,8 @@ It covers the threat model the framework assumes, what `scripts/run-sandboxed.sh
 that matters, optional `container-use` worker placement, and the secret-hygiene rules every worker
 follows. It ends with how to report a vulnerability.
 
-Read [Installation](02-installation.md) first if you have not, and skim
-[The engine](06-the-engine.md) so the SAFETY RAILS and TRUST BOUNDARIES references land in context.
+Read [Installation](/02-installation/) first if you have not, and skim
+[The engine](/06-the-engine/) so the SAFETY RAILS and TRUST BOUNDARIES references land in context.
 
 > One sentence to carry through the whole chapter: the framework's safety primitives are
 > best-effort nets against accidental and obvious damage. They are NOT a security boundary. The
@@ -348,7 +348,7 @@ This composes with two adjacent disciplines worth knowing:
 - TRUST BOUNDARIES + the trace stream. The trace `details` object is free-form but MUST NOT carry
   secrets or host-absolute paths; sensitive evidence is referenced by `evidence_hash` instead. This
   is no longer a prose-only request: it is enforced by `emit_trace.validate_event` plus `emit()`
-  before any trace event is written. See the [Trace schema](16-trace-schema.md) reference for the
+  before any trace event is written. See the [Trace schema](/16-trace-schema/) reference for the
   redaction contract.
 
 - ROTATE-BEFORE-SCRUB. Any git-history purge, history rewrite, secret-scrub, or leaked-secret
@@ -431,6 +431,6 @@ Wave 2 shipped `scripts/run-sandboxed.sh --role reviewer` — read-only reviewer
 
 ---
 
-← [Previous: Strict mode](11-strict-mode.md) ·
-[Guide Index](README.md) ·
-[Next: Extending →](13-extending.md)
+← [Previous: Strict mode](/11-strict-mode/) ·
+[Guide Index](/) ·
+[Next: Extending →](/13-extending/)

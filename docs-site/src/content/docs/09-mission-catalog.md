@@ -15,10 +15,10 @@ Three missions ship today with real-run evidence behind them: `doc-sync`, `test-
 `adversarial-review-and-fix`. Everything else lives in `docs/exploratory/missions/` and is not
 active until it earns the three-artifact promotion gate (covered at the end of this chapter).
 
-If you have not read [Missions vs campaigns](05-missions-vs-campaigns.md) yet, read it first. It
+If you have not read [Missions vs campaigns](/05-missions-vs-campaigns/) yet, read it first. It
 explains the difference between running one mission and chaining several behind verification gates.
-This chapter is about the single mission. Chaining is [Campaigns](10-campaigns.md). Writing a new
-mission from scratch is [Extending](13-extending.md), not here.
+This chapter is about the single mission. Chaining is [Campaigns](/10-campaigns/). Writing a new
+mission from scratch is [Extending](/13-extending/), not here.
 
 **On this page:** [How to read a mission entry](#how-to-read-a-mission-entry) ·
 [doc-sync](#doc-sync) · [test-coverage](#test-coverage) ·
@@ -44,7 +44,7 @@ Failure modes           What goes wrong and where to look (Troubleshooting cross
 Example invocations     Copy-pasteable kickoffs.
 ```
 
-A few terms recur. A quick gloss, with the full definitions in the [Glossary](20-glossary.md):
+A few terms recur. A quick gloss, with the full definitions in the [Glossary](/20-glossary/):
 
 ```
 Ledger        A progress file the coordinator writes as it runs (docs/<mission>-progress.md).
@@ -58,7 +58,7 @@ Build-blind   The reviewer never saw the builder's conversation. It is handed th
 
 One rule applies to every mission: one mission per repo at a time. A mission freezes a plan and
 opens many PRs against one base branch. Two missions racing on the same repo means two frozen
-plans fighting over the same files. To chain missions, use a [campaign](10-campaigns.md), which
+plans fighting over the same files. To chain missions, use a [campaign](/10-campaigns/), which
 runs them in sequence behind gates, never concurrently on the same base.
 
 ## doc-sync
@@ -156,7 +156,7 @@ docs PR, and each one is independently reviewable and revertable.
 
 The reviewer is a fresh build-blind @claude: a different session than the one that wrote the fix,
 handed the diff and the acceptance criteria as text only. See
-[Roles and blindness](08-roles-and-blindness.md) for why the reviewer is structurally separated
+[Roles and blindness](/08-roles-and-blindness/) for why the reviewer is structurally separated
 rather than just instructed to be impartial.
 
 ### Edge cases
@@ -173,10 +173,10 @@ rather than just instructed to be impartial.
 
 - An example command cannot run in the environment, so the verifier cannot prove it works. The
   fix lands only when the verifier can run it; otherwise the item stays OPEN. See
-  [Troubleshooting](14-troubleshooting.md).
+  [Troubleshooting](/14-troubleshooting/).
 - Two doc areas turn out to overlap in the same file and a parallel edit conflicts. The engine
   serializes same-file edits, but if a conflict slips through it surfaces at integration. See
-  [Troubleshooting](14-troubleshooting.md).
+  [Troubleshooting](/14-troubleshooting/).
 - The DRIFT INDEX is large and the run is interrupted. The ledger flags let a resumed run see
   which items are already CLOSED via which PR, so work is not redone.
 
@@ -206,7 +206,7 @@ npx skills add https://github.com/ravidsrk/autonomous-fleet \
 ```
 
 Replace `autonomous-fleet-adapter-claude-code` with `-orca`, `-grok`, or `-codex` for another
-runtime. See [Installation](02-installation.md) for the full per-runtime setup.
+runtime. See [Installation](/02-installation/) for the full per-runtime setup.
 
 ## test-coverage
 
@@ -310,7 +310,7 @@ PR #N  test-coverage: readiness, gaps_open: 0, coverage_regressed: false   (fina
 ### Failure modes
 
 - A test passes against the broken version of the code. The reviewer rejects it as tautological.
-  The builder rewrites it to assert behaviour. See [Troubleshooting](14-troubleshooting.md).
+  The builder rewrites it to assert behaviour. See [Troubleshooting](/14-troubleshooting/).
 - Coverage rises in the mapped area but regresses elsewhere. `coverage_regressed: true` blocks
   `status: done`. The run is `status: partial` until the regression is resolved.
 - The full suite is red before the mission starts. The mapping task surfaces this; you cannot
@@ -433,7 +433,7 @@ combination, because the archive is the audit trail.
 ### Three lanes
 
 Every confirmed finding is classified into one of three terminal lanes before fixing begins. The
-engine defines the lanes (see [The engine](06-the-engine.md)); the mission records the lane in the
+engine defines the lanes (see [The engine](/06-the-engine/)); the mission records the lane in the
 CLOSE-INDEX as `lane: A|B|0`:
 
 ```
@@ -484,7 +484,7 @@ point-of-creation fix, and writes that blind fix to
 `.fleet/runs/<run_id>/reviewer-blind-fix-<finding-id>.md`. Only after that blind fix is committed
 to disk does the reviewer open the candidate diff. A candidate fix at a different call-stack depth
 than the blind fix triggers a `root_cause_depth` finding. This is the anti-anchoring rule; see
-[The substrate](07-the-substrate.md).
+[The substrate](/07-the-substrate/).
 
 ### Edge cases
 
@@ -503,13 +503,13 @@ than the blind fix triggers a `root_cause_depth` finding. This is the anti-ancho
 ### Failure modes
 
 - A reviewer hallucinates a finding whose quote does not exist in the source. `verify_findings.py`
-  catches it and HALTS at P0-REVIEW. See [Troubleshooting](14-troubleshooting.md).
+  catches it and HALTS at P0-REVIEW. See [Troubleshooting](/14-troubleshooting/).
 - A confirmed finding's Evidence repro still reproduces after the fix. `EVID` stays false, the
   finding stays OPEN, and the run does not reach `status: done`.
 - The run-archive validator (`validate_run_archive.py`) exits non-zero because the mtime ordering
   of blind-fix / findings / verify-summary / readiness files is wrong. The fix is to re-create or
   re-order the misplaced file and re-emit the manifest before shipping. See
-  [Run-archive anatomy](15-run-archive.md).
+  [Run-archive anatomy](/15-run-archive/).
 
 ### Example invocations
 
@@ -538,7 +538,7 @@ npx skills add https://github.com/ravidsrk/autonomous-fleet \
 
 A quick decision aid. When the intent maps cleanly to one mission, run that mission. When it names
 multiple missions or a conditional flow ("if the audit finds P0s, then…"), use a
-[campaign](10-campaigns.md) instead.
+[campaign](/10-campaigns/) instead.
 
 ```
 +----------------------------------------+----------------------------+-------+
@@ -649,7 +649,7 @@ Stage 8 distillation list and have no real-run evidence. They are not in the shi
 > presets, the affected presets are archived in place. `align-then-ship`, `handoff-to-product`, and
 > `secure-ship` reference demoted missions and are intentionally empty until those missions are
 > promoted. Only `repo-health`, `ship-with-proof`, and `quality-gate` remain populated. See
-> [Campaigns](10-campaigns.md).
+> [Campaigns](/10-campaigns/).
 
 ## Promotion criteria
 
@@ -674,7 +674,7 @@ reversed; doctrine alone cannot promote. The artifact is the gate.
 
 The promotion process itself (run the mission, archive the run, write the two docs, `git mv` the
 skill back, strip the exploratory marker, update consumers, open the PR) is the contributor task
-covered in [Extending](13-extending.md). This chapter only documents the criteria, not the
+covered in [Extending](/13-extending/). This chapter only documents the criteria, not the
 mechanics.
 
 > Why the bar is this high. Keeping the shipped surface 1:1 with missions that have real-run
@@ -701,6 +701,6 @@ documented in `docs/roadmap-gap-matrix.md` gap M-promote.
 
 ---
 
-← [Roles and blindness](08-roles-and-blindness.md) ·
-[Guide Index](README.md) ·
-[Campaigns](10-campaigns.md) →
+← [Roles and blindness](/08-roles-and-blindness/) ·
+[Guide Index](/) ·
+[Campaigns](/10-campaigns/) →

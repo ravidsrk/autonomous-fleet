@@ -42,19 +42,19 @@ submission PENDING human action (gap G-market).
 Yes. autonomous-fleet drives _your_ coding agent, it does not ship one. You bring a supported agent
 (Claude Code, Codex, Grok, or Orca), installed and authenticated, and the skills route work through
 it. Think of the framework as the protocol, your agent as the runtime. See
-[Installation](02-installation.md).
+[Installation](/02-installation/).
 
 ### What are the hard prerequisites?
 
 Node.js >= 18 (for the `npx skills` installer), `git`, and an authenticated `gh` (every task ships
 as a GitHub PR), plus one supported agent. That is the whole list for the interactive path. See the
-prerequisite matrix in [Installation](02-installation.md).
+prerequisite matrix in [Installation](/02-installation/).
 
 ### How do I install just enough to try it?
 
 One `npx skills add` command with five targeted skills (`setup-autonomous-fleet`, `autonomous-fleet`,
 `autonomous-fleet-core`, the Claude Code adapter, and `doc-sync`). That is the
-[Quickstart](01-quickstart.md). You do not need the full set to ship your first PR.
+[Quickstart](/01-quickstart/). You do not need the full set to ship your first PR.
 
 ### How do I install everything?
 
@@ -69,7 +69,7 @@ the missions you will actually run plus the one adapter for your runtime.
 
 No. `npx skills add` writes to `.agents/skills/`, which is gitignored, so your `git status` stays
 clean. The only tracked file the installer touches is `skills-lock.json`, the lockfile. See "Where
-things live" in [Installation](02-installation.md).
+things live" in [Installation](/02-installation/).
 
 ### Which adapter do I install?
 
@@ -92,7 +92,7 @@ are on and which branch prefix to use, then writes the config to your repo.
 `doc-sync`. It has the highest merge-success rate of any AI-agent PR category in the AIDev dataset
 (per arXiv:2601.15195, Ehsani et al., MSR 2026), which makes it the lowest-risk way to see a real
 run end to end. Say "the docs are out of date, fix them" and read the PR it opens. See
-[Your first mission](03-your-first-mission.md).
+[Your first mission](/03-your-first-mission/).
 
 ### What missions actually ship today?
 
@@ -125,7 +125,7 @@ which mission you want, invoke it directly.
 
 One PR per unit of work (never one giant blob), each with a readiness doc explaining what was done
 and how it was verified, plus a `.fleet/runs/<run_id>/` archive if archiving was enabled. The
-machine-readable summary is the `fleet-outcome` YAML block. See [Your first mission](03-your-first-mission.md).
+machine-readable summary is the `fleet-outcome` YAML block. See [Your first mission](/03-your-first-mission/).
 
 ---
 
@@ -136,7 +136,7 @@ machine-readable summary is the `fleet-outcome` YAML block. See [Your first miss
 Yes, and resume is the point of the file ledger: a fresh coordinator with zero prior context can pick
 a run back up from `.fleet/runs/<run_id>/` alone, because the ledger is authoritative and the
 coordinator's memory is not. On resume the coordinator does not blindly continue. It runs the recovery
-scanner first to find out which tasks are actually still alive. See [The engine](06-the-engine.md).
+scanner first to find out which tasks are actually still alive. See [The engine](/06-the-engine/).
 
 ### How does recovery decide what to do with each task?
 
@@ -162,7 +162,7 @@ human rather than looping forever. Adapters whose runtime has no session-restore
 The recovery scan sweeps for `orphan` worktrees: a worktree on a fleet-prefixed branch with no ledger
 row. It only recommends `ARCHIVE_ORPHAN` when the SCM proves the branch merged and the worktree has no
 uncommitted changes; otherwise it recommends `ESCALATE_TO_DECISIONS`. It will not clean up a worktree
-that still holds unmerged work. See [The engine](06-the-engine.md).
+that still holds unmerged work. See [The engine](/06-the-engine/).
 
 ---
 
@@ -172,7 +172,7 @@ that still holds unmerged work. See [The engine](06-the-engine.md).
 
 A mission is one discrete job. A campaign chains several missions into a DAG with a verification gate
 between nodes: if a gate fails, the campaign stops and tells you why. Use `fleet-program` to chain
-rather than orchestrating by hand. See [Missions vs campaigns](05-missions-vs-campaigns.md).
+rather than orchestrating by hand. See [Missions vs campaigns](/05-missions-vs-campaigns/).
 
 ### Which campaign presets are shipped?
 
@@ -185,7 +185,7 @@ test-coverage then doc-sync), and `quality-gate` (review-fix then test-coverage)
 
 The `secure-ship`, `align-then-ship`, and `handoff-to-product` preset files also exist under
 `scripts/campaigns/` but are archived pending promotion of the missions they reference. See
-[Missions vs campaigns](05-missions-vs-campaigns.md).
+[Missions vs campaigns](/05-missions-vs-campaigns/).
 
 ### How do I preview a campaign without running it?
 
@@ -211,7 +211,7 @@ repo itself is a contributor task, not an operator one.
 
 By default, no: shell commands go through `scripts/run-sandboxed.sh`, which scrubs credential-shaped
 env vars and applies blast-radius limits. The exception is `--yolo`, which auto-approves commands.
-Never use `--yolo` on a repo or host you care about. See [Safety and secrets](12-safety-and-secrets.md).
+Never use `--yolo` on a repo or host you care about. See [Safety and secrets](/12-safety-and-secrets/).
 
 ### Does merge mean deploy?
 
@@ -222,7 +222,7 @@ not push anything to production. That separation is a deliberate discipline, not
 
 Yes, optionally. With `container-use` placement, each independent worker gets its own Linux
 container instead of sharing the host. It is opt-in and adds setup; see the container-use section of
-[Safety and secrets](12-safety-and-secrets.md).
+[Safety and secrets](/12-safety-and-secrets/).
 
 ### How are secrets handled?
 
@@ -243,7 +243,7 @@ disabled reads one `FLEET_DISABLE_*` knob, set truthy (`1`/`true`/`yes`/`on`), a
 `FLEET_DISABLE_RUN_ARCHIVE`). The strict truthy allow-list means a typo never silently disables a
 gate. The mutation gate (Layer 4) has no knob on purpose. Disabling a gate turns its verdict into PASS
 for the run, so reach for it only when you understand exactly what you are silencing.
-See [The substrate](07-the-substrate.md) and [Troubleshooting](14-troubleshooting.md).
+See [The substrate](/07-the-substrate/) and [Troubleshooting](/14-troubleshooting/).
 
 ### How do I report a vulnerability?
 
@@ -254,7 +254,7 @@ report privately rather than opening a public GitHub issue, and use the 90-day d
 
 A malicious `--yolo` operator, a compromised upstream agent CLI, and supply-chain attacks on the npm
 packages it installs. The sandbox reduces accidental blast radius; it is not a defense against a host
-you have already lost control of. See the threat model in [Safety and secrets](12-safety-and-secrets.md).
+you have already lost control of. See the threat model in [Safety and secrets](/12-safety-and-secrets/).
 
 ---
 
@@ -264,7 +264,7 @@ you have already lost control of. See the threat model in [Safety and secrets](1
 
 Yes, through the Codex runtime. The default builder staffing is `@codex` (OpenAI Codex / GPT-5). The
 framework is model-agnostic: it specifies roles and a protocol, and each adapter maps that protocol
-to one runtime's real commands. See [Roles and blindness](08-roles-and-blindness.md).
+to one runtime's real commands. See [Roles and blindness](/08-roles-and-blindness/).
 
 ### Which runtimes are supported?
 
@@ -277,20 +277,20 @@ No, but you lose something without it. The default topology uses different model
 reviewer, and integrator so review is not self-marking. If you only have one family, the framework
 still enforces terminal separation (the reviewer gets a fresh session with no context inheritance),
 but it loses cross-vendor blind-spot diversity. Every run records which mode it ran in via
-`fleet-outcome`. See [Roles and blindness](08-roles-and-blindness.md).
+`fleet-outcome`. See [Roles and blindness](/08-roles-and-blindness/).
 
 ### Why is the reviewer "build-blind"?
 
 Because a model that can see its own session will rationalize its own work. The reviewer is spawned
 in a separate terminal with no access to the builder's session, scratchpads, or prior context, so it
 can only judge the artifact (the diff plus `EVID`), not the intent. This came out of the Aula run and
-became a structural rule. See [Roles and blindness](08-roles-and-blindness.md).
+became a structural rule. See [Roles and blindness](/08-roles-and-blindness/).
 
 ### Can I add a runtime that is not in the list?
 
 Yes. Copy `autonomous-fleet-adapter-template` and implement the primitives (`PLACE`, `SPAWN_WORKER`,
 `DISPATCH`, `WAIT`, `INSPECT`, `SYNC_TASK_STATE`). The engine stays the same; the adapter is the only
-runtime-specific piece. See [Extending](13-extending.md).
+runtime-specific piece. See [Extending](/13-extending/).
 
 ---
 
@@ -345,7 +345,7 @@ A single agent marks its own homework. autonomous-fleet splits each task into bu
 integrator roles in separate terminals (usually separate model families), so a fresh build-blind
 agent reviews the diff before you ever see the PR. The other structural differences: one PR per unit,
 a frozen scope per run, a file-based ledger that survives restarts, and a four-layer verification
-substrate. See [Mental model](04-mental-model.md).
+substrate. See [Mental model](/04-mental-model/).
 
 ### How is this different from an agent swarm?
 
@@ -357,7 +357,7 @@ interchangeable parts that plug into it. That is the point of the adapter split.
 
 So you can review and merge work in small, conflict-aware pieces, the way a senior engineer would,
 instead of being handed one giant blob to approve or reject. Original commits are preserved (never
-squashed), and worktrees are cleaned up after every merge. See [Mental model](04-mental-model.md).
+squashed), and worktrees are cleaned up after every merge. See [Mental model](/04-mental-model/).
 
 ### Why mutation testing instead of line coverage?
 
@@ -379,7 +379,7 @@ Not yet. The trace schema covers 11 primitives, but in production code today exa
 emitted: `T-FINAL`, from `fleet_run.write_manifest` (correctly emitted before the manifest write, per
 the trace-first doctrine). The stream is intentionally sparse while per-transition emission rolls out
 across the coordinator and adapters. If you are building a dashboard, design against the full schema
-but expect a sparse stream today. See [Trace schema](16-trace-schema.md) when it lands.
+but expect a sparse stream today. See [Trace schema](/16-trace-schema/) when it lands.
 
 ### Is headless campaign mode production-ready?
 
@@ -393,10 +393,10 @@ live agent sessions in CI. Mechanical paths are gated: `validate-headless.sh`, f
 
 The supported path today for production work is interactive: drive missions from your agent's chat
 / `/goal`. If a headless run cannot authenticate, fall back to the interactive flow. See
-[Safety and secrets](12-safety-and-secrets.md).
+[Safety and secrets](/12-safety-and-secrets/).
 
 ---
 
-← [CLI reference](18-cli-reference.md) ·
-[📖 Guide Index](README.md) ·
-[Glossary](20-glossary.md) →
+← [CLI reference](/18-cli-reference/) ·
+[📖 Guide Index](/) ·
+[Glossary](/20-glossary/) →

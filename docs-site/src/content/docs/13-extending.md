@@ -19,9 +19,9 @@ design is that the engine (`autonomous-fleet-core`) is tool-agnostic and mission
 a fixed set of PRIMITIVES and never hard-codes a runtime command or a mission's logic. So when you
 want it to do something new, you add a leaf, not a branch.
 
-This chapter is for the person who has read the engine ([Chapter 06](06-the-engine.md)) and the
-substrate ([Chapter 07](07-the-substrate.md)), has run a mission from the catalog
-([Chapter 09](09-mission-catalog.md)), and now wants to:
+This chapter is for the person who has read the engine ([Chapter 06](/06-the-engine/)) and the
+substrate ([Chapter 07](/07-the-substrate/)), has run a mission from the catalog
+([Chapter 09](/09-mission-catalog/)), and now wants to:
 
 - run an existing mission on a runtime the repo does not ship an adapter for, or
 - teach the fleet a new kind of engineering job (a new mission), or
@@ -640,8 +640,8 @@ positional argument is the runtime, then either `--preset NAME` for a shipped pr
 > fully validated end-to-end. The supported path today is the interactive one: invoke a mission or
 > the campaign skill (`fleet-program`) from a chat / `/goal` session. Use `--dry-run` to inspect the
 > plan, and treat a full headless campaign run as experimental. See
-> [Chapter 12, Safety and secrets](12-safety-and-secrets.md) for the headless-auth caveat in full,
-> and [Chapter 10, Campaigns](10-campaigns.md) for running campaigns the supported way.
+> [Chapter 12, Safety and secrets](/12-safety-and-secrets/) for the headless-auth caveat in full,
+> and [Chapter 10, Campaigns](/10-campaigns/) for running campaigns the supported way.
 
 Adding a brand-new preset to the shipped set under `scripts/campaigns/` is a contributor task: it
 ships with the repo, so it belongs in a PR with a CONTRIBUTING-style review. For your own one-off
@@ -650,7 +650,7 @@ in `scripts/campaigns/` to chain missions.
 
 ## Adding a mutation to the gate
 
-The mutation gate is Layer 4 of the substrate ([Chapter 07](07-the-substrate.md)). It is the
+The mutation gate is Layer 4 of the substrate ([Chapter 07](/07-the-substrate/)). It is the
 mechanism that proves your tests actually test something. Every entry in `tests/mutations.yaml`
 introduces a representative bug into the code and asserts that a named guard test FAILS. A mutation
 whose guards still pass SURVIVED, which means the test is weak or tautological. You add an entry
@@ -842,6 +842,6 @@ the mutation gate stands ready for the next mechanism you pin.
 
 ---
 
-← [Prev: Safety and secrets](12-safety-and-secrets.md) ·
-[Guide Index](README.md) ·
-[Next: Troubleshooting](14-troubleshooting.md) →
+← [Prev: Safety and secrets](/12-safety-and-secrets/) ·
+[Guide Index](/) ·
+[Next: Troubleshooting](/14-troubleshooting/) →

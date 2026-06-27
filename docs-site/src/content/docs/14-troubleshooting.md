@@ -937,4 +937,4 @@ python scripts/validate_run_archive.py .fleet/runs/example-fixture
 
 ---
 
-← [Extending](13-extending.md) · [Guide Index](README.md) · [Run-archive anatomy](15-run-archive.md) →
+← [Extending](/13-extending/) · [Guide Index](/) · [Run-archive anatomy](/15-run-archive/) →
