@@ -8,7 +8,7 @@
       "path": "p0-review-findings.json",
       "kind": "findings",
       "sha256": "5de7255673c5b84e48e1f2900e213edeaec8cc16f4c556ec60107cec926c3306",
-      "mtime_utc": "2026-06-27T20:05:00Z",
+      "mtime_utc": "2026-06-27T14:35:00.000000Z",
       "producer": "p0-reviewer-grok",
       "bytes": 2134
     },
@@ -16,7 +16,7 @@
       "path": "p0-skeptic-findings.json",
       "kind": "findings",
       "sha256": "5de7255673c5b84e48e1f2900e213edeaec8cc16f4c556ec60107cec926c3306",
-      "mtime_utc": "2026-06-27T20:05:30Z",
+      "mtime_utc": "2026-06-27T14:35:30.000000Z",
       "producer": "p0-skeptic-grok",
       "bytes": 2134
     },
@@ -24,7 +24,7 @@
       "path": "p0-verify-summary.json",
       "kind": "verify_summary",
       "sha256": "d23b09d077ab1841c4af2d095f83bb8f8c0ae18b59c96e21c43a41b7256ec501",
-      "mtime_utc": "2026-06-27T20:06:00Z",
+      "mtime_utc": "2026-06-27T14:36:00.000000Z",
       "producer": "verifier",
       "bytes": 191
     },
@@ -32,7 +32,7 @@
       "path": "reviewer-blind-fix-F-001.md",
       "kind": "blind_fix",
       "sha256": "5bffe8140a647ff049f84c65f3f1d3c86f537d0569e0c0b2921c6abe65cba4d5",
-      "mtime_utc": "2026-06-27T20:01:00Z",
+      "mtime_utc": "2026-06-27T14:31:00.000000Z",
       "producer": "p0-reviewer-grok",
       "bytes": 655
     },
@@ -40,7 +40,7 @@
       "path": "reviewer-blind-fix-F-002.md",
       "kind": "blind_fix",
       "sha256": "c003228df61a88ba0605df07a03446d92271799366b3e306cb1bd3cdeef5a502",
-      "mtime_utc": "2026-06-27T20:01:30Z",
+      "mtime_utc": "2026-06-27T14:31:30.000000Z",
       "producer": "p0-reviewer-grok",
       "bytes": 501
     },
@@ -48,7 +48,7 @@
       "path": "stop-verify-decisions.log",
       "kind": "other",
       "sha256": "b81e111925ac9f13ab34378bbf13c40e874cc4592fc942b6be1aa8a1d41df0fc",
-      "mtime_utc": "2026-06-27T20:06:30Z",
+      "mtime_utc": "2026-06-27T14:36:30.000000Z",
       "producer": "stop-verify-hook",
       "bytes": 231
     },
@@ -56,7 +56,7 @@
       "path": "p1-fix-attestation.json",
       "kind": "other",
       "sha256": "2779d1cfee2150247006f6b53339f6a96ee7b660cb48094bc276ca878eceb604",
-      "mtime_utc": "2026-06-27T20:07:00Z",
+      "mtime_utc": "2026-06-27T14:37:00.000000Z",
       "producer": "fixer-grok",
       "bytes": 578
     },
@@ -64,7 +64,7 @@
       "path": "trace.jsonl",
       "kind": "other",
       "sha256": "3d6a0d0214cfb60db774630633f93b6df8a9308562988b872e8bc84d61a4d061",
-      "mtime_utc": "2026-06-26T20:05:28Z",
+      "mtime_utc": "2026-06-26T14:35:28.000000Z",
       "producer": "coordinator",
       "bytes": 5671
     },
@@ -72,7 +72,7 @@
       "path": "fleet-outcome.yaml",
       "kind": "readiness",
       "sha256": "06847eae00ebfe915b7d8978a8ba3be8842f282f2130b08f08baf0af1d654038",
-      "mtime_utc": "2026-06-27T20:10:00Z",
+      "mtime_utc": "2026-06-27T14:40:00.000000Z",
       "producer": "t-final",
       "bytes": 1294
     },
@@ -80,7 +80,7 @@
       "path": "first-substrate-progress.md",
       "kind": "progress",
       "sha256": "b6584f831ecb682be272ac9fb543bbe33a603d05e4fe6c8b4d4f6ebd4052d111",
-      "mtime_utc": "2026-06-27T20:09:30Z",
+      "mtime_utc": "2026-06-27T14:39:30.000000Z",
       "producer": "coordinator",
       "bytes": 1731
     },
@@ -88,17 +88,17 @@
       "path": "first-substrate-review.md",
       "kind": "other",
       "sha256": "05e29db0c65d3b12294b91480411c5a9fe65001a2f54bdc214a87da528ff84ec",
-      "mtime_utc": "2026-06-27T20:04:30Z",
+      "mtime_utc": "2026-06-27T14:34:30.000000Z",
       "producer": "coordinator",
       "bytes": 3342
     },
     {
       "path": "README.md",
       "kind": "other",
-      "sha256": "b71a7f76d87fd9b51987b0664d702af669520c3f855e5194d3b956d01da31afa",
-      "mtime_utc": "2026-06-27T20:09:00Z",
+      "sha256": "918d571f1ece15d56727a0b186d1912fb8f297e331049d0cb552a542b37efccc",
+      "mtime_utc": "2026-06-27T14:39:00.000000Z",
       "producer": "human",
-      "bytes": 113
+      "bytes": 1993
     }
   ],
   "coordinator": "grok-headless",

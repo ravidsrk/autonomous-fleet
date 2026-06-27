@@ -215,10 +215,20 @@ def lint_external_source_pins(root: Path) -> list[str]:
         source = row.get("source")
         if source in (None, LOCAL_LOCK_SOURCE):
             continue
-        if not any(isinstance(row.get(field), str) and row[field] for field in _PIN_FIELDS):
+        pin_value = next(
+            (row[field] for field in _PIN_FIELDS if isinstance(row.get(field), str) and row[field]),
+            None,
+        )
+        if not pin_value:
             errors.append(
                 f"skills-lock.json: external source {source!r} for {name} is not pinned "
                 f"(add one of {', '.join(_PIN_FIELDS)})"
+            )
+            continue
+        upper = pin_value.upper()
+        if "TODO" in upper or "PLACEHOLDER" in upper:
+            errors.append(
+                f"skills-lock.json: external source {source!r} for {name} uses placeholder pin {pin_value!r}"
             )
 
     return errors

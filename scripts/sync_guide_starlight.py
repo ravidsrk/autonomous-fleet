@@ -83,6 +83,10 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     if check:
         drifted: list[str] = []
+        expected_names = {
+            "index.md" if src.name == "README.md" else src.name
+            for src in GUIDE.glob("*.md")
+        }
         for src in sorted(GUIDE.glob("*.md")):
             name = "index.md" if src.name == "README.md" else src.name
             dest = OUT / name
@@ -90,6 +94,10 @@ def main(argv: list[str] | None = None) -> int:
             current = dest.read_text(encoding="utf-8") if dest.is_file() else None
             if current != rendered:
                 drifted.append(_display_path(dest))
+        if OUT.is_dir():
+            for dest in sorted(OUT.glob("*.md")):
+                if dest.name not in expected_names:
+                    drifted.append(_display_path(dest))
         if drifted:
             print(
                 "sync_guide_starlight: committed docs-site copy is stale; "
