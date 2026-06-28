@@ -5,26 +5,46 @@
 All notable changes to `autonomous-fleet` are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Dates are merge dates in IST.
 
-**On this page:** [Unreleased](#unreleased) · [0.2.1](#021---2026-06-27) · [0.2.0](#020---2026-06-27) · [0.1.0](#010---2026-06-26) · [Conventions](#conventions)
+**On this page:** [Unreleased](#unreleased) · [0.2.2](#022---2026-06-27) · [0.2.1](#021---2026-06-27) · [0.2.0](#020---2026-06-27) · [0.1.0](#010---2026-06-26) · [Conventions](#conventions)
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-06-27
+
+Substrate hardening ([#64](https://github.com/ravidsrk/autonomous-fleet/pull/64)) plus warn-tier
+community skill preflight and install bundles ([#65](https://github.com/ravidsrk/autonomous-fleet/pull/65)).
+
 ### Added
 
-- Community skill dependency tiers (warn-tier) documented in `composition.md` and `community-skills.md`.
-- `community-recommends` metadata on six gstack exploratory missions (`product-framing`, `browser-qa-fix`, `security-cso-audit`, `devex-audit`, `release-document`, `incident-investigate`).
-- `scripts/lib/community_preflight.py` and `scripts/preflight-community.sh` — advisory preflight with install hints (`COMMUNITY_PROBE_HOME` for isolated probes).
-- `scripts/install-community.sh` — bundle table (`gstack-browser`, `gstack-framing`, etc.); dry-run by default, `--execute` opt-in.
-- `scripts/campaigns/gstack-quality.yaml` — exploratory campaign preset (framing → qa → security → devex).
-- `tests/test_community_preflight.py` and headless integration tests for community hint emission.
+- **Community dependency tiers** — documented in `composition.md` and `community-skills.md` (Tier 0–4, on-missing behavior).
+- **`community-recommends` metadata** on six gstack exploratory missions with `mode: warn`.
+- **`community_preflight.py` + `preflight-community.sh`** — advisory checks, always-on install hints, `COMMUNITY_PROBE_HOME` for isolated probes.
+- **`install-community.sh`** — bundle table (`gstack-browser`, `gstack-framing`, `gstack-security`, `gstack-devex`, `gstack-ship`, `gstack`); dry-run default, `--execute` opt-in.
+- **`gstack-quality` campaign** preset — framing → qa → security → devex with `allow_exploratory_nodes`.
+- **Substrate kill-switches** (`FLEET_DISABLE_*`) with fail-closed override semantics for security gates.
+- **Reviewer-role sandbox** (`run-sandboxed.sh --role reviewer`) — macOS `sandbox-exec` / Linux `bwrap` / hash-assertion fallback.
+- **`scripts/campaigns/audit-gated.yaml`** — conditional campaign with `--probe-fail` reachability in `validate-headless.sh`.
+- **`registry_lint` external pin checks** — reject placeholder `ref` values; `skill-creator` pinned to anthropics/skills HEAD.
+- **`sync_guide_starlight.py --check`** — fails on content drift and orphan generated docs-site pages.
+- **`--wiring-only` adapter preflight** — headless/campaign dry-runs skip runtime binary checks.
+- Tests: `test_community_preflight.py`, expanded `test_reviewer_sandbox.py`, `test_registry_lint_cli.py`, `test_sync_guide_starlight.py` (1312 tests).
 
 ### Changed
 
 - `run-mission-headless.sh` and `run-campaign.sh` invoke community preflight after adapter preflight.
-- `install-skills.sh` accepts `--with-community BUNDLE` (opt-in).
+- `install-skills.sh` accepts `--with-community BUNDLE` (opt-in); preserves Grok starter-set defaults and comments.
 - `setup-autonomous-fleet` fleet-config template records community bundle choice.
-- `validate-headless.sh` includes `gstack-quality` preset and echoes community preflight output.
-- `skill_lint.py` validates `community-recommends` on gstack exploratory missions.
+- `validate-headless.sh` — `gstack-quality` + `audit-gated` presets; echoes community preflight output.
+- `validate-all.sh` — Starlight sync uses `--check` (no silent working-tree mutation).
+- `skill_lint.py` — `community-recommends` lint for gstack missions; lock version/hash sync retained from #64.
+
+### Fixed
+
+- Dry-run no longer appends `.fleet/runs/` to external repo `.git/info/exclude` ([#64](https://github.com/ravidsrk/autonomous-fleet/pull/64)).
+- macOS reviewer `sandbox-exec` profile — `file-read*` with scoped writes (narrow subpath profiles SIGABRT on recent darwin).
+- Dogfood run-archive manifest bytes/mtime ordering for `20260626T200255Z-adversarial-review-and-fix-8358f1`.
+- `agent-skills` bundle blocks shell `--execute` (Claude Code slash commands only).
+- `skills-lock.json` computedHash refreshed for `autonomous-fleet-core`, `fleet-program`, `setup-autonomous-fleet`.
 
 ## [0.2.1] - 2026-06-27
 

@@ -9,7 +9,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-amber.svg?color=F59E0B" alt="MIT License"></a>
   <a href="https://agentskills.io/"><img src="https://img.shields.io/badge/format-agentskills.io-amber.svg?color=F59E0B" alt="agentskills.io format"></a>
   <a href="https://github.com/ravidsrk/autonomous-fleet/stargazers"><img src="https://img.shields.io/github/stars/ravidsrk/autonomous-fleet.svg?style=flat" alt="Stars"></a>
-  <a href="https://github.com/ravidsrk/autonomous-fleet/releases"><img src="https://img.shields.io/badge/version-0.2.1-amber.svg?color=F59E0B" alt="Version 0.2.1"></a>
+  <a href="https://github.com/ravidsrk/autonomous-fleet/releases"><img src="https://img.shields.io/badge/version-0.2.2-amber.svg?color=F59E0B" alt="Version 0.2.2"></a>
   <a href="https://github.com/ravidsrk/autonomous-fleet/commits/main"><img src="https://img.shields.io/github/last-commit/ravidsrk/autonomous-fleet.svg" alt="Last commit"></a>
 </p>
 
