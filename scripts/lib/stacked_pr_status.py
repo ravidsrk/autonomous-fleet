@@ -125,7 +125,7 @@ def verify_stacked_pr_consistency(prs: list[PRFacts]) -> list[str]:
             continue
         if not should_nudge_merge_conflict(pr, stacks):
             continue
-        if pr.get("nudge_merge_conflict") is False:
+        if pr.get("nudge_merge_conflict") is not True:
             errors.append(
                 f"{pr['url']}: merge conflict at stack bottom requires nudge_merge_conflict=true"
             )

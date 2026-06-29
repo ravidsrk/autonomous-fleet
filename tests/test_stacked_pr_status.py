@@ -99,6 +99,20 @@ def test_child_ci_failure_still_surfaces() -> None:
     assert sp.aggregate_pr_status(prs) == "ci_failed"
 
 
+def test_verify_requires_explicit_conflict_nudge() -> None:
+    prs = [
+        _pr(
+            url="p1",
+            source_branch="fleet/a",
+            target_branch="main",
+            mergeability="conflicting",
+        ),
+    ]
+    errors = sp.verify_stacked_pr_consistency(prs)
+    assert errors
+    assert "nudge_merge_conflict=true" in errors[0]
+
+
 def test_verify_flags_blocked_child_driving_status() -> None:
     prs = [
         _pr(url="p1", source_branch="fleet/parent", target_branch="main", mergeability="mergeable"),

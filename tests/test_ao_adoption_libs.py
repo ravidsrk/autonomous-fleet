@@ -110,15 +110,17 @@ def test_stacked_pr_snapshot_validation_and_conflict_nudge() -> None:
     assert any("missing required field" in e for e in sp.validate_pr_snapshot([{}]))
     assert any("url must be" in e for e in sp.validate_pr_snapshot([{"url": " ", "source_branch": "a", "target_branch": "b"}]))
 
-    pr = {
+    pr_false = {
         "url": "u",
         "source_branch": "a",
         "target_branch": "main",
         "mergeability": "conflicting",
         "nudge_merge_conflict": False,
     }
-    errors = sp.verify_stacked_pr_consistency([pr])
-    assert any("nudge_merge_conflict=true" in e for e in errors)
+    pr_missing = {k: v for k, v in pr_false.items() if k != "nudge_merge_conflict"}
+    for pr in (pr_false, pr_missing):
+        errors = sp.verify_stacked_pr_consistency([pr])
+        assert any("nudge_merge_conflict=true" in e for e in errors)
 
 
 def test_hook_signal_branches() -> None:
