@@ -75,6 +75,54 @@ if (( sp_status != 0 )); then
   exit 1
 fi
 
+echo "== verify-nudge-dedup =="
+shopt -s nullglob
+nd_status=0
+for run_dir in .fleet/runs/*/; do
+  if [[ -f "$run_dir/nudge-state.json" ]]; then
+    if ! "$VENV_PYTHON" scripts/verify_nudge_dedup.py "$run_dir"; then
+      nd_status=1
+    fi
+  fi
+done
+shopt -u nullglob
+if (( nd_status != 0 )); then
+  echo "verify-nudge-dedup: at least one nudge-state.json failed" >&2
+  exit 1
+fi
+
+echo "== verify-stacked-pr =="
+shopt -s nullglob
+sp_status=0
+for run_dir in .fleet/runs/*/; do
+  if [[ -f "$run_dir/pr-snapshot.json" ]]; then
+    if ! "$VENV_PYTHON" scripts/verify_stacked_pr.py "$run_dir"; then
+      sp_status=1
+    fi
+  fi
+done
+shopt -u nullglob
+if (( sp_status != 0 )); then
+  echo "verify-stacked-pr: at least one pr-snapshot.json failed" >&2
+  exit 1
+fi
+
+echo "== verify-hook-signal =="
+shopt -s nullglob
+hs_status=0
+for run_dir in .fleet/runs/*/; do
+  if [[ -f "$run_dir/trace.jsonl" ]]; then
+    if ! "$VENV_PYTHON" scripts/verify_hook_signal.py "$run_dir"; then
+      hs_status=1
+    fi
+  fi
+done
+shopt -u nullglob
+if (( hs_status != 0 )); then
+  echo "verify-hook-signal: at least one trace failed hook-signal discipline" >&2
+  exit 1
+fi
+
 echo "== verify-round-budget =="
 # A task that exhausted its review-round budget must have gone BLOCKED, not MERGED.
 shopt -s nullglob
