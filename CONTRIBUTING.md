@@ -5,6 +5,11 @@ research catalog. Every concept in `engine.md` and every mission in
 `skills/` exists because a specific run exposed a specific failure
 mode that the concept prevents.
 
+When you borrow a mechanism from another open-source project, add credits in
+[`ATTRIBUTIONS.md`](ATTRIBUTIONS.md) (and [`NOTICE`](NOTICE) when the upstream license
+requires retained notices). Link the upstream license and document the port map under
+`skills/autonomous-fleet-core/references/` or `docs/`.
+
 ## Maintenance status
 
 autonomous-fleet is a single-maintainer, pre-1.0 project. There is one
