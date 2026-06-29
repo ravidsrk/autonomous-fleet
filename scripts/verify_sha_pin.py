@@ -43,6 +43,13 @@ def _sha_pin_paths(target: Path) -> list[Path]:
     )
 
 
+def _run_dir_for_pin(path: Path) -> Path:
+    """Return the run archive directory that owns a sha-pin record."""
+    if path.parent.name == "sha-pins":
+        return path.parent.parent
+    return path.parent
+
+
 def _sibling_readiness_says_merged(run_dir: Path) -> bool:
     readiness_paths = sorted(
         path
@@ -66,7 +73,7 @@ def _load_records(paths: list[Path]) -> tuple[list[dict[str, Any]], list[str]]:
             errors.append(f"verify-sha-pin: cannot read {path}: {exc}")
             continue
         if isinstance(record, dict) and record.get("merged") is not True:
-            if _sibling_readiness_says_merged(path.parent):
+            if _sibling_readiness_says_merged(_run_dir_for_pin(path)):
                 record = {**record, "merged": True}
         records.append(record)
     return records, errors
