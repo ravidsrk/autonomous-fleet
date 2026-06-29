@@ -67,11 +67,12 @@ import sys
 
 sys.path.insert(0, "scripts")
 
-from lib.adapter_preflight import Intent, check, load_requires
+from lib.adapter_preflight import Intent, activity_hooks_advisory, check, load_requires
 
 adapter_dir = sys.argv[1]
 intent = Intent(scm=sys.argv[2] == "1", wiring_only=sys.argv[3] == "1")
-failures = check(load_requires(adapter_dir), intent)
+requires = load_requires(adapter_dir)
+failures = check(requires, intent)
 
 if failures:
     print(f"preflight: {len(failures)} failure(s)", file=sys.stderr)
@@ -79,5 +80,8 @@ if failures:
         print(f"FAIL  {failure}", file=sys.stderr)
     raise SystemExit(1)
 
+note = activity_hooks_advisory(requires)
+if note:
+    print(f"NOTE  {note}")
 print("preflight: ok")
 PY
