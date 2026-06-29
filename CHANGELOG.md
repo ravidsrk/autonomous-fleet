@@ -9,6 +9,31 @@ All notable changes to `autonomous-fleet` are recorded here. The format follows
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-06-29
+
+Agent Orchestrator mechanism ports ([#67](https://github.com/ravidsrk/autonomous-fleet/pull/67))
+with explicit upstream attribution.
+
+### Added
+
+- **AO mechanism validators** — nudge dedup (`verify_nudge_dedup.py`), stacked PR status
+  (`verify_stacked_pr.py`), hook-signal health (`verify_hook_signal.py`), review supersede on
+  sha-pin records; wired into `validate-all.sh` with `FLEET_DISABLE_*` kill switches.
+- **`references/ao-adoptions.md`** — port map from Agent Orchestrator mechanisms to AF artifacts.
+- **`ATTRIBUTIONS.md` + `NOTICE`** — credits for
+  [Agent Orchestrator](https://github.com/AgentWrapper/agent-orchestrator) (Copyright 2026
+  Untrivial, Apache 2.0).
+- Example fixtures: `.fleet/runs/example-fixture/nudge-state.json`, `pr-snapshot.json`.
+- Tests: `test_nudge_dedup.py`, `test_stacked_pr_status.py`, `test_hook_signal.py`,
+  `test_ao_adoption_libs.py` (1368 tests).
+
+### Changed
+
+- `engine.md` AO MECHANISMS section; `substrate-disable-knobs.md`; Grok/Claude/Codex adapters
+  declare `activity_hooks: true`.
+- `verify_sha_pin.py` multi-file `sha-pins/` layout + supersede enforcement.
+- README Acknowledgments section pointing at attribution files.
+
 ## [0.2.2] - 2026-06-27
 
 Substrate hardening ([#64](https://github.com/ravidsrk/autonomous-fleet/pull/64)) plus warn-tier
