@@ -8,8 +8,15 @@ missions.
 | Layer | Count | Skills |
 |-------|-------|--------|
 | Engine | 1 | `autonomous-fleet-core` (+ `references/engine.md` when coordinating) |
-| Adapter | 1 | `autonomous-fleet-adapter-{orca,claude-code,grok,codex}` |
+| Adapter | 1 | `autonomous-fleet-adapter-{orca,claude-code,grok,codex}` — default **Orca** (reference runtime) |
 | Mission | 1 | Exactly one mission skill (`doc-sync`, `test-coverage`, `adversarial-review-and-fix`; 18 more exploratory under `docs/exploratory/missions/`) |
+
+**Reference runtime:** Orca is the primary distribution path for autonomous-fleet. It provides
+structural build-blind review (separate terminals per role), native `orchestration` primitives,
+and matches the production directives the framework was distilled from. Other adapters emulate
+Orca's supervised loop via subagents and ledger polling; use them when Orca is unavailable.
+On Orca, also load companion skills (`orchestration`, `orca-cli`) for full-handoff vs supervised
+routing — see `autonomous-fleet-adapter-orca` → `references/orca-platform.md`.
 
 **Do not** activate two mission skills in the same coordinator session. Conflicting ledgers,
 BASE branches, and DONE conditions will corrupt the run.

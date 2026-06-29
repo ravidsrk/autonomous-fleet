@@ -99,14 +99,14 @@ npx skills@1.5.12 add https://github.com/ravidsrk/autonomous-fleet \
   --skill autonomous-fleet \
   --skill autonomous-fleet-core \
   --skill fleet-program \
-  --skill autonomous-fleet-adapter-claude-code \
+  --skill autonomous-fleet-adapter-orca \
   --skill doc-sync \
   -y
 ```
 
 This creates a `.agents/skills/` folder (gitignored — your `git status` stays clean). The folder is the universal [`agentskills.io`](https://agentskills.io/) format, which Claude Code, Grok, Codex, and Orca all read.
 
-> Using a different agent? Replace `autonomous-fleet-adapter-claude-code` with `-grok`, `-codex`, or `-orca`. Want every skill? Use `--skill '*'`.
+> **Orca is the reference runtime** — structural build-blind review and native multi-terminal orchestration. On Grok, Claude Code, or Codex, swap `-orca` for `-grok`, `-claude-code`, or `-codex`. Want every skill? Use `--skill '*'`.
 
 ### Step 2 — Configure the repo once
 
@@ -341,7 +341,7 @@ Individual validators:
 ./scripts/validate-fleet-outcome.sh                # readiness doc fleet-outcome YAML
 ./scripts/validate-goal-condition.sh --scan-docs   # /goal binding
 python scripts/validate_run_archive.py             # Layers 3 & 4: manifest + sha256 + mtime ordering (the blind-fix anti-anchoring ordering IS Layer 3)
-pytest tests/                                      # full suite (65 files, 1369 tests; 100% line coverage of the Python tooling, scripts/*.py — shell is validated by behavioral + mutation tests, not line coverage)
+pytest tests/                                      # full suite (66 files, 1376 tests; 100% line coverage of the Python tooling, scripts/*.py — shell is validated by behavioral + mutation tests, not line coverage)
 
 # Operator gates (run on a specific run-id)
 python scripts/verify_findings.py \
@@ -443,7 +443,7 @@ autonomous-fleet/
 │   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate, secure-ship, handoff-to-product
 │   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, emit_trace, analyze_seat, analyze_cost, locks, substrate_disable, stop_verify, mission_registry, venv-bootstrap
 │   └── install-skills.sh
-├── tests/                               # 65 test files, 1369 tests; validators + engine doctrine + 4-layer substrate
+├── tests/                               # 66 test files, 1376 tests; validators + engine doctrine + 4-layer substrate
 ├── .agents/skills/                      # installed skill copies (gitignored)
 └── skills-lock.json                     # lockfile for npx skills
 ```

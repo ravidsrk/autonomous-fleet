@@ -8,7 +8,7 @@ license: MIT
 compatibility: Requires git; gh CLI recommended for PR workflows
 metadata:
   author: "ravidsrk"
-  version: "1.0.0"
+  version: "1.0.1"
   fleet-component: "setup"
 ---
 
@@ -42,12 +42,13 @@ default.
 
 | Choice | Adapter skill |
 |--------|---------------|
+| **Orca** (recommended) | `autonomous-fleet-adapter-orca` |
 | Grok Build | `autonomous-fleet-adapter-grok` |
 | Claude Code | `autonomous-fleet-adapter-claude-code` |
 | OpenAI Codex | `autonomous-fleet-adapter-codex` |
-| Orca | `autonomous-fleet-adapter-orca` |
 
-Default: Grok Build if unclear.
+Default: **Orca** — reference runtime with structural build-blind review and native orchestration.
+Use another adapter only when Orca is unavailable.
 
 **Section B — Branch prefix.**
 

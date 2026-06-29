@@ -10,8 +10,8 @@
     "autonomous-fleet": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.0.0",
-      "computedHash": "4b7b14ca86339058fef37db1fff4d7bd0838c9fa2bf185345b2d232a8e0fd9b3"
+      "version": "1.0.1",
+      "computedHash": "521cc636bdd7164c11239775ea1d90372cc005dd40d956b745beb8af1c23efee"
     },
     "autonomous-fleet-adapter-claude-code": {
       "source": "ravidsrk/autonomous-fleet",
@@ -34,8 +34,8 @@
     "autonomous-fleet-adapter-orca": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.1.0",
-      "computedHash": "0a3387be9cdb3009df0405628302846883778cbe2d734d05f0b94252104a4a7c"
+      "version": "1.2.0",
+      "computedHash": "bb34a2a8385b950a56716437dc50b65825aca017752dd9f173b4073b871bc8df"
     },
     "autonomous-fleet-adapter-template": {
       "source": "ravidsrk/autonomous-fleet",
@@ -46,8 +46,8 @@
     "autonomous-fleet-core": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.1.1",
-      "computedHash": "a6137ed67fd01a703028dc6c4a67aa6bb8dec6aa214d5b68c0a2e454f9540310"
+      "version": "1.1.2",
+      "computedHash": "df918694e9b02d285151e3b7fcb8ccd0fb42034e6da6d6d894cdb1aee3679fcc"
     },
     "doc-sync": {
       "source": "ravidsrk/autonomous-fleet",
@@ -64,8 +64,8 @@
     "setup-autonomous-fleet": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.0.0",
-      "computedHash": "9f825ed3d73847b45c017396ac9e54625a762336f4e578d871422cda38612c0a"
+      "version": "1.0.1",
+      "computedHash": "2b676ee0ed2db33d3097bd95665857519e640a95a46e17fbe5fe811837c802fc"
     },
     "skill-creator": {
       "source": "anthropics/skills",
