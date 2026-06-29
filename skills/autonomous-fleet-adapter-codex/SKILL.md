@@ -10,7 +10,7 @@ license: MIT
 compatibility: Requires Codex with goals enabled (features.goals), git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.0"
+  version: "1.1.1"
   fleet-component: "adapter"
 ---
 
@@ -98,7 +98,9 @@ Read FILE LEDGER + `git worktree list` + `gh pr list --base BASE` via shell.
 
 ### OPEN_PR / MERGE_PR(conflict-aware) / CLEANUP
 Same as other adapters: `gh pr create`, conflict-aware rebase + re-review, `gh pr merge --merge`
-(NEVER squash), `git worktree remove`.
+(NEVER squash), delete branch. CLEANUP (WT_CLEAN gate): verify MERGED + branch-deleted FIRST;
+apply core engine guard clauses — NEVER remove the active/unmerged/dirty worktree; then
+`git worktree remove ../<repo>-<slug>-<run_short>`; set task-row `WT_CLEAN=true`; pull BASE.
 
 ### SYNC_TASK_STATE(task, status)
 Update FILE LEDGER flag. (No external task daemon — ledger is the task view.)

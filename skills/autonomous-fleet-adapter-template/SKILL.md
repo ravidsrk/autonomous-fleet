@@ -10,7 +10,7 @@ license: MIT
 compatibility: Reference template for adapter authors; not a runnable mission
 metadata:
   author: "ravidsrk"
-  version: "1.1.0"
+  version: "1.1.1"
   fleet-component: "adapter-template"
   runnable: "false"
 ---
@@ -90,7 +90,9 @@ the user.>
 ### OPEN_PR / MERGE_PR(conflict-aware) / CLEANUP
 <usually `gh` via your tool's shell. KEEP the conflict-aware rule verbatim: check mergeable, rebase
 onto BASE, resolve, re-test green, re-review if logic changed, then merge with a MERGE COMMIT
-(commits preserved, NEVER squash), delete branch, clean the checkout.>
+(commits preserved, NEVER squash), delete branch. CLEANUP is a WT_CLEAN gate: verify MERGED +
+branch-deleted FIRST; apply core engine guard clauses (NEVER remove active/unmerged/dirty worktree);
+version-tolerant remove/archive per your runtime; set task-row WT_CLEAN=true; pull BASE.>
 
 ### SYNC_TASK_STATE(task, status)
 <how the tool's native task view is kept aligned with the file ledger — or a note that the ledger +

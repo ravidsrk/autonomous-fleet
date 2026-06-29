@@ -13,7 +13,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository; install skills via npx skills
 metadata:
   author: "ravidsrk"
-  version: "1.0.0"
+  version: "1.0.1"
   fleet-component: "umbrella"
 ---
 
@@ -47,14 +47,16 @@ skills + `fleet-program` + setup). Each single-mission run composes three layers
 npx skills add https://github.com/ravidsrk/autonomous-fleet \
   --skill setup-autonomous-fleet \
   --skill autonomous-fleet-core \
-  --skill autonomous-fleet-adapter-grok \
+  --skill autonomous-fleet-adapter-orca \
+  --skill fleet-program \
   --skill doc-sync \
   -y
 ```
 
-Replace `autonomous-fleet-adapter-grok` with `autonomous-fleet-adapter-orca`,
-`autonomous-fleet-adapter-claude-code`, or `autonomous-fleet-adapter-codex` for other runtimes. Install all:
-`npx skills add https://github.com/ravidsrk/autonomous-fleet --skill '*' -y`
+On Orca, also load Orca's companion skills (`orchestration`, `orca-cli`) for full-handoff vs
+supervised routing — see `autonomous-fleet-adapter-orca` → `references/orca-platform.md`.
+For Grok, Claude Code, or Codex hosts, swap `-orca` for `-grok`, `-claude-code`, or `-codex`.
+Install all: `npx skills add https://github.com/ravidsrk/autonomous-fleet --skill '*' -y`
 
 ## How to route a request
 
@@ -66,7 +68,8 @@ Replace `autonomous-fleet-adapter-grok` with `autonomous-fleet-adapter-orca`,
    the closest single mission; Tier 1 for first unattended single-mission runs.
 5. Always activate **`autonomous-fleet-core`** and **one adapter** alongside the mission or program.
 
-Default adapter on Grok Build: `autonomous-fleet-adapter-grok`.
+Default adapter: `autonomous-fleet-adapter-orca` (reference runtime). On Grok Build without Orca,
+use `autonomous-fleet-adapter-grok`.
 
 ## Quick routing
 
