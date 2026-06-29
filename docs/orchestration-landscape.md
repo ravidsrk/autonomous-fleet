@@ -2,7 +2,7 @@
 
 Deep research (2026-06-20) on the agent-orchestration state of the art, mapped against
 autonomous-fleet so we adopt mature solutions instead of reinventing them. Produced by a
-multi-agent research run: deep-dives of two named repos (omnigent, ComposioHQ agent-orchestrator),
+multi-agent research run: deep-dives of two named repos (omnigent, AgentWrapper agent-orchestrator),
 the GitHub framework landscape, X discourse (via monid Twitter search), papers/standards, and a
 self-inventory, with adversarial accuracy + completeness critiques folded in.
 
@@ -22,9 +22,14 @@ ComposioHQ AO, omnigent, Cursor background agents, Claude Code native parallelis
 commercial Devin/Factory. omnigent and AO are mature MECHANISM; autonomous-fleet is mature METHOD;
 the rest fill the gaps. Adopt the mechanism, keep the method.
 
-Accuracy note carried from the critique: ComposioHQ AO is NOT Claude-Code-only. It ships plugins for
-claude-code, codex, cursor, aider, opencode, kimicode, grok; runtimes tmux/process/Docker; trackers
-GitHub/GitLab/Linear. Our edge over AO is the method layer, not cross-host coverage.
+Accuracy note carried from the critique: Agent Orchestrator (AO) is NOT Claude-Code-only. It ships
+plugins for claude-code, codex, cursor, aider, opencode, kimicode, grok; runtimes tmux/process/Docker;
+trackers GitHub/GitLab/Linear. Our edge over AO is the method layer, not cross-host coverage.
+
+**2026-06 update:** AO now lives at [AgentWrapper/agent-orchestrator](https://github.com/AgentWrapper/agent-orchestrator)
+(Go rewrite, v0.10+). AF ports AO mechanisms as validators + engine doctrine — see
+`skills/autonomous-fleet-core/references/ao-adoptions.md` (nudge dedup, stacked PR, hook-signal,
+review supersede) without adopting the daemon/UI.
 
 ## Never reinvent (use these instead)
 
@@ -32,7 +37,7 @@ GitHub/GitLab/Linear. Our edge over AO is the method layer, not cross-host cover
 |----------------------|-------------|-----|
 | OS sandbox + container-per-agent + branch-per-agent isolation | `dagger/container-use` (first choice) | MCP server, tool-agnostic (Claude Code/Cursor/Codex/Goose/any MCP agent), container + git-branch per agent, git-checkout-to-review. Closes our sandbox AND worktree gaps in one drop-in. |
 | Dangerous-command classifier (force-push, rm -rf, gh pr merge, terraform apply) | omnigent `nessie` `blast_radius` (`inner/nessie/policies.py`) | Handles split/long rm flags, +/: refspecs, sudo/env-prefix unwrap, git -C. `run-sandboxed.sh` is a static deny-list that misses these. |
-| Deterministic CI/review control plane (poll-derive-react) | ComposioHQ AO lifecycle engine (`lifecycle-status-decisions.ts`, MIT) | Borrow three rules into engine.md: signal reconciliation, anti-flap evidence-hash, oscillation-aware CI budget. |
+| Deterministic CI/review control plane (poll-derive-react) | AO lifecycle (`backend/internal/lifecycle/`, MIT) | Borrowed into engine.md: signal reconciliation, anti-flap evidence-hash; plus nudge dedup, stacked PR, hook-signal, review supersede verifiers. |
 | Durable-execution engine (replay, exactly-once, sagas) | Temporal / Inngest / DBOS / Restate, or LangGraph checkpointer+interrupt() | Don't write replay/idempotency/saga by hand. Patch the ledger or run the DAG on one of these. |
 | Cross-vendor wire format / tools-vs-agents split | MCP (tools, ~97M monthly downloads, Linux Foundation) + A2A/ACP (agents) | container-use proves MCP is a viable orchestration transport; one MCP/ACP adapter could subsume per-host adapters. |
 | OS sandbox from scratch (alt to container-use) | omnigent seatbelt/bwrap profile, or e2b/daytona/modal | Months of security-sensitive work omnigent already ships; have `run-sandboxed.sh` shell out to a macOS seatbelt profile for the common case. |
@@ -96,7 +101,7 @@ WAIT to native host APIs before inventing file conventions.
 
 ## Sources
 
-Repos read: `omnigent-ai/omnigent`, `ComposioHQ/agent-orchestrator`. Web/X via monid (Exa, TikHub
+Repos read: `omnigent-ai/omnigent`, `AgentWrapper/agent-orchestrator` (formerly ComposioHQ). Web/X via monid (Exa, TikHub
 Twitter). Papers: arXiv 2601.15195 (MSR AIDev), 2606.00953 (Co-Coder), 2602.16873 (AdaptOrch),
 2606.03115 (SPOQ), 2511.03690 (OpenHands SDK). Frameworks surveyed: LangGraph, CrewAI, AutoGen/AG2,
 OpenAI Agents SDK/Swarm, Claude Agent SDK, Google ADK, Temporal/Inngest/DBOS/Restate, container-use,
