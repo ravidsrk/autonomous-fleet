@@ -1,0 +1,22 @@
+autonomous-fleet
+Copyright (c) 2026 ravidsrk
+
+This product includes mechanism designs adapted from Agent Orchestrator.
+
+====
+
+Agent Orchestrator
+Copyright 2026 Untrivial
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use files from the Agent Orchestrator distribution except
+in compliance with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Agent Orchestrator project home:
+    https://github.com/AgentWrapper/agent-orchestrator
+
+autonomous-fleet re-expresses selected Agent Orchestrator mechanisms as
+MIT-licensed Python validators and skill doctrine (see ATTRIBUTIONS.md).
+No Agent Orchestrator source tree is vendored in this repository.
