@@ -29,10 +29,18 @@ _MERGED_MARKERS = (
 def _sha_pin_paths(target: Path) -> list[Path]:
     if target.is_file():
         return [target]
-    direct = target / "sha-pin.json"
-    if direct.is_file():
-        return [direct]
-    return sorted((target / ".fleet" / "runs").glob("*/sha-pin.json"))
+    if target.is_dir():
+        paths = sorted(target.glob("sha-pin*.json"))
+        pins_dir = target / "sha-pins"
+        if pins_dir.is_dir():
+            paths.extend(sorted(pins_dir.glob("*.json")))
+        if paths:
+            return paths
+    return sorted(
+        list((target / ".fleet" / "runs").glob("*/sha-pin.json"))
+        + list((target / ".fleet" / "runs").glob("*/sha-pin-*.json"))
+        + list((target / ".fleet" / "runs").glob("*/sha-pins/*.json"))
+    )
 
 
 def _sibling_readiness_says_merged(run_dir: Path) -> bool:
