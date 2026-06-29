@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "pr_url": "https://github.com/example/repo/pull/1",
+  "entries": [
+    {
+      "key": "ci:https://github.com/example/repo/pull/1:build",
+      "kind": "ci",
+      "signature": "abc123deadbeef00000000000000000000000001:log-tail",
+      "attempts": 1,
+      "commit_sha": "abc123deadbeef00000000000000000000000001"
+    }
+  ]
+}

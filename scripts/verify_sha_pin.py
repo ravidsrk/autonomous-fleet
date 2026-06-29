@@ -29,10 +29,25 @@ _MERGED_MARKERS = (
 def _sha_pin_paths(target: Path) -> list[Path]:
     if target.is_file():
         return [target]
-    direct = target / "sha-pin.json"
-    if direct.is_file():
-        return [direct]
-    return sorted((target / ".fleet" / "runs").glob("*/sha-pin.json"))
+    if target.is_dir():
+        paths = sorted(target.glob("sha-pin*.json"))
+        pins_dir = target / "sha-pins"
+        if pins_dir.is_dir():
+            paths.extend(sorted(pins_dir.glob("*.json")))
+        if paths:
+            return paths
+    return sorted(
+        list((target / ".fleet" / "runs").glob("*/sha-pin.json"))
+        + list((target / ".fleet" / "runs").glob("*/sha-pin-*.json"))
+        + list((target / ".fleet" / "runs").glob("*/sha-pins/*.json"))
+    )
+
+
+def _run_dir_for_pin(path: Path) -> Path:
+    """Return the run archive directory that owns a sha-pin record."""
+    if path.parent.name == "sha-pins":
+        return path.parent.parent
+    return path.parent
 
 
 def _sibling_readiness_says_merged(run_dir: Path) -> bool:
@@ -58,7 +73,7 @@ def _load_records(paths: list[Path]) -> tuple[list[dict[str, Any]], list[str]]:
             errors.append(f"verify-sha-pin: cannot read {path}: {exc}")
             continue
         if isinstance(record, dict) and record.get("merged") is not True:
-            if _sibling_readiness_says_merged(path.parent):
+            if _sibling_readiness_says_merged(_run_dir_for_pin(path)):
                 record = {**record, "merged": True}
         records.append(record)
     return records, errors

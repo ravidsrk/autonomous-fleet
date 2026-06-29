@@ -455,6 +455,33 @@ declare a task stuck on the FIRST read that disagrees.
   circuit-breaker, a confirmed worker exit, or the DETECTING timeout — never on a single poll.
 
 ═══════════════════════════════════════════════════════════
+AO MECHANISMS — adopted from Agent Orchestrator (AgentWrapper/agent-orchestrator).
+═══════════════════════════════════════════════════════════
+See `references/ao-adoptions.md` for the full port map. These four close the remaining
+mechanism gaps without adopting AO's daemon/UI:
+
+PR-FEEDBACK NUDGE DEDUP (AO sendOnce): when routing CI failures, review comments, or
+merge-conflict prompts to a worker, persist `.fleet/runs/<run_id>/nudge-state.json`
+{pr_url, entries:[{key, kind, signature, attempts}]}. Before sending, check should_send_nudge;
+after sending, record_nudge. Identical evidence (same signature) must NOT re-nudge; review kinds
+cap at 3 attempts. Validated by `scripts/verify_nudge_dedup.py`.
+
+STACKED-PR STATUS (AO status.go): a session may own multiple open PRs. Aggregate with worst-wins
+severity. A child PR whose target_branch equals a sibling's source_branch while that parent is
+still open is BLOCKED: suppress non-actionable child signals (mergeable/approved/review-pending)
+but still surface ci_failed/changes_requested/draft. Merge-conflict nudges fire only for the stack
+bottom. Snapshot to `pr-snapshot.json`; validated by `scripts/verify_stacked_pr.py`.
+
+HOOK-SIGNAL HEALTH (AO no_signal): adapters with `activity_hooks: true` in the requires block
+install a hook pipeline. After spawn/restore, 90s without any hook callback means no_signal, not
+confident idle. INSPECT must record details.signal_state in trace events; `scripts/verify_hook_signal.py`
+FAILs idle claims past grace with no callback.
+
+REVIEW SUPERSEDE (AO review run supersede): when HEAD moves after a PASS, write a NEW sha-pin.json
+(or sha-pins/<id>.json) for the new SHA and mark the prior approve record superseded: true. At most
+one active approve per branch; `verify_sha_pin.py` enforces both HEAD match and supersede invariants.
+
+═══════════════════════════════════════════════════════════
 TRACE EMISSION — the dashboard contract (vibe-kanban, Agent View, custom).
 ═══════════════════════════════════════════════════════════
 The trace stream is ONE JSONL line per state transition in the ledger, written to
@@ -828,7 +855,9 @@ Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
   ENFORCED (not prose-only): the reviewer writes `.fleet/runs/<run_id>/sha-pin.json`
   {reviewed_sha, branch, verdict} at PASS; `scripts/verify_sha_pin.py` (run by validate-all)
   re-resolves the branch HEAD and FAILs when reviewed_sha has diverged, so a stale PASS cannot
-  ship even if the coordinator forgets. A merged task whose branch was deleted is N/A, not a fail.
+  ship even if the coordinator forgets. When HEAD moves, supersede the old record (superseded: true)
+  and emit a fresh sha-pin for the new SHA — at most one active approve per branch. A merged task
+  whose branch was deleted is N/A, not a fail.
 
 ═══════════════════════════════════════════════════════════
 DONE CONDITION: regression-catching test.

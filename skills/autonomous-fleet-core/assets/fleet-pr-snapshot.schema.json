@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-fleet.dev/schemas/fleet-pr-snapshot.schema.json",
+  "title": "Fleet PR Snapshot",
+  "description": "Point-in-time PR facts for stacked-PR status verification (AO status.go port).",
+  "type": "object",
+  "required": ["schema_version", "prs"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "prs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["url", "source_branch", "target_branch"],
+        "additionalProperties": true,
+        "properties": {
+          "url": { "type": "string", "minLength": 1 },
+          "source_branch": { "type": "string" },
+          "target_branch": { "type": "string" },
+          "merged": { "type": "boolean" },
+          "closed": { "type": "boolean" },
+          "draft": { "type": "boolean" },
+          "ci": { "type": "string" },
+          "review": { "type": "string" },
+          "review_comments": { "type": "boolean" },
+          "mergeability": { "type": "string" },
+          "reported_session_status": { "type": "string" },
+          "nudge_merge_conflict": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

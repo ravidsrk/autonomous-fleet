@@ -39,6 +39,7 @@ Machine-readable preflight requires-block:
 
 ```yaml requires
 bins: [grok, git, gh]
+activity_hooks: true
 env: []
 auth:
   - check: "gh auth status"

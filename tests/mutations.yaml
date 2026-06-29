@@ -232,6 +232,30 @@ mutations:
     replace: 'if False and reviewed_sha.lower() != head.lower():'
     guards: [tests/test_sha_pin.py]
 
+  - id: sha-pin-supersede-off
+    file: scripts/lib/verify_sha_pin.py
+    find: 'if len(labels) > 1:'
+    replace: 'if False and len(labels) > 1:'
+    guards: [tests/test_sha_pin.py]
+
+  - id: nudge-dedup-attempts-off
+    file: scripts/lib/nudge_dedup.py
+    find: 'if max_attempts > 0 and int(entry["attempts"]) > max_attempts:'
+    replace: 'if False and max_attempts > 0 and int(entry["attempts"]) > max_attempts:'
+    guards: [tests/test_nudge_dedup.py]
+
+  - id: stacked-pr-child-suppression-off
+    file: scripts/lib/stacked_pr_status.py
+    find: 'if stacks[pr["url"]]["blocked"] and not is_actionable_child_signal(status):'
+    replace: 'if False and stacks[pr["url"]]["blocked"] and not is_actionable_child_signal(status):'
+    guards: [tests/test_stacked_pr_status.py]
+
+  - id: hook-signal-no-signal-off
+    file: scripts/lib/hook_signal.py
+    find: 'if at_inspect == "no_signal" and reported in {"idle", "working"}:'
+    replace: 'if False and at_inspect == "no_signal" and reported in {"idle", "working"}:'
+    guards: [tests/test_hook_signal.py]
+
   - id: dashboard-watch-always-rebuild
     file: scripts/render-dashboard.py
     find: 'if fp != last_fp:'
