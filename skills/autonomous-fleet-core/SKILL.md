@@ -57,6 +57,9 @@ manifest-audited trail under `.fleet/runs/<run_id>/`. See
 [references/run-archive.md](references/run-archive.md) for the manifest scheme and the
 `archive_enabled` gate (a `status: done` outcome is rejected if its archive doesn't validate).
 
+Ports of Agent Orchestrator mechanisms (nudge dedup, stacked PR, hook-signal, review supersede)
+without adopting AO's daemon: [references/ao-adoptions.md](references/ao-adoptions.md).
+
 ## Primitives (summary)
 
 The active adapter must implement: `PLACE`, `SPAWN_WORKER`, `DISPATCH`, `WAIT`, `INSPECT`,
