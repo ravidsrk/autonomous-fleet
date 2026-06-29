@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Claude Code with Task tool, git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.0"
+  version: "1.1.1"
   fleet-component: "adapter"
 ---
 
@@ -155,7 +155,10 @@ BASE` via Bash. TodoWrite reflects current state for visibility. None of these c
   re-review (relaunch the reviewer subagent on the rebased diff) if logic changed, force-push.
   Then `gh pr merge <n> --merge --delete-branch` (merge commit, commits preserved, NEVER
   `--squash`).
-- CLEANUP: `git worktree remove ../<repo>-<slug>-<run_short>` for the merged unit; pull BASE.
+- CLEANUP (WT_CLEAN gate): verify MERGED + branch-deleted FIRST. Apply core engine guard clauses —
+  NEVER remove the active worktree; NEVER remove an unmerged or dirty worktree. Then
+  `git worktree remove ../<repo>-<slug>-<run_short>`; set task-row `WT_CLEAN=true` in the ledger;
+  pull BASE.
 
 ### SYNC_TASK_STATE(task, status)
 Update the FILE LEDGER flag and the TodoWrite entry. In TEAMS tier, also mirror to the native

@@ -84,6 +84,11 @@ autonomous-fleet drives *your* coding agent — it doesn't ship one. You'll need
 - **`git` and an authenticated [`gh`](https://cli.github.com/)** — run `gh auth status` to confirm; every task ships as a GitHub PR.
 - **CLI auth for your chosen runtime** only if you use the headless campaign scripts (`grok login`, etc.). The interactive path in Step 3 needs just the agent itself.
 
+> **Recommended for build-blind review:** [Orca](https://github.com/diggerhq/orca) with
+> `autonomous-fleet-adapter-orca` gives **structural** cross-vendor isolation — separate terminals
+> per role (`@codex` builds, fresh `@claude` reviews). Single-session hosts (Claude, Grok, Codex)
+> instruct terminal separation; headless runs one process per mission (see role topology above).
+
 ### Step 1 — Install the skills into your repo
 
 **In a terminal,** in your project's root directory:
@@ -94,14 +99,16 @@ npx skills@1.5.12 add https://github.com/ravidsrk/autonomous-fleet \
   --skill autonomous-fleet \
   --skill autonomous-fleet-core \
   --skill fleet-program \
-  --skill autonomous-fleet-adapter-claude-code \
+  --skill autonomous-fleet-adapter-orca \
   --skill doc-sync \
   -y
 ```
 
 This creates a `.agents/skills/` folder (gitignored — your `git status` stays clean). The folder is the universal [`agentskills.io`](https://agentskills.io/) format, which Claude Code, Grok, Codex, and Orca all read.
 
-> Using a different agent? Replace `autonomous-fleet-adapter-claude-code` with `-grok`, `-codex`, or `-orca`. Want every skill? Use `--skill '*'`.
+> **Orca is the reference runtime** — structural build-blind review and native multi-terminal orchestration. On Grok, Claude Code, or Codex, swap `-orca` for `-grok`, `-claude-code`, or `-codex`. Want every skill? Use `--skill '*'`.
+
+> **On Orca:** fleet missions use only the skills above. For full-handoff routing (one-shot ownership transfer without supervision), also load Orca's companion skills **`orchestration`** and **`orca-cli`** — they ship with the Orca app, not this repo. See `autonomous-fleet-adapter-orca` → `references/orca-platform.md`.
 
 ### Step 2 — Configure the repo once
 
@@ -336,7 +343,7 @@ Individual validators:
 ./scripts/validate-fleet-outcome.sh                # readiness doc fleet-outcome YAML
 ./scripts/validate-goal-condition.sh --scan-docs   # /goal binding
 python scripts/validate_run_archive.py             # Layers 3 & 4: manifest + sha256 + mtime ordering (the blind-fix anti-anchoring ordering IS Layer 3)
-pytest tests/                                      # full suite (65 files, 1368 tests; 100% line coverage of the Python tooling, scripts/*.py — shell is validated by behavioral + mutation tests, not line coverage)
+pytest tests/                                      # full suite (66 files, 1377 tests; 100% line coverage of the Python tooling, scripts/*.py — shell is validated by behavioral + mutation tests, not line coverage)
 
 # Operator gates (run on a specific run-id)
 python scripts/verify_findings.py \
@@ -438,7 +445,7 @@ autonomous-fleet/
 │   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate, secure-ship, handoff-to-product
 │   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, emit_trace, analyze_seat, analyze_cost, locks, substrate_disable, stop_verify, mission_registry, venv-bootstrap
 │   └── install-skills.sh
-├── tests/                               # 65 test files, 1368 tests; validators + engine doctrine + 4-layer substrate
+├── tests/                               # 66 test files, 1377 tests; validators + engine doctrine + 4-layer substrate
 ├── .agents/skills/                      # installed skill copies (gitignored)
 └── skills-lock.json                     # lockfile for npx skills
 ```

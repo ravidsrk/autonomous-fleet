@@ -2,7 +2,7 @@
 # Install autonomous-fleet skills using the npx skills CLI (agentskills.io standard).
 #
 # Usage:
-#   ./scripts/install-skills.sh              # starter set (umbrella + program + core + grok + doc-sync)
+#   ./scripts/install-skills.sh              # starter set (umbrella + program + core + orca + doc-sync)
 #   ./scripts/install-skills.sh --all        # install all 12 fleet skills
 #   ./scripts/install-skills.sh doc-sync bug-batch   # install named skills
 #   ./scripts/install-skills.sh --all --with-community gstack-browser [--execute]
@@ -62,21 +62,15 @@ run_fleet_install() {
     npx "$SKILLS_CLI" add "$SOURCE" --skill "$@" -y -p
     return
   fi
-  # Default: the "Grok starter set".
-  #
-  # This intentionally differs from the README's quickstart in two ways, and that is fine —
-  # they target different defaults (the README agent calls out the difference):
-  #   1. Adapter: this set installs `autonomous-fleet-adapter-grok`; the README quickstart
-  #      installs `-claude-code`. Swap `-grok` below for your chosen runtime.
-  #   2. `-p`: this set passes `-p` (install into the project, not the user-global skills dir),
-  #      so a clone's local skills win; the README quickstart omits it for a fresh project.
-  # Both install the same six-skill set from this repo and pin `skills@1.5.12`.
+  # Default: Orca reference-runtime starter set (matches README quickstart adapter).
+  # Companion Orca skills (orchestration, orca-cli) ship with the Orca app — not this repo.
+  # `-p` installs into the project so a clone's local skills win.
   npx "$SKILLS_CLI" add "$SOURCE" \
     --skill setup-autonomous-fleet \
     --skill autonomous-fleet \
     --skill fleet-program \
     --skill autonomous-fleet-core \
-    --skill autonomous-fleet-adapter-grok \
+    --skill autonomous-fleet-adapter-orca \
     --skill doc-sync \
     -y -p
 }
