@@ -9,7 +9,25 @@ source-doc section AND grepping the repo, then an adversary re-checked every CAP
 downgrade anything over-credited. Evidence is a repo `file:line` where the pattern is implemented, or
 the source-doc line where it lives when the repo lacks it.
 
-BOTTOM LINE: 26 distinct patterns. 11 CAPTURED, 11 PARTIAL, 4 MISSING (plus 4 verified directly below the workflow under-covered). Every CAPTURED item is engine/core machinery (Stages 1-8 of the prompt evolution). Every gap is a Stage-9 RAIL, the part the docs' own conclusion says 'became as important as the machinery'.
+## Reconciliation (2026-06-29)
+
+The gap rows below are the **original audit snapshot** from 2026-06-21. A dogfood
+`adversarial-review-and-fix` run closed every PARTIAL/MISSING item against
+`docs/close-gaps-readiness.md` (BASE `ravidsrk/close-gaps`). On current `main`, all 26 patterns are
+**CAPTURED** in engine doctrine, missions, validators, and/or `tests/test_engine_disciplines.py`.
+
+| Area | Original (2026-06-21) | Now |
+|------|----------------------|-----|
+| Stage 1–8 engine machinery | 11 CAPTURED | unchanged |
+| Stage 9 rails (anti-inflation, lanes, WT_CLEAN, EVID, …) | 11 PARTIAL + 4 MISSING | **CAPTURED** — see `skills/autonomous-fleet-core/references/engine.md`, `skills/adversarial-review-and-fix/SKILL.md`, `scripts/verify_*.py` |
+| Adapter WT_CLEAN guard echo | PARTIAL (engine only) | **CAPTURED** — all shipped adapters + `tests/test_adapter_namespacing_doc.py` |
+
+**Still operator-owned (not a code gap):** external-repo run with `prs_merged > 0` and a citable
+public benchmark — tracked in `docs/external-dogfood/README.md` and `docs/roadmap-gap-matrix.md`.
+
+BOTTOM LINE (original 2026-06-21): 26 distinct patterns. 11 CAPTURED, 11 PARTIAL, 4 MISSING.
+BOTTOM LINE (reconciled 2026-06-29): **26 CAPTURED** in repo artifacts; remaining work is proof on
+external repos, not missing rails.
 
 ## CAPTURED (engine machinery is faithfully distilled)
 

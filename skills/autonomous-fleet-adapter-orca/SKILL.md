@@ -106,7 +106,10 @@ Heartbeat likewise (payload `{"taskId","dispatchId","phase"}` OR `--task-id --di
   rebase). If conflicts: `git fetch origin BASE && git rebase origin/BASE`, resolve, re-test green,
   re-review if logic changed, force-push. Then `gh pr merge <n> --merge --delete-branch` (merge
   commit, commits preserved, NEVER `--squash`).
-- CLEANUP: archive/remove the merged branch's worktree (`orca worktree` remove/archive). Pull BASE.
+- CLEANUP (WT_CLEAN gate): verify MERGED + branch-deleted FIRST. Apply core engine guard clauses —
+  NEVER remove the active worktree; NEVER remove an unmerged or dirty worktree. Version-tolerant:
+  `orca worktree remove <id>` or `orca worktree archive <id>` (try X, fall back to Y). Set task-row
+  `WT_CLEAN=true` in the ledger; pull BASE.
 
 ### SYNC_TASK_STATE(task, status)
 `orca orchestration task-update --id <taskId> --status

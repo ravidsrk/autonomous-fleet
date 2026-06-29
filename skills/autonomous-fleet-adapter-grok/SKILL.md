@@ -123,7 +123,10 @@ BASE` via Shell. None of these consume anything.
   re-review (relaunch the reviewer subagent on the rebased diff) if logic changed, force-push.
   Then `gh pr merge <n> --merge --delete-branch` (merge commit, commits preserved, NEVER
   `--squash`).
-- CLEANUP: `git worktree remove ../<repo>-<slug>-<run_short>` for the merged unit; pull BASE.
+- CLEANUP (WT_CLEAN gate): verify MERGED + branch-deleted FIRST. Apply core engine guard clauses —
+  NEVER remove the active worktree; NEVER remove an unmerged or dirty worktree. Then
+  `git worktree remove ../<repo>-<slug>-<run_short>`; set task-row `WT_CLEAN=true` in the ledger;
+  pull BASE.
 
 ### SYNC_TASK_STATE(task, status)
 Update the FILE LEDGER flag for the task. (No external task daemon to sync — the ledger is the
