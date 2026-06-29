@@ -41,6 +41,7 @@ Machine-readable preflight requires-block:
 
 ```yaml requires
 bins: [claude, git, gh]
+activity_hooks: true
 env: []
 auth:
   - check: "gh auth status"

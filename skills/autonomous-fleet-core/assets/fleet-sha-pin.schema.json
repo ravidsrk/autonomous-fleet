@@ -48,6 +48,15 @@
     "merged": {
       "description": "Optional post-merge marker. If true and the branch is unknown/deleted, the SHA-pin check is N/A rather than a failure.",
       "type": "boolean"
+    },
+    "superseded": {
+      "description": "When true, this approve record is historical only (HEAD moved; a newer sha-pin supersedes it).",
+      "type": "boolean"
+    },
+    "supersedes_review_id": {
+      "description": "Optional link to the review_id this record replaces after a fix-round push.",
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9._/-]+$"
     }
   }
 }

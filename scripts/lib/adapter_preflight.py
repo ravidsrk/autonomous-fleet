@@ -73,6 +73,16 @@ def _bins_skipped_by_intent(requires: Mapping[str, Any], intent_name: str) -> se
     return skipped
 
 
+def activity_hooks_advisory(requires: Mapping[str, Any]) -> str | None:
+    """Return a coordinator note when the adapter installs an activity-hook pipeline."""
+    if requires.get("activity_hooks") is True:
+        return (
+            "activity_hooks: INSPECT must treat >90s post-spawn silence as no_signal "
+            "(see engine.md AO MECHANISMS; verify_hook_signal.py)"
+        )
+    return None
+
+
 def check(
     requires: Mapping[str, Any],
     intent: Intent | Mapping[str, Any],

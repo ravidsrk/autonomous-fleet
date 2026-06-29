@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://autonomous-fleet.dev/schemas/fleet-nudge-state.schema.json",
+  "title": "Fleet Nudge State",
+  "description": "Persisted PR-feedback nudge dedup state (AO sendOnce port). Prevents re-sending identical CI/review/conflict nudges across polls and coordinator resumes.",
+  "type": "object",
+  "required": ["schema_version", "pr_url", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "pr_url": { "type": "string", "minLength": 1 },
+    "updated_at": { "type": "string" },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key", "kind", "signature", "attempts"],
+        "additionalProperties": false,
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "kind": {
+            "type": "string",
+            "enum": ["ci", "review", "merge_conflict", "ao_review"]
+          },
+          "signature": { "type": "string", "minLength": 1 },
+          "attempts": { "type": "integer", "minimum": 0 },
+          "commit_sha": { "type": "string", "pattern": "^[0-9a-fA-F]{40}$" },
+          "max_attempts": { "type": "integer", "minimum": 0 }
+        }
+      }
+    }
+  }
+}
