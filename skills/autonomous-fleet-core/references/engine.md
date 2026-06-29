@@ -431,7 +431,8 @@ Completion-for-Real — the anti-inflation run; prompts.md L3013 and L3061 — "
 be structural; an autonomous run will otherwise believe its own green checkmarks").
 
 ═══════════════════════════════════════════════════════════
-SIGNAL RECONCILIATION — three signals, never transition on one read (from ComposioHQ AO).
+SIGNAL RECONCILIATION — three signals, never transition on one read (from Agent Orchestrator;
+Apache 2.0, Copyright Untrivial — see ATTRIBUTIONS.md).
 ═══════════════════════════════════════════════════════════
 Three signals report task health and they DISAGREE in normal operation: worker-liveness (INSPECT),
 the ledger flag you wrote, and the external SCM/CI fact (`gh pr view` state, CI conclusion). A
@@ -455,7 +456,8 @@ declare a task stuck on the FIRST read that disagrees.
   circuit-breaker, a confirmed worker exit, or the DETECTING timeout — never on a single poll.
 
 ═══════════════════════════════════════════════════════════
-AO MECHANISMS — adopted from Agent Orchestrator (AgentWrapper/agent-orchestrator).
+AO MECHANISMS — adopted from Agent Orchestrator (AgentWrapper/agent-orchestrator;
+Apache 2.0, Copyright Untrivial — see references/ao-adoptions.md and ATTRIBUTIONS.md).
 ═══════════════════════════════════════════════════════════
 See `references/ao-adoptions.md` for the full port map. These four close the remaining
 mechanism gaps without adopting AO's daemon/UI:

@@ -1,7 +1,17 @@
 # Agent Orchestrator mechanism ports
 
-Source repo: [AgentWrapper/agent-orchestrator](https://github.com/AgentWrapper/agent-orchestrator)
-(formerly ComposioHQ). AF adopts **mechanisms**, not the product (no daemon, no Electron UI).
+## Attribution
+
+| | |
+|---|---|
+| **Upstream** | [AgentWrapper/agent-orchestrator](https://github.com/AgentWrapper/agent-orchestrator) (formerly ComposioHQ/agent-orchestrator) |
+| **Copyright** | Copyright 2026 Untrivial |
+| **License** | [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) |
+| **AF relationship** | Clean-room ports as validators + engine doctrine — not a fork of the AO daemon/UI |
+
+Repo-level credits: [`ATTRIBUTIONS.md`](../../../ATTRIBUTIONS.md) · [`NOTICE`](../../../NOTICE)
+
+AF adopts **mechanisms**, not the product (no daemon, no Electron UI).
 
 ## Port map
 
