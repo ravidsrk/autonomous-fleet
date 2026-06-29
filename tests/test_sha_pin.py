@@ -356,6 +356,29 @@ def test_cli_unknown_branch_with_sibling_readiness_is_na(git_repo: Path, tmp_pat
     assert err == ""
 
 
+def test_cli_unknown_branch_sha_pins_subdir_with_readiness_is_na(
+    git_repo: Path, tmp_path: Path
+) -> None:
+    c1 = _commit(git_repo, "a.txt", "one\n")
+    run_dir = tmp_path / ".fleet" / "runs" / "run-1"
+    pins = run_dir / "sha-pins"
+    pins.mkdir(parents=True)
+    (pins / "review-2.json").write_text(
+        json.dumps(_record(reviewed_sha=c1, branch="fleet/deleted", review_id="review-2"))
+        + "\n",
+        encoding="utf-8",
+    )
+    (run_dir / "fleet-outcome.yaml").write_text(
+        "---\nfleet-outcome:\n  status: done\n---\n",
+        encoding="utf-8",
+    )
+
+    rc, out, err = _run_cli(str(tmp_path), "--repo", str(git_repo))
+    assert rc == 0
+    assert "1 record(s) checked" in out
+    assert err == ""
+
+
 def test_git_head_empty_stdout_returns_none(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     cli = _load_cli()
 
