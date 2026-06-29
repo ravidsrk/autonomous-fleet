@@ -13,7 +13,7 @@ from typing import Any
 
 SCHEMA_VERSION = "1.0"
 REQUIRED_FIELDS = ("schema_version", "review_id", "reviewed_sha", "branch", "verdict")
-ALLOWED_FIELDS = frozenset({*REQUIRED_FIELDS, "merged"})
+ALLOWED_FIELDS = frozenset({*REQUIRED_FIELDS, "merged", "superseded", "supersedes_review_id"})
 ENFORCED_VERDICTS = frozenset({"approve", "PASS"})
 VALID_VERDICTS = frozenset({"approve", "PASS", "request_changes", "partial", "fail", "FAIL"})
 
@@ -72,6 +72,19 @@ def validate_sha_pin_record(record: Any, label: str = "sha-pin") -> list[str]:
     if merged is not None and type(merged) is not bool:
         errors.append(f"{label}: merged must be boolean, got {type(merged).__name__}")
 
+    superseded = record.get("superseded")
+    if superseded is not None and type(superseded) is not bool:
+        errors.append(f"{label}: superseded must be boolean, got {type(superseded).__name__}")
+
+    supersedes_review_id = record.get("supersedes_review_id")
+    if supersedes_review_id is not None and (
+        not isinstance(supersedes_review_id, str) or not _REVIEW_ID_RE.match(supersedes_review_id)
+    ):
+        errors.append(
+            f"{label}: supersedes_review_id must match ^[a-zA-Z0-9._/-]+$, "
+            f"got {supersedes_review_id!r}"
+        )
+
     return errors
 
 
@@ -94,6 +107,8 @@ def verify_sha_pin(
 
         if record["verdict"] not in ENFORCED_VERDICTS:
             continue
+        if record.get("superseded") is True:
+            continue
 
         branch = record["branch"]
         reviewed_sha = record["reviewed_sha"]
@@ -110,6 +125,33 @@ def verify_sha_pin(
         if reviewed_sha.lower() != head.lower():
             errors.append(
                 f"{branch} moved {reviewed_sha}..{head}: REVIEWED is OUTDATED, force re-review"
+            )
+
+    errors.extend(verify_review_supersede(records))
+    return errors
+
+
+def verify_review_supersede(records: list[dict[str, Any]]) -> list[str]:
+    """Ensure at most one active approve/PASS sha-pin exists per branch."""
+    errors: list[str] = []
+    active_by_branch: dict[str, list[str]] = {}
+    for idx, record in enumerate(records):
+        if not isinstance(record, dict):
+            continue
+        if record.get("verdict") not in ENFORCED_VERDICTS:
+            continue
+        if record.get("superseded") is True:
+            continue
+        branch = record.get("branch")
+        if not isinstance(branch, str):
+            continue
+        active_by_branch.setdefault(branch, []).append(f"sha-pin[{idx}]")
+
+    for branch, labels in active_by_branch.items():
+        if len(labels) > 1:
+            errors.append(
+                f"{branch}: multiple active approve sha-pin records ({', '.join(labels)}); "
+                "mark older passes superseded:true when HEAD moves (AO review supersede)"
             )
 
     return errors

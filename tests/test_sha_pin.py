@@ -98,6 +98,23 @@ def git_repo(tmp_path: Path) -> Path:
     return repo
 
 
+def test_superseded_record_skips_head_enforcement() -> None:
+    active = _record(reviewed_sha=C2)
+    stale = _record(reviewed_sha=C1, superseded=True)
+    assert sp.verify_sha_pin([stale, active], lambda branch: C2) == []
+
+
+def test_multiple_active_approve_per_branch_fails() -> None:
+    errors = sp.verify_sha_pin(
+        [
+            _record(review_id="r1", reviewed_sha=C2),
+            _record(review_id="r2", reviewed_sha=C2),
+        ],
+        lambda branch: C2,
+    )
+    assert any("multiple active approve" in e for e in errors)
+
+
 def test_acceptance_current_head_matches() -> None:
     assert sp.verify_sha_pin([_record()], lambda branch: C1) == []
 
@@ -250,6 +267,20 @@ def test_cli_rejects_bad_repo_and_missing_target(tmp_path: Path) -> None:
     assert rc == 1
     assert out == ""
     assert "target not found" in err
+
+
+def test_cli_loads_sha_pins_subdirectory(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    pins = run_dir / "sha-pins"
+    pins.mkdir(parents=True)
+    (pins / "review-2.json").write_text(
+        json.dumps(_record(review_id="review-2")) + "\n",
+        encoding="utf-8",
+    )
+    rc, out, err = _run_cli(str(run_dir), "--repo", str(tmp_path))
+    assert rc == 1
+    assert "1 record(s) checked" in out
+    assert "HEAD unknown" in err or "force re-review" in err
 
 
 def test_cli_no_records_is_pass(tmp_path: Path) -> None:
