@@ -42,6 +42,9 @@ can be waved through for a single run.
 |---|---|---|
 | registry-lint | `scripts/registry_lint.py` | `FLEET_DISABLE_REGISTRY_LINT` |
 | round-budget | `scripts/verify_round_budget.py` | `FLEET_DISABLE_ROUND_BUDGET` |
+| nudge-dedup | `scripts/verify_nudge_dedup.py` | `FLEET_DISABLE_NUDGE_DEDUP` |
+| stacked-pr | `scripts/verify_stacked_pr.py` | `FLEET_DISABLE_STACKED_PR` |
+| hook-signal | `scripts/verify_hook_signal.py` | `FLEET_DISABLE_HOOK_SIGNAL` |
 
 ## Security / integrity knobs (FAIL-CLOSED — explicit operator override required)
 
