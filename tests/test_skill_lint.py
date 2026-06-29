@@ -127,7 +127,7 @@ def test_adapter_missing_metadata_is_reported(tmp_path: Path) -> None:
         path.read_text(encoding="utf-8").replace(
             'metadata:\n'
             '  author: "ravidsrk"\n'
-            '  version: "1.1.0"\n'
+            '  version: "1.1.1"\n'
             '  fleet-component: "adapter"\n',
             "",
         ),
