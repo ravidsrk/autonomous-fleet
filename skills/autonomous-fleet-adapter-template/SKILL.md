@@ -10,7 +10,7 @@ license: MIT
 compatibility: Reference template for adapter authors; not a runnable mission
 metadata:
   author: "ravidsrk"
-  version: "1.1.0"
+  version: "1.1.1"
   fleet-component: "adapter-template"
   runnable: "false"
 ---
