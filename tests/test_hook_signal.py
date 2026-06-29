@@ -94,6 +94,47 @@ def test_hook_callback_clears_no_signal() -> None:
     assert hs.verify_hook_signal_trace(events, hook_capable=True) == []
 
 
+def test_spawn_started_and_top_level_task_id() -> None:
+    """TraceEmitter uses top-level task_id and SPAWN_WORKER status started."""
+    events = [
+        {
+            "schema_version": "1.0",
+            "ts": TS0,
+            "run_id": "run-1",
+            "mission": "test",
+            "primitive": "SPAWN_WORKER",
+            "role": "COORDINATOR",
+            "status": "started",
+            "task_id": "T1",
+        },
+        {
+            "schema_version": "1.0",
+            "ts": TS1,
+            "run_id": "run-1",
+            "mission": "test",
+            "primitive": "INSPECT",
+            "role": "COORDINATOR",
+            "status": "succeeded",
+            "task_id": "T1",
+            "details": {"signal_state": "idle"},
+        },
+    ]
+    errors = hs.verify_hook_signal_trace(events, hook_capable=True)
+    assert errors
+    assert "T1" in errors[0]
+
+
+def test_future_callback_does_not_clear_past_inspect() -> None:
+    events = [
+        _event(TS0, "SPAWN_WORKER", task_id="T1"),
+        _event(TS1, "INSPECT", task_id="T1", signal_state="idle"),
+        _event("2026-06-28T10:05:00Z", "INSPECT", task_id="T1", hook_callback=True),
+    ]
+    errors = hs.verify_hook_signal_trace(events, hook_capable=True)
+    assert errors
+    assert "2026-06-28T10:02:00Z" in errors[0]
+
+
 def test_cli_rejects_missing_target(tmp_path: Path) -> None:
     rc, out, err = _run_cli(str(tmp_path / "missing"))
     assert rc == 1
