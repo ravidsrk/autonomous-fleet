@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Claude Code with Task tool, git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.0"
+  version: "1.1.1"
   fleet-component: "adapter"
 ---
 

@@ -63,6 +63,7 @@ run_fleet_install() {
     return
   fi
   # Default: Orca reference-runtime starter set (matches README quickstart adapter).
+  # Companion Orca skills (orchestration, orca-cli) ship with the Orca app — not this repo.
   # `-p` installs into the project so a clone's local skills win.
   npx "$SKILLS_CLI" add "$SOURCE" \
     --skill setup-autonomous-fleet \
