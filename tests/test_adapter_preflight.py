@@ -11,7 +11,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from lib.adapter_preflight import Intent, check, load_requires  # noqa: E402
+from lib.adapter_preflight import Intent, activity_hooks_advisory, check, load_requires  # noqa: E402
 
 
 def _which_factory(found: set[str]):
@@ -187,6 +187,16 @@ def test_load_requires_rejects_missing_block(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="missing fenced yaml requires-block"):
         load_requires(adapter)
+
+
+def test_activity_hooks_advisory_when_declared() -> None:
+    note = activity_hooks_advisory({"activity_hooks": True})
+    assert note is not None
+    assert "no_signal" in note
+
+
+def test_activity_hooks_advisory_absent_by_default() -> None:
+    assert activity_hooks_advisory({"bins": ["git"]}) is None
 
 
 def test_load_requires_rejects_non_mapping_block(tmp_path: Path) -> None:
