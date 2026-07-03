@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Claude Code with Task tool, git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.5"
+  version: "1.1.6"
   fleet-component: "adapter"
 ---
 
@@ -44,7 +44,7 @@ says so.
 | SYNC_TASK_STATE | **degraded** | ledger authoritative; TodoWrite is per-session |
 | SET_GOAL family (9–12) | real | `/goal` (v2.1.139+) |
 | LOOP_POLL | real | `/loop` (CI/health polling only) |
-| CONTINUE_WORKER | aliased | → SPAWN_WORKER (no documented restore) |
+| CONTINUE_WORKER | real | `claude --resume <session-id>` (also `-c`, `--from-pr <n>`) — VERIFIED Claude Code 2.1.200 (issue #91); alias to SPAWN_WORKER remains the fallback on older CLIs |
 
 ## PRECONDITIONS (the core calls for these; here's the Claude Code form)
 A git repo (REPO_ROOT resolvable) · `gh auth status` via Bash (else local merge-commits into BASE)
@@ -252,7 +252,7 @@ freshness window. It is OPT-IN and fail-open (a broken gate degrades to loose mo
   (`<BRANCH_PREFIX><slug>-<run_short>`, `../<repo>-<slug>-<run_short>`, run_short = the 6-hex tail of
   the run_id) so parallel runs/checkouts never collide on a bare slug.
   `<SUBSTRATE>/validate_namespacing.py` enforces this.
-- CONTINUE_WORKER(role, placement, session_handle): no documented restore command -> ALIAS to SPAWN_WORKER (idempotent relaunch). Re-attach only for `live`-classified
+- CONTINUE_WORKER(role, placement, session_handle): `claude --resume <session-id>` (VERIFIED Claude Code 2.1.200, issue #91; `-c` re-attaches the cwd's most recent, `--from-pr <n>` by PR). On older CLIs without --resume, ALIAS to SPAWN_WORKER (idempotent relaunch). Re-attach only for `live`-classified
   rows (per `recovery_scan.py`); never re-attach a session whose PR merged or branch is gone. When a
   row's `RESUME_COUNT` hits `MAX_RESUME_ATTEMPTS` (3), escalate instead of continuing.
 - Reviewer isolation: when role==reviewer, launch the worker via
