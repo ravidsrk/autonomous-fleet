@@ -489,7 +489,7 @@ fill in your runtime's restore command or its ALIAS.
 The template lists the rules that come from the core and that your adapter must NOT relax. These are
 verbatim from `skills/autonomous-fleet-adapter-template/SKILL.md`:
 
-- One PR per unit, commits preserved, NEVER squash, authored by MAINTAINER, no agent/tool trailers.
+- One PR per unit, commits preserved, NEVER squash, authored by MAINTAINER, trailers per AUTHORSHIP_MODE (default: attributed Co-Authored-By).
 - Conflict-aware merge (never force a merge over conflicts or a red suite).
 - Checkout cleanup on every merge.
 - Safety rails (testnet/staging/fixtures only; merge is not deploy; infra-is-code).
