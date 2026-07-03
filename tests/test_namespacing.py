@@ -182,8 +182,20 @@ def test_cli_rejects_bare_branch(tmp_path: Path) -> None:
     assert "branch 'fleet/auth-fix' must end with '-3a9c2f'" in err
 
 
-def test_cli_kill_switch_short_circuits_before_argparse() -> None:
+def test_cli_kill_switch_requires_security_ack() -> None:
+    """Fail-closed class (issue #85 / codex on PR #117): a bare truthy knob
+    must NOT drop the check without the explicit security acknowledgement."""
     rc, out, err = _run_cli("--not-a-real-arg", env={"FLEET_DISABLE_NAMESPACING": "1"})
+
+    assert rc == 1
+    assert "REFUSING to disable" in err
+
+
+def test_cli_kill_switch_short_circuits_with_ack() -> None:
+    rc, out, err = _run_cli(
+        "--not-a-real-arg",
+        env={"FLEET_DISABLE_NAMESPACING": "1", "FLEET_SECURITY_OVERRIDE_ACK": "1"},
+    )
 
     assert rc == 0
     assert out == ""

@@ -36,7 +36,7 @@
     "requirements.txt": "71749243f84428fee225bfaa796dca5ef6c1e83a98f6d2a407df615b0390d6fb",
     "stop_verify.py": "406ac35fd9a417ec2f9368882478d5af42c5f7534f0c7b611f4e13666485b957",
     "validate_fleet_outcome.py": "c1a63ca4c6a7afaa23552d85f020293dff6fc00d259d6532853d86388c9998a6",
-    "validate_namespacing.py": "16319a11f60830d84ea175853513666c188388d237f2167ee4f33a443cf6cdbc",
+    "validate_namespacing.py": "8b52676eb4dc1b8a4cf40bbf44b99216f78f27bab8489da9274d05af779b9c58",
     "validate_run_archive.py": "d7b517f7e201a1524967f565df2ef811ed59b7e2345895c096f8e5fe5f705cff",
     "verify_blind_fix.py": "6e35e51e0bc2fe1eb7b4b405dddb97a681c30070bbfcb1b86776034b12e953a1",
     "verify_findings.py": "143c389ec30b36d1e72a2327f51895d11faa65339c3cfbc0ef16da79d028ff33",
