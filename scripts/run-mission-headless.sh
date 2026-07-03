@@ -196,7 +196,7 @@ ${HANDOFF_BODY}
 ===== END HANDOFF DOCUMENT ====="
 else
   if [[ "$MISSION" == "fleet-program" ]]; then
-    GOAL_COND="Campaign DONE: ${FLEET_LEDGER_DIR:-docs}/fleet-program-progress.md PHASE is DONE, every node DONE or SKIPPED, each readiness doc has valid fleet-outcome YAML."
+    GOAL_COND="Campaign DONE: the run-keyed campaign ledger (${FLEET_LEDGER_DIR:-docs}/fleet-program-<run_short>-progress.md per engine step 9; unkeyed name if the coordinator recorded none) PHASE is DONE, every node DONE or SKIPPED, each readiness doc has valid fleet-outcome YAML."
     PROMPT="Activate fleet-program, autonomous-fleet-core, and the installed runtime adapter. Run the repo-health campaign (or campaign in ${FLEET_LEDGER_DIR:-docs}/fleet-program-progress.md if present). /goal ${GOAL_COND}"
   else
     validate_mission "$MISSION"

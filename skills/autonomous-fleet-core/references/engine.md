@@ -97,9 +97,16 @@ path, product, maintainer identity, or scope — figure them out and record in D
 8. AUTHORSHIP_MODE (issue #102): default `attributed`. If `docs/agents/fleet-config.md` exists (from
    `setup-autonomous-fleet`), use its `AUTHORSHIP_MODE` (`maintainer-only` requires that explicit
    entry — never assumed). Record the chosen mode in DECISIONS.md before commit #1.
+9. RUN IDENTITY: allocate the run_id NOW (the documented
+   `YYYYMMDDTHHMMSSZ-<mission>-<6hex>` format; `<SUBSTRATE>/lib/fleet_run.py` has
+   `allocate_run_id`), export `FLEET_RUN_SHORT=<its 6-hex tail>` for every worker/validator
+   invocation, and write `RUN_ID:`/`RUN_SHORT:` into the ledger header — the env var is
+   volatile; the LEDGER HEADER survives. AT RESUME: re-derive FLEET_RUN_SHORT from the ledger
+   header (or the run-keyed ledger filename) BEFORE the first registry path resolution —
+   resuming unkeyed silently forks the run's ledger (issue #96).
 Everywhere below: REPO_ROOT = resolved path, MAINTAINER = from step 4, AUTHORSHIP_MODE = from
-step 8, BRANCH_PREFIX = from step 7, BASE = the integration branch the mission specifies (default:
-a NEW branch off the default branch at current HEAD).
+step 8, BRANCH_PREFIX = from step 7, RUN_SHORT = from step 9, BASE = the integration branch the
+mission specifies (default: a NEW branch off the default branch at current HEAD).
 
 ═══════════════════════════════════════════════════════════
 ORCHESTRATOR DIRECTIVE — fully autonomous.
@@ -614,7 +621,9 @@ placements + next ready wave + DECISIONS.md rationale — enough for a FRESH coo
 prior context to resume. On context pressure (degrading responses, lost handles, uncertainty about
 what's done): do NOT push through, do NOT ask the user; write a complete CONTEXT HANDOFF block into
 the ledger and state a fresh coordinator resumes from it.
-HANDOFF CARRIES: for each task carry branch, PR#, reviewed SHA, WT path or environment id, WT_CLEAN,
+HANDOFF CARRIES: the run's RUN_ID + RUN_SHORT + resolved LEDGER_DIR and ledger paths FIRST
+(a fresh coordinator re-exports FLEET_RUN_SHORT before touching the registry); then for each
+task carry branch, PR#, reviewed SHA, WT path or environment id, WT_CLEAN,
 MERGED, live worker handle, placement, and next action.
 PROACTIVE (don't wait for the cliff): the coordinator's own context grows with every wave. As each
 wave of tasks completes, roll its detail UP into a one-line-per-task summary in the ledger (task,
