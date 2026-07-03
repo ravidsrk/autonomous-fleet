@@ -250,6 +250,7 @@ that defines the Layer numbering the rest of the corpus cites; the blocks below 
   re-verified against source (`<SUBSTRATE>/verify_findings.py`; `references/review-findings.md`).
 - Layer 2 — runtime enforcement gate / strict mode: an opt-in, adapter-provided gate refuses to end
   a session without fresh on-disk evidence (`<SUBSTRATE>/stop_verify.py`; `references/strict-mode.md`).
+  SHIPPED FOR CLAUDE CODE ONLY today — no other adapter provides a gate (issue #83).
 - Layer 3 — anti-anchoring blind-fix: the reviewer commits its own fix before reading the candidate
   patch (`<SUBSTRATE>/verify_blind_fix.py`; `references/blind-fix.md`).
 - Layer 4 — run-archive: every run leaves a manifest-audited `.fleet/runs/<run_id>/` trail with
@@ -357,7 +358,10 @@ Reference implementation: the Claude Code adapter ships a Stop hook
 (`skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh`) that emits
 `{decision:"block", reason:"..."}` so Claude Code refuses to terminate. Install + configuration:
 see `references/strict-mode.md` and the claude-code adapter. Other runtimes can wire the same
-discipline to their own mechanism (Codex automations, a Grok scheduler, an Orca gate). Lineage:
+discipline to their own mechanism (Codex automations, a Grok scheduler, an Orca gate) — but NONE
+DOES today: Layer 2 is shipped for Claude Code only, and a run on any other adapter operates at
+the Loose level regardless of operator intent (record that in DECISIONS.md when strictness was
+requested). Lineage:
 claude-code-orchestra's stop-verify.sh (mtime-window scan) + multi-llm-plugin-cc's
 stop-review-gate-hook.mjs (the {decision:"block"} JSON contract), composed for the fleet's
 progress.md/readiness.md ledger format (see `docs/competitor-audit-2026-06-22.md` #2). Fail-open by

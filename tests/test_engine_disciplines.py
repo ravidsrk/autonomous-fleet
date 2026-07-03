@@ -708,3 +708,13 @@ def test_substrate_kill_switch_block_anchors_after_write_lock() -> None:
     kill_idx = text.index("SUBSTRATE KILL-SWITCH CONVENTION")
     handoff_idx = text.index("CONTEXT HANDOFF")
     assert lock_idx < kill_idx < handoff_idx
+
+
+def test_layer2_scoped_to_claude_code_only() -> None:
+    """Issue #83: Layer 2 (stop-gate) ships for Claude Code only; the engine
+    and strict-mode reference must say so rather than implying multi-runtime
+    enforcement."""
+    engine = (ROOT / "skills/autonomous-fleet-core/references/engine.md").read_text(encoding="utf-8")
+    assert "SHIPPED FOR CLAUDE CODE ONLY" in engine
+    strict = (ROOT / "skills/autonomous-fleet-core/references/strict-mode.md").read_text(encoding="utf-8")
+    assert "shipped for **Claude Code\n> only**" in strict or "Claude Code only" in strict
