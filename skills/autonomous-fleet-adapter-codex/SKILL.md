@@ -10,7 +10,7 @@ license: MIT
 compatibility: Requires Codex with goals enabled (features.goals), git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.2"
+  version: "1.1.3"
   fleet-component: "adapter"
 ---
 
@@ -153,6 +153,17 @@ Chain worker events with `--parent-event`. See `docs/guide/16-trace-schema.md`.
 
 - Default role mapping when mission does not override: Codex subagent builds, fresh subagent
   reviews (build-blind), coordinator or integrator opens/merges PRs.
+
+> **Reviewer isolation on this host — single-vendor caveat (issue #88).**
+> A fresh Codex subagent reviewing a Codex build is build-blind as
+> **instructed** isolation: fresh context, handed only the diff + acceptance
+> criteria, write-isolated. It is NOT the mechanical cross-vendor /
+> separate-process guarantee (Orca's topology) — a same-vendor reviewer can
+> share the builder's blind spots, and nothing in this runtime makes seeing
+> the build session physically impossible. Record
+> `reviewer_mode: same-vendor-instructed` in DECISIONS.md and the run
+> outcome. Scope of the "structural" claim: engine.md REVIEW step.
+
 - File ledger is sacred — update at every lifecycle change before yielding the turn.
 - One in-flight unit per hot file; parallelize across non-overlapping files.
 
