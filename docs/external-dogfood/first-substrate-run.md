@@ -37,7 +37,8 @@ either. Concretely, in this run:
 - **Build-blindness is structural only in the cross-vendor / separate-process (Orca) case.** The
   shipped headless path runs one agent process per mission; on a single session it is fresh-context
   isolation (instructed), not a mechanical guarantee. No external run-archive with `prs_merged > 0`
-  exists yet.
+  existed at the time of this run (true as of 2026-06-27; superseded 2026-07-03 — see
+  [gemoji-autonomous-run.md](gemoji-autonomous-run.md)).
 
 Treat this archive as gate-validation evidence (validators, trace emission, and `fleet_run`
 orchestration over a live session) — not as independent-review or autonomous-landing proof. See the

@@ -1,0 +1,1 @@
+BUILDER dispatch to codex exec -s workspace-write: close D-004..D-007 comment drift in script/release, lib/emoji.rb, lib/emoji/character.rb, Rakefile; comments only; no behaviour change; no commit; print unified diff.

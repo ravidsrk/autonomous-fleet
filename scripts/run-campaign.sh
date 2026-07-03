@@ -43,7 +43,7 @@ Options:
   --timeout SECONDS   Per-node runtime watchdog passed to run-mission-headless.sh
                       (default: its 5400; 0 disables)
   --skip-auth-check   Skip the per-node runtime auth pre-check
-  --yolo              Auto-approve agent tools (Grok only; default: off)
+  --yolo              Auto-approve agent tools (Grok: --yolo; Codex: --dangerously-bypass-approvals-and-sandbox; default: off)
   --no-yolo           Deprecated alias for default (no auto-approve)
   --yolo-untrusted-acknowledged  Required with --yolo when --repo is outside this clone (accepts RCE risk)
 
@@ -336,7 +336,17 @@ while [[ -n "$CURRENT" ]]; do
   fi
 
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "  would run: run-mission-headless.sh $RUNTIME $MISSION --repo $REPO_ROOT --max-turns $MAX_TURNS --dry-run"
+    # Print the REAL flag set the child would receive (incl. --yolo and its
+    # codex bypass mapping) — a dry-run that hides the dangerous flags
+    # defeats its purpose as the operator's preflight.
+    DRY_EXTRA=""
+    [[ -n "$TIMEOUT_SECS" ]] && DRY_EXTRA+=" --timeout $TIMEOUT_SECS"
+    [[ "$SKIP_AUTH_CHECK" -eq 1 ]] && DRY_EXTRA+=" --skip-auth-check"
+    [[ "$YOLO" -eq 1 ]] && DRY_EXTRA+=" --yolo"
+    [[ "$YOLO_ACK" -eq 1 ]] && DRY_EXTRA+=" --yolo-untrusted-acknowledged"
+    echo "  would run: run-mission-headless.sh $RUNTIME $MISSION --repo $REPO_ROOT --max-turns $MAX_TURNS${DRY_EXTRA} --dry-run"
+    [[ "$YOLO" -eq 1 && "$RUNTIME" == "codex" ]] && \
+      echo "  note:      --yolo maps to codex --dangerously-bypass-approvals-and-sandbox in the child"
     echo "  expect:    $READINESS_ABS with fleet-outcome.status done"
     if [[ -f "$ROOT/scripts/emit_headless_dryrun_trace.py" ]]; then
       SCRATCH_REPO="$(mktemp -d "${TMPDIR:-/tmp}/fleet-campaign-dryrun-XXXXXX")"

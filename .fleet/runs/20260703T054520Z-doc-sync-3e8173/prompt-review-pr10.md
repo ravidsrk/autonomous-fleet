@@ -1,0 +1,1 @@
+Fresh build-blind REVIEWER rounds 1+2: PR#10 (T-FINAL docs) diff + acceptance (claims verifiable from repo or explicitly routed; docs-only). Round 1 FAIL (self-attested merge state; stale-ref claims); round 2 PASS after fix commit 3c245f7.

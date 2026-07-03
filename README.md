@@ -72,19 +72,20 @@ Each run takes minutes to hours depending on scope. You get GitHub notifications
 
 # Try it
 
-> Install takes about a minute. In interactive dogfood runs the first PR has
-> shown up within minutes — but see the evidence status below: **no fully
-> autonomous end-to-end run on an external repo has landed a PR yet**
-> ([#76](https://github.com/ravidsrk/autonomous-fleet/issues/76) tracks it).
+> Install takes about a minute. In evidenced runs the first PR has shown up
+> within minutes.
 
-> **Evidence status (2026-07-03).** What's validated today: the validators,
-> archive/trace substrate, and campaign wiring (self-dogfood + gate-validation
-> on an external checkout — see
-> [`docs/external-dogfood/`](docs/external-dogfood/README.md)). What isn't
-> yet: an external run-archive with `prs_merged > 0`, and adversarial-bench
-> numbers. Claims in this README about unattended runs describe the design
-> and the interactive-dogfood behaviour, not yet an externally-evidenced
-> autonomous pipeline.
+> **Evidence status (2026-07-03).** The first external run with
+> autonomously-landed PRs exists:
+> [`doc-sync` on ravidsrk/gemoji](docs/external-dogfood/gemoji-autonomous-run.md)
+> — 3 PRs opened, build-blind reviewed (one genuine FAIL→fix→PASS round), and
+> merged by agents, with a validated run-archive
+> (`.fleet/runs/20260703T054520Z-doc-sync-3e8173/`). Topology: interactive
+> claude coordinator + sandboxed codex builders + fresh codex reviewers
+> (single-vendor caveat recorded). **Still open:** a single-process fully
+> headless external run (the sandbox-bypass launch needs explicit operator
+> opt-in) and adversarial-bench A/B numbers — see
+> [`docs/external-dogfood/`](docs/external-dogfood/README.md).
 
 ### Before you start
 
