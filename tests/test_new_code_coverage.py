@@ -860,7 +860,7 @@ def test_vf_verify_findings_doc_skips_non_dict_findings(tmp_path):
     skipped — the loop continues, total_findings reflects the list length but
     the non-dict contributes nothing to verified/unverified counts."""
     src = tmp_path / "code.py"; src.write_text("x = 1\n")
-    good = _vf_min_finding(evidence={"file_path": "code.py", "quoted_line": "x = 1"})
+    good = _vf_min_finding(evidence={"file_path": "code.py", "quoted_line": "x = 1", "line_number": 1})
     doc = {"findings": ["not a dict", good]}
     summary = _vf.verify_findings_doc(doc, repo_root=tmp_path)
     assert summary["total_findings"] == 2

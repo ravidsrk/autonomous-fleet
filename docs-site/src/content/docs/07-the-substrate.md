@@ -197,11 +197,14 @@ into `validate_findings_doc` (shape) and keeps it separate from source verificat
 malformed doc still produces a useful structural error before any grep happens.
 
 Pass 2 is source verification. For each finding, the verifier resolves `evidence.file_path` against
-`--repo` and runs a whitespace-tolerant grep for `evidence.quoted_line`. Whitespace-tolerant means
-runs of whitespace in both the quote and the source are collapsed to a single space before the
-substring comparison, so tab-versus-space and line-wrap differences do not cause a false miss while
-the integrity of the check stays intact. A finding whose quote is found gets `verified: true`. A
-finding whose quote is not found gets `verified: false` and a `verify_reason`.
+`--repo` and runs a whitespace-tolerant match for `evidence.quoted_line` (runs of whitespace in
+both the quote and the source collapse to a single space, so tab-versus-space and line-wrap
+differences do not cause a false miss). Specificity must come from the anchor or the length
+(issue #98): with `evidence.line_number` the quote must match within a ±2-line window of that line
+— a global match elsewhere does not rescue a wrong anchor; without it, the quote needs at least 12
+normalized characters, so a trivially short quote can no longer "verify" against any file. A
+finding whose quote passes gets `verified: true`; otherwise `verified: false` and a
+`verify_reason`.
 
 The `verified` and `verify_reason` fields are set by the verifier, NOT by the reviewer. A reviewer
 cannot mark their own finding verified. That is the whole point.
