@@ -93,6 +93,14 @@ the cross-cutting orderings that encode the Layers 1-3 disciplines:
    thing the mission does; anything mtime-after the readiness doc was
    written outside the run boundary and breaks the audit story.
 
+4. **`findings` from different producers must not be byte-identical** —
+   independent-review integrity. Two findings artifacts from DIFFERENT
+   producer slugs sharing one sha256 mean the "independent second pass"
+   (skeptic, second reviewer) was a copy, not a review. Same-producer
+   duplicates are not flagged by this invariant (shape checks own those).
+   Lineage: the quarantined first-substrate fixture shipped reviewer and
+   skeptic findings with one sha256 and passed validation (issues #77/#78).
+
 A manifest whose listed files don't satisfy these orderings FAILS
 validation, even when every checksum matches.
 

@@ -98,14 +98,24 @@ mutations:
 
   - id: run-archive-anti-anchoring-off
     file: scripts/lib/fleet_run.py
-    find: 'if blind_mt >= findings_mt:'
-    replace: 'if blind_mt >= findings_mt and False:'
+    # find refreshed for the strict-tie-break refactor (issue #77 PR): the
+    # comparison is now strictly-greater; the mutation still disables it.
+    find: 'if blind_mt > findings_mt:'
+    replace: 'if blind_mt > findings_mt and False:'
+    guards: [tests/test_run_archive.py]
+
+  - id: run-archive-independence-off
+    file: scripts/lib/fleet_run.py
+    find: 'if len(entries) > 1 and len(producers) > 1:'
+    replace: 'if False and len(entries) > 1 and len(producers) > 1:'
     guards: [tests/test_run_archive.py]
 
   - id: blind-fix-mtime-ordering-off
     file: scripts/lib/verify_blind_fix.py
-    find: 'findings_mtime is not None and mtime is not None and mtime >= findings_mtime'
-    replace: 'findings_mtime is not None and mtime is not None and mtime > findings_mtime'
+    # find refreshed for the strict-tie-break refactor: code is now strictly-
+    # greater; the mutation disables the ordering flag entirely.
+    find: 'if findings_mtime is not None and mtime is not None and mtime > findings_mtime:'
+    replace: 'if False and findings_mtime is not None and mtime is not None and mtime > findings_mtime:'
     guards: [tests/test_verify_blind_fix.py]
 
   - id: blind-fix-stub-detector-off

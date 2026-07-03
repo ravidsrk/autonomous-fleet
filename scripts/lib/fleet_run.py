@@ -847,6 +847,47 @@ def _validate_ordering(files: list[dict[str, Any]], where: str) -> list[str]:
     return errors
 
 
+def _validate_independence(files: list[dict[str, Any]], where: str) -> list[str]:
+    """Reject byte-identical `findings` artifacts from DIFFERENT producers.
+
+    Independence is only auditable at the artifact level: an "independent
+    second pass" (skeptic, second reviewer) that ships the same bytes as the
+    first reviewer is a copy, not a review. The quarantined first-substrate
+    fixture (issue #78) exhibited exactly this — reviewer and skeptic findings
+    sharing one sha256 — and nothing caught it (issue #77). Same-producer
+    duplicates are left to other checks; only cross-producer identity is an
+    independence violation.
+    """
+    errors: list[str] = []
+    by_sha: dict[str, list[tuple[str, str]]] = {}
+    for entry in files:
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("kind") != "findings":
+            continue
+        sha = entry.get("sha256")
+        path = entry.get("path", "")
+        producer = entry.get("producer", "")
+        if not isinstance(sha, str) or not SHA256_PATTERN.match(sha):
+            # Malformed sha256 is already a shape error; don't double-report.
+            continue
+        by_sha.setdefault(sha, []).append((str(path), str(producer)))
+
+    for sha, entries in sorted(by_sha.items()):
+        producers = {producer for _, producer in entries}
+        if len(entries) > 1 and len(producers) > 1:
+            listing = ", ".join(
+                f"{path!r} (producer={producer!r})" for path, producer in entries
+            )
+            errors.append(
+                f"{where}: independent-review violation: findings artifacts "
+                f"from different producers are byte-identical "
+                f"(sha256 {sha}): {listing}"
+            )
+
+    return errors
+
+
 MAX_ARCHIVE_BYTES = 5 * 1024 * 1024  # 5 MB cap; see references/run-archive.md
 
 
@@ -977,6 +1018,7 @@ def validate_manifest_payload(
     files = manifest.get("files")
     if isinstance(files, list) and files:
         errors.extend(_validate_ordering(files, label))
+        errors.extend(_validate_independence(files, label))
         errors.extend(_validate_size_cap(files, archive_root, label))
         if check_files_on_disk and archive_root is not None:
             errors.extend(_validate_files_on_disk(archive_root, files, label))
