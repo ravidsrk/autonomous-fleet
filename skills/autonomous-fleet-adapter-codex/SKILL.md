@@ -10,7 +10,7 @@ license: MIT
 compatibility: Requires Codex with goals enabled (features.goals), git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.4"
+  version: "1.1.5"
   fleet-component: "adapter"
 ---
 
@@ -40,7 +40,7 @@ Enable goals if `/goal` is missing: `codex features enable goals` or `features.g
 | SYNC_TASK_STATE | **degraded** | ledger-only (no durable native task view) |
 | SET_GOAL family (9–12) | real (interactive) / **inert headless** | `/goal` in the app; `codex exec` is single-shot |
 | LOOP_POLL | **degraded** | automations/cron; unverified end-to-end |
-| CONTINUE_WORKER | asserted | `codex exec resume <thread>` — verify on your CLI version (#91) |
+| CONTINUE_WORKER | real | `codex exec resume [SESSION_ID] [PROMPT]` (VERIFIED codex-cli 0.140.0, issue #91) |
 
 ## PRECONDITIONS
 
@@ -191,7 +191,7 @@ Chain worker events with `--parent-event`. See `docs/guide/16-trace-schema.md`.
   (`<BRANCH_PREFIX><slug>-<run_short>`, `../<repo>-<slug>-<run_short>`, run_short = the 6-hex tail of
   the run_id) so parallel runs/checkouts never collide on a bare slug.
   `<SUBSTRATE>/validate_namespacing.py` enforces this.
-- CONTINUE_WORKER(role, placement, session_handle): resume the worker thread (`codex exec resume <thread>`); else ALIAS to SPAWN_WORKER. Re-attach only for `live`-classified
+- CONTINUE_WORKER(role, placement, session_handle): resume the worker thread (`codex exec resume <SESSION_ID>`); else ALIAS to SPAWN_WORKER. Re-attach only for `live`-classified
   rows (per `recovery_scan.py`); never re-attach a session whose PR merged or branch is gone. When a
   row's `RESUME_COUNT` hits `MAX_RESUME_ATTEMPTS` (3), escalate instead of continuing.
 - Reviewer isolation: when role==reviewer, launch the worker via
