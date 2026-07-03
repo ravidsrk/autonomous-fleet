@@ -177,6 +177,9 @@ if not isinstance(data, dict):
 if "start" not in data:
     print("error: campaign missing 'start'", file=sys.stderr)
     raise SystemExit(1)
+if not isinstance(data.get("nodes"), dict):
+    print("error: campaign 'nodes' must be a mapping", file=sys.stderr)
+    raise SystemExit(1)
 allow_exploratory = data.get("allow_exploratory_nodes") is True
 for node, spec in (data.get("nodes") or {}).items():
     if not isinstance(spec, dict) or "mission" not in spec:
