@@ -19,7 +19,7 @@ INTEGRATOR: coordinator (claude) via gh — push, PR, conflict-aware merge
 
 | Task | Branch | PR | REVIEWED_SHA | WRITTEN | PR_OPEN | REVIEWED | MERGED |
 |------|--------|----|--------------|---------|---------|----------|--------|
-| T-AUDIT | — | — | — | t | — | — | — |
+| T-AUDIT |  | — | — | t | — | — | — |
 | T-FIX-contributing (D-001..D-003) | fleet/doc-sync-contributing-3e8173 | #8 | b0bd3865d15cfe1c68a621f305dd80e85bdaebf6 | t | t | t (PASS) | t (merged 22f79dc; remote branch deleted at merge) |
 | T-FIX-comments (D-004..D-007) | fleet/doc-sync-comments-3e8173 | #9 | f241925fe0bfe9db7d03b37bc6089fa70b81b7db | t | t | t (PASS) | t (merged 614946b; remote branch deleted at merge) |
 | T-FINAL | fleet/doc-sync-final-3e8173 | #10 | see .fleet run archive sha-pin-pr10.json | t | t | pending at doc-write time | pending at doc-write time |
