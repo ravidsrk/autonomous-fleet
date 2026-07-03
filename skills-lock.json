@@ -46,8 +46,8 @@
     "autonomous-fleet-core": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.2.7",
-      "computedHash": "68dc54b07033855ecb56a6018c4b274073aa84458a364d4baac9b4cfe1e1e684"
+      "version": "1.2.8",
+      "computedHash": "02326dc8c9944abde4a5e208b4da2e6f2e26bdb32c2cc3fe8680d5e5ed96e38b"
     },
     "doc-sync": {
       "source": "ravidsrk/autonomous-fleet",

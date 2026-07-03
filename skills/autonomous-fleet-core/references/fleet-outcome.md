@@ -74,6 +74,14 @@ to jump straight to the archive without re-deriving the run_id from filesystem s
 Then markdown body: human summary, indexes, **Recommended next missions** table (duplicate of
 `deferred_missions` for readers).
 
+### degraded_mode (optional, closed enum)
+
+`degraded_mode: no_scm_auth` — set by the engine PRECONDITIONS when `gh` was
+unauthenticated and the run detoured to local merge-commits. The PR/review
+pipeline never ran, so this mode is **incompatible with `status: done`**
+(validator-enforced; report `partial`). Unknown mode strings are rejected —
+the enum is closed so a typo cannot slip past the done-gate.
+
 ## Mission-specific metrics
 
 Add under `fleet-outcome.metrics`. Shipped missions are validated by the
