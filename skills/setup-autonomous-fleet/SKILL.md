@@ -32,8 +32,9 @@ Read what already exists; do not assume:
 
 ### 2. Present findings — one section at a time
 
-Walk the user through **three decisions** sequentially. Each section: short explainer, choices,
-default.
+Walk the user through the sections sequentially — A–C are decisions, D is an
+optional install, E is detect-and-record only. Each section: short explainer,
+choices, default.
 
 **Section A — Runtime adapter.**
 
