@@ -102,7 +102,10 @@ CLOSED via PR#n`.
 
   **PR sizing (issue #100 — the seam that decides spam vs blob):**
   - A "doc area" is one of: one top-level doc file (README, CONTRIBUTING, a
-    single `docs/<file>.md`), one `docs/` subdirectory, or one code module's
+    single `docs/<file>.md`), one `docs/` subdirectory, one docs-site content
+    section (e.g. one `docs-site/src/content/docs/<chapter>.md` — but if the
+    site copy is GENERATED from `docs/`, fix the source and re-run the sync;
+    never hand-edit the generated copy), or one code module's
     comments/docstrings. Group the frozen DRIFT INDEX rows by that unit.
   - Target diff ≤ ~400 changed lines per PR. An area whose rows exceed that:
     split by file. An area whose fix is < ~10 lines: MERGE it with another
@@ -118,9 +121,9 @@ CLOSED via PR#n`.
   **DRIFT INDEX row schema (frozen at T-AUDIT; the reviewer verifies against
   THESE columns):**
 
-  | ID | Doc file:line | Doc says | Code truth (file:line) | Fix area | State |
+  | ID | Doc file:line | Doc says | Code truth | Fix area | State |
   |----|---------------|----------|------------------------|----------|-------|
-  | D-001 | `CONTRIBUTING.md:11` | "Ruby 1.9+" | CI tests 2.7/3.0/3.1 (`.github/workflows/test.yml:10`) | contributing | OPEN → CLOSED via PR#n |
+  | D-001 | `CONTRIBUTING.md:11` | "Ruby 1.9+" | CI tests 2.7/3.0/3.1 (cite code file:line)  | contributing | OPEN → CLOSED via PR#n |
 - **T-FINAL [@claude]** — verify every DRIFT-INDEX item is CLOSED, all example commands run,
   all internal links resolve, no stale instruction remains. Output `docs/doc-sync-readiness.md`
   starting with **`fleet-outcome` YAML** (`drift_open`, `code_bug_findings` in metrics; see
