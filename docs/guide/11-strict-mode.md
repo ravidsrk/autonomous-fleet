@@ -69,7 +69,7 @@ The hook scans for any of these evidence kinds, all within the freshness window:
   wt_clean_flag   WT_CLEAN=true in a progress ledger touched in the window
   e2e_verified    e2e_verified: true in a readiness doc touched in the window
   status_done     status: done in a readiness doc touched in the window
-  verify_summary  a passing summary from scripts/verify_findings.py
+  verify_summary  a passing summary from <SUBSTRATE>/verify_findings.py
   test_artifact   test-runner output (.pytest_cache, coverage/, junit XMLs)
   e2e_artifact    end-to-end artifacts (Playwright PNGs, trace screenshots)
 ```
@@ -186,11 +186,12 @@ The next Claude Code session in this repo runs the gate.
 ## Verifying you actually enabled it
 
 Installing a hook and having the hook actually fire are two different things. Run
-this check after install. It pipes an empty CC payload through the wrapper and
-expects an `ALLOW`/verdict line on stderr with no error:
+this check after install. It pipes a minimal CC payload through the wrapper with
+`STOP_VERIFY_EXPLAIN=1` (the verdict line only prints when explain is on) and
+expects a BLOCK/ALLOW verdict on stderr with no "not found" warning:
 
 ```bash
-echo '{"cwd":"."}' | bash "$HOOKS/stop-verify.sh"   # HOOKS from the install section above
+echo '{"cwd":"."}' | STOP_VERIFY_EXPLAIN=1 bash "$HOOKS/stop-verify.sh"   # HOOKS from the install section
 ```
 
 What you should see:
@@ -281,7 +282,7 @@ To unblock:
   - Run the test suite end-to-end (pytest / jest / cargo test / go test).
   - Write the readiness doc with `status: done` (and `e2e_verified: true`
     if the mission requires it).
-  - Or, for verified review missions, run scripts/verify_findings.py
+  - Or, for verified review missions, run <SUBSTRATE>/verify_findings.py
     --summary-out.
 
 If this is a no-edit turn (status/diagnostic only), set
