@@ -17,7 +17,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.1.2"
+  version: "1.2.0"
   fleet-component: "core"
 ---
 # Autonomous Fleet — Core Engine (tool-agnostic)
@@ -56,6 +56,16 @@ Every run that emits first-class artifacts (findings, blind-fix files, verifier 
 manifest-audited trail under `.fleet/runs/<run_id>/`. See
 [references/run-archive.md](references/run-archive.md) for the manifest scheme and the
 `archive_enabled` gate (a `status: done` outcome is rejected if its archive doesn't validate).
+
+**Substrate distribution (skills-install mode).** The Python enforcement substrate (the
+validators above plus `lib/`) ships WITH this skill under
+[`assets/substrate/`](assets/substrate/) — on a skills-installed repo it lives at
+`.agents/skills/autonomous-fleet-core/assets/substrate/` and each CLI runs standalone with
+`python3` (deps: `assets/substrate/requirements.txt`; version pinned in
+`assets/substrate/substrate-manifest.json`). In a framework clone, prefer the canonical
+`scripts/` copies. Shell wrappers (`preflight.sh`, `validate-fleet-outcome.sh`,
+`run-sandboxed.sh`) remain clone-only for now. `setup-autonomous-fleet` records the resolved
+`SUBSTRATE_PATH` in `docs/agents/fleet-config.md`.
 
 Ports of Agent Orchestrator mechanisms (nudge dedup, stacked PR, hook-signal, review supersede)
 without adopting AO's daemon: [references/ao-adoptions.md](references/ao-adoptions.md).

@@ -358,7 +358,7 @@ Individual validators:
 ./scripts/validate-fleet-outcome.sh                # readiness doc fleet-outcome YAML
 ./scripts/validate-goal-condition.sh --scan-docs   # /goal binding
 python scripts/validate_run_archive.py             # Layers 3 & 4: manifest + sha256 + mtime ordering (the blind-fix anti-anchoring ordering IS Layer 3)
-pytest tests/                                      # full suite (67 files, 1403 tests; 100% line coverage of the Python tooling, scripts/*.py — shell is validated by behavioral + mutation tests, not line coverage)
+pytest tests/                                      # full suite (68 files, 1419 tests; 100% line coverage of the Python tooling, scripts/*.py — shell is validated by behavioral + mutation tests, not line coverage)
 
 # Operator gates (run on a specific run-id)
 python scripts/verify_findings.py \
@@ -429,6 +429,7 @@ autonomous-fleet/
 │   │   │   ├── strict-mode.md           # Layer 2: stop-verify Claude Code hook (opt-in)
 │   │   │   └── run-archive.md           # Layer 4: .fleet/runs/<run_id>/ manifest scheme
 │   │   └── assets/
+│   │       ├── substrate/                          # bundled Python validators + lib (travels with npx skills; issue #80)
 │   │       ├── fleet-review-findings.schema.json   # Layer 1 schema
 │   │       ├── fleet-review-findings.example.json
 │   │       ├── fleet-run-manifest.schema.json      # Layer 4 manifest schema
@@ -460,7 +461,7 @@ autonomous-fleet/
 │   ├── campaigns/                       # repo-health, ship-with-proof, align-then-ship, quality-gate, secure-ship, handoff-to-product
 │   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, emit_trace, analyze_seat, analyze_cost, locks, substrate_disable, stop_verify, mission_registry, venv-bootstrap
 │   └── install-skills.sh
-├── tests/                               # 67 test files, 1403 tests; validators + engine doctrine + 4-layer substrate
+├── tests/                               # 68 test files, 1419 tests; validators + engine doctrine + 4-layer substrate
 ├── .agents/skills/                      # installed skill copies (gitignored)
 └── skills-lock.json                     # lockfile for npx skills
 ```
