@@ -38,19 +38,34 @@ set -uo pipefail
 # Operators set AUTONOMOUS_FLEET_HOME to the checkout root. If unset, we
 # walk up from this script's location — works when the hook is installed
 # as a SYMLINK from .claude/hooks/ to skills/autonomous-fleet-adapter-claude-code/assets/hooks/.
-FLEET_HOME="${AUTONOMOUS_FLEET_HOME:-}"
-if [ -z "$FLEET_HOME" ]; then
-  this_script="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || python3 -c "import os,sys; print(os.path.realpath(sys.argv[1]))" "${BASH_SOURCE[0]}")"
-  # this_script -> skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh
-  # repo root   -> 4 levels up
-  FLEET_HOME="$(cd "$(dirname "$this_script")/../../../.." && pwd)"
-fi
-
-CLI="$FLEET_HOME/scripts/stop_verify.py"
-if [ ! -x "$CLI" ] && [ ! -f "$CLI" ]; then
+# Candidates, first hit wins (issue #82 — skills-install repos have no
+# framework clone; the bundled substrate ships the CLI):
+#   1. $FLEET_SUBSTRATE/stop_verify.py   — explicit substrate dir
+#   2. $AUTONOMOUS_FLEET_HOME/scripts/…  — explicit clone root (legacy)
+#   3. <cwd>/.agents/skills/autonomous-fleet-core/assets/substrate/…
+#      (Claude Code runs Stop hooks with cwd = the worker repo)
+#   4. walk-up from this script: the clone's scripts/, then — when the
+#      wrapper was copied into <repo>/.claude/hooks/ — that repo's
+#      .agents substrate (walk-up lands on the repo root in that layout)
+this_script="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || python3 -c "import os,sys; print(os.path.realpath(sys.argv[1]))" "${BASH_SOURCE[0]}")"
+walkup_root="$(cd "$(dirname "$this_script")/../../../.." && pwd)"
+hookdir_root="$(cd "$(dirname "$this_script")/../.." && pwd)"  # <repo>/.claude/hooks -> <repo>
+CLI=""
+for candidate in \
+  "${FLEET_SUBSTRATE:+$FLEET_SUBSTRATE/stop_verify.py}" \
+  "${AUTONOMOUS_FLEET_HOME:+$AUTONOMOUS_FLEET_HOME/scripts/stop_verify.py}" \
+  "$PWD/.agents/skills/autonomous-fleet-core/assets/substrate/stop_verify.py" \
+  "$walkup_root/scripts/stop_verify.py" \
+  "$hookdir_root/.agents/skills/autonomous-fleet-core/assets/substrate/stop_verify.py"; do
+  if [ -n "$candidate" ] && [ -f "$candidate" ]; then
+    CLI="$candidate"
+    break
+  fi
+done
+if [ -z "$CLI" ]; then
   # Same fail-open discipline as the Python CLI: a missing CLI must NOT
   # trap a session. Log + ALLOW (silent stdout).
-  echo "stop-verify: warning — CLI not found at $CLI; allowing session end." >&2
+  echo "stop-verify: warning — stop_verify.py not found (tried FLEET_SUBSTRATE, AUTONOMOUS_FLEET_HOME, .agents substrate, clone walk-up); allowing session end." >&2
   exit 0
 fi
 
@@ -73,4 +88,4 @@ fi
 # "$@" is forwarded last so operator-supplied flags (`--repo`, `--explain`,
 # etc., useful when invoking the wrapper by hand from a terminal) override
 # our env-derived defaults via argparse's last-wins behavior.
-exec python3 "$CLI" --window-min "$WINDOW_MIN" "${EXTRA_ARGS[@]}" "$@"
+exec python3 "$CLI" --window-min "$WINDOW_MIN" ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} "$@"
