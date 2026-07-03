@@ -10,7 +10,7 @@ license: MIT
 compatibility: Requires Codex with goals enabled (features.goals), git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.3"
+  version: "1.1.4"
   fleet-component: "adapter"
 ---
 
@@ -24,6 +24,23 @@ self-orientation (default `fleet/`; recorded in DECISIONS.md).
 
 Enable goals if `/goal` is missing: `codex features enable goals` or `features.goals = true` in
 `config.toml`.
+
+## PRIMITIVE SUPPORT MATRIX (issue #93 — honest per-primitive status)
+
+| Primitive | Status | Mechanic |
+|-----------|--------|----------|
+| PLACE | real | `git worktree add` (+ optional container-use) |
+| SPAWN_WORKER | real | fresh `codex` session / `codex exec` (headless) |
+| DISPATCH | real | role-scoped prompt |
+| WAIT | **degraded** | no blocking event API — `poll-ledger.sh` ledger polling |
+| INSPECT | real | shell + `gh pr list` |
+| WORKER_DONE | real | worker return + ledger write |
+| ASK / REPLY | **absent** | no blocking worker→coordinator question exists on this host; workers get DECISION DEFAULTS up front and write `BLOCKED` to the ledger when a question is unanswerable — a documented FALLBACK, not the engine primitive |
+| OPEN_PR / MERGE_PR / CLEANUP | real | `gh` + worktree remove |
+| SYNC_TASK_STATE | **degraded** | ledger-only (no durable native task view) |
+| SET_GOAL family (9–12) | real (interactive) / **inert headless** | `/goal` in the app; `codex exec` is single-shot |
+| LOOP_POLL | **degraded** | automations/cron; unverified end-to-end |
+| CONTINUE_WORKER | asserted | `codex exec resume <thread>` — verify on your CLI version (#91) |
 
 ## PRECONDITIONS
 

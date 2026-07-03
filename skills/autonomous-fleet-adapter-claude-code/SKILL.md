@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Claude Code with Task tool, git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.4"
+  version: "1.1.5"
   fleet-component: "adapter"
 ---
 
@@ -28,6 +28,23 @@ This adapter resolves the core's PRIMITIVES to Claude Code mechanics. Native blo
 queues now exist under agent teams (SendMessage, automatic delivery, idle notifications); where a
 host has them off, the adapter substitutes the file ledger + inbox markers as the FALLBACK, and
 says so.
+
+## PRIMITIVE SUPPORT MATRIX (issue #93 — honest per-primitive status)
+
+| Primitive | Status | Mechanic |
+|-----------|--------|----------|
+| PLACE | real | `git worktree add` (+ optional container-use) |
+| SPAWN_WORKER | real | Task tool / background subagent |
+| DISPATCH | real | subagent prompt |
+| WAIT | tiered | TEAMS tier real (needs `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`); SUBAGENT tier foreground-blocking; INBOX tier **degraded** (file markers) |
+| INSPECT | real | Bash + `gh pr list` |
+| WORKER_DONE | real | return value / SendMessage |
+| ASK / REPLY | tiered | real ONLY in TEAMS tier; a background subagent cannot block the coordinator — DECISION DEFAULTS fallback otherwise |
+| OPEN_PR / MERGE_PR / CLEANUP | real | `gh` + worktree remove |
+| SYNC_TASK_STATE | **degraded** | ledger authoritative; TodoWrite is per-session |
+| SET_GOAL family (9–12) | real | `/goal` (v2.1.139+) |
+| LOOP_POLL | real | `/loop` (CI/health polling only) |
+| CONTINUE_WORKER | aliased | → SPAWN_WORKER (no documented restore) |
 
 ## PRECONDITIONS (the core calls for these; here's the Claude Code form)
 A git repo (REPO_ROOT resolvable) · `gh auth status` via Bash (else local merge-commits into BASE)
