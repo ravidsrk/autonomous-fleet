@@ -1,5 +1,24 @@
 # Engine specification
 
+## Contents (issue #84 — slim core + trigger-loaded references)
+
+CORE (this file, always read): SELF-ORIENTATION · ORCHESTRATOR DIRECTIVE ·
+COORDINATOR BEHAVIORS · AUTONOMY ENFORCEMENT · SUBSTRATE RESOLUTION · the
+Layer index · RESULT-STATE GATE · RUNTIME ENFORCEMENT GATE · ARCHIVE_ENABLED ·
+CONTEXT HANDOFF · PLAN/DAG GATE · FROZEN SCOPE + EVID + LANE PATTERN · WORKER
+PLACEMENT + WORKER SKILLS · RESEARCH DISCIPLINE · PR-PER-TASK PIPELINE + DONE
+CONDITION + spot-checks · TRUST BOUNDARIES · SAFETY RAILS · SECRET HYGIENE ·
+COMMIT & AUTHORSHIP · PRECONDITIONS.
+
+TRIGGER-LOADED (each stub below names its trigger; read the reference when it
+applies): root-cause depth → `review-findings.md` · anti-anchoring →
+`blind-fix.md` · inflation post-mortem → `inflation-postmortem.md` · signal
+reconciliation → `signals.md` · AO mechanisms → `ao-adoptions.md` · trace →
+`trace.md` · write-locks/ledger keying → `locks.md` · cost routing →
+`cost-routing.md` · risk tiers → `risk-tiers.md` · kill-switch registry →
+`substrate-disable-knobs.md` · shared adapter contract →
+`adapter-contract.md`.
+
 Three things compose every run:
 - **This CORE** — the method (below). Tool-agnostic.
 - **A MISSION** — the work: goal, role pipeline, phase/task structure, ledger filename + flags,
@@ -279,71 +298,15 @@ that defines the Layer numbering the rest of the corpus cites; the blocks below 
 ═══════════════════════════════════════════════════════════
 ROOT_CAUSE_DEPTH: a fix at the wrong call-stack depth is a symptom fix, no matter how green tests are.
 ═══════════════════════════════════════════════════════════
-EVID asks "does the original reproduction stop reproducing?" e2e_verified asks "does the real
-end-to-end flow work?" ROOT_CAUSE_DEPTH asks an upstream question both can MISS: is the patch at
-the SAME call-stack depth as the bug's root cause, or does it guard a symptom one frame above?
-A null guard at the caller silences the crash and turns CI green but leaves the source of the null
-intact — any other caller of that source hits the same bug. A test that only exercises the patched
-path keeps EVID=true forever even though the fix is wrong.
-
-HARD RULE — symptom-fix detection. The reviewer marks a finding `category: root_cause_depth` and
-verdict `request_changes` if ANY of these match, EVEN WHEN TESTS PASS:
-
-- The patch is at a different/shallower location than the reviewer's identified root cause.
-- The reviewer finds itself thinking "this doesn't fix the root cause but it prevents the crash."
-- The patch adds a guard/check/conversion at the point of USE instead of fixing the point of
-  CREATION.
-- The patch fixes ONE manifestation but the root cause can trigger the same issue via other paths
-  (a `cascade_impact` field naming those other paths is REQUIRED when this finding is filed —
-  a root-cause-depth finding without a cascade is almost always a symptom-fix finding in disguise,
-  miscategorised).
-
-Where this lands mechanically: in the schema-verified findings shape (see
-`references/review-findings.md`), `category: root_cause_depth` REQUIRES `cascade_impact`. A
-finding tagged `root_cause_depth` with no cascade is a schema violation — the verifier rejects it
-the same way it rejects an unverified `quoted_line`. The builder fixes the cited POINT OF CREATION
-and re-runs EVID across every cascade path named in `cascade_impact`; closing only the originally
-reported path does not satisfy the finding.
-
-Lineage: SWE-Review (Wang et al., 2026) `prompts/agentic_review.md` HARD RULE, the most-cited
-reviewer rubric in the academic literature. Composed for the fleet via the `cascade_impact`
-required-field gate so the discipline is schema-enforced rather than prose-aspirational. See
-`docs/competitor-audit-2026-06-22.md` #3.
-
+TRIGGER: reviewing any fix/patch (adversarial-review-and-fix and future reviewer phases).
+CORE RULE: a patch at a shallower call-stack depth than the root cause is a symptom fix EVEN WHEN TESTS PASS — reviewer files `category: root_cause_depth` (REQUIRES `cascade_impact`; schema-enforced) and returns request_changes.
+FULL DOCTRINE (read when the trigger applies): `references/review-findings.md`.
 ═══════════════════════════════════════════════════════════
 ANTI-ANCHORING: reviewer commits its own fix BEFORE reading the candidate patch.
 ═══════════════════════════════════════════════════════════
-The cross-vendor build-blind reviewer rule says the reviewer never sees the build conversation.
-That's necessary but not sufficient: even WITH no build context, a reviewer handed a patch and
-asked "is this correct?" anchors on whatever it sees. The reviewer rationalises the existing fix,
-because rationalising an artifact is cognitively cheaper than independently re-deriving the
-correct one. SWE-Review's empirical result: reviewers given the same patch in two orders — patch
-first vs root-cause-first — produce systematically different decisions on the same case.
-
-The mechanical countermeasure: BEFORE the reviewer opens the candidate diff, it writes its
-INDEPENDENT proposed fix to `.fleet/runs/<run_id>/reviewer-blind-fix-<finding-id>.md` (one file
-per reviewer in multi-reviewer setups). The blind fix names:
-
-- The POINT OF CREATION (file:function:line — same call-stack-depth language as ROOT_CAUSE_DEPTH).
-- The shape of the change the reviewer would make (a paragraph; no code required).
-- The reviewer's pre-commit confidence (0–100).
-
-ONLY THEN does the reviewer open the candidate patch. The review then compares the candidate to
-its own pre-committed blind fix and writes findings accordingly. A candidate that agrees with the
-blind fix at the same call-stack depth gets weight; a candidate at a different depth triggers the
-ROOT_CAUSE_DEPTH HARD RULE above.
-
-The blind-fix file is a first-class fleet artifact: it lands in `.fleet/runs/<run_id>/`
-alongside the findings JSON, ships with the readiness doc's archive bundle, and is auditable
-post-hoc. A review run whose blind-fix file is missing or is mtime-AFTER the candidate-findings
-file is structurally suspect — the protocol requires blind-fix BEFORE patch read, and the
-filesystem must reflect that order.
-
-Lineage: SWE-Review's "Step 3: Write YOUR Proposed Fix (BEFORE reading the patch)" prompt step
-(`prompts/agentic_review.md` Step 3). The committed-in-writing-first technique is the
-proven anti-anchoring scaffold from the academic literature. See
-`docs/competitor-audit-2026-06-22.md` #4.
-
+TRIGGER: any reviewer pass over a candidate patch.
+CORE RULE: the reviewer writes its INDEPENDENT blind fix to `.fleet/runs/<run_id>/reviewer-blind-fix-<id>.md` BEFORE opening the candidate diff; the archive's mtime ordering makes violations tamper-evident.
+FULL DOCTRINE (read when the trigger applies): `references/blind-fix.md`.
 ═══════════════════════════════════════════════════════════
 RESULT-STATE TERMINATION GATE: green checks are not enough.
 ═══════════════════════════════════════════════════════════
@@ -459,141 +422,35 @@ See `docs/competitor-audit-2026-06-22.md` #8.
 ═══════════════════════════════════════════════════════════
 INFLATION POST-MORTEM: break the "we already shipped that" trap on re-runs.
 ═══════════════════════════════════════════════════════════
-When a prior run claimed completion but the RESULT-STATE TERMINATION GATE later proved incomplete
-(green CI but the real end-to-end flow aborted, untested security leaks, half-built screens reached
-via the live app), the next run starts with a brief INFLATION POST-MORTEM before BOOTSTRAP. Re-read
-the prior readiness / fleet-outcome doc; identify every claim that was green-CI-but-not-real-result-
-state (a feature that built but did not work end to end, a "passing" suite that masked a missing
-flow, a "DONE" that survived only because the unit test stubbed the failing dependency); list those
-items as the FIRST entries in the new CLOSE-INDEX with the prior PR# noted alongside the
-re-confirmed OPEN state. This is structural anti-inflation: an autonomous run will otherwise believe
-its own prior green checkmarks and skip them as "already done." Source: Stage-9 prompt 24 (Aula
-Completion-for-Real — the anti-inflation run; prompts.md L3013 and L3061 — "anti-inflation has to
-be structural; an autonomous run will otherwise believe its own green checkmarks").
-
+TRIGGER: a prior run claimed completion that the RESULT-STATE gate later disproved.
+CORE RULE: before BOOTSTRAP, re-read the prior readiness doc and list every green-CI-but-not-real claim as the FIRST entries of the new CLOSE-INDEX.
+FULL DOCTRINE (read when the trigger applies): `references/inflation-postmortem.md`.
 ═══════════════════════════════════════════════════════════
 SIGNAL RECONCILIATION — three signals, never transition on one read (from Agent Orchestrator;
 Apache 2.0, Copyright Untrivial — see ATTRIBUTIONS.md).
 ═══════════════════════════════════════════════════════════
-Three signals report task health and they DISAGREE in normal operation: worker-liveness (INSPECT),
-the ledger flag you wrote, and the external SCM/CI fact (`gh pr view` state, CI conclusion). A
-worker process can be dead while the runtime is alive, the ledger can say PR_OPEN while CI already
-went red, the SCM can show merged while your flag still reads REVIEWED. Do NOT advance, escalate, or
-declare a task stuck on the FIRST read that disagrees.
-- ANTI-FLAP (require N consistent polls or a timeout): hold a contested task in a DETECTING state;
-  only transition after N consecutive consistent polls (default 3) OR a hard timeout (default 5 min)
-  elapses, whichever first. Key the counter to an evidence HASH of the contested signals (strip
-  volatile fields like timestamps/activity counters before hashing): unchanged WEAK evidence
-  re-presenting must NOT reset the counter, and genuinely NEW evidence resets it to 1. This stops a
-  flapping signal from oscillating a task between states or resetting the stuck clock forever.
-- EXTERNAL FACT OVERRIDES THE LEDGER (re-verify before any terminal flag): before writing ANY
-  terminal flag (MERGED / DONE), re-verify the external fact directly (`gh pr view <n>
-  --json state,mergedAt`, CI conclusion) and let it OVERRIDE the ledger when they disagree. If the
-  SCM says merged but your flag does not, the SCM wins: record MERGED. If your flag says merged but
-  the SCM says open/closed-unmerged, the SCM wins: do NOT mark DONE, record the discrepancy in
-  DECISIONS.md, and re-drive the task. The ledger is your loop memory; the SCM/CI is ground truth at
-  a terminal edge.
-- A signal disagreement is a DETECTING checkpoint, not a failure. Reassign only after the 3-failure
-  circuit-breaker, a confirmed worker exit, or the DETECTING timeout — never on a single poll.
-
+TRIGGER: any WAIT loop, task-health decision, or terminal-flag write.
+CORE RULES: never transition on ONE read (DETECTING state: 3 consistent polls or 5-min timeout, evidence-hash keyed); before ANY terminal flag re-verify the external SCM/CI fact and let it OVERRIDE the ledger.
+FULL DOCTRINE (read when the trigger applies): `references/signals.md`.
 ═══════════════════════════════════════════════════════════
 AO MECHANISMS — adopted from Agent Orchestrator (AgentWrapper/agent-orchestrator;
 Apache 2.0, Copyright Untrivial — see references/ao-adoptions.md and ATTRIBUTIONS.md).
 ═══════════════════════════════════════════════════════════
-See `references/ao-adoptions.md` for the full port map. These four close the remaining
-mechanism gaps without adopting AO's daemon/UI:
-
-PR-FEEDBACK NUDGE DEDUP (AO sendOnce): when routing CI failures, review comments, or
-merge-conflict prompts to a worker, persist `.fleet/runs/<run_id>/nudge-state.json`
-{pr_url, entries:[{key, kind, signature, attempts}]}. Before sending, check should_send_nudge;
-after sending, record_nudge. Identical evidence (same signature) must NOT re-nudge; review kinds
-cap at 3 attempts. Validated by `python3 <SUBSTRATE>/verify_nudge_dedup.py`.
-
-STACKED-PR STATUS (AO status.go): a session may own multiple open PRs. Aggregate with worst-wins
-severity. A child PR whose target_branch equals a sibling's source_branch while that parent is
-still open is BLOCKED: suppress non-actionable child signals (mergeable/approved/review-pending)
-but still surface ci_failed/changes_requested/draft. Merge-conflict nudges fire only for the stack
-bottom. Snapshot to `pr-snapshot.json`; validated by `python3 <SUBSTRATE>/verify_stacked_pr.py`.
-
-HOOK-SIGNAL HEALTH (AO no_signal): adapters with `activity_hooks: true` in the requires block
-install a hook pipeline. After spawn/restore, 90s without any hook callback means no_signal, not
-confident idle. INSPECT must record details.signal_state in trace events; `python3 <SUBSTRATE>/verify_hook_signal.py`
-FAILs idle claims past grace with no callback.
-
-REVIEW SUPERSEDE (AO review run supersede): when HEAD moves after a PASS, write a NEW sha-pin.json
-(or sha-pins/<id>.json) for the new SHA and mark the prior approve record superseded: true. At most
-one active approve per branch; `<SUBSTRATE>/verify_sha_pin.py` enforces both HEAD match and supersede invariants.
-
+TRIGGER: routing PR feedback (nudge dedup), multi-PR sessions (stacked status), activity_hooks adapters (hook-signal), or HEAD moving after a PASS (review supersede).
+CORE RULE: identical evidence never re-nudges; a PASS binds to its SHA and is superseded when HEAD moves.
+FULL DOCTRINE (read when the trigger applies): `references/ao-adoptions.md`.
 ═══════════════════════════════════════════════════════════
 TRACE EMISSION — the dashboard contract (vibe-kanban, Agent View, custom).
 ═══════════════════════════════════════════════════════════
-The trace stream is ONE JSONL line per state transition in the ledger, written to
-`.fleet/runs/<run_id>/trace.jsonl`. The schema (`assets/fleet-trace.schema.json`, pinned at
-`schema_version: "1.0"`) is the CONTRACT: vibe-kanban, Claude Code Agent View, and custom dashboards
-are interchangeable consumers — owning the format, not the renderer, is what keeps live observability
-free of UI debt. Landscape Gap 8 ("no live dashboard") is closed by emitting the stream and letting
-existing readers render it, not by building a GUI.
-- Every state transition that writes to the ledger SHOULD emit a trace event BEFORE the ledger
-  write commits (trace first, ledger second) so a crashed coordinator rarely leaves a row with no
-  externally-visible cause. AUTHORITY: the LEDGER is the authoritative loop state; the trace is
-  best-effort causal TELEMETRY. (These were previously stated the other way around in this block
-  while the failure-handling bullet below made emission fail-soft — an internal contradiction,
-  issue #85. Telemetry that can be skipped on I/O error cannot be a source of truth.)
-- The mechanism is the `emit_trace.TraceEmitter` library, which the coordinator and each adapter call
-  at every transition; `fleet_run.write_manifest(..., emitter=...)` is the reference in-code
-  integration (it emits the `T-FINAL` archive transition, test + mutation covered). Enforcement is the
-  schema + `emit_trace.validate_event` + the schema-drift test + the trace mutations, NOT auto-wiring,
-  because the file ledger is coordinator-driven.
-- CAUSAL LINEAGE: `emit()` stamps every event with a unique `id` and RETURNS it; a worker's
-  `COMMIT`/`INSPECT`/`WORKER_DONE` MUST set `parent_event` to that worker's `SPAWN_WORKER` id, so a
-  consumer can reconstruct one worker's lifeline. `fleet_run` wires the reference SPAWN→COMMIT edge;
-  `id` is optional in the schema (non-breaking) but always generated.
-- The `details` object is free-form but MUST NOT carry secrets or host-absolute paths; reference
-  sensitive evidence by `evidence_hash`. The stream is meant for publication to external dashboards.
-- Schema is versioned (`schema_version: "1.0"`) and breaking changes require a NEW `$id`; consumers
-  pin to the version they understand. Adding a primitive, role, or status to the enum is a breaking
-  change for the same reason — closed enums are part of the contract.
-- The trace `primitive`/`role` enums are trace-specific vocabulary — overlapping with, but NOT
-  identical to, the 13 coordinator PRIMITIVES. The trace records ledger state-transition verbs the
-  coordinator does not dispatch (`SYNC`, `MERGE`, `FREEZE`, `T-FINAL`, `COMMIT`, `ABORT`) and a
-  `FIXER` role (the blind-fix author), and omits coordinator-only primitives the trace never emits
-  (e.g. `PLACE`, `WORKER_DONE`, `OPEN_PR`, `CLEANUP`, `LOOP_POLL`). Neither list is a subset of the
-  other; the 13-primitive coordinator list above is unchanged.
-- Failure to emit a trace event is NOT a hard error. The run continues with degraded telemetry; the
-  coordinator records `trace_emission_degraded: true` in `fleet-outcome.yaml` so the post-hoc audit
-  knows the stream is incomplete. Hard-failing on a telemetry I/O error would let the dashboard veto
-  real work, which inverts the dependency.
-
+TRIGGER: emitting or consuming the `.fleet/runs/<run_id>/trace.jsonl` stream.
+CORE RULES: one JSONL event per ledger state transition, trace first ledger second (SHOULD); the LEDGER is authoritative loop state, the trace is best-effort causal telemetry; emission failure degrades (record `trace_emission_degraded: true`), never blocks work.
+FULL DOCTRINE (read when the trigger applies): `references/trace.md`.
 ═══════════════════════════════════════════════════════════
 WRITE-LOCK DISCIPLINE — construction vs request locks.
 ═══════════════════════════════════════════════════════════
-A worker that mutates shared state (the run-archive, a worktree branch, an external API) SHOULD
-acquire the correct lock before the mutation and release it after WHEN multiple coordinators or
-workers may write concurrently. (Status: the lock library is available and tested but has no
-production call-site today — single-coordinator runs serialize through the file ledger. Wire it for
-parallel-coordinator or shared-archive multi-writer setups.) LEDGER KEYING (issue #96): export
-`FLEET_RUN_SHORT=<run_id's 6-hex tail>` right after allocating the run_id at SELF-ORIENTATION —
-the mission registry then keys every ledger/readiness filename by run
-(`<mission>-<run_short>-progress.md`, still matching every validator's `*-progress.md` glob), so
-two concurrent same-mission runs no longer share a write target. RESIDUAL: a coordinator that
-skips the export falls back to mission-keyed names and the old race; the steal() TOCTOU in the
-lock library is fixed (CAS-shaped: tombstone rename + fresh link-acquire, never an in-place
-overwrite). Two locks, two lifetimes:
-- CONSTRUCTION LOCK: acquired before a worker starts BUILDING artifacts in its task slot
-  (worktree, branch, attestation file). Released only on COMMIT or ABORT. Long-held. Prevents
-  two workers racing to write the same artifact path under `.fleet/runs/<run_id>/`.
-- REQUEST LOCK: acquired before a worker calls an external write API (`gh pr merge`,
-  `terraform apply`, `fly deploy`, `git push`). Released immediately after the call returns.
-  Short-held. Prevents a runaway worker from issuing duplicate side-effectful API calls.
-A worker holding a construction lock MAY hold a request lock briefly; the reverse (long-held
-request lock) is forbidden — request locks are taken just-in-time, never preemptively.
-A lock whose holder process is dead (PID gone, ledger heartbeat stale) MAY be stolen by another
-worker — but ONLY after the SIGNAL RECONCILIATION § dead-worker detection discipline has
-confirmed the holder is gone. Stealing without a confirmed-dead signal is a protocol violation;
-the lock library exposes the steal mechanism but the coordinator's circuit-breaker decides when
-it's safe to invoke. Lock files live under `.fleet/runs/<run_id>/locks/` with contents
-`{owner, acquired_at, pid}` for diagnostics. Implementation: `<SUBSTRATE>/lib/locks.py`.
-
+TRIGGER: multiple coordinators/workers writing shared state (parallel-coordinator or shared-archive setups).
+CORE RULES: construction locks are long-held (release on COMMIT/ABORT), request locks just-in-time; steal only after confirmed-dead per SIGNAL RECONCILIATION. LEDGER KEYING: export FLEET_RUN_SHORT at step 9 — run-keyed ledger filenames close the same-mission race; implementation `<SUBSTRATE>/lib/locks.py`.
+FULL DOCTRINE (read when the trigger applies): `references/locks.md`.
 ═══════════════════════════════════════════════════════════
 SUBSTRATE KILL-SWITCH CONVENTION — operator escape hatch + bench comparator.
 ═══════════════════════════════════════════════════════════
@@ -833,34 +690,9 @@ fails PRs that do.
 ═══════════════════════════════════════════════════════════
 MODEL & COST ROUTING — match the model tier to the role; track spend; gate on a budget.
 ═══════════════════════════════════════════════════════════
-Running every worker at flat max effort is the difference between an affordable unattended fleet and
-an unaffordable one. DISPATCH carries an optional per-task `model` / `effort`; the coordinator routes
-by role, not uniformly, and records a running cost estimate so a mission can stop before it overruns.
-
-- DISPATCH(task, handle) MAY carry `model`/`effort`. When the adapter's host supports per-call model
-  or effort selection, the coordinator sets it per the ROLE TIER below; when it does not, it records
-  the intended tier in the ledger and uses the host's single available setting. This is a hint, not
-  a hard primitive — an adapter without model selection ignores it.
-- ROLE TIER (default; a mission may override in DECISION DEFAULTS):
-  - STRONG (highest reasoning): the coordinator itself, the REVIEWER, and any planning/decomposition
-    or freeze step (T-AUDIT). Judgment-heavy, low-volume, high-leverage — never cheap out here. The
-    freeze emits the task DAG the PLAN/DAG VALIDATION GATE checks before the first SPAWN_WORKER.
-  - MID: bulk BUILDERS on Tier 1/2 missions and well-scoped task units.
-  - CHEAP (fastest/cheapest): mechanical or high-volume steps — build-failure triage, lint/format
-    fixes, log scans, status summarization, the dashboard render.
-  Record the tier chosen per role in DECISIONS.md (alongside the launch flags).
-- BUDGET: a mission MAY set a `BUDGET` decision-default (a soft spend ceiling for the run). The
-  coordinator keeps a running `cost_estimate` in the ledger. `cost_estimate` is a DECLARED ESTIMATE
-  aggregation, NOT a measured spend: it is the sum of the per-task estimates the adapter exposes, or
-  a coarse token-based estimate when it does not — never a reconciled provider bill. As
-  `cost_estimate` approaches BUDGET: downgrade non-critical workers a tier, then defer remaining
-  optional work via `fleet-outcome.deferred_missions`, then GOAL_BLOCKED with a clear note. NEVER
-  silently exceed a stated BUDGET; surface it like any hard gate.
-- T-FINAL records `cost_estimate: <n>` in the readiness `fleet-outcome` (a non-negative number,
-  parallel to `unverified_assumptions`). It is reportable telemetry — an ESTIMATE, not a billed
-  figure — and a campaign edge MAY branch on it; a coordinator with no cost signal omits it (it is
-  optional).
-
+TRIGGER: the host supports per-call model/effort selection, or a mission sets BUDGET.
+CORE RULES: route by ROLE tier (STRONG: coordinator/reviewer/freeze; MID: builders; CHEAP: mechanical triage), record tiers in DECISIONS.md; cost_estimate is a declared estimate, never silently exceed a stated BUDGET.
+FULL DOCTRINE (read when the trigger applies): `references/cost-routing.md`.
 ═══════════════════════════════════════════════════════════
 PR-PER-TASK PIPELINE — commits preserved, NEVER squash, conflict-aware, checkout cleaned.
 ═══════════════════════════════════════════════════════════
@@ -1089,16 +921,9 @@ COMMIT & AUTHORSHIP — more commits are better; transparent authorship; never s
 EMPIRICAL RISK TIERS — which missions to trust unattended (cross-agent merge rates from arXiv
 2601.15195, MSR 2026 AIDev dataset, 33,596 agent-authored PRs).
 ═══════════════════════════════════════════════════════════
-- Tier 1 (~62–84% cross-agent, run unattended): doc-sync (~84% documentation), test-coverage
-  (~61.5% test), dependency-update (~74% build / ~84% chore), cleanup (~84% chore).
-- Tier 2 (~64–79% cross-agent, full review gate, glance at the control artifact): bug-batch
-  (~64% fix, reproduce-first), adversarial-review-and-fix, targeted-migration,
-  design-integration, landing-page-convergence (no direct category in the study — treat as Tier 2).
-- Tier 3 (high blast radius, review the frozen scope/architecture artifact, expect rework):
-  legacy-rebuild, take-product-to-completion (no direct category in the study).
-- No standalone performance mission — performance is the worst category (~55% cross-agent); keep
-  human-gated.
-
+TRIGGER: choosing which missions to run unattended.
+CORE RULE: Tier 1 (doc-sync, test-coverage) runs unattended; Tier 2 needs the full review gate; Tier 3 (legacy-rebuild, take-product-to-completion) expects rework; performance work stays human-gated.
+FULL DOCTRINE (read when the trigger applies): `references/risk-tiers.md`.
 ═══════════════════════════════════════════════════════════
 PRECONDITIONS — confirm at start (the adapter specifies the exact checks for its tool). Each
 adapter carries a machine-readable requires-block (bins/env/auth); in a framework clone, run `scripts/preflight.sh
