@@ -435,7 +435,7 @@ mirroring Layer 1's shape so the two summaries are easy to read side by side.
 ## Layer 4: mutation gate
 
 Layers 1 through 3 are tests. Layer 4 tests the tests. It is the standing mutation gate, and its
-manifest is `tests/mutations.yaml`. There are 50 mutations in the manifest today.
+manifest is `tests/mutations.yaml`. There are 58 mutations in the manifest today (count it — `grep -c 'id:' tests/mutations.yaml` — this sentence drifts).
 
 The idea is fault injection. Each entry describes a representative bug as a `find` string and a
 `replace` string in a real source file, plus the `guards` (test files) that MUST catch it. The gate
@@ -445,8 +445,8 @@ SURVIVED, which means the test is weak or tautological. Here is the shape:
 ```yaml
 - id: verify-findings-hallucination-gate-off
   file: scripts/lib/verify_findings.py
-  find: "quoted_norm and quoted_norm in source_norm"
-  replace: "True"
+  find: "if quoted_norm in source_norm:"
+  replace: "if True:"
   guards: [tests/test_verify_findings.py]
 ```
 
