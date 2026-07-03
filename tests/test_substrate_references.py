@@ -162,3 +162,16 @@ def test_validate_fleet_outcome_collects_relocated_readiness(tmp_path, monkeypat
     monkeypatch.setenv("FLEET_LEDGER_DIR", ".fleet/docs")
     names = sorted(p.name for p in vfo.collect_readiness_paths(tmp_path))
     assert names == ["a-readiness.md", "b-readiness.md"]
+
+
+def test_adapters_carry_honest_primitive_matrix() -> None:
+    """Issue #93: every adapter states per-primitive real/degraded/absent
+    status; the two hosts without ASK/REPLY must say 'absent', not present a
+    fallback as the primitive."""
+    for name in ("orca", "claude-code", "grok", "codex", "template"):
+        text = (ROOT / "skills" / f"autonomous-fleet-adapter-{name}" / "SKILL.md").read_text(encoding="utf-8")
+        assert "PRIMITIVE SUPPORT MATRIX" in text, name
+    for name in ("grok", "codex"):
+        text = (ROOT / "skills" / f"autonomous-fleet-adapter-{name}" / "SKILL.md").read_text(encoding="utf-8")
+        assert "**absent**" in text, name
+        assert "not the engine primitive" in text, name

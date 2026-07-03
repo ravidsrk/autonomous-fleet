@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Orca orchestration CLI, git, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.2.1"
+  version: "1.2.2"
   fleet-component: "adapter"
   reference-runtime: "orca"
 ---
@@ -55,6 +55,22 @@ orca worktree create --name <task> --no-parent --agent codex --prompt "<brief>" 
 
 Custom Codex model/effort: create worktree, then `terminal create --command 'codex --model …'`,
 wait `tui-idle`, `terminal send` — see `references/orca-platform.md`.
+
+## PRIMITIVE SUPPORT MATRIX (issue #93 — honest per-primitive status)
+
+| Primitive | Status | Mechanic |
+|-----------|--------|----------|
+| PLACE | real | `orca worktree create` / terminal `--worktree active` |
+| SPAWN_WORKER | real | `worktree create --agent` + `terminal wait --for tui-idle` |
+| DISPATCH | real | `task-create` + `dispatch --inject` |
+| WAIT | real | native blocking `check --wait --types …` |
+| INSPECT | real | `task-list`, `inbox`, `dispatch-show` |
+| WORKER_DONE / ASK / REPLY | real | `send --type worker_done`, `ask --to`, `reply --id` |
+| OPEN_PR / MERGE_PR / CLEANUP | real | `gh` + version-tolerant worktree remove/archive |
+| SYNC_TASK_STATE | real | `task-update --status` (cross-session) |
+| SET_GOAL family (9–12) | **absent by design** | no `/goal` API — file ledger + `check --wait` loop suffices |
+| LOOP_POLL | real | `check --wait` loop |
+| CONTINUE_WORKER | aliased | → SPAWN_WORKER (no documented session restore) |
 
 ## PRECONDITIONS (the core calls for these; here's the Orca form)
 `orca status --json` (running runtime) · orchestration experimental flag on · `gh auth status`
