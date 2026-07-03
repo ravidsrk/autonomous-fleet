@@ -13,7 +13,20 @@ back, add its id here AFTER `git mv`-ing the SKILL.md back to `skills/`.
 
 from __future__ import annotations
 
+import os
+
 from .fleet_registry import MISSIONS
+
+
+def ledger_dir() -> str:
+    """Directory fleet ledgers/readiness docs live under (issue #101).
+
+    Default `docs`. Repos whose docs/ is a published docs-site tree (Docusaurus,
+    Sphinx, MkDocs, Starlight) set `FLEET_LEDGER_DIR=.fleet/docs` (recorded by
+    setup-autonomous-fleet as LEDGER_DIR in fleet-config.md) so fleet files
+    never break or publish through the site build. Trailing slashes stripped.
+    """
+    return os.environ.get("FLEET_LEDGER_DIR", "docs").rstrip("/") or "docs"
 
 SHIPPED_MISSIONS: frozenset[str] = frozenset(
     mission_id for mission_id, row in MISSIONS.items() if row["shipped"] is True
@@ -30,14 +43,14 @@ MISSION_DOCS: dict[str, dict[str, str]] = {
 
 def readiness_path(mission: str) -> str:
     if mission not in MISSION_DOCS:
-        return f"docs/{mission}-readiness.md"
-    return f"docs/{MISSION_DOCS[mission]['readiness']}"
+        return f"{ledger_dir()}/{mission}-readiness.md"
+    return f"{ledger_dir()}/{MISSION_DOCS[mission]['readiness']}"
 
 
 def progress_path(mission: str) -> str:
     if mission not in MISSION_DOCS:
-        return f"docs/{mission}-progress.md"
-    return f"docs/{MISSION_DOCS[mission]['progress']}"
+        return f"{ledger_dir()}/{mission}-progress.md"
+    return f"{ledger_dir()}/{MISSION_DOCS[mission]['progress']}"
 
 
 def headless_emit_mission(mission: str) -> str:

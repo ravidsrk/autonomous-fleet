@@ -117,3 +117,17 @@ def test_tier1_missions_carry_pr_sizing_heuristics() -> None:
         text = (ROOT / "skills" / mission / "SKILL.md").read_text(encoding="utf-8")
         assert "PR sizing" in text, mission
         assert "400" in text, mission
+
+
+def test_ledger_dir_env_override(monkeypatch) -> None:
+    """Issue #101: mission ledger paths resolve through FLEET_LEDGER_DIR so
+    docs-site repos can relocate fleet files out of the published tree."""
+    from lib import mission_registry as mr
+
+    monkeypatch.delenv("FLEET_LEDGER_DIR", raising=False)
+    assert mr.progress_path("doc-sync").startswith("docs/")
+    monkeypatch.setenv("FLEET_LEDGER_DIR", ".fleet/docs/")
+    assert mr.progress_path("doc-sync") == ".fleet/docs/doc-sync-progress.md"
+    assert mr.readiness_path("doc-sync") == ".fleet/docs/doc-sync-readiness.md"
+    monkeypatch.setenv("FLEET_LEDGER_DIR", "")
+    assert mr.progress_path("doc-sync").startswith("docs/")
