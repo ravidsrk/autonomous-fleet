@@ -117,15 +117,19 @@ def test_steal_wraps_vanished_lock_as_lock_steal_error(tmp_path, monkeypatch):
         json.dumps({"owner": "dead", "acquired_at": "1970-01-01T00:00:00Z", "pid": _unused_pid()}),
         encoding="utf-8",
     )
-    real = locks_mod._read_steal_payload
-    calls = {"n": 0}
+    # New CAS protocol (issue #96): the vanish window is the tombstone
+    # rename — a competitor's rename wins and ours hits FileNotFoundError.
+    import os as _os
 
-    def flaky(path):
-        calls["n"] += 1
-        if calls["n"] >= 2:  # the re-validation read inside the try
-            raise FileNotFoundError(str(path))
-        return real(path)
+    real_rename = _os.rename
 
-    monkeypatch.setattr(locks_mod, "_read_steal_payload", flaky)
+    def racing_rename(src, dst):
+        if pathlib.Path(src) == lock.lock_path:
+            lock.lock_path.unlink()
+        return real_rename(src, dst)
+
+    import pathlib
+
+    monkeypatch.setattr(_os, "rename", racing_rename)
     with pytest.raises(LockStealError, match="vanished"):
         FileLock.steal(tmp_path, "vanish", new_owner="thief")

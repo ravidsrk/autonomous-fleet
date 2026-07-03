@@ -173,6 +173,12 @@ mutations:
     replace: "False"
     guards: [tests/test_locks.py]
 
+  - id: lock-steal-tombstone-verify-off
+    file: scripts/lib/locks.py
+    find: 'if stolen_text != text:'
+    replace: 'if False and stolen_text != text:'
+    guards: [tests/test_locks.py]
+
   - id: lock-steal-liveness-check-off
     file: scripts/lib/locks.py
     find: "isinstance(holder_pid, int) and _pid_alive(holder_pid)"
@@ -230,7 +236,7 @@ mutations:
 
   - id: lock-steal-second-liveness-check-off
     file: scripts/lib/locks.py
-    find: 'if _pid_alive(current_holder_pid):'
+    find: 'if isinstance(recheck_pid, int) and _pid_alive(recheck_pid):'
     replace: 'if False:'
     guards: [tests/test_locks_review_fixes.py, tests/test_review_fixes_2.py]
 

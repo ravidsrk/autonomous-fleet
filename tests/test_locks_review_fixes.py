@@ -125,7 +125,9 @@ def test_steal_aborts_if_holder_changes_before_replace(
 
     def changing_read_text(self: Path, *args: object, **kwargs: object) -> str:
         nonlocal read_count
-        if self == lock_path:
+        # New CAS protocol (issue #96): the post-takeover verify reads the
+        # TOMBSTONE (a dotfile carrying the lock's name), not lock_path.
+        if self == lock_path or lock_path.name in self.name:
             read_count += 1
             if read_count == 2:
                 return changed_text

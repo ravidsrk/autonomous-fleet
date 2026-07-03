@@ -97,9 +97,16 @@ path, product, maintainer identity, or scope — figure them out and record in D
 8. AUTHORSHIP_MODE (issue #102): default `attributed`. If `docs/agents/fleet-config.md` exists (from
    `setup-autonomous-fleet`), use its `AUTHORSHIP_MODE` (`maintainer-only` requires that explicit
    entry — never assumed). Record the chosen mode in DECISIONS.md before commit #1.
+9. RUN IDENTITY: allocate the run_id NOW (the documented
+   `YYYYMMDDTHHMMSSZ-<mission>-<6hex>` format; `<SUBSTRATE>/lib/fleet_run.py` has
+   `allocate_run_id`), export `FLEET_RUN_SHORT=<its 6-hex tail>` for every worker/validator
+   invocation, and write `RUN_ID:`/`RUN_SHORT:` into the ledger header — the env var is
+   volatile; the LEDGER HEADER survives. AT RESUME: re-derive FLEET_RUN_SHORT from the ledger
+   header (or the run-keyed ledger filename) BEFORE the first registry path resolution —
+   resuming unkeyed silently forks the run's ledger (issue #96).
 Everywhere below: REPO_ROOT = resolved path, MAINTAINER = from step 4, AUTHORSHIP_MODE = from
-step 8, BRANCH_PREFIX = from step 7, BASE = the integration branch the mission specifies (default:
-a NEW branch off the default branch at current HEAD).
+step 8, BRANCH_PREFIX = from step 7, RUN_SHORT = from step 9, BASE = the integration branch the
+mission specifies (default: a NEW branch off the default branch at current HEAD).
 
 ═══════════════════════════════════════════════════════════
 ORCHESTRATOR DIRECTIVE — fully autonomous.
@@ -564,13 +571,14 @@ A worker that mutates shared state (the run-archive, a worktree branch, an exter
 acquire the correct lock before the mutation and release it after WHEN multiple coordinators or
 workers may write concurrently. (Status: the lock library is available and tested but has no
 production call-site today — single-coordinator runs serialize through the file ledger. Wire it for
-parallel-coordinator or shared-archive multi-writer setups.) HONEST LIMITATION: the markdown ledger
-is keyed by MISSION (its filename), not by `run_id`, and the lock library has no production
-call-site, so two concurrent runs over the same `(repo, mission)` are NOT mutually exclusive today —
-nothing mechanically stops them sharing a ledger filename and racing. The `run_short` branch/worktree
-suffix keeps their BRANCHES and CHECKOUTS from colliding, but the ledger file itself is a shared
-write target. Until the lock is wired (or the ledger is keyed by `run_id`), do not launch two runs of
-the SAME mission against the SAME repo at once. Two locks, two lifetimes:
+parallel-coordinator or shared-archive multi-writer setups.) LEDGER KEYING (issue #96): export
+`FLEET_RUN_SHORT=<run_id's 6-hex tail>` right after allocating the run_id at SELF-ORIENTATION —
+the mission registry then keys every ledger/readiness filename by run
+(`<mission>-<run_short>-progress.md`, still matching every validator's `*-progress.md` glob), so
+two concurrent same-mission runs no longer share a write target. RESIDUAL: a coordinator that
+skips the export falls back to mission-keyed names and the old race; the steal() TOCTOU in the
+lock library is fixed (CAS-shaped: tombstone rename + fresh link-acquire, never an in-place
+overwrite). Two locks, two lifetimes:
 - CONSTRUCTION LOCK: acquired before a worker starts BUILDING artifacts in its task slot
   (worktree, branch, attestation file). Released only on COMMIT or ABORT. Long-held. Prevents
   two workers racing to write the same artifact path under `.fleet/runs/<run_id>/`.
@@ -613,7 +621,9 @@ placements + next ready wave + DECISIONS.md rationale — enough for a FRESH coo
 prior context to resume. On context pressure (degrading responses, lost handles, uncertainty about
 what's done): do NOT push through, do NOT ask the user; write a complete CONTEXT HANDOFF block into
 the ledger and state a fresh coordinator resumes from it.
-HANDOFF CARRIES: for each task carry branch, PR#, reviewed SHA, WT path or environment id, WT_CLEAN,
+HANDOFF CARRIES: the run's RUN_ID + RUN_SHORT + resolved LEDGER_DIR and ledger paths FIRST
+(a fresh coordinator re-exports FLEET_RUN_SHORT before touching the registry); then for each
+task carry branch, PR#, reviewed SHA, WT path or environment id, WT_CLEAN,
 MERGED, live worker handle, placement, and next action.
 PROACTIVE (don't wait for the cliff): the coordinator's own context grows with every wave. As each
 wave of tasks completes, roll its detail UP into a one-line-per-task summary in the ledger (task,
