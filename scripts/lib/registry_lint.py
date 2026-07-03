@@ -286,17 +286,27 @@ def lint_adapter_contract_single_source(root: Path) -> list[str]:
     (issue #89): every adapter references adapter-contract.md, and no
     adapter contains a >=_COPY_SPAN-char verbatim span of it."""
     errors: list[str] = []
+    adapters = sorted(root.glob("skills/autonomous-fleet-adapter-*/SKILL.md"))
+    if not adapters:
+        return errors  # fixture/minimal repos without adapters need no contract
     canon_path = root / _ADAPTER_CONTRACT
     if not canon_path.is_file():
         return [f"{_ADAPTER_CONTRACT}: missing canonical adapter contract"]
     canon = " ".join(canon_path.read_text(encoding="utf-8").split())
-    spans = [canon[i:i + _COPY_SPAN] for i in range(0, max(1, len(canon) - _COPY_SPAN), 40)]
-    for path in sorted(root.glob("skills/autonomous-fleet-adapter-*/SKILL.md")):
+    # stride 1 (codex on #130): a sampled stride left 160-198 char re-inlines
+    # startable between windows; sizes are small enough for the exact scan.
+    spans = [canon[i:i + _COPY_SPAN] for i in range(0, max(1, len(canon) - _COPY_SPAN + 1))]
+    for path in adapters:
         rel = path.relative_to(root)
         text = path.read_text(encoding="utf-8")
         flat = " ".join(text.split())
         if "adapter-contract.md" not in text:
             errors.append(f"{rel}: does not reference references/adapter-contract.md (issue #89)")
+        if "CONTINUE_WORKER binding:" not in text:
+            errors.append(
+                f"{rel}: missing its 'CONTINUE_WORKER binding:' line — the one "
+                f"runtime-specific part of the shared contract (issue #89)"
+            )
         for span in spans:
             if span in flat:
                 errors.append(
