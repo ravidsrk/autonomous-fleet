@@ -277,20 +277,17 @@ _ROUTING_DOCS = (
 _EXPLORATORY_MARKERS = ("exploratory", "archived", "demoted", "not yet", "pending promotion")
 
 
-def lint_mission_state_docs(root: Path) -> list[str]:
+def lint_mission_state_docs(
+    root: Path, missions: Mapping[str, Mapping[str, Any]] = MISSIONS
+) -> list[str]:
     """The registry (fleet_registry.MISSIONS) is the single source of mission
     state (issue #92). Routing docs must not present an exploratory mission as
     first-class: any line naming one must carry an exploratory/archived marker
     on the line or in its enclosing section heading; and every shipped mission
     must appear in the missions catalog."""
-    import sys as _sys
-
-    _sys.path.insert(0, str(root / "scripts"))
-    from lib.fleet_registry import MISSIONS  # noqa: PLC0415
-
     errors: list[str] = []
-    shipped = {m for m, row in MISSIONS.items() if row["shipped"] is True}
-    exploratory = {m for m, row in MISSIONS.items() if row["shipped"] is not True}
+    shipped = {m for m, row in missions.items() if row["shipped"] is True}
+    exploratory = {m for m, row in missions.items() if row["shipped"] is not True}
 
     catalog = root / "skills/autonomous-fleet/references/missions.md"
     if catalog.is_file():
@@ -431,7 +428,7 @@ def lint_registry(
         + lint_skills_lock(root)
         + lint_lock_hashes(root)
         + lint_no_skill_version_literals_in_tests(root)
-        + lint_mission_state_docs(root)
+        + lint_mission_state_docs(root, missions)
         + lint_external_source_pins(root)
         + lint_campaign_missions(root, missions)
     )
