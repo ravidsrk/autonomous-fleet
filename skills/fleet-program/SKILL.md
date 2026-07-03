@@ -110,7 +110,7 @@ Acceptance / readiness → `quality-gate`. Community hooks: [community-skills.md
 |------|--------|
 | Campaign start | `SET_GOAL(campaign_done_condition)`; write `## Runtime goal` in program ledger |
 | Each node start | `SET_GOAL(mission_done_condition)` — replaces campaign goal for this session |
-| Node complete | `UPDATE_GOAL("node <id> done: <fleet-outcome summary>")`; run `validate-fleet-outcome.sh` |
+| Node complete | `UPDATE_GOAL("node <id> done: <fleet-outcome summary>")`; run `python3 <SUBSTRATE>/validate_fleet_outcome.py` on readiness doc (per SUBSTRATE RESOLUTION; skip when SUBSTRATE=none) |
 | Campaign complete | `GOAL_COMPLETE` only when `PHASE: DONE` in file + all validations pass |
 | Blocked node | `GOAL_BLOCKED` if `fleet-outcome.status == blocked` and no retry |
 
@@ -118,8 +118,8 @@ Mission goal template (substitute mission id, ledger, readiness, metrics):
 
 ```
 Mission <mission-id> DONE: docs/<mission>-progress.md all task flags true,
-docs/<mission>-readiness.md with fleet-outcome.status done,
-all PRs merged into BASE, validate-fleet-outcome.sh passes.
+docs/<mission>-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+the readiness fleet-outcome validates (python3 <SUBSTRATE>/validate_fleet_outcome.py per the engine's SUBSTRATE RESOLUTION; skip recorded in the readiness doc when SUBSTRATE=none), all PRs merged into BASE.
 ```
 
 Unattended CI (framework clone only): `./scripts/run-campaign.sh <grok|claude|codex> --preset repo-health --max-turns N`
