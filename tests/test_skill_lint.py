@@ -123,13 +123,14 @@ def test_adapter_missing_metadata_is_reported(tmp_path: Path) -> None:
         tmp_path / "autonomous-fleet-adapter-codex",
     )
     path = skill / "SKILL.md"
+    # Version-agnostic strip (issue #90: a literal version string here broke
+    # on every adapter bump — see ebd33d3 and PR #112's fix round).
+    import re as _re
     path.write_text(
-        path.read_text(encoding="utf-8").replace(
-            'metadata:\n'
-            '  author: "ravidsrk"\n'
-            '  version: "1.1.1"\n'
-            '  fleet-component: "adapter"\n',
+        _re.sub(
+            r'metadata:\n  author: "ravidsrk"\n  version: "[^"]+"\n  fleet-component: "adapter"\n',
             "",
+            path.read_text(encoding="utf-8"),
         ),
         encoding="utf-8",
     )

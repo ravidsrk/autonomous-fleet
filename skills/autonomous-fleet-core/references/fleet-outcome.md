@@ -56,7 +56,7 @@ discipline assertions they don't substantiate. Branchable; a campaign edge MAY b
 `archive_enabled` is the ARCHIVE_ENABLED discipline assertion (see engine.md ARCHIVE_ENABLED and
 references/run-archive.md). Optional and cross-cutting: when present it must be a bool. T-FINAL of
 a mission that emitted any first-class artifact (findings JSON, verifier summary, blind-fix file,
-etc.) records `archive_enabled: true` ONLY AFTER `scripts/validate_run_archive.py
+etc.) records `archive_enabled: true` ONLY AFTER `<SUBSTRATE>/validate_run_archive.py
 .fleet/runs/<run_id>/` exits 0. The validator enforces schema shape, on-disk integrity (sha256 +
 size), AND the cross-cutting mtime-ordering invariants from Layers 1-3 (blind_fix < findings,
 verify_summary > findings, readiness with the latest mtime). Unlike `root_cause_audited`,
@@ -77,7 +77,7 @@ Then markdown body: human summary, indexes, **Recommended next missions** table 
 ## Mission-specific metrics
 
 Add under `fleet-outcome.metrics`. Shipped missions are validated by the
-`MISSION_METRICS` table in `scripts/lib/fleet_outcome.py`; exploratory
+`MISSION_METRICS` table in `<SUBSTRATE>/lib/fleet_outcome.py`; exploratory
 missions retain their `fleet-outcome` shape (the schema validator still
 knows them) so a promotion run can land without schema churn.
 
@@ -111,7 +111,7 @@ any mission whose reviewer phase produces structured findings can record them.
 | `human_gated_findings` | Verified findings with `fix_strategy: ask`. Human approval required before fix. |
 
 All four must be non-negative integers when present. They populate from
-`scripts/verify_findings.py --summary-out summary.json` so coordinators wire
+`<SUBSTRATE>/verify_findings.py --summary-out summary.json` so coordinators wire
 the verifier into the readiness doc without re-parsing JSON. Lineage:
 GodModeSkill quoted-line self-consistency + xreview confidence/fix_strategy
 gating, both ingested in the 2026-06-22 competitor audit. A campaign edge
