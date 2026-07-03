@@ -55,3 +55,16 @@ def test_update_records_current_plus_headroom(tmp_path, monkeypatch) -> None:
     data = json.loads(budget.read_text(encoding="utf-8"))
     total = sum(cib.composed_surface().values())
     assert data["max_bytes"] == int(total * cib.UPDATE_HEADROOM)
+
+
+def test_missing_adapter_or_mission_groups_are_skipped(tmp_path, monkeypatch) -> None:
+    """Covers the empty-group branch: a tree with only the core docs composes
+    without adapters/missions rather than crashing."""
+    for rel in cib.CORE_MANDATORY:
+        target = tmp_path / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("x" * 10, encoding="utf-8")
+    monkeypatch.setattr(cib, "ROOT", tmp_path)
+    surface = cib.composed_surface()
+    assert set(surface) == set(cib.CORE_MANDATORY)
+    assert all(v == 10 for v in surface.values())
