@@ -68,3 +68,16 @@ def test_mission_goal_conditions_are_substrate_aware() -> None:
         text = (ROOT / "skills" / mission / "SKILL.md").read_text(encoding="utf-8")
         assert "./scripts/validate-fleet-outcome.sh" not in text, mission
         assert "<SUBSTRATE>/validate_fleet_outcome.py" in text, mission
+
+
+def test_single_session_adapters_carry_buildblind_caveat() -> None:
+    """Issue #88: every single-session adapter must state in its own file that
+    build-blindness there is instructed, not mechanical."""
+    for name in (
+        "autonomous-fleet-adapter-claude-code",
+        "autonomous-fleet-adapter-codex",
+        "autonomous-fleet-adapter-grok",
+    ):
+        text = (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+        assert "single-vendor caveat" in text, name
+        assert "reviewer_mode: same-vendor-instructed" in text, name
