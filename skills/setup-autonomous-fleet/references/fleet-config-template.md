@@ -41,6 +41,12 @@ When intent is vague, suggest `fleet-program` preset: **`<preset-id>`**
 
 Coordinators invoke validators as `python3 <SUBSTRATE_PATH>/<validator>.py …`.
 
+## Research tools
+
+| Field | Value |
+|-------|-------|
+| RESEARCH_TOOLS | detected/preferred tools, e.g. `monid, context7` — or `native-web` (the universal fallback) |
+
 ## Community skills
 
 | Bundle id | Installed | Mode | Notes |
