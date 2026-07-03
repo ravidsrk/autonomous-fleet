@@ -1,1 +1,8 @@
-{"reviewed_sha": "b0bd3865d15cfe1c68a621f305dd80e85bdaebf6", "branch": "fleet/doc-sync-contributing-3e8173", "pr": 8, "verdict": "PASS", "reviewer": "codex-exec-fresh", "reviewer_mode": "separate-process same-vendor (build-blind: diff+acceptance only)"}
+{
+  "schema_version": "1.0",
+  "review_id": "gemoji-pr8-codex-round1",
+  "reviewed_sha": "b0bd3865d15cfe1c68a621f305dd80e85bdaebf6",
+  "branch": "fleet/doc-sync-contributing-3e8173",
+  "verdict": "PASS",
+  "merged": true
+}
