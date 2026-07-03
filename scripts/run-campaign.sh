@@ -336,7 +336,17 @@ while [[ -n "$CURRENT" ]]; do
   fi
 
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "  would run: run-mission-headless.sh $RUNTIME $MISSION --repo $REPO_ROOT --max-turns $MAX_TURNS --dry-run"
+    # Print the REAL flag set the child would receive (incl. --yolo and its
+    # codex bypass mapping) — a dry-run that hides the dangerous flags
+    # defeats its purpose as the operator's preflight.
+    DRY_EXTRA=""
+    [[ -n "$TIMEOUT_SECS" ]] && DRY_EXTRA+=" --timeout $TIMEOUT_SECS"
+    [[ "$SKIP_AUTH_CHECK" -eq 1 ]] && DRY_EXTRA+=" --skip-auth-check"
+    [[ "$YOLO" -eq 1 ]] && DRY_EXTRA+=" --yolo"
+    [[ "$YOLO_ACK" -eq 1 ]] && DRY_EXTRA+=" --yolo-untrusted-acknowledged"
+    echo "  would run: run-mission-headless.sh $RUNTIME $MISSION --repo $REPO_ROOT --max-turns $MAX_TURNS${DRY_EXTRA} --dry-run"
+    [[ "$YOLO" -eq 1 && "$RUNTIME" == "codex" ]] && \
+      echo "  note:      --yolo maps to codex --dangerously-bypass-approvals-and-sandbox in the child"
     echo "  expect:    $READINESS_ABS with fleet-outcome.status done"
     if [[ -f "$ROOT/scripts/emit_headless_dryrun_trace.py" ]]; then
       SCRATCH_REPO="$(mktemp -d "${TMPDIR:-/tmp}/fleet-campaign-dryrun-XXXXXX")"
