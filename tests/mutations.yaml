@@ -104,6 +104,12 @@ mutations:
     replace: 'if blind_mt > findings_mt and False:'
     guards: [tests/test_run_archive.py]
 
+  - id: degraded-scm-auth-gate-off
+    file: scripts/lib/fleet_outcome.py
+    find: 'if degraded == "no_scm_auth" and outcome.get("status") == "done":'
+    replace: 'if False and degraded == "no_scm_auth" and outcome.get("status") == "done":'
+    guards: [tests/test_e2e_gate.py]
+
   - id: run-archive-independence-off
     file: scripts/lib/fleet_run.py
     find: 'if len(entries) > 1 and len(producers) > 1:'

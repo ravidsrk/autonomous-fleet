@@ -1,5 +1,5 @@
 {
-  "core_version": "1.2.7",
+  "core_version": "1.2.8",
   "files": {
     "emit_trace.py": "88b22b371918540e73f3f2f513a2d47fe74809f9d0ecf5203e70fd4dc8dcad6d",
     "lib/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -10,7 +10,7 @@
     "lib/coordinator_trace.py": "6689eda284161699d0a59b4b7ec680cffdea080a584858614e4db370441b68d6",
     "lib/emit_trace.py": "150fe3d0a4feb7269bb9cb47ea9cdd82d43c367e4e5989646b600f935c378675",
     "lib/exploratory_missions.py": "a77fcd64f8089c8d68e9d1df71ef64494cced960a326d6a2c388e24aa2746c7b",
-    "lib/fleet_outcome.py": "5247fa1449a87535f579b38770cecaaf54e4696971353eb776df5417b4fdd35d",
+    "lib/fleet_outcome.py": "1379f7693c4449df01ec66ccabba1bd8952ee12ff0b79ebc373566ca7528767f",
     "lib/fleet_registry.py": "2c41087eee78c70726cd4f019ac53812656dd155559f0775e609ad982c2313b5",
     "lib/fleet_run.py": "c181b16cf23dcb8f7fe12f577b3da6aadff136bd479e75be84d221074e1e3e90",
     "lib/headless_trace.py": "92fc184a208bda3ba710b4d920d7fd3ff26e5f8154957a5bd2c9d0d661c2cc10",
