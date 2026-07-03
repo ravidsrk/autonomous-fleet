@@ -35,7 +35,7 @@ Options:
   --repo PATH       Target git repo (default: autonomous-fleet clone). Agent cwd is REPO.
   --max-turns N     Agent turn budget for Grok/Codex (default: 50; Claude has no --max-turns)
   --handoff PATH    Prompt file (default: generated minimal handoff)
-  --yolo            Auto-approve tools (Grok only; default: off)
+  --yolo            Auto-approve tools (Grok: --yolo; Codex: --dangerously-bypass-approvals-and-sandbox; default: off)
   --no-yolo         Deprecated alias for default (no auto-approve)
   --yolo-untrusted-acknowledged  Required with --yolo when --repo is outside this clone (accepts RCE risk)
   --dry-run           Validate preflight and print the agent command without invoking the runtime CLI
@@ -443,7 +443,14 @@ case "$RUNTIME" in
       exit 0
     fi
     if command -v codex >/dev/null 2>&1; then
-      run_runtime_emit codex exec --cd "$REPO_ROOT" "$PROMPT"
+      CMD=(codex exec --cd "$REPO_ROOT")
+      # --yolo on codex = full autonomy: without it `codex exec` sandboxes writes
+      # and cannot push branches or open PRs, which is why prior headless codex
+      # attempts could never land work. Gated by the same RCE guard as grok
+      # (--yolo-untrusted-acknowledged required for an external --repo).
+      [[ "$YOLO" -eq 1 ]] && CMD+=(--dangerously-bypass-approvals-and-sandbox)
+      CMD+=("$PROMPT")
+      run_runtime_emit "${CMD[@]}"
       exit $?
     else
       echo "error: codex CLI not found on PATH; run interactively in Codex app with:" >&2

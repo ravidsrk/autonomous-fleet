@@ -1,0 +1,1 @@
+T-AUDIT dispatch to codex exec (default sandbox): audit README/CONTRIBUTING/comments vs code; output DRIFT INDEX with file:line both sides; VERIFY-MANUALLY for unverifiable examples; no edits, no commits.
