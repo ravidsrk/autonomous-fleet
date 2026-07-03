@@ -730,3 +730,15 @@ def test_engine_defers_knob_registry_and_ledger_authority() -> None:
     assert "nine knobs" in engine
     assert "the LEDGER is the authoritative loop state" in engine
     assert 'trace is the source of truth for "what happened"' not in engine
+
+
+def test_research_discipline_is_host_conditional() -> None:
+    """Issue #86: the worker preamble must not mandate a tool most hosts lack;
+    tool binding resolves at SELF-ORIENTATION with a native-web-search
+    fallback, and workers may only invoke confirmed-present tools."""
+    engine = (ROOT / "skills/autonomous-fleet-core/references/engine.md").read_text(encoding="utf-8")
+    assert "host-conditional tooling" in engine
+    assert "NEVER invoke a research tool it has not confirmed exists" in engine
+    preamble = engine.split("RESEARCH: before coding against any external fact")[1][:500]
+    assert "monid" not in preamble
+    assert "native web" in preamble

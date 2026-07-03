@@ -140,16 +140,18 @@ Invoke explicitly; record output path in `docs/fleet-program-progress.md` **Hand
 Copy the chosen rows into the mission `## Worker skills` table when authoring; coordinator
 pastes into engine WORKER SKILLS block on DISPATCH.
 
-**Research worker stack (always available, every mission).** The RESEARCH DISCIPLINE in engine.md
-is not a single skill but a stack any worker invokes on demand when it hits an external unknown:
+**Research worker stack (OPTIONAL, host-conditional — issue #86).** The RESEARCH DISCIPLINE in
+engine.md is tool-agnostic: the binding resolves once at SELF-ORIENTATION (fleet-config
+`RESEARCH_TOOLS` → probed host tools → the ALWAYS-available native web search fallback), and a
+worker may only invoke tools confirmed present. When installed, these upgrade the stack:
 
-| Skill | Source | Role |
+| Skill | Source | Role (when present) |
 |-------|--------|------|
-| `monid` | monid CLI | front door — `discover → inspect → run` any external source (web/exa, deps, CVE/OSV, repo, API, competitive) |
-| `Context7` | MCP | carve-out — a pure current-library-docs lookup may go straight here |
+| `monid` | monid CLI | `discover → inspect → run` any external source (web/exa, deps, CVE/OSV, repo, API, competitive) |
+| `Context7` | MCP | a pure current-library-docs lookup may go straight here |
 | `deep-research` | gstack/global | corroborate — fan-out + adversarial verification for high-stakes findings |
 
-These attach via the engine RESEARCH worker preamble on EVERY dispatch (not just missions that
+The DISCIPLINE attaches via the engine RESEARCH worker preamble on EVERY dispatch (not just missions that
 list worker skills), so a mission need not re-declare them. Findings log to `docs/research-notes.md`;
 T-FINAL records `unverified_assumptions: 0`.
 

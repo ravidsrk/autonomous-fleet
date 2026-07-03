@@ -8,7 +8,7 @@ license: MIT
 compatibility: Requires git; gh CLI recommended for PR workflows
 metadata:
   author: "ravidsrk"
-  version: "1.1.0"
+  version: "1.1.1"
   fleet-component: "setup"
 ---
 
@@ -107,6 +107,11 @@ Resolve where the Python verification substrate lives and record it as
 Offer to install the substrate's Python deps into the repo's environment
 (`python3 -m pip install -r <SUBSTRATE_PATH>/requirements.txt`) — ask before
 touching any environment.
+
+Also probe which research tools exist on this host (`monid` on PATH, a
+Context7/library-docs MCP, a `deep-research`-class skill) and record them as
+`RESEARCH_TOOLS` in `fleet-config.md`; record `native-web` when none are
+found (engine.md RESEARCH LOOP resolves through this field first).
 
 ### 3. Confirm draft
 

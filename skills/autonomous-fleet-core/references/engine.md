@@ -773,13 +773,18 @@ below ships on EVERY DISPATCH, not only when a mission lists worker skills.
   semantics, a CVE/advisory, a payment/auth/provider surface, a design or competitive pattern,
   anything dated after your training cutoff. When unsure whether a fact is stale-prone, treat it
   as yes. Do not guess and ship: verify, then act.
-- THE LOOP (monid-first): `monid discover -q "<the unknown>"` → `monid inspect` the endpoint →
-  `monid run` it. monid is the front door for ANY external unknown (web → exa; dependency version →
-  npm-package-info; vulnerability → cve-lookup; repo/stack → github-repo-analyze / tech-stack-detect;
-  API contract → api-docs-generate; competitive → competitor-compare). ONE carve-out: a pure
-  current-library-docs lookup may go straight to Context7, which is built for exactly that. For
-  anything broader, or to corroborate a high-stakes finding, use the `deep-research` skill (fan-out
-  + adversarial verification). Never skip verification entirely.
+- THE LOOP (host-conditional tooling; issue #86 removed the hard-coded binding): resolve the
+  research tool ONCE at SELF-ORIENTATION, record it in DECISIONS.md, and use it for every trigger:
+  1. `docs/agents/fleet-config.md` `RESEARCH_TOOLS`, if recorded by setup.
+  2. Tools actually present on the host, probed not assumed — e.g. `monid` on PATH
+     (`monid discover` → `inspect` → `run`), a Context7/library-docs MCP for pure
+     current-library-docs lookups, a `deep-research`-class skill for corroborating
+     high-stakes findings.
+  3. Fallback ALWAYS available: the host's native web search/fetch. No fleet host lacks one;
+     "the good tool isn't installed" never excuses skipping verification.
+  A worker must NEVER invoke a research tool it has not confirmed exists — a failed
+  `monid` call retried in a loop, or a fabricated "verified" line, is worse than the fallback.
+  Never skip verification entirely.
 - SPIKE (when reading is not enough): for a load-bearing unknown, build ONE throwaway proof to
   validate the approach before the freeze, record findings in `docs/research-notes.md`, then discard
   it. A spike validates behavior; it is not documentation lookup and is not kept as build output.
@@ -796,10 +801,11 @@ below ships on EVERY DISPATCH, not only when a mission lists worker skills.
 Worker preamble (append to every DISPATCH, alongside OPERATING BEHAVIORS):
 ```
 RESEARCH: before coding against any external fact you can't confirm from this repo (library/API
-behavior, versions, CVEs, provider surfaces, competitive/design patterns), run `monid discover`
-and verify it first (Context7 for a pure library-docs lookup; `deep-research` to corroborate).
-Log each check to docs/research-notes.md (unknown | source | finding | verified). Ship no
-unverified external assumption; the reviewer fails PRs that do.
+behavior, versions, CVEs, provider surfaces, competitive/design patterns), verify it first with
+the research tool named in this dispatch (from DECISIONS.md; fallback: this host's native web
+search). Use only tools you have confirmed exist. Log each check to docs/research-notes.md
+(unknown | source | finding | verified). Ship no unverified external assumption; the reviewer
+fails PRs that do.
 ```
 
 ═══════════════════════════════════════════════════════════
