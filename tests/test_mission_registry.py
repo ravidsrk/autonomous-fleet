@@ -5,10 +5,17 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from lib.mission_registry import progress_path, readiness_path  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _default_ledger_dir(monkeypatch):
+    monkeypatch.delenv("FLEET_LEDGER_DIR", raising=False)
 
 
 def test_known_mission_default_names():
