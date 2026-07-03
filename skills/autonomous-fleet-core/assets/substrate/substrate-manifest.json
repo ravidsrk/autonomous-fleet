@@ -1,5 +1,5 @@
 {
-  "core_version": "1.2.14",
+  "core_version": "1.2.15",
   "files": {
     "emit_trace.py": "88b22b371918540e73f3f2f513a2d47fe74809f9d0ecf5203e70fd4dc8dcad6d",
     "lib/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -15,9 +15,9 @@
     "lib/fleet_run.py": "c181b16cf23dcb8f7fe12f577b3da6aadff136bd479e75be84d221074e1e3e90",
     "lib/headless_trace.py": "92fc184a208bda3ba710b4d920d7fd3ff26e5f8154957a5bd2c9d0d661c2cc10",
     "lib/hook_signal.py": "9c901b576aa49d242d40944982b247706be34d3f7d670838106ae20ef932adb1",
-    "lib/locks.py": "a33d0d9f57a08af54c3c679079042ad8875283ff8da079e9f538eadeb416f9c1",
+    "lib/locks.py": "b52976c13fad0ba1f39f077c277b6a92ed3b0b89ff645fb1822df65a87ea8045",
     "lib/mission_promotion.py": "4080822faa06cc89b25103133f254c3385a6d61bc9023c09802a990adfd7a613",
-    "lib/mission_registry.py": "35e03a5707b17e0869ea224d1921596c698cf036378bf9576c5b5e208bee1054",
+    "lib/mission_registry.py": "4e3ebd768538f7b3f5f06701acc3accd2f933b83b1830c15c3188c42de3aa5dd",
     "lib/namespace.py": "9a67056568aa62b6ebdbe0e9935c1d16df929ce0555f1d1ca41c75b6502968c0",
     "lib/nudge_dedup.py": "9e36a47c4796d4508f3eba7556ba3b15a1a0df59327d9eac125b4e4091d6ecd6",
     "lib/png_banner.py": "f19ca77fd426b380c7bee1be1b189cdb055b979be7c9fa71cca13d5fd71a25eb",

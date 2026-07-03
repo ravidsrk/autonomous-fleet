@@ -564,13 +564,14 @@ A worker that mutates shared state (the run-archive, a worktree branch, an exter
 acquire the correct lock before the mutation and release it after WHEN multiple coordinators or
 workers may write concurrently. (Status: the lock library is available and tested but has no
 production call-site today — single-coordinator runs serialize through the file ledger. Wire it for
-parallel-coordinator or shared-archive multi-writer setups.) HONEST LIMITATION: the markdown ledger
-is keyed by MISSION (its filename), not by `run_id`, and the lock library has no production
-call-site, so two concurrent runs over the same `(repo, mission)` are NOT mutually exclusive today —
-nothing mechanically stops them sharing a ledger filename and racing. The `run_short` branch/worktree
-suffix keeps their BRANCHES and CHECKOUTS from colliding, but the ledger file itself is a shared
-write target. Until the lock is wired (or the ledger is keyed by `run_id`), do not launch two runs of
-the SAME mission against the SAME repo at once. Two locks, two lifetimes:
+parallel-coordinator or shared-archive multi-writer setups.) LEDGER KEYING (issue #96): export
+`FLEET_RUN_SHORT=<run_id's 6-hex tail>` right after allocating the run_id at SELF-ORIENTATION —
+the mission registry then keys every ledger/readiness filename by run
+(`<mission>-<run_short>-progress.md`, still matching every validator's `*-progress.md` glob), so
+two concurrent same-mission runs no longer share a write target. RESIDUAL: a coordinator that
+skips the export falls back to mission-keyed names and the old race; the steal() TOCTOU in the
+lock library is fixed (CAS-shaped: tombstone rename + fresh link-acquire, never an in-place
+overwrite). Two locks, two lifetimes:
 - CONSTRUCTION LOCK: acquired before a worker starts BUILDING artifacts in its task slot
   (worktree, branch, attestation file). Released only on COMMIT or ABORT. Long-held. Prevents
   two workers racing to write the same artifact path under `.fleet/runs/<run_id>/`.
