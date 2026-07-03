@@ -104,7 +104,7 @@ per reviewer in multi-reviewer setups). The blind fix names:
 ONLY THEN does the reviewer open the candidate patch. The review then compares the candidate to
 its own pre-committed blind fix and writes findings accordingly. A candidate that agrees with the
 blind fix at the same call-stack depth gets weight; a candidate at a different depth triggers the
-ROOT_CAUSE_DEPTH HARD RULE above.
+ROOT_CAUSE_DEPTH HARD RULE (engine.md stub; full doctrine in `review-findings.md`).
 
 The blind-fix file is a first-class fleet artifact: it lands in `.fleet/runs/<run_id>/`
 alongside the findings JSON, ships with the readiness doc's archive bundle, and is auditable

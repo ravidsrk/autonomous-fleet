@@ -1,4 +1,4 @@
 {
   "max_bytes": 170000,
-  "note": "Composed mandatory instruction surface cap (issue #87). Ratcheted DOWN by #84 (engine 95.9KB -> ~73KB; nine doctrine sections demoted to trigger-loaded references). Raising is a deliberate per-commit act; further reduction is semantic compression of kept must-read text."
+  "note": "Composed mandatory instruction surface cap (issue #87). Ratcheted DOWN by #84 (engine.md 89.2KB -> 82.9KB measured post-restructure; nine doctrine sections demoted to trigger-loaded references). Raising is a deliberate per-commit act; further reduction is semantic compression of kept must-read text."
 }
