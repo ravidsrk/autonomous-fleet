@@ -13,7 +13,7 @@ pass on an unfamiliar repo.
 |---|---------|-----|
 | 1 | `doc-sync` | Highest merge rate; surfaces real state in docs |
 | 2 | `test-coverage` | Lock behaviour before churn; uses doc-sync deferrals as gap hints |
-| 3 | `cleanup` | Behaviour-preserving tidy after truth + tests exist |
+| 3 | `cleanup` | Behaviour-preserving tidy after truth + tests exist *(exploratory)* |
 
 ## docs-and-tests
 
@@ -31,7 +31,7 @@ pass on an unfamiliar repo.
 | # | Mission | Why |
 |---|---------|-----|
 | 1 | `adversarial-review-and-fix` | Frozen findings before churn |
-| 2 | `dependency-update` | Advisories and stale deps after fixes |
+| 2 | `dependency-update` | Advisories and stale deps after fixes *(exploratory)* |
 | 3 | `doc-sync` | Docs match post-fix code |
 
 The audit GATES the campaign (not `if: always`): it advances to deps only when clean
@@ -45,7 +45,7 @@ re-audits the changed surface before docs. See `campaigns.md` for the edge wirin
 | # | Mission | Why |
 |---|---------|-----|
 | 1 | `test-coverage` | Characterization tests on migration surface |
-| 2 | `targeted-migration` | The migration itself |
+| 2 | `targeted-migration` | The migration itself *(exploratory)* |
 | 3 | `doc-sync` | Update setup/migration docs |
 
 ## fix-then-prove
@@ -54,7 +54,7 @@ re-audits the changed surface before docs. See `campaigns.md` for the edge wirin
 
 | # | Mission |
 |---|---------|
-| 1 | `bug-batch` |
+| 1 | `bug-batch` *(exploratory)* |
 | 2 | `test-coverage` |
 
 ## ship-with-proof
@@ -76,7 +76,7 @@ or `office-hours`. Campaign: `scripts/campaigns/align-then-ship.yaml`.
 
 | # | Mission |
 |---|---------|
-| 1 | `take-product-to-completion` |
+| 1 | `take-product-to-completion` *(exploratory)* |
 
 ## quality-gate
 
@@ -97,5 +97,5 @@ User-specified order wins. Rules:
 - Max one active mission.
 - Carry **Recommended next missions** from each readiness doc into the next mission's discovery
   task (T-AUDIT, T-MAP, T-SCAN, etc.).
-- Do not insert `legacy-rebuild` or `take-product-to-completion` unless the user explicitly asks
+- Do not insert `legacy-rebuild` or `take-product-to-completion` unless the user explicitly asks *(exploratory)*
   (Tier 3 blast radius).
