@@ -53,11 +53,11 @@ Record installs in `docs/agents/fleet-config.md` (see `setup-autonomous-fleet` S
 
 | Bundle id | gstack skill ids | Fleet missions / presets |
 |-----------|------------------|--------------------------|
-| `gstack-browser` | `browse`, `qa`, `qa-only`, `health` | `browser-qa-fix`; post-gate on `ship-with-proof` |
-| `gstack-framing` | `office-hours`, `autoplan`, `plan-ceo-review`, `plan-eng-review`, `plan-design-review` | `product-framing`; pre-gate on `gstack-quality` |
-| `gstack-security` | `cso`, `investigate` | `security-cso-audit`, `incident-investigate` |
-| `gstack-devex` | `plan-devex-review`, `devex-review` | `devex-audit` |
-| `gstack-ship` | `ship`, `review`, `document-release`, `health` | `release-document`; post-gates on ship presets |
+| `gstack-browser` | `browse`, `qa`, `qa-only`, `health` | `browser-qa-fix`; post-gate on `ship-with-proof` *(exploratory)* |
+| `gstack-framing` | `office-hours`, `autoplan`, `plan-ceo-review`, `plan-eng-review`, `plan-design-review` | `product-framing`; pre-gate on `gstack-quality` *(exploratory)* |
+| `gstack-security` | `cso`, `investigate` | `security-cso-audit`, `incident-investigate` *(exploratory)* |
+| `gstack-devex` | `plan-devex-review`, `devex-review` | `devex-audit` *(exploratory)* |
+| `gstack-ship` | `ship`, `review`, `document-release`, `health` | `release-document`; post-gates on ship presets *(exploratory)* |
 | `gstack` | full clone + `./setup` | All bundles above |
 
 Gstack-derived exploratory missions declare machine-readable recommends:
@@ -77,12 +77,12 @@ missions still complete via TASK fallbacks. See [composition.md](composition.md)
 
 | Mission | Pre-gate (user-invoked) | gstack `benefits-from` analogue |
 |---------|-------------------------|----------------------------------|
-| `product-framing` | `office-hours` | `autoplan` chain |
-| `browser-qa-fix` | — | — |
-| `security-cso-audit` | — | — |
-| `devex-audit` | — | `plan-devex-review` optional |
-| `release-document` | — | `document-release` optional |
-| `incident-investigate` | — | `investigate` optional |
+| `product-framing` | `office-hours` | `autoplan` chain *(exploratory)* |
+| `browser-qa-fix` | — | — *(exploratory)* |
+| `security-cso-audit` | — | — *(exploratory)* |
+| `devex-audit` | — | `plan-devex-review` optional *(exploratory)* |
+| `release-document` | — | `document-release` optional *(exploratory)* |
+| `incident-investigate` | — | `investigate` optional *(exploratory)* |
 
 ---
 
@@ -137,21 +137,20 @@ Invoke explicitly; record output path in `docs/fleet-program-progress.md` **Hand
 | `qa` | gstack | UI missions (exploratory until promoted) | @builder (fix loop) |
 | `qa-only` | gstack | UI missions (exploratory until promoted) | @reviewer (report only) |
 
-Copy the chosen rows into the mission `## Worker skills` table when authoring; coordinator
-pastes into engine WORKER SKILLS block on DISPATCH.
+Copy chosen rows into the mission `## Worker skills` table when authoring; the coordinator
+pastes them into the engine WORKER SKILLS block on DISPATCH.
 
-**Research worker stack (OPTIONAL, host-conditional — issue #86).** The RESEARCH DISCIPLINE in
-engine.md is tool-agnostic: the binding resolves once at SELF-ORIENTATION (fleet-config
-`RESEARCH_TOOLS` → probed host tools → the ALWAYS-available native web search fallback), and a
-worker may only invoke tools confirmed present. When installed, these upgrade the stack:
+**Research stack (OPTIONAL, host-conditional — issue #86).** Binding resolves per engine.md's
+RESEARCH LOOP (fleet-config `RESEARCH_TOOLS` → probed host tools → native web search fallback);
+workers only invoke confirmed-present tools. When installed, these upgrade the stack:
 
 | Skill | Source | Role (when present) |
 |-------|--------|------|
 | `monid` | monid CLI | `discover → inspect → run` any external source (web/exa, deps, CVE/OSV, repo, API, competitive) |
-| `Context7` | MCP | a pure current-library-docs lookup may go straight here |
-| `deep-research` | gstack/global | corroborate — fan-out + adversarial verification for high-stakes findings |
+| `Context7` | MCP | pure current-library-docs lookups go straight here |
+| `deep-research` | gstack/global | corroborate high-stakes findings (fan-out + adversarial verification) |
 
-The DISCIPLINE attaches via the engine RESEARCH worker preamble on EVERY dispatch (not just missions that
+The DISCIPLINE attaches via the engine RESEARCH preamble on EVERY dispatch (not just missions that
 list worker skills), so a mission need not re-declare them. Findings log to `docs/research-notes.md`;
 T-FINAL records `unverified_assumptions: 0`.
 
@@ -174,7 +173,7 @@ and `validate-fleet-outcome.sh` passes.
 | Preset | Mission nodes | Pre-gate | Post-gate |
 |--------|---------------|----------|-----------|
 | `ship-with-proof` | audit → tests → docs | — | `ship`, `qa` |
-| `align-then-ship` | `take-product-to-completion` | `grill-with-docs`, `office-hours` | `qa` |
+| `align-then-ship` | `take-product-to-completion` | `grill-with-docs`, `office-hours` | `qa` *(exploratory)* |
 | `quality-gate` | audit → tests | — | `qa-only`, `health` |
 | `gstack-quality` | framing → browser QA → security → devex | `office-hours` | `qa-only`, `health` |
 

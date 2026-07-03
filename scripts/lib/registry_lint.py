@@ -265,6 +265,83 @@ def lint_no_skill_version_literals_in_tests(root: Path) -> list[str]:
     return errors
 
 
+_ROUTING_DOCS = (
+    "skills/autonomous-fleet/SKILL.md",
+    "skills/autonomous-fleet/references/missions.md",
+    "skills/fleet-program/SKILL.md",
+    "skills/fleet-program/references/campaigns.md",
+    "skills/fleet-program/references/programs.md",
+    "skills/autonomous-fleet-core/references/community-skills.md",
+)
+
+_EXPLORATORY_MARKERS = ("exploratory", "archived", "demoted", "not yet", "pending promotion")
+
+
+def lint_mission_state_docs(root: Path) -> list[str]:
+    """The registry (fleet_registry.MISSIONS) is the single source of mission
+    state (issue #92). Routing docs must not present an exploratory mission as
+    first-class: any line naming one must carry an exploratory/archived marker
+    on the line or in its enclosing section heading; and every shipped mission
+    must appear in the missions catalog."""
+    import sys as _sys
+
+    _sys.path.insert(0, str(root / "scripts"))
+    from lib.fleet_registry import MISSIONS  # noqa: PLC0415
+
+    errors: list[str] = []
+    shipped = {m for m, row in MISSIONS.items() if row["shipped"] is True}
+    exploratory = {m for m, row in MISSIONS.items() if row["shipped"] is not True}
+
+    catalog = root / "skills/autonomous-fleet/references/missions.md"
+    if catalog.is_file():
+        text = catalog.read_text(encoding="utf-8")
+        for m in sorted(shipped):
+            if m not in text:
+                errors.append(f"{catalog.relative_to(root)}: shipped mission {m!r} missing from the catalog")
+
+    for rel in _ROUTING_DOCS:
+        path = root / rel
+        if not path.is_file():
+            continue
+        heading = ""
+        lines = path.read_text(encoding="utf-8").splitlines()
+        # Block-wise: a blank-line-delimited paragraph/table shares one
+        # context — a marker anywhere in the block (or its section heading)
+        # marks every mission named in it.
+        block_start = 0
+        blocks: list[tuple[int, list[str]]] = []
+        cur: list[str] = []
+        for idx, line in enumerate(lines):
+            if line.strip() == "":
+                if cur:
+                    blocks.append((block_start, cur))
+                cur = []
+                block_start = idx + 1
+            else:
+                cur.append(line)
+        if cur:
+            blocks.append((block_start, cur))
+        for start, block in blocks:
+            if block and block[0].startswith("#"):
+                heading = block[0].lower()
+            block_text = " ".join(block).lower()
+            marked = any(k in block_text for k in _EXPLORATORY_MARKERS) or any(
+                k in heading for k in _EXPLORATORY_MARKERS
+            )
+            if marked:
+                continue
+            for offset, line in enumerate(block):
+                for m in exploratory:
+                    if f"`{m}`" in line or f" {m} " in f" {line} ":
+                        errors.append(
+                            f"{rel}:{start + offset + 1}: exploratory mission {m!r} "
+                            f"presented without an exploratory/archived marker in its "
+                            f"block or section heading (registry is the single source "
+                            f"— issue #92)"
+                        )
+    return errors
+
+
 def _campaign_yaml_paths(root: Path) -> list[Path]:
     paths: list[Path] = []
     campaigns_dir = root / "scripts" / "campaigns"
@@ -354,6 +431,7 @@ def lint_registry(
         + lint_skills_lock(root)
         + lint_lock_hashes(root)
         + lint_no_skill_version_literals_in_tests(root)
+        + lint_mission_state_docs(root)
         + lint_external_source_pins(root)
         + lint_campaign_missions(root, missions)
     )
