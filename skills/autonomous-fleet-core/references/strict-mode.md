@@ -1,5 +1,11 @@
 # Strict mode — runtime enforcement of EVID, WT_CLEAN, and e2e_verified
 
+> **Runtime scope (issue #83):** strict mode is shipped for **Claude Code
+> only**. Codex, Grok, and Orca adapters have no stop-gate today; runs on
+> those hosts operate at the Loose level. The discipline is defined
+> tool-agnostically so another runtime CAN wire its own mechanism, but until
+> one ships, treat every Layer-2 claim as Claude-Code-scoped.
+
 This reference defines **strict mode**: an opt-in install that wires the
 autonomous-fleet stop-verify Stop hook into a Claude Code worker session,
 making the engine's three discipline flags (`EVID`, `WT_CLEAN`,
