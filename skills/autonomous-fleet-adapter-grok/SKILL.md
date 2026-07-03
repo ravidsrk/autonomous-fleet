@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Grok Build with Task tool, git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.2"
+  version: "1.1.3"
   fleet-component: "adapter"
 ---
 
@@ -189,6 +189,17 @@ If `manifest.json` is not present yet, add `--mission <slug> --run-id <run_id>`.
   concurrently. Parallelize subagents across non-overlapping files.
 - Default role mapping when a mission does not override: Grok subagent builds, a fresh Grok
   subagent reviews (build-blind), coordinator or integrator subagent opens/merges PRs.
+
+> **Reviewer isolation on this host — single-vendor caveat (issue #88).**
+> A fresh Grok subagent reviewing a Grok build is build-blind as
+> **instructed** isolation: fresh context, handed only the diff + acceptance
+> criteria, write-isolated. It is NOT the mechanical cross-vendor /
+> separate-process guarantee (Orca's topology) — a same-vendor reviewer can
+> share the builder's blind spots, and nothing in this runtime makes seeing
+> the build session physically impossible. Record
+> `reviewer_mode: same-vendor-instructed` in DECISIONS.md and the run
+> outcome. Scope of the "structural" claim: engine.md REVIEW step.
+
 
 
 ## RESUMABILITY + REVIEWER ISOLATION (Wave 3 contract)
