@@ -213,7 +213,7 @@ see. See `references/runtime-goals.md` for the binding details.
 `CONTINUE_WORKER(role, placement, session_handle)` re-attaches an EXISTING resumable agent session
 for an in-flight task instead of spawning a fresh worker. It exists so a run that crashed or
 compacted mid-task can pick the worker back up rather than redo its work. Adapters whose runtime
-exposes a restore command (a Grok `sessionId`, a Codex thread, an opencode session) implement it;
+exposes a restore command (`grok --resume`, `codex exec resume`, `claude --resume` — live-verified, issue #91) implement it;
 adapters without one ALIAS it to `SPAWN_WORKER`, which is the documented idempotent-relaunch
 fallback. Like the goal/loop family, it is optional: an adapter that cannot restore a session is
 fully conformant without it.
