@@ -42,6 +42,12 @@ from pathlib import Path
 # (claude-code-orchestra hardcoded 30, multi-llm timeout 15min). 30min is
 # the longest gap between "evidence ran" and "agent declares done" that the
 # fleet's real runs produce in steady state — anything longer is a smell.
+def _ledger_dir() -> str:
+    """Fleet ledger directory (issue #101): FLEET_LEDGER_DIR relocates fleet
+    files on docs-site repos; strict-mode evidence scans must follow."""
+    return os.environ.get("FLEET_LEDGER_DIR", "docs").strip().rstrip("/") or "docs"
+
+
 DEFAULT_WINDOW_MIN = 30
 
 # Lower bound — we won't accept a window so small that ordinary disk-cache
@@ -163,8 +169,12 @@ class StopVerifyConfig:
 
     window_sec: int = DEFAULT_WINDOW_MIN * 60
     repo_root: Path = Path.cwd()
-    progress_glob: str = "docs/*-progress.md"
-    readiness_glob: str = "docs/*-readiness.md"
+    progress_glob: str = field(
+        default_factory=lambda: f"{_ledger_dir()}/*-progress.md"
+    )
+    readiness_glob: str = field(
+        default_factory=lambda: f"{_ledger_dir()}/*-readiness.md"
+    )
     runs_dir: str = ".fleet/runs"
     require_progress_flag: bool = False
     min_evidence_kinds: int = 1

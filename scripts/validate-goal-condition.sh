@@ -108,10 +108,10 @@ scan_docs_ledgers() {
         err=1
       fi
     fi
-  done < <(find docs -maxdepth 1 -name '*-progress.md' -print0 2>/dev/null)
+  done < <(find docs "${FLEET_LEDGER_DIR:-docs}" -maxdepth 1 -name '*-progress.md' -print0 2>/dev/null | sort -zu)
 
   if [[ "$found" -eq 0 ]]; then
-    echo "OK   no ## Runtime goal sections in docs/*-progress.md (nothing to validate)"
+    echo "OK   no ## Runtime goal sections in ledger *-progress.md (docs/ + FLEET_LEDGER_DIR; nothing to validate)"
   fi
   return "$err"
 }

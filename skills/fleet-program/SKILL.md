@@ -46,7 +46,7 @@ Load **only** the active mission's skill while that mission runs — never two m
 
 ## Program ledger
 
-`docs/fleet-program-progress.md`:
+`<LEDGER_DIR>/fleet-program-progress.md` (LEDGER_DIR defaults to `docs/`; docs-site repos relocate it — engine SELF-ORIENTATION step 6):
 
 ```markdown
 # Fleet program progress
