@@ -49,7 +49,7 @@ Each layer catches a class of failure the others cannot:
 - Layer 4 catches a regression in layers 1 through 3 themselves. It injects a representative bug into
   the verifier code and asserts the test suite notices.
 
-The first three are runtime gates: they fire while a mission runs. The fourth is a build-time gate:
+The first three are runtime gates: they fire while a mission runs (Layer 2's gate is shipped for Claude Code only today — other hosts run Loose; see chapter 11). The fourth is a build-time gate:
 it fires in CI and makes the other three falsifiable. A verifier with no mutation pinning is a
 verifier you cannot trust, because nothing proves it would catch the bug it claims to catch.
 
