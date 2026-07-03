@@ -569,8 +569,9 @@ def test_trace_emission_doctrine_block_present_with_dashboard_contract() -> None
 
     # The core invariant. The whole point of the doctrine.
     trace_flat = squash(trace)
-    assert "MUST emit a trace event BEFORE the ledger write" in trace
-    assert "Trace first, ledger second" in trace_flat
+    assert "SHOULD emit a trace event BEFORE the ledger" in trace
+    assert "the LEDGER is the authoritative loop state" in trace
+    assert "trace first, ledger second" in trace_flat
 
     # Schema is the contract: pinned at 1.0, breaking changes need a new id.
     assert 'schema_version: "1.0"' in trace
@@ -718,3 +719,14 @@ def test_layer2_scoped_to_claude_code_only() -> None:
     assert "SHIPPED FOR CLAUDE CODE ONLY" in engine
     strict = (ROOT / "skills/autonomous-fleet-core/references/strict-mode.md").read_text(encoding="utf-8")
     assert "shipped for **Claude Code\n> only**" in strict or "Claude Code only" in strict
+
+
+def test_engine_defers_knob_registry_and_ledger_authority() -> None:
+    """Issue #85: engine.md must not duplicate the knob registry (stale copy
+    contradiction) and must state ledger-authoritative / trace-telemetry
+    consistently with the fail-soft emission bullet."""
+    engine = (ROOT / "skills/autonomous-fleet-core/references/engine.md").read_text(encoding="utf-8")
+    assert "substrate-disable-knobs.md" in engine
+    assert "nine knobs" in engine
+    assert "the LEDGER is the authoritative loop state" in engine
+    assert 'trace is the source of truth for "what happened"' not in engine
