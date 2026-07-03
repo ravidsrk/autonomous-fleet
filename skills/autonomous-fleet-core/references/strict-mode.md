@@ -73,10 +73,11 @@ jq '.hooks.Stop += input.hooks.Stop' .claude/settings.json "$HOOKS/hooks.json" \
    > .claude/settings.json.tmp && mv .claude/settings.json.tmp .claude/settings.json
 ```
 
-Verify it's wired up (prints a BLOCK/ALLOW decision, no "not found" warning):
+Verify it's wired up (with explain on, prints a BLOCK/ALLOW verdict line on
+stderr — BLOCK also emits JSON on stdout; no "not found" warning either way):
 
 ```bash
-echo '{"cwd":"."}' | bash "$HOOKS/stop-verify.sh"
+echo '{"cwd":"."}' | STOP_VERIFY_EXPLAIN=1 bash "$HOOKS/stop-verify.sh"
 ```
 
 ### Per-repo install — framework clone
