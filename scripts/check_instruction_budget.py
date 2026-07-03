@@ -46,15 +46,25 @@ def _size(rel: str) -> int:
 def composed_surface() -> dict[str, int]:
     """Relative path -> bytes for the worst-case mandatory composition."""
     surface = {rel: _size(rel) for rel in CORE_MANDATORY}
+
+    def _composition(skill_md: Path) -> dict[Path, int]:
+        """SKILL.md plus the skill's own references/ — adapters mandate them
+        (e.g. orca-platform.md), so the worst case is the composed size."""
+        files = {skill_md: skill_md.stat().st_size}
+        for ref in sorted(skill_md.parent.glob("references/*.md")):
+            files[ref] = ref.stat().st_size
+        return files
+
     adapters = sorted(ROOT.glob("skills/autonomous-fleet-adapter-*/SKILL.md"))
-    if adapters:
-        biggest = max(adapters, key=lambda p: p.stat().st_size)
-        surface[str(biggest.relative_to(ROOT))] = biggest.stat().st_size
-    missions = [ROOT / "skills" / m / "SKILL.md" for m in SHIPPED_MISSIONS]
-    missions = [p for p in missions if p.is_file()]
-    if missions:
-        biggest = max(missions, key=lambda p: p.stat().st_size)
-        surface[str(biggest.relative_to(ROOT))] = biggest.stat().st_size
+    missions = [
+        p for m in SHIPPED_MISSIONS if (p := ROOT / "skills" / m / "SKILL.md").is_file()
+    ]
+    for group in (adapters, missions):
+        if not group:
+            continue
+        biggest = max((_composition(p) for p in group), key=lambda c: sum(c.values()))
+        for path, size in biggest.items():
+            surface[str(path.relative_to(ROOT))] = size
     return surface
 
 
