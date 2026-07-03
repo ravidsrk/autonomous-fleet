@@ -75,8 +75,15 @@ path, product, maintainer identity, or scope — figure them out and record in D
    assumes; confirm the capability it assumes is missing). If the repo does NOT match, do NOT
    blindly execute — adapt to what THIS repo needs toward the mission's intent, record the
    adaptation and why, proceed. The mission's INTENT governs; its literal premises are assumptions.
-6. LEDGER DIRECTORY: ensure `docs/` exists under REPO_ROOT (`mkdir -p docs/` if missing). Missions
-   write progress ledgers and readiness docs there; create it before the first ledger write.
+6. LEDGER DIRECTORY (docs-site probe — issue #101): default `LEDGER_DIR=docs/`. FIRST probe for a
+   published docs-site toolchain — any of `docusaurus.config.*`, `mkdocs.yml`, `docs/conf.py`
+   (Sphinx), or an `astro.config.*` mentioning starlight. If found (and fleet-config records no
+   explicit `LEDGER_DIR`), set `LEDGER_DIR=.fleet/docs/` instead so fleet ledgers never break or
+   publish through the site build; export `FLEET_LEDGER_DIR` for every worker and validator
+   invocation (the mission registry resolves paths through it) and record the choice in
+   DECISIONS.md. Then ensure LEDGER_DIR exists (`mkdir -p`). Missions write progress ledgers and
+   readiness docs there; create it before the first ledger write. `docs/agents/fleet-config.md`
+   `LEDGER_DIR` (from setup) overrides the probe in both directions.
 7. BRANCH_PREFIX: default `fleet/`. Override by slugifying MAINTAINER's git user.name (lowercase,
    non-alphanumeric → `-`, trailing slash) — e.g. `Jane Doe` → `jane-doe/`. If
    `docs/agents/fleet-config.md` exists (from `setup-autonomous-fleet`), use its `BRANCH_PREFIX`
@@ -194,8 +201,8 @@ instinct is a BUG. Suppress it mechanically:
   renders on ledger mtime change in the FOREGROUND (a convenience that dies with the terminal, NOT
   a daemon).
 - RUNTIME GOAL (when adapter supports primitives 9–12): after SELF-ORIENTATION and ledger init,
-  SET_GOAL with a condition that paraphrases the mission DONE gates (must reference `docs/` ledger
-  and readiness paths). UPDATE_GOAL at major phase transitions. GOAL_COMPLETE only after TERMINATE
+  SET_GOAL with a condition that paraphrases the mission DONE gates (must reference the LEDGER_DIR ledger
+  and readiness paths — `docs/` by default, the relocated dir per step 6 otherwise). UPDATE_GOAL at major phase transitions. GOAL_COMPLETE only after TERMINATE
   checks pass (re-read ledger, readiness exists, the readiness fleet-outcome validates (`python3 <SUBSTRATE>/validate_fleet_outcome.py <readiness>`) when
   available). Never GOAL_COMPLETE on belief — files are authoritative; the native goal is the turn-
   continuation harness. GOAL_BLOCKED when the mission names a hard external dependency or circuit-

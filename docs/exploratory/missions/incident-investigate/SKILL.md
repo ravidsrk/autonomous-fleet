@@ -74,7 +74,7 @@ signal — pause at T-SCOPE and document unknowns.
 
 ## Deferred missions
 
-Record in `docs/incident-readiness.md` under **Recommended next missions**.
+Record in `<LEDGER_DIR>/incident-readiness.md` under **Recommended next missions**.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -95,11 +95,11 @@ and learnings persisted — not a narrative-only postmortem.
 - @claude **skeptic pass** refutes weak causal claims.
 - @codex adds **regression test** reproducing the failure mode, then minimal fix if still broken.
 - Fresh build-blind @claude **reviews** test + fix PR.
-- @claude writes `docs/incident-readiness.md` with **`fleet-outcome` YAML** and learnings.
+- @claude writes `<LEDGER_DIR>/incident-readiness.md` with **`fleet-outcome` YAML** and learnings.
 
 ## LEDGER
 
-`docs/incident-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/incident-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
 SHIPPED=<t/f>`.
 
 Frozen artifacts:
@@ -113,14 +113,14 @@ Frozen artifacts:
 - **T-SKEPTIC [@claude, fresh session]** — refute weak causes; update REFUTED rows.
 - **T-FREEZE [@claude]** — confirmed root cause frozen; drives fix loop only.
 - **T-REGRESS [@codex → @claude review]** — failing test first, then fix; CLOSE-INDEX `CLOSED`.
-- **T-LEARN [@claude]** — append learnings; output `docs/incident-readiness.md` with **`fleet-outcome`
+- **T-LEARN [@claude]** — append learnings; output `<LEDGER_DIR>/incident-readiness.md` with **`fleet-outcome`
   YAML** (`root_cause_confirmed`, `regression_test_merged`, `learnings_count`).
 
 ## Runtime goal
 
 ```
 Mission incident-investigate DONE: docs/incident-rca.md FROZEN, regression test merged,
-docs/incident-close-index confirmed rows CLOSED, docs/incident-readiness.md fleet-outcome.status done,
+docs/incident-close-index confirmed rows CLOSED, <LEDGER_DIR>/incident-readiness.md fleet-outcome.status done,
 ./scripts/validate-fleet-outcome.sh passes.
 ```
 

@@ -15,7 +15,7 @@ license: MIT
 compatibility: Requires git and gh CLI; install mission skills via npx skills
 metadata:
   author: "ravidsrk"
-  version: "1.2.2"
+  version: "1.2.3"
   fleet-component: "program"
 ---
 
@@ -46,7 +46,7 @@ Load **only** the active mission's skill while that mission runs — never two m
 
 ## Program ledger
 
-`docs/fleet-program-progress.md`:
+`<LEDGER_DIR>/fleet-program-progress.md` (LEDGER_DIR defaults to `docs/`; docs-site repos relocate it — engine SELF-ORIENTATION step 6):
 
 ```markdown
 # Fleet program progress
@@ -72,7 +72,7 @@ BASE: <branch>
 
 SCOPE: campaign
 CONDITION: |
-  Campaign <id> DONE: docs/fleet-program-progress.md PHASE is DONE,
+  Campaign <id> DONE: <LEDGER_DIR>/fleet-program-progress.md PHASE is DONE,
   every node DONE or SKIPPED, each readiness doc has valid fleet-outcome YAML.
 HOST: <adapter runtime>
 SET_AT: <timestamp>
@@ -102,7 +102,7 @@ Acceptance / readiness → `quality-gate`. Community hooks: [community-skills.md
 3. Write spec + ledger; record in DECISIONS.md.
 4. **BASE:** `<BRANCH_PREFIX><campaign-id>-base` off default branch at HEAD (first node).
 5. **SET_GOAL** (campaign scope) per [runtime-goals.md](../autonomous-fleet-core/references/runtime-goals.md) —
-   condition must reference `docs/fleet-program-progress.md` and readiness validation.
+   condition must reference `<LEDGER_DIR>/fleet-program-progress.md` and readiness validation.
 
 ## Runtime goal binding
 
@@ -117,8 +117,8 @@ Acceptance / readiness → `quality-gate`. Community hooks: [community-skills.md
 Mission goal template (substitute mission id, ledger, readiness, metrics):
 
 ```
-Mission <mission-id> DONE: docs/<mission>-progress.md all task flags true,
-docs/<mission>-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission <mission-id> DONE: <LEDGER_DIR>/<mission>-progress.md all task flags true,
+<LEDGER_DIR>/<mission>-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 the readiness fleet-outcome validates (python3 <SUBSTRATE>/validate_fleet_outcome.py per the engine's SUBSTRATE RESOLUTION; skip recorded in the readiness doc when SUBSTRATE=none), all PRs merged into BASE.
 ```
 

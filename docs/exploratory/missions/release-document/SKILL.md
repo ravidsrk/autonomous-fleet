@@ -74,7 +74,7 @@ document.
 
 ## Deferred missions
 
-Record in `docs/release-doc-readiness.md` under **Recommended next missions**.
+Record in `<LEDGER_DIR>/release-doc-readiness.md` under **Recommended next missions**.
 
 | Gap type | Route to |
 |----------|----------|
@@ -94,11 +94,11 @@ deploy verification notes, and canary/monitoring reminders — frozen before pub
 - @claude runs **doc sweep** against guide, README, API docs, and migration notes.
 - @claude records **deploy checklist** (land, health, canary) with pass/fail or N/A.
 - @claude **FREEZES** `docs/release-doc-checklist.md`.
-- @claude writes `docs/release-doc-readiness.md` with **`fleet-outcome` YAML**.
+- @claude writes `<LEDGER_DIR>/release-doc-readiness.md` with **`fleet-outcome` YAML**.
 
 ## LEDGER
 
-`docs/release-doc-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/release-doc-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
 SHIPPED=<t/f>`.
 
 Frozen artifact: `docs/release-doc-checklist.md` — sections `CHANGELOG | USER_DOCS | DEPLOY | CANARY`
@@ -110,14 +110,14 @@ each row `PENDING | DONE | N/A`.
 - **T-SWEEP [@claude]** — walk doc surfaces; list required updates in checklist (DRAFT).
 - **T-DEPLOY [@claude, optional]** — verify deploy URL health / canary notes if credentials supplied.
 - **T-FREEZE [@claude]** — mark checklist FROZEN; outstanding items routed to Deferred missions.
-- **T-FINAL [@claude]** — output `docs/release-doc-readiness.md` with **`fleet-outcome` YAML**
+- **T-FINAL [@claude]** — output `<LEDGER_DIR>/release-doc-readiness.md` with **`fleet-outcome` YAML**
   (`version`, `checklist_complete`, `open_doc_items`).
 
 ## Runtime goal
 
 ```
 Mission release-document DONE: docs/release-doc-checklist.md FROZEN,
-docs/release-doc-readiness.md fleet-outcome.status done,
+<LEDGER_DIR>/release-doc-readiness.md fleet-outcome.status done,
 ./scripts/validate-fleet-outcome.sh passes.
 ```
 

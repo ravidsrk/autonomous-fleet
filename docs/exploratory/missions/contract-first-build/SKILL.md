@@ -81,7 +81,7 @@ Inject per role on DISPATCH (workers load these; coordinator does not). Use only
 ## Deferred missions
 
 ROADMAP / deferred items in DECISIONS.md + **Recommended next missions** in
-`docs/contract-build-readiness.md`. Route to REUSED generic missions only; never invent a mission
+`<LEDGER_DIR>/contract-build-readiness.md`. Route to REUSED generic missions only; never invent a mission
 and never inline another mission as a node.
 
 | Finding type | Route to |
@@ -125,7 +125,7 @@ in place for `agents-layer`). The seam interface is untouched and the live impl 
 - @integrator SHIPS: opens PR, merges (conflict-aware), cleans worktree.
 
 ## LEDGER
-`docs/contract-build-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/contract-build-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
 SHIPPED=<t/f>`. The frozen INDEX is the set of Work-areas rows this mission owns (every § Work
 areas row with layer != `agents-live`), each `OPEN | DONE via PR#n`, plus an OPS QUEUE (rows
 blocked on a human-supplied secret: DB / auth creds / payment keys) and a ROADMAP list (deferred,
@@ -154,7 +154,7 @@ never built this run).
 - **T-FINAL [@integrator]:** run the § Invariants commands: build green, lint clean, full suite
   green; confirm every owned INDEX row is DONE and zero stubs remain in the typed layers (the
   seam's own stub is intentionally retained for `agents-layer`); confirm the seam interface and the
-  live impl file are untouched. Output `docs/contract-build-readiness.md` LED BY the `fleet-outcome`
+  live impl file are untouched. Output `<LEDGER_DIR>/contract-build-readiness.md` LED BY the `fleet-outcome`
   YAML block (metrics `in_items_open`, `roadmap_count`, `stubs_remaining`, `ops_queue_count`; see
   `autonomous-fleet-core/references/fleet-outcome.md`), plus boolean readiness fields for each
   OPS-QUEUE secret still pending (e.g. `db_credentials_pending`, `auth_credentials_pending`,
@@ -189,18 +189,18 @@ fleet-outcome:
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/contract-build-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/contract-build-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission contract-first-build DONE: docs/contract-build-progress.md all task flags true,
-docs/contract-build-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission contract-first-build DONE: <LEDGER_DIR>/contract-build-progress.md all task flags true,
+<LEDGER_DIR>/contract-build-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 ./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
 ```
 
 
 ## DONE
 Every owned INDEX row `DONE`, every task `PLANNED=t BUILT=t REVIEWED=t SHIPPED=t`,
-`docs/contract-build-readiness.md` exists, zero stubs remain in the typed layers, the seam
+`<LEDGER_DIR>/contract-build-readiness.md` exists, zero stubs remain in the typed layers, the seam
 interface and the live impl file are untouched, and the build/lint/suite § Invariants pass. Then
 send the FINAL report.
 

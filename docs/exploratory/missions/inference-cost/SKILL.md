@@ -53,7 +53,7 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 ## Deferred missions
 
-Record in `docs/inference-cost-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+Record in `<LEDGER_DIR>/inference-cost-readiness.md` under **Recommended next missions** and in DECISIONS.md.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -92,7 +92,7 @@ missing, record the blocker and stop the live-call portion of the mission.
 
 ## LEDGER
 
-`docs/inference-cost-progress.md`. Per-task flags: `BASELINE=<t/f> PLANNED=<t/f> CODED=<t/f>
+`<LEDGER_DIR>/inference-cost-progress.md`. Per-task flags: `BASELINE=<t/f> PLANNED=<t/f> CODED=<t/f>
 QUALITY_OK=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f> MERGED=<t/f>`. Plus a CALL-CLASS INDEX: each
 inference call class, owner/module, baseline model/provider, baseline cost metric, quality sample,
 candidate lever, `OPEN | SHIPPED via PR#n | REJECTED (quality/cost reason) | DEFERRED (reason)`.
@@ -114,18 +114,18 @@ candidate lever, `OPEN | SHIPPED via PR#n | REJECTED (quality/cost reason) | DEF
   or violates the rubric, reject it for that call class and do not ship it. Keep only changes with
   measured savings and `QUALITY_OK=t`.
 - **T-FINAL [@claude]** - run the full suite and the cost+quality harness. Output
-  `docs/inference-cost-readiness.md` with **`fleet-outcome` YAML** (`cost_regressed`,
+  `<LEDGER_DIR>/inference-cost-readiness.md` with **`fleet-outcome` YAML** (`cost_regressed`,
   `quality_regressed`, `levers_open`), the before/after savings table, quality results, rejected
   levers with reasons, provider price sources, and all PRs. Ship as the final PR.
 
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/inference-cost-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/inference-cost-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission inference-cost DONE: docs/inference-cost-progress.md all task flags true,
-docs/inference-cost-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission inference-cost DONE: <LEDGER_DIR>/inference-cost-progress.md all task flags true,
+<LEDGER_DIR>/inference-cost-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 ./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
 ```
 
@@ -135,7 +135,7 @@ docs/inference-cost-readiness.md with fleet-outcome.status done and mission metr
 Every shipped optimization has measured before/after savings with quality held constant, every
 CALL-CLASS INDEX item is `SHIPPED`, `REJECTED`, or explicitly `DEFERRED`, suite and harness green,
 `cost_regressed=false`, `quality_regressed=false`, `levers_open=0`, and
-`docs/inference-cost-readiness.md` exists. Then send the FINAL report.
+`<LEDGER_DIR>/inference-cost-readiness.md` exists. Then send the FINAL report.
 
 ## DECISION DEFAULTS (mission-specific)
 

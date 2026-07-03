@@ -54,7 +54,7 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 ## Deferred missions
 
-Record in `docs/cleanup-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+Record in `<LEDGER_DIR>/cleanup-readiness.md` under **Recommended next missions** and in DECISIONS.md.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -83,7 +83,7 @@ and point to legacy-rebuild). Every change is behaviour-preserving and proven so
 - @claude is the INTEGRATOR: opens PR, merges (conflict-aware), cleans worktree.
 
 ## LEDGER
-`docs/cleanup-progress.md`. Per-task flags: `CLEANED=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/cleanup-progress.md`. Per-task flags: `CLEANED=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
 MERGED=<t/f>`. Plus a CLEANUP INDEX: each item (dead-code/duplication/anti-pattern/structure)
 with location, `OPEN | DONE via PR#n`.
 
@@ -99,24 +99,24 @@ with location, `OPEN | DONE via PR#n`.
   → @claude merges. Parallelize non-overlapping files; serialize same-file. Update the CLEANUP
   INDEX.
 - **T-FINAL [@claude]** — build green, full suite green, no behaviour change, the targeted smells
-  gone. Output `docs/cleanup-readiness.md` with **`fleet-outcome` YAML** (`cleanup_items_open`),
+  gone. Output `<LEDGER_DIR>/cleanup-readiness.md` with **`fleet-outcome` YAML** (`cleanup_items_open`),
   cleanup summary, **Recommended next missions**, all PRs. Ship as the final PR.
 
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/cleanup-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/cleanup-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission cleanup DONE: docs/cleanup-progress.md all task flags true,
-docs/cleanup-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission cleanup DONE: <LEDGER_DIR>/cleanup-progress.md all task flags true,
+<LEDGER_DIR>/cleanup-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 ./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
 ```
 
 
 ## DONE
 Every CLEANUP-INDEX item `DONE`, every task terminal, suite green, behaviour preserved,
-`docs/cleanup-readiness.md` exists. Then send the FINAL report.
+`<LEDGER_DIR>/cleanup-readiness.md` exists. Then send the FINAL report.
 
 ## DECISION DEFAULTS (mission-specific)
 - Behaviour-preserving ALWAYS. If a "cleanup" would change behaviour, it's not cleanup — stop and

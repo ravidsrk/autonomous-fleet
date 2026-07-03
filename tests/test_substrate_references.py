@@ -117,3 +117,48 @@ def test_tier1_missions_carry_pr_sizing_heuristics() -> None:
         text = (ROOT / "skills" / mission / "SKILL.md").read_text(encoding="utf-8")
         assert "PR sizing" in text, mission
         assert "400" in text, mission
+
+
+def test_ledger_dir_env_override(monkeypatch) -> None:
+    """Issue #101: mission ledger paths resolve through FLEET_LEDGER_DIR so
+    docs-site repos can relocate fleet files out of the published tree."""
+    from lib import mission_registry as mr
+
+    monkeypatch.delenv("FLEET_LEDGER_DIR", raising=False)
+    assert mr.progress_path("doc-sync").startswith("docs/")
+    monkeypatch.setenv("FLEET_LEDGER_DIR", ".fleet/docs/")
+    assert mr.progress_path("doc-sync") == ".fleet/docs/doc-sync-progress.md"
+    assert mr.readiness_path("doc-sync") == ".fleet/docs/doc-sync-readiness.md"
+    monkeypatch.setenv("FLEET_LEDGER_DIR", "")
+    assert mr.progress_path("doc-sync").startswith("docs/")
+
+
+def test_stop_verify_globs_follow_ledger_dir(monkeypatch) -> None:
+    """#123 review: strict-mode evidence scans must follow the relocated
+    ledger dir or evidence is silently missed."""
+    import importlib
+    from lib import stop_verify as sv
+
+    monkeypatch.setenv("FLEET_LEDGER_DIR", ".fleet/docs")
+    cfg = sv.StopVerifyConfig()
+    assert cfg.progress_glob == ".fleet/docs/*-progress.md"
+    monkeypatch.delenv("FLEET_LEDGER_DIR")
+    cfg = sv.StopVerifyConfig()
+    assert cfg.progress_glob == "docs/*-progress.md"
+
+
+def test_validate_fleet_outcome_collects_relocated_readiness(tmp_path, monkeypatch) -> None:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "vfo", ROOT / "scripts" / "validate_fleet_outcome.py"
+    )
+    vfo = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(vfo)
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "a-readiness.md").write_text("x", encoding="utf-8")
+    (tmp_path / ".fleet" / "docs").mkdir(parents=True)
+    (tmp_path / ".fleet" / "docs" / "b-readiness.md").write_text("x", encoding="utf-8")
+    monkeypatch.setenv("FLEET_LEDGER_DIR", ".fleet/docs")
+    names = sorted(p.name for p in vfo.collect_readiness_paths(tmp_path))
+    assert names == ["a-readiness.md", "b-readiness.md"]
