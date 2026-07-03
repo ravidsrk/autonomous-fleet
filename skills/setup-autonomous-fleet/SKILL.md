@@ -8,7 +8,7 @@ license: MIT
 compatibility: Requires git; gh CLI recommended for PR workflows
 metadata:
   author: "ravidsrk"
-  version: "1.1.2"
+  version: "1.1.3"
   fleet-component: "setup"
 ---
 
@@ -90,6 +90,13 @@ When the user confirms, print or run:
 # after explicit consent:
 ./scripts/install-community.sh <bundle-id> --execute --host <adapter-host>
 ```
+
+**Section D2 — Authorship mode.**
+
+> How should fleet commits record agent involvement? Default `attributed`:
+> commits are authored as the maintainer AND carry a Co-Authored-By trailer
+> naming the agent — transparent provenance. Choose `maintainer-only` only if
+> this repo's contribution policy forbids trailers; that choice is recorded.
 
 **Section E — Substrate path (no user decision; detect and record).**
 

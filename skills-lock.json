@@ -40,14 +40,14 @@
     "autonomous-fleet-adapter-template": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.1.2",
-      "computedHash": "ad8ce3bb80637f3b737c7bb6d45ce9f0f83d1faa8ee5d6e8d6cafda46b15d963"
+      "version": "1.1.3",
+      "computedHash": "c8d32f07151fd2611a7bcdf1d6843e616d218400982adc80ad5d6046ec0c8214"
     },
     "autonomous-fleet-core": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.2.12",
-      "computedHash": "5eb0017c15473e21846ab0268e0964b7995f8636f220fd9a93096ee6378f916c"
+      "version": "1.2.13",
+      "computedHash": "d1dc91c84e4ee508d1dc7d06810c99b151ccd1af6ec5486812c857196cacbb96"
     },
     "doc-sync": {
       "source": "ravidsrk/autonomous-fleet",
@@ -64,8 +64,8 @@
     "setup-autonomous-fleet": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.1.2",
-      "computedHash": "b972ee7c88daca21c65fc1967800c0c4667e1903bc6be144fcd661b17c088d48"
+      "version": "1.1.3",
+      "computedHash": "15cd8424ad0aa4ab1c00f8a3e4a0bc365f43d7c0a41dabb94733af753a5ff754"
     },
     "skill-creator": {
       "source": "anthropics/skills",

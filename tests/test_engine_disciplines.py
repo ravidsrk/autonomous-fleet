@@ -262,7 +262,7 @@ def test_first_merge_spot_check_blocks_later_waves_on_fail() -> None:
     assert "After the first task merges into BASE" in pipeline
     assert "preserved the branch commit count" in pipeline
     assert "authored by MAINTAINER" in pipeline
-    assert "no commit message contains agent/tool trailers" in pipeline
+    assert "trailer usage matches the recorded AUTHORSHIP_MODE" in pipeline
     assert "PR branch is deleted" in pipeline
     assert "secret-scan ran" in pipeline
     assert "FIRST_MERGE_SPOT_CHECK=PASS or FAIL" in pipeline
@@ -742,3 +742,14 @@ def test_research_discipline_is_host_conditional() -> None:
     preamble = engine.split("RESEARCH: before coding against any external fact")[1][:500]
     assert "monid" not in preamble
     assert "native web" in preamble
+
+
+def test_authorship_mode_is_a_deliberate_documented_policy() -> None:
+    """Issue #102: authorship is an explicit policy with rationale, defaulting
+    to attributed (agent trailers), never an inherited no-trailer default."""
+    engine = (ROOT / "skills/autonomous-fleet-core/references/engine.md").read_text(encoding="utf-8")
+    assert "AUTHORSHIP_MODE" in engine
+    assert "`attributed` (DEFAULT)" in engine
+    assert "Co-Authored-By" in engine
+    assert "never impersonate a DIFFERENT human" in engine
+    assert "No agent/tool trailers." not in engine
