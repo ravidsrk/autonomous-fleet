@@ -73,7 +73,7 @@ ledger DONE via primitives 9–12 in `engine.md`. See [runtime-goals.md](runtime
 - **Native goal** = turn-continuation harness (prevents early stop).
 - `GOAL_COMPLETE` only after readiness + `validate-fleet-outcome.sh`.
 - Orca: ledger + `check --wait` loop only (no `/goal`).
-- Headless CI: `scripts/run-mission-headless.sh`.
+- Headless CI: `scripts/run-mission-headless.sh` (framework clone only).
 
 ## Multi-mission programs and campaigns
 

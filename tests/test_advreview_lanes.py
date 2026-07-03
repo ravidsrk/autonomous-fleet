@@ -147,7 +147,7 @@ def test_p0_review_requires_schema_verified_findings_doc() -> None:
     assert "autonomous-fleet-core/assets/fleet-review-findings.schema.json" in tasks
     # The verifier CLI invocation is documented inline so coordinators don't
     # have to guess.
-    assert "scripts/verify_findings.py" in tasks
+    assert "<SUBSTRATE>/verify_findings.py" in tasks
     # The HALT semantics are explicit. Don't soften them.
     assert "the run HALTS at P0-REVIEW" in tasks
     assert "MUST NOT enter the fix loop" in tasks
@@ -294,7 +294,7 @@ def test_t_final_writes_run_archive_manifest_before_shipping() -> None:
     # The mechanics: write_manifest + validate_run_archive.py. Pin both
     # names so a rename doesn't silently break operator scripts.
     assert "fleet_run.write_manifest" in flat or "fleet_run.write_manifest" in tasks
-    assert "scripts/validate_run_archive.py" in tasks
+    assert "<SUBSTRATE>/validate_run_archive.py" in tasks
 
     # The three mtime-ordering invariants are mentioned explicitly. A
     # reviewer who sees a validator failure must know WHY it failed; the

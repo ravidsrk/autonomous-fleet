@@ -108,13 +108,13 @@ validation, even when every checksum matches.
 
 ```sh
 # All archives under .fleet/runs/
-python scripts/validate_run_archive.py
+python3 <SUBSTRATE>/validate_run_archive.py
 
 # Specific archive
-python scripts/validate_run_archive.py .fleet/runs/<run_id>/
+python3 <SUBSTRATE>/validate_run_archive.py .fleet/runs/<run_id>/
 
 # Cheap pre-flight (skip on-disk sha256 verification)
-python scripts/validate_run_archive.py --no-checksums
+python3 <SUBSTRATE>/validate_run_archive.py --no-checksums
 ```
 
 Exit 0 = pass, exit 1 = at least one archive failed. Lives behind

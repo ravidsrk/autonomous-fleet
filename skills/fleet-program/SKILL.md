@@ -15,7 +15,7 @@ license: MIT
 compatibility: Requires git and gh CLI; install mission skills via npx skills
 metadata:
   author: "ravidsrk"
-  version: "1.2.0"
+  version: "1.2.1"
   fleet-component: "program"
 ---
 
@@ -122,7 +122,7 @@ docs/<mission>-readiness.md with fleet-outcome.status done,
 all PRs merged into BASE, validate-fleet-outcome.sh passes.
 ```
 
-Unattended CI: `./scripts/run-campaign.sh <grok|claude|codex> --preset repo-health --max-turns N`
+Unattended CI (framework clone only): `./scripts/run-campaign.sh <grok|claude|codex> --preset repo-health --max-turns N`
 (or `--campaign docs/<campaign>.yaml`; add `--dry-run` to plan only)
 
 ## Per-mission loop (single repo)
