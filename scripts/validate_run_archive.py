@@ -9,6 +9,8 @@ invariants from engine.md ARCHIVE_ENABLED satisfied:
   - blind_fix mtime < findings mtime (per producer)
   - verify_summary mtime > findings mtime (per producer)
   - readiness mtime = max(all file mtimes)
+  - findings from different producers are not byte-identical
+    (independent-review integrity, issue #77)
 
 Exit codes:
   0 — all validated archives pass (or no archives present)
