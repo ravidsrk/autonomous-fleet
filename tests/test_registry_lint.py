@@ -40,3 +40,12 @@ def test_real_repo_has_no_version_literals_in_tests() -> None:
     from lib.registry_lint import lint_no_skill_version_literals_in_tests
 
     assert lint_no_skill_version_literals_in_tests(Path(__file__).resolve().parents[1]) == []
+
+
+def test_version_literal_lint_skips_on_lock_errors(tmp_path) -> None:
+    """Lock problems are lint_skills_lock's job — this rule stays quiet."""
+    from lib.registry_lint import lint_no_skill_version_literals_in_tests
+
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "skills-lock.json").write_text("{not json", encoding="utf-8")
+    assert lint_no_skill_version_literals_in_tests(tmp_path) == []
