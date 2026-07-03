@@ -1,4 +1,4 @@
 {
-  "max_bytes": 182000,
-  "note": "Composed mandatory instruction surface cap (issue #87). Raising this is a deliberate act \u2014 justify it in the commit that grows the corpus. Measured by scripts/check_instruction_budget.py."
+  "max_bytes": 170000,
+  "note": "Composed mandatory instruction surface cap (issue #87). Ratcheted DOWN by #84 (engine.md 89.2KB -> 82.9KB measured post-restructure; nine doctrine sections demoted to trigger-loaded references). Raising is a deliberate per-commit act; further reduction is semantic compression of kept must-read text."
 }
