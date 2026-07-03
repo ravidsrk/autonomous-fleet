@@ -406,6 +406,10 @@ while [[ -n "$CURRENT" ]]; do
     READINESS="$(readiness_for_mission "$MISSION")"
     READINESS_ABS="$REPO_ROOT/$READINESS"
     emit_campaign_node_archive "$MISSION" || true
+    # Re-resolve after run: run-keyed missions write <mission>-<run_short>-readiness.md
+    # during execution; pre-run discovery cannot know that suffix.
+    READINESS="$(readiness_for_mission "$MISSION")"
+    READINESS_ABS="$REPO_ROOT/$READINESS"
     if [[ "$NODE_RC" -ne 0 ]]; then
       if [[ -d "$REPO_ROOT/.fleet/runs" ]] && compgen -G "$REPO_ROOT/.fleet/runs/*" >/dev/null; then
         echo "warn: node $CURRENT runtime exited $NODE_RC (archives under $REPO_ROOT/.fleet/runs/)" >&2
