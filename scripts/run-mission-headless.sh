@@ -314,6 +314,8 @@ run_with_timeout() {
   pkill -P "$watch_pid" 2>/dev/null || true
   kill "$watch_pid" 2>/dev/null || true
   wait "$watch_pid" 2>/dev/null || true
+  # Sentinel (not rc normalization): 124 only when the watchdog actually fired, so a
+  # runtime that exits 143 for its own reasons is not misreported as a timeout.
   if [[ -s "$timed_out_flag" ]]; then
     rc=124
   fi
