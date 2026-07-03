@@ -442,16 +442,14 @@ case "$RUNTIME" in
     # attempts could never land work. Gated by the same RCE guard as grok
     # (--yolo-untrusted-acknowledged required for an external --repo).
     [[ "$YOLO" -eq 1 ]] && CMD+=(--dangerously-bypass-approvals-and-sandbox)
+    CMD+=("$PROMPT")
     if [[ "$DRY_RUN" -eq 1 ]]; then
-      # Print the REAL flag set (including the yolo bypass) — the dry-run is
-      # the preflight operators use to see exactly what would execute.
-      echo "would run: ${CMD[*]} <prompt>"
+      printf 'would run: '; printf '%q ' "${CMD[@]}"; echo
       emit_and_cleanup_dryrun_trace "$(dryrun_emit_mission)"
       echo "headless dry-run complete (codex not invoked; runtime auth not required)"
       exit 0
     fi
     if command -v codex >/dev/null 2>&1; then
-      CMD+=("$PROMPT")
       run_runtime_emit "${CMD[@]}"
       exit $?
     else
