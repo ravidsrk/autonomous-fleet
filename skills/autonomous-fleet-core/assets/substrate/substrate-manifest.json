@@ -22,7 +22,7 @@
     "lib/nudge_dedup.py": "9e36a47c4796d4508f3eba7556ba3b15a1a0df59327d9eac125b4e4091d6ecd6",
     "lib/png_banner.py": "f19ca77fd426b380c7bee1be1b189cdb055b979be7c9fa71cca13d5fd71a25eb",
     "lib/recovery_scan.py": "3b70799e9ff6a8b3dd71e87cee4578681e82ce55aca5f43d0fa0612ee0048958",
-    "lib/registry_lint.py": "08cb27a0125e8824cc9ab61728a71fd733ab1f0b2a17b9c48a7c2fe0297aa819",
+    "lib/registry_lint.py": "c83012286812241dd034a7bf189cccdbf59a8e63df6617c30a96176f9ae8bc01",
     "lib/reviewer_sandbox.py": "f953821517f157b559e500a4f1d2cc014e21e7ca5926560e31a65578d4eecb91",
     "lib/skill_lint.py": "3adde6d08df11e0162cd43c6820dd2f3fb2a9712efdba98e338c074105747516",
     "lib/stacked_pr_status.py": "42a709a5d55956b59b78ba1ee1f8ff2b32abf3d3c08ce63582652ee24f187da1",

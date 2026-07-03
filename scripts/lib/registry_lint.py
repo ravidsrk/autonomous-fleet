@@ -234,6 +234,37 @@ def lint_external_source_pins(root: Path) -> list[str]:
     return errors
 
 
+def lint_no_skill_version_literals_in_tests(root: Path) -> list[str]:
+    """Tests hard-coding a CURRENT skill's version break on every routine bump
+    (ebd33d3, PR #112). Precisely: flag `version: "X.Y.Z"` literals whose X.Y.Z
+    equals any version in skills-lock.json today. Self-contained fixture
+    frontmatter (conventionally `0.0.1`-style) and pinned schema versions are
+    unaffected (issue #90)."""
+    errors: list[str] = []
+    tests_dir = root / "tests"
+    if not tests_dir.is_dir():
+        return errors
+    skills, load_errors = _load_lock_skills(root)
+    if load_errors:
+        return errors  # lock problems are lint_skills_lock's job
+    current = {
+        row.get("version")
+        for row in skills.values()
+        if isinstance(row, dict) and isinstance(row.get("version"), str)
+    }
+    patterns = {v: re.compile(r'(?<!schema_)version: "' + re.escape(v) + '"') for v in current}
+    for path in sorted(tests_dir.glob("*.py")):
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for v, pat in patterns.items():
+                if pat.search(line):
+                    errors.append(
+                        f"{path.relative_to(root)}:{i}: literal of CURRENT skill version "
+                        f"{v!r} in a test — breaks on the next bump (use a version-agnostic "
+                        f"pattern; see CONTRIBUTING 'Skill versioning policy')"
+                    )
+    return errors
+
+
 def _campaign_yaml_paths(root: Path) -> list[Path]:
     paths: list[Path] = []
     campaigns_dir = root / "scripts" / "campaigns"
@@ -322,6 +353,7 @@ def lint_registry(
         + lint_catalog_mentions(root, missions)
         + lint_skills_lock(root)
         + lint_lock_hashes(root)
+        + lint_no_skill_version_literals_in_tests(root)
         + lint_external_source_pins(root)
         + lint_campaign_missions(root, missions)
     )

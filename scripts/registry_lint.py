@@ -17,6 +17,7 @@ def main() -> int:
         + rl.lint_catalog_mentions(root)
         + rl.lint_skills_lock(root)
         + rl.lint_lock_hashes(root)
+        + rl.lint_no_skill_version_literals_in_tests(root)
         + rl.lint_external_source_pins(root)
         + rl.lint_campaign_missions(root)
     )
