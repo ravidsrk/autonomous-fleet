@@ -120,13 +120,19 @@ the ROOT_CAUSE_DEPTH discipline in engine.md).
 }
 ```
 
-After `verify_findings.py` runs against this:
-- If `scripts/run-sandboxed.sh` contains a line matching (whitespace-tolerant)
-  `[ -z "$wt" ] && wt="$ACTIVE_CHECKOUT"` — finding gets `verified: true`,
-  counts toward `auto_applicable_findings` (auto + conf ≥ 80).
-- If the line isn't there — finding gets `verified: false` with
-  `verify_reason: "quoted_line not found in cited file"`, counts toward
-  `unverified_findings`. Operator inspects.
+After `verify_findings.py` runs against this (issue #98 semantics —
+specificity from the anchor OR the length):
+- With `evidence.line_number` set: the quoted line must match
+  (whitespace-tolerant) within a ±2-line window around that line —
+  `verified: true` on hit; on miss, `verify_reason:
+  "quoted_line not found within ±2 lines of line_number N"`. A global match
+  elsewhere in the file does NOT rescue a wrong anchor.
+- Without `line_number`: the whole-file match applies, but the quote must be
+  ≥12 normalized characters — shorter quotes get `verify_reason:
+  "quoted_line too short to verify un-anchored"` (the old behavior let
+  `return` "verify" against almost any file).
+- Verified findings count toward `auto_applicable_findings` (auto + conf ≥ 80);
+  unverified ones count toward `unverified_findings` and the operator inspects.
 
 ## ROOT_CAUSE_DEPTH — schema-enforced
 
