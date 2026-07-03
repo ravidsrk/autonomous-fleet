@@ -271,13 +271,15 @@ runtime_auth_check() {
     return 0
   fi
   echo "error: auth-check: $RUNTIME is not authenticated ('${probe[*]}' exited $rc):" >&2
-  echo "$out" | head -3 | sed 's/^/       /' >&2
+  # herestring (not echo|): a closing head must never SIGPIPE us out before the hint prints
+  head -3 <<<"$out" | sed 's/^/       /' >&2
   echo "       Authenticate the CLI (e.g. '$RUNTIME login' or 'claude auth login'), or pass --skip-auth-check." >&2
   exit 3
 }
 
 # Watchdog: kill a hung runtime after TIMEOUT_SECS (rc 124, GNU timeout convention) instead of
 # blocking a campaign forever. Prefers coreutils timeout; falls back to a bash watchdog.
+# FLEET_FORCE_TIMEOUT_FALLBACK=1 forces the bash path so tests can exercise it.
 run_with_timeout() {
   local secs="$1"
   shift
@@ -285,28 +287,37 @@ run_with_timeout() {
     "$@"
     return $?
   fi
-  if command -v timeout >/dev/null 2>&1; then
+  if [[ "${FLEET_FORCE_TIMEOUT_FALLBACK:-0}" != "1" ]] && command -v timeout >/dev/null 2>&1; then
     timeout --kill-after=30 "$secs" "$@"
     return $?
   fi
-  local rc=0 cmd_pid watch_pid
+  # The watchdog marks the sentinel BEFORE killing, so a TERM'd child is classified by the
+  # sentinel, not by PID liveness (during the 30s TERM->KILL grace the watchdog is still
+  # alive, so "watchdog running" does NOT mean "no timeout").
+  local rc=0 cmd_pid watch_pid timed_out_flag
+  timed_out_flag="$(mktemp "${TMPDIR:-/tmp}/headless-timeout-XXXXXX")" || {
+    echo "warning: mktemp failed for timeout sentinel; running without watchdog" >&2
+    "$@"
+    return $?
+  }
   "$@" &
   cmd_pid=$!
   (
     sleep "$secs"
+    echo timeout >"$timed_out_flag"
     kill -TERM "$cmd_pid" 2>/dev/null
     sleep 30
     kill -KILL "$cmd_pid" 2>/dev/null
   ) &
   watch_pid=$!
   wait "$cmd_pid" || rc=$?
-  if kill -0 "$watch_pid" 2>/dev/null; then
-    kill "$watch_pid" 2>/dev/null
-    wait "$watch_pid" 2>/dev/null || true
-  else
-    # Watchdog already fired: normalize the kill signal to timeout's rc contract.
-    [[ "$rc" -eq 143 || "$rc" -eq 137 ]] && rc=124
+  pkill -P "$watch_pid" 2>/dev/null || true
+  kill "$watch_pid" 2>/dev/null || true
+  wait "$watch_pid" 2>/dev/null || true
+  if [[ -s "$timed_out_flag" ]]; then
+    rc=124
   fi
+  rm -f "$timed_out_flag"
   return "$rc"
 }
 
