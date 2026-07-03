@@ -249,7 +249,7 @@ def test_verify_marks_finding_verified_with_whitespace_tolerance(tmp_path: Path)
     src = tmp_path / "code.py"
     src.write_text("\tif\t\tcondition:\n\t\treturn  True\n")
     f = _minimal_finding(
-        evidence={"file_path": "code.py", "quoted_line": "return True"}
+        evidence={"file_path": "code.py", "quoted_line": "return True", "line_number": 2}
     )
     verify_finding_against_source(f, repo_root=tmp_path)
     assert f["verified"] is True
@@ -303,7 +303,7 @@ def test_verify_clears_stale_verify_reason_on_pass(tmp_path: Path):
     src = tmp_path / "code.py"
     src.write_text("return ok\n")
     f = _minimal_finding(
-        evidence={"file_path": "code.py", "quoted_line": "return ok"},
+        evidence={"file_path": "code.py", "quoted_line": "return ok", "line_number": 1},
         verified=False,
         verify_reason="quoted_line not found in cited file (from earlier round)",
     )
@@ -397,19 +397,19 @@ def test_verify_doc_summary_counts_split_correctly(tmp_path: Path):
                 id="F-001",
                 fix_strategy="ask",
                 confidence=70,
-                evidence={"file_path": "src/a.py", "quoted_line": "alpha line"},
+                evidence={"file_path": "src/a.py", "quoted_line": "alpha line", "line_number": 1},
             ),
             _minimal_finding(
                 id="F-002",
                 fix_strategy="ask",
                 confidence=95,
-                evidence={"file_path": "src/b.py", "quoted_line": "beta line"},
+                evidence={"file_path": "src/b.py", "quoted_line": "beta line", "line_number": 1},
             ),
             _minimal_finding(
                 id="F-003",
                 fix_strategy="auto",
                 confidence=90,
-                evidence={"file_path": "src/c.py", "quoted_line": "gamma line"},
+                evidence={"file_path": "src/c.py", "quoted_line": "gamma line", "line_number": 1},
             ),
             _minimal_finding(
                 id="F-004",
@@ -530,7 +530,7 @@ def test_cli_exit_0_on_clean_verification(tmp_path: Path):
     doc = _minimal_doc(
         findings=[
             _minimal_finding(
-                evidence={"file_path": "src/a.py", "quoted_line": "real line"}
+                evidence={"file_path": "src/a.py", "quoted_line": "real line", "line_number": 1}
             )
         ]
     )
@@ -548,7 +548,7 @@ def test_cli_write_round_trips_verified_field(tmp_path: Path):
     doc = _minimal_doc(
         findings=[
             _minimal_finding(
-                evidence={"file_path": "src/a.py", "quoted_line": "real line"}
+                evidence={"file_path": "src/a.py", "quoted_line": "real line", "line_number": 1}
             )
         ]
     )
@@ -566,7 +566,7 @@ def test_cli_summary_out_emits_json_summary(tmp_path: Path):
     doc = _minimal_doc(
         findings=[
             _minimal_finding(
-                evidence={"file_path": "src/a.py", "quoted_line": "real line"}
+                evidence={"file_path": "src/a.py", "quoted_line": "real line", "line_number": 1}
             )
         ]
     )
@@ -583,3 +583,72 @@ def test_cli_summary_out_emits_json_summary(tmp_path: Path):
     assert summary["unverified_findings"] == 0
     assert summary["auto_applicable_findings"] == 0  # default is ask
     assert summary["human_gated_findings"] == 1
+
+
+# --- issue #98: anchored-or-long quote specificity ---------------------------
+
+
+def test_short_unanchored_quote_rejected(tmp_path: Path):
+    """A short quote with no line anchor "verified" against almost any file
+    under the old whole-file substring match. It must now fail with an
+    actionable reason."""
+    (tmp_path / "code.py").write_text("def f():\n    return\n")
+    f = _minimal_finding(evidence={"file_path": "code.py", "quoted_line": "return"})
+    verify_finding_against_source(f, repo_root=tmp_path)
+    assert f["verified"] is False
+    assert "too short to verify un-anchored" in f["verify_reason"]
+
+
+def test_short_anchored_quote_passes(tmp_path: Path):
+    """Specificity may come from the anchor instead of the length."""
+    (tmp_path / "code.py").write_text("def f():\n    return\n")
+    f = _minimal_finding(
+        evidence={"file_path": "code.py", "quoted_line": "return", "line_number": 2}
+    )
+    verify_finding_against_source(f, repo_root=tmp_path)
+    assert f["verified"] is True
+
+
+def test_anchored_quote_outside_window_rejected(tmp_path: Path):
+    """The quote exists in the file but ±2 lines away from the cited line —
+    a global match must not rescue a wrong anchor."""
+    body = "\n".join(f"line {i}" for i in range(1, 20)) + "\nneedle here unique\n"
+    (tmp_path / "code.py").write_text(body)
+    f = _minimal_finding(
+        evidence={"file_path": "code.py", "quoted_line": "needle here unique", "line_number": 3}
+    )
+    verify_finding_against_source(f, repo_root=tmp_path)
+    assert f["verified"] is False
+    assert "within ±2 lines" in f["verify_reason"]
+
+
+def test_anchored_quote_tolerates_small_drift(tmp_path: Path):
+    (tmp_path / "code.py").write_text("a\nb\nneedle here unique\nd\n")
+    f = _minimal_finding(
+        evidence={"file_path": "code.py", "quoted_line": "needle here unique", "line_number": 2}
+    )
+    verify_finding_against_source(f, repo_root=tmp_path)
+    assert f["verified"] is True
+
+
+def test_long_unanchored_quote_still_passes(tmp_path: Path):
+    (tmp_path / "code.py").write_text("x\nthe quick brown fox jumps over\n")
+    f = _minimal_finding(
+        evidence={"file_path": "code.py", "quoted_line": "the quick brown fox jumps over"}
+    )
+    verify_finding_against_source(f, repo_root=tmp_path)
+    assert f["verified"] is True
+
+
+def test_anchored_empty_quote_rejected(tmp_path: Path):
+    """Regression guard: '' is a substring of every window — an anchored empty
+    quote must never verify."""
+    (tmp_path / "code.py").write_text("a\nb\n")
+    f = _minimal_finding(
+        evidence={"file_path": "code.py", "quoted_line": "   ", "line_number": 1}
+    )
+    verify_finding_against_source(f, repo_root=tmp_path)
+    assert f["verified"] is False
+    # The structural pre-check upstream already rejects empty/whitespace
+    # quotes before any matching path — anchored or not.
+    assert "missing/empty" in f["verify_reason"]

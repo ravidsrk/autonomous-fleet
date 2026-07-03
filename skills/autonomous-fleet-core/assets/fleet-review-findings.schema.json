@@ -174,7 +174,7 @@
             "line_number": {
               "type": "integer",
               "minimum": 1,
-              "description": "Optional 1-based line number where quoted_line appears. The verifier does not require this match \u2014 quoted_line is the source of truth \u2014 but inconsistent line_number is reported as a soft warning."
+              "description": "Optional 1-based line number where quoted_line appears. When present, the verifier anchors the match to a \u00b12-line window around it (issue #98); when absent, the quote must be at least 12 normalized characters for the whole-file match to count."
             },
             "quoted_line": {
               "type": "string",
