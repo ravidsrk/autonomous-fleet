@@ -93,6 +93,9 @@ def parse_readiness(path: Path) -> dict[str, Any]:
     return outcome
 
 
+VALID_DEGRADED_MODES = {"no_scm_auth"}
+
+
 def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[str]:
     errors: list[str] = []
     prefix = str(path) if path else "fleet-outcome"
@@ -110,6 +113,12 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
     degraded = outcome.get("degraded_mode")
     if degraded is not None and not isinstance(degraded, str):
         errors.append(f"{prefix}: degraded_mode must be a string when present")
+    elif isinstance(degraded, str) and degraded not in VALID_DEGRADED_MODES:
+        # Closed enum: a typo'd mode must not slip past the done-gate below.
+        errors.append(
+            f"{prefix}: unknown degraded_mode {degraded!r}; "
+            f"valid: {sorted(VALID_DEGRADED_MODES)}"
+        )
     if degraded == "no_scm_auth" and outcome.get("status") == "done":
         # engine.md PRECONDITIONS (issue #97): an unauthenticated-gh run
         # detours to local merges — no PRs, no reviewer pass, no SHA-pin.

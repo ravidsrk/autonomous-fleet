@@ -82,3 +82,10 @@ def test_degraded_no_scm_auth_incompatible_with_done() -> None:
 def test_degraded_mode_must_be_string() -> None:
     outcome = {**DOC_SYNC_OUTCOME, "degraded_mode": 7}
     assert any("degraded_mode must be a string" in e for e in validate_outcome(outcome))
+
+
+def test_unknown_degraded_mode_rejected() -> None:
+    """Closed enum (codex on #119): a typo'd mode must not slip past the gate."""
+    outcome = {**DOC_SYNC_OUTCOME, "degraded_mode": "no_scm_authh", "status": "done"}
+    errors = validate_outcome(outcome)
+    assert any("unknown degraded_mode" in e for e in errors)
