@@ -304,8 +304,7 @@ run_with_timeout() {
   cmd_pid=$!
   (
     sleep "$secs"
-    echo timeout >"$timed_out_flag"
-    kill -TERM "$cmd_pid" 2>/dev/null
+    kill -TERM "$cmd_pid" 2>/dev/null && echo timeout >"$timed_out_flag"
     sleep 30
     kill -KILL "$cmd_pid" 2>/dev/null
   ) &
