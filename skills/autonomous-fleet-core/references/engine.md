@@ -201,8 +201,8 @@ instinct is a BUG. Suppress it mechanically:
   renders on ledger mtime change in the FOREGROUND (a convenience that dies with the terminal, NOT
   a daemon).
 - RUNTIME GOAL (when adapter supports primitives 9–12): after SELF-ORIENTATION and ledger init,
-  SET_GOAL with a condition that paraphrases the mission DONE gates (must reference `docs/` ledger
-  and readiness paths). UPDATE_GOAL at major phase transitions. GOAL_COMPLETE only after TERMINATE
+  SET_GOAL with a condition that paraphrases the mission DONE gates (must reference the LEDGER_DIR ledger
+  and readiness paths — `docs/` by default, the relocated dir per step 6 otherwise). UPDATE_GOAL at major phase transitions. GOAL_COMPLETE only after TERMINATE
   checks pass (re-read ledger, readiness exists, the readiness fleet-outcome validates (`python3 <SUBSTRATE>/validate_fleet_outcome.py <readiness>`) when
   available). Never GOAL_COMPLETE on belief — files are authoritative; the native goal is the turn-
   continuation harness. GOAL_BLOCKED when the mission names a hard external dependency or circuit-

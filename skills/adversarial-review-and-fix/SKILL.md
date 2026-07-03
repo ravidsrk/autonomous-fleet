@@ -14,7 +14,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.0.2"
+  version: "1.0.3"
   tier: "2"
   fleet-component: "mission"
 ---
@@ -60,7 +60,7 @@ session distinct from the builder's, and is handed the diff + acceptance contrac
 
 ## Deferred missions
 
-Record in `docs/arch-build-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+Record in `<LEDGER_DIR>/arch-build-readiness.md` under **Recommended next missions** and in DECISIONS.md.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -123,7 +123,7 @@ record its lane in the CLOSE-INDEX (`lane: A|B|0`):
 Engine definition: see `engine.md` → FROZEN-ARTIFACT CLOSE TEST (EVID). The engine defines EVID as
 the standard close-test boolean for any frozen-artifact item; this mission's ledger uses it.
 
-`docs/arch-build-progress.md`. PHASE marker (REVIEW | REVIEW_FROZEN | FIXING | VERIFY); a FINDING
+`<LEDGER_DIR>/arch-build-progress.md`. PHASE marker (REVIEW | REVIEW_FROZEN | FIXING | VERIFY); a FINDING
 CLOSE-INDEX (every confirmed ID by wave, with its `lane: A|B|0`, in state
 `OPEN | CLOSED via PR#n | CODE_CLOSED via PR#n (OPS: …) | HUMAN_GATED via PR#n`); per-fix-task rows
 with flags `CODED EVID PR_OPEN REVIEWED MERGED ACCEPT`; an OPS/VERIFY-AT-SCALE list + recorded
@@ -197,7 +197,7 @@ value, the script that reproduced the race) and sets `EVID=true` only when it no
   candidate-findings file means the protocol was violated; the coordinator surfaces this and
   re-runs review on the affected PR.
 - **T-FINAL [@claude]** — build green, lint clean, full suite green incl. added tests; every
-  confirmed finding CLOSED or CODE_CLOSED(+OPS recorded). Output `docs/arch-build-readiness.md`
+  confirmed finding CLOSED or CODE_CLOSED(+OPS recorded). Output `<LEDGER_DIR>/arch-build-readiness.md`
   starting with **`fleet-outcome` YAML** (`p0_open`, `p1_open`, `findings_open`, `ops_queue_count`;
   see fleet-outcome.md), then finding status, OPS queue, **Recommended next missions**, all PRs.
   When schema-verified review findings were emitted, also surface
@@ -238,18 +238,18 @@ value, the script that reproduced the race) and sets `EVID=true` only when it no
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/arch-build-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/arch-build-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission adversarial-review-and-fix DONE: docs/arch-build-progress.md all task flags true,
-docs/arch-build-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission adversarial-review-and-fix DONE: <LEDGER_DIR>/arch-build-progress.md all task flags true,
+<LEDGER_DIR>/arch-build-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 the readiness fleet-outcome validates (python3 <SUBSTRATE>/validate_fleet_outcome.py per the engine's SUBSTRATE RESOLUTION; skip recorded in the readiness doc when SUBSTRATE=none), all PRs merged into BASE.
 ```
 
 
 ## DONE
 Review frozen; every confirmed finding CLOSED or CODE_CLOSED(+OPS recorded); every fix task
-terminal; docs/arch-build-readiness.md exists. Terminal state = engineering landed on BASE + OPS
+terminal; <LEDGER_DIR>/arch-build-readiness.md exists. Terminal state = engineering landed on BASE + OPS
 queue surfaced — NOT deployed, NOT promoted to main. Then send the FINAL report.
 
 ## FIX-ONLY MODE — when the review is already done

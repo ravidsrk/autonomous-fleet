@@ -43,7 +43,7 @@ Run these checks in order; any failure → keep working, do not complete:
 1. Re-read mission/program ledger — all non-terminal tasks resolved.
 2. Readiness doc exists with valid `fleet-outcome` YAML.
 3. `python3 <SUBSTRATE>/validate_fleet_outcome.py <readiness>` passes on readiness doc (when script available).
-4. For campaigns: `PHASE: DONE` written in `docs/fleet-program-progress.md`.
+4. For campaigns: `PHASE: DONE` written in `<LEDGER_DIR>/fleet-program-progress.md`.
 
 ## Ledger section template
 
@@ -65,7 +65,7 @@ LAST_UPDATE: <progress message>
 ### Campaign
 
 ```
-Campaign <id> DONE: docs/fleet-program-progress.md PHASE is DONE,
+Campaign <id> DONE: <LEDGER_DIR>/fleet-program-progress.md PHASE is DONE,
 every node in Node status is DONE or SKIPPED,
 each readiness doc has valid fleet-outcome YAML,
 python3 <SUBSTRATE>/validate_fleet_outcome.py <readiness> passes on every readiness doc.
@@ -74,8 +74,8 @@ python3 <SUBSTRATE>/validate_fleet_outcome.py <readiness> passes on every readin
 ### Mission (substitute mission id, ledger, readiness, metrics)
 
 ```
-Mission <mission-id> DONE: docs/<mission>-progress.md shows all mission task flags true,
-docs/<mission>-readiness.md exists with fleet-outcome.status done and mission metrics satisfied,
+Mission <mission-id> DONE: <LEDGER_DIR>/<mission>-progress.md shows all mission task flags true,
+<LEDGER_DIR>/<mission>-readiness.md exists with fleet-outcome.status done and mission metrics satisfied,
 all PRs merged into BASE, the readiness fleet-outcome validates (python3 <SUBSTRATE>/validate_fleet_outcome.py per the engine's SUBSTRATE RESOLUTION; skip recorded when SUBSTRATE=none).
 ```
 
@@ -127,7 +127,7 @@ Use `scripts/run-mission-headless.sh` (framework clone only) for CI:
 ./scripts/run-mission-headless.sh # (framework clone only) claude fleet-program --max-turns 80
 ```
 
-Pass a handoff file (`docs/<mission>-handoff.md`) or let the script generate a minimal prompt
+Pass a handoff file (`<LEDGER_DIR>/<mission>-handoff.md`) or let the script generate a minimal prompt
 from the mission skill name.
 
 ## Non-goals
