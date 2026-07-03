@@ -19,6 +19,7 @@ def main() -> int:
         + rl.lint_lock_hashes(root)
         + rl.lint_no_skill_version_literals_in_tests(root)
         + rl.lint_mission_state_docs(root)
+        + rl.lint_adapter_contract_single_source(root)
         + rl.lint_external_source_pins(root)
         + rl.lint_campaign_missions(root)
     )
