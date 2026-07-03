@@ -24,6 +24,8 @@ YOLO=0
 YOLO_ACK=0
 DRY_RUN=0
 REPO_ROOT=""
+TIMEOUT_SECS=5400
+SKIP_AUTH_CHECK=0
 
 usage() {
   cat <<'EOF'
@@ -37,6 +39,9 @@ Options:
   --no-yolo         Deprecated alias for default (no auto-approve)
   --yolo-untrusted-acknowledged  Required with --yolo when --repo is outside this clone (accepts RCE risk)
   --dry-run           Validate preflight and print the agent command without invoking the runtime CLI
+  --timeout SECONDS   Kill the runtime after SECONDS and archive the run as timed out
+                      (default: 5400; 0 disables the watchdog)
+  --skip-auth-check   Skip the runtime auth pre-check (claude/codex; grok has no status probe)
 
 Runtimes:
   grok, claude, codex — supported headless drivers.
@@ -84,6 +89,14 @@ while [[ $# -gt 0 ]]; do
       DRY_RUN=1
       shift
       ;;
+    --timeout)
+      TIMEOUT_SECS="${2:?}"
+      shift 2
+      ;;
+    --skip-auth-check)
+      SKIP_AUTH_CHECK=1
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -95,6 +108,11 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if ! [[ "$TIMEOUT_SECS" =~ ^[0-9]+$ ]]; then
+  echo "error: --timeout expects a non-negative integer (seconds), got '$TIMEOUT_SECS'" >&2
+  exit 1
+fi
 
 if [[ -n "$REPO_ROOT" ]]; then
   REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
@@ -218,6 +236,92 @@ emit_headless_trace_archive() {
   fi
 }
 
+# Auth pre-check: fail fast (exit 3) on a confirmed-unauthenticated CLI instead of hanging
+# or dying mid-run (the gemoji headless run failed auth mid-flight and was finished by hand).
+# claude/codex expose a cheap status probe; grok has no status subcommand (its `login` is
+# interactive), so grok relies on the timeout watchdog instead. Version-tolerant: a CLI whose
+# probe subcommand went away is a warning, not a block.
+runtime_auth_check() {
+  if [[ "$SKIP_AUTH_CHECK" -eq 1 ]]; then
+    echo "auth-check: skipped (--skip-auth-check)"
+    return 0
+  fi
+  if ! command -v "$RUNTIME" >/dev/null 2>&1; then
+    echo "error: runtime CLI '$RUNTIME' not found on PATH" >&2
+    exit 3
+  fi
+  local -a probe
+  case "$RUNTIME" in
+    claude) probe=(claude auth status) ;;
+    codex) probe=(codex login status) ;;
+    grok)
+      echo "auth-check: grok exposes no auth status probe; relying on --timeout watchdog"
+      return 0
+      ;;
+    *) return 0 ;;
+  esac
+  local out rc=0
+  out="$("${probe[@]}" 2>&1)" || rc=$?
+  if [[ "$rc" -eq 0 ]]; then
+    echo "auth-check: $RUNTIME authenticated (${probe[*]})"
+    return 0
+  fi
+  if grep -qiE "unknown (sub)?command|unrecognized|no such command|invalid (sub)?command|unexpected argument" <<<"$out"; then
+    echo "warning: auth-check: '${probe[*]}' not supported by this $RUNTIME version; cannot pre-verify auth (proceeding)" >&2
+    return 0
+  fi
+  echo "error: auth-check: $RUNTIME is not authenticated ('${probe[*]}' exited $rc):" >&2
+  # herestring (not echo|): a closing head must never SIGPIPE us out before the hint prints
+  head -3 <<<"$out" | sed 's/^/       /' >&2
+  echo "       Authenticate the CLI (e.g. '$RUNTIME login' or 'claude auth login'), or pass --skip-auth-check." >&2
+  exit 3
+}
+
+# Watchdog: kill a hung runtime after TIMEOUT_SECS (rc 124, GNU timeout convention) instead of
+# blocking a campaign forever. Prefers coreutils timeout; falls back to a bash watchdog.
+# FLEET_FORCE_TIMEOUT_FALLBACK=1 forces the bash path so tests can exercise it.
+run_with_timeout() {
+  local secs="$1"
+  shift
+  if [[ "$secs" -le 0 ]]; then
+    "$@"
+    return $?
+  fi
+  if [[ "${FLEET_FORCE_TIMEOUT_FALLBACK:-0}" != "1" ]] && command -v timeout >/dev/null 2>&1; then
+    timeout --kill-after=30 "$secs" "$@"
+    return $?
+  fi
+  # The watchdog marks the sentinel BEFORE killing, so a TERM'd child is classified by the
+  # sentinel, not by PID liveness (during the 30s TERM->KILL grace the watchdog is still
+  # alive, so "watchdog running" does NOT mean "no timeout").
+  local rc=0 cmd_pid watch_pid timed_out_flag
+  timed_out_flag="$(mktemp "${TMPDIR:-/tmp}/headless-timeout-XXXXXX")" || {
+    echo "warning: mktemp failed for timeout sentinel; running without watchdog" >&2
+    "$@"
+    return $?
+  }
+  "$@" &
+  cmd_pid=$!
+  (
+    sleep "$secs"
+    kill -TERM "$cmd_pid" 2>/dev/null && echo timeout >"$timed_out_flag"
+    sleep 30
+    kill -KILL "$cmd_pid" 2>/dev/null
+  ) &
+  watch_pid=$!
+  wait "$cmd_pid" || rc=$?
+  pkill -P "$watch_pid" 2>/dev/null || true
+  kill "$watch_pid" 2>/dev/null || true
+  wait "$watch_pid" 2>/dev/null || true
+  # Sentinel (not rc normalization): 124 only when the watchdog actually fired, so a
+  # runtime that exits 143 for its own reasons is not misreported as a timeout.
+  if [[ -s "$timed_out_flag" ]]; then
+    rc=124
+  fi
+  rm -f "$timed_out_flag"
+  return "$rc"
+}
+
 # Run a runtime command, stream output live via tee, and capture a merged transcript
 # for the archive (stdout+stderr interleaved as the runtime produced them).
 # Returns the runtime exit code so callers (e.g. run-campaign.sh) can emit before exiting.
@@ -230,9 +334,13 @@ run_runtime_emit() {
     return $?
   }
   set +e
-  "${cmd[@]}" 2>&1 | tee "$runtime_capture"
+  run_with_timeout "$TIMEOUT_SECS" "${cmd[@]}" 2>&1 | tee "$runtime_capture"
   runtime_rc=${PIPESTATUS[0]}
   set -e
+  if [[ "$runtime_rc" -eq 124 ]]; then
+    echo "error: runtime timed out after ${TIMEOUT_SECS}s (killed; transcript archived)" >&2
+    printf '\n[run-mission-headless] RUNTIME TIMEOUT after %ss\n' "$TIMEOUT_SECS" >>"$runtime_capture"
+  fi
   emit_headless_trace_archive "$(dryrun_emit_mission)" 0 "$runtime_capture"
   rm -f "$runtime_capture"
   return "$runtime_rc"
@@ -292,10 +400,16 @@ echo "runtime:  $RUNTIME"
 echo "mission:  $MISSION"
 echo "repo:     $REPO_ROOT"
 echo "turns:    $MAX_TURNS"
+echo "timeout:  ${TIMEOUT_SECS}s"
 echo ""
 
 run_preflight_stack
 echo ""
+
+if [[ "$DRY_RUN" -ne 1 ]]; then
+  runtime_auth_check
+  echo ""
+fi
 
 case "$RUNTIME" in
   grok)
