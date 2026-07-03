@@ -42,7 +42,7 @@ Run these checks in order; any failure → keep working, do not complete:
 
 1. Re-read mission/program ledger — all non-terminal tasks resolved.
 2. Readiness doc exists with valid `fleet-outcome` YAML.
-3. `./scripts/validate-fleet-outcome.sh` passes on readiness doc (when script available).
+3. `python3 <SUBSTRATE>/validate_fleet_outcome.py <readiness>` passes on readiness doc (when script available).
 4. For campaigns: `PHASE: DONE` written in `docs/fleet-program-progress.md`.
 
 ## Ledger section template
@@ -68,7 +68,7 @@ LAST_UPDATE: <progress message>
 Campaign <id> DONE: docs/fleet-program-progress.md PHASE is DONE,
 every node in Node status is DONE or SKIPPED,
 each readiness doc has valid fleet-outcome YAML,
-./scripts/validate-fleet-outcome.sh passes on every readiness doc.
+python3 <SUBSTRATE>/validate_fleet_outcome.py <readiness> passes on every readiness doc.
 ```
 
 ### Mission (substitute mission id, ledger, readiness, metrics)
@@ -120,11 +120,11 @@ Full missions need PR pipeline, placement, and review gates from the core.
 
 ## Headless unattended runs
 
-Use `scripts/run-mission-headless.sh` for CI:
+Use `scripts/run-mission-headless.sh` (framework clone only) for CI:
 
 ```bash
-./scripts/run-mission-headless.sh grok doc-sync --max-turns 50
-./scripts/run-mission-headless.sh claude fleet-program --max-turns 80
+./scripts/run-mission-headless.sh # (framework clone only) grok doc-sync --max-turns 50
+./scripts/run-mission-headless.sh # (framework clone only) claude fleet-program --max-turns 80
 ```
 
 Pass a handoff file (`docs/<mission>-handoff.md`) or let the script generate a minimal prompt

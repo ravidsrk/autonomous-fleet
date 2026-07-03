@@ -69,7 +69,7 @@ For each finding `<finding-id>` in `<run_id>`:
 - `<SUBSTRATE>/verify_blind_fix.py` — CLI entrypoint
 - `<SUBSTRATE>/lib/verify_blind_fix.py` — library (jsonschema-free, like
   `verify_findings.py`)
-- `scripts/validate-all.sh` — runs the verifier against the fixture
+- `scripts/validate-all.sh` (framework clone only) — runs the verifier against the fixture
   archive on every CI run
 - `tests/test_verify_blind_fix.py` — coverage gate at 100%
 
