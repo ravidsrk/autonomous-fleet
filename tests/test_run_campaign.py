@@ -578,3 +578,16 @@ def test_campaign_yaml_scan_includes_top_level_docs(tmp_path: Path) -> None:
     paths = [p.name for p in _campaign_yaml_paths(tmp_path)]
     assert "example-campaign.yaml" in paths
     assert paths.count("a-campaign.yaml") == 1
+
+
+def test_campaign_nodes_must_be_mapping(tmp_path: Path) -> None:
+    """Review observation on #111: a list-valued nodes crashed the loader with
+    a raw AttributeError instead of a polite error."""
+    campaign = tmp_path / "bad-nodes.yaml"
+    campaign.write_text("campaign: x\nstart: a\nnodes:\n  - a\nedges: {}\n", encoding="utf-8")
+    r = subprocess.run(
+        [str(SCRIPT), "grok", "--campaign", str(campaign), "--dry-run"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    assert r.returncode != 0
+    assert "'nodes' must be a mapping" in r.stderr
