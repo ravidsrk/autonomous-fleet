@@ -42,11 +42,13 @@ set -uo pipefail
 # framework clone; the bundled substrate ships the CLI):
 #   1. $FLEET_SUBSTRATE/stop_verify.py   — explicit substrate dir
 #   2. $AUTONOMOUS_FLEET_HOME/scripts/…  — explicit clone root (legacy)
-#   3. <cwd>/.agents/skills/autonomous-fleet-core/assets/substrate/…
-#      (Claude Code runs Stop hooks with cwd = the worker repo)
-#   4. walk-up from this script: the clone's scripts/, then — when the
-#      wrapper was copied into <repo>/.claude/hooks/ — that repo's
-#      .agents substrate (walk-up lands on the repo root in that layout)
+#   3. walk-up from this script: the clone's scripts/ (clone symlink
+#      layout — BEFORE the worker repo's copy so a stale bundle never
+#      shadows the clone the wrapper shipped from)
+#   4. <cwd>/.agents/skills/autonomous-fleet-core/assets/substrate/…
+#      (Claude Code runs Stop hooks with cwd = the worker repo), then —
+#      when the wrapper was copied into <repo>/.claude/hooks/ — that
+#      repo's .agents substrate
 this_script="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || python3 -c "import os,sys; print(os.path.realpath(sys.argv[1]))" "${BASH_SOURCE[0]}")"
 walkup_root="$(cd "$(dirname "$this_script")/../../../.." && pwd)"
 hookdir_root="$(cd "$(dirname "$this_script")/../.." && pwd)"  # <repo>/.claude/hooks -> <repo>
@@ -68,7 +70,7 @@ done
 if [ -z "$CLI" ]; then
   # Same fail-open discipline as the Python CLI: a missing CLI must NOT
   # trap a session. Log + ALLOW (silent stdout).
-  echo "stop-verify: warning — stop_verify.py not found (tried FLEET_SUBSTRATE, AUTONOMOUS_FLEET_HOME, .agents substrate, clone walk-up); allowing session end." >&2
+  echo "stop-verify: warning — stop_verify.py not found (tried FLEET_SUBSTRATE, AUTONOMOUS_FLEET_HOME, clone walk-up, .agents substrate); allowing session end." >&2
   exit 0
 fi
 
