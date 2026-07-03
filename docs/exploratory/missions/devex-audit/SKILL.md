@@ -69,7 +69,7 @@ No @codex builder unless user explicitly requests doc PRs from gap list — defa
 
 ## Deferred missions
 
-Record in `docs/devex-readiness.md` under **Recommended next missions**.
+Record in `<LEDGER_DIR>/devex-readiness.md` under **Recommended next missions**.
 
 | Outcome | Route to |
 |---------|----------|
@@ -89,31 +89,31 @@ and a documentation gap index — without rewriting the whole docs tree in this 
 - @claude builds **scorecard** (TTHW, CLI help, error messages, discoverability) per gstack devex lenses.
 - @claude **skeptic pass** drops vanity metrics; only reproducible friction enters gap index.
 - @claude **FREEZES** `docs/devex-scorecard.md` and `docs/devex-gaps-index.md`.
-- @claude writes `docs/devex-readiness.md` with **`fleet-outcome` YAML**.
+- @claude writes `<LEDGER_DIR>/devex-readiness.md` with **`fleet-outcome` YAML**.
 
 ## LEDGER
 
-`docs/devex-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f> SHIPPED=<t/f>`.
+`<LEDGER_DIR>/devex-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f> SHIPPED=<t/f>`.
 
 Frozen index: `docs/devex-gaps-index.md` — rows `OPEN | DOC_STUB | ROUTED | WONT_FIX` with evidence links.
 
 ## TASK STRUCTURE
 
 - **T-WALK [@claude]** — execute getting-started path; capture notes + optional screenshots in
-  `docs/devex-progress.md`.
+  `<LEDGER_DIR>/devex-progress.md`.
 - **T-SCORECARD [@claude]** — score dimensions (install, first run, CLI, errors, docs nav); output
   `docs/devex-scorecard.md` (DRAFT).
 - **T-GAPS [@claude]** — rank documentation and tooling gaps; output `docs/devex-gaps-index.md`.
 - **T-SKEPTIC [@claude, fresh session]** — refute weak friction claims; trim scorecard.
 - **T-FREEZE [@claude]** — mark scorecard FROZEN; gaps index is fix-loop input for downstream missions.
-- **T-FINAL [@claude]** — output `docs/devex-readiness.md` with **`fleet-outcome` YAML**
+- **T-FINAL [@claude]** — output `<LEDGER_DIR>/devex-readiness.md` with **`fleet-outcome` YAML**
   (`tthw_minutes`, `gaps_ranked`, `scorecard_frozen`).
 
 ## Runtime goal
 
 ```
 Mission devex-audit DONE: docs/devex-scorecard.md FROZEN, docs/devex-gaps-index.md complete,
-docs/devex-readiness.md fleet-outcome.status done, ./scripts/validate-fleet-outcome.sh passes.
+<LEDGER_DIR>/devex-readiness.md fleet-outcome.status done, ./scripts/validate-fleet-outcome.sh passes.
 ```
 
 ## DONE

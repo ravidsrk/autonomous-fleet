@@ -64,7 +64,7 @@ have seen the build conversation, and is handed the diff + acceptance contract a
 
 ## Deferred missions
 
-ROADMAP list in boundary doc + **Recommended next missions** in `docs/completion-readiness.md`.
+ROADMAP list in boundary doc + **Recommended next missions** in `<LEDGER_DIR>/completion-readiness.md`.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -102,7 +102,7 @@ Stage-9 final form (Aula prompt 24, prompts.md L3013):
 - @claude SHIPS: opens PR, merges (conflict-aware), cleans worktree.
 
 ## LEDGER
-`docs/completion-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/completion-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
 SHIPPED=<t/f>`. Plus the frozen SCOPE INDEX (every IN + FIX item, each `OPEN | DONE via PR#n`)
 and a ROADMAP list (deferred, never built this run).
 
@@ -153,25 +153,25 @@ and a ROADMAP list (deferred, never built this run).
   (a) approved-count incremented, (b) non-zero `api_cost` recorded, (c) audit row written. Exit
   codes don't prove this; querying the DB does. The `e2e_verified` readiness flag means the
   result-state query passed, not that the test suite was green. Output
-  `docs/completion-readiness.md` with **`fleet-outcome` YAML** (`in_items_open`, `roadmap_count`,
+  `<LEDGER_DIR>/completion-readiness.md` with **`fleet-outcome` YAML** (`in_items_open`, `roadmap_count`,
   `stubs_remaining`), scope/roadmap summary, **Recommended next missions**, all PRs. Ship as the
   final PR.
 
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/completion-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/completion-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission take-product-to-completion DONE: docs/completion-progress.md all task flags true,
-docs/completion-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission take-product-to-completion DONE: <LEDGER_DIR>/completion-progress.md all task flags true,
+<LEDGER_DIR>/completion-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 ./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
 ```
 
 
 ## DONE
 Every SCOPE-INDEX item `DONE`, every task `PLANNED=t BUILT=t REVIEWED=t SHIPPED=t`,
-`docs/completion-readiness.md` exists, the product works end to end with zero stubs/dead ends.
+`<LEDGER_DIR>/completion-readiness.md` exists, the product works end to end with zero stubs/dead ends.
 Then send the FINAL report.
 
 ## DECISION DEFAULTS (mission-specific; on top of the engine's)

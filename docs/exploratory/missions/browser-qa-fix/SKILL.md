@@ -74,7 +74,7 @@ build-blind @claude reviews each fix PR.
 
 ## Deferred missions
 
-Record in `docs/qa-readiness.md` under **Recommended next missions**.
+Record in `<LEDGER_DIR>/qa-readiness.md` under **Recommended next missions**.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -86,7 +86,7 @@ Record in `docs/qa-readiness.md` under **Recommended next missions**.
 ## TARGET URL (user supplies)
 
 Staging URL, preview deploy URL, or `http://localhost:<port>` with explicit start command recorded
-in `docs/qa-progress.md`. HARD EXTERNAL DEPENDENCY if app cannot be reached — pause and document.
+in `<LEDGER_DIR>/qa-progress.md`. HARD EXTERNAL DEPENDENCY if app cannot be reached — pause and document.
 
 ## GOAL
 
@@ -106,7 +106,7 @@ health summary.
 
 ## LEDGER
 
-`docs/qa-progress.md` — per-story flags + rolling health score (before/after).
+`<LEDGER_DIR>/qa-progress.md` — per-story flags + rolling health score (before/after).
 
 Frozen index: `docs/qa-index.md` — columns: `id`, `severity`, `story`, `repro_steps`, `evid_before`,
 `fix_pr`, `evid_after`, `status: OPEN|FIXED|WONTFIX`.
@@ -119,20 +119,20 @@ sufficient — steps must be copy-pasteable.
 
 ## TASK STRUCTURE
 
-- **T-QA-PLAN [@claude]** — ingest URL + tier; write story checklist to `docs/qa-progress.md`;
+- **T-QA-PLAN [@claude]** — ingest URL + tier; write story checklist to `<LEDGER_DIR>/qa-progress.md`;
   seed `docs/qa-index.md`.
 - **T-QA-SCAN [@grok + browse]** — run stories; record failures with EVID; compute **health_before**.
 - **T-FIX-LOOP [per qa-index OPEN row]** — @grok fix → fresh @claude review → @claude ship →
   update row FIXED + evid_after.
 - **T-FINAL [@claude]** — re-run full scan at chosen tier; **health_after** must meet threshold
   (Quick: no critical/high open; Standard: no medium+; Exhaustive: cosmetic catalogued only).
-  Output `docs/qa-readiness.md` with **`fleet-outcome` YAML** (`health_before`, `health_after`,
+  Output `<LEDGER_DIR>/qa-readiness.md` with **`fleet-outcome` YAML** (`health_before`, `health_after`,
   `defects_open`, `defects_fixed`).
 
 ## Runtime goal
 
 ```
-Mission browser-qa-fix DONE: docs/qa-progress.md complete, docs/qa-readiness.md with
+Mission browser-qa-fix DONE: <LEDGER_DIR>/qa-progress.md complete, <LEDGER_DIR>/qa-readiness.md with
 fleet-outcome.status done, health_after meets tier threshold,
 ./scripts/validate-fleet-outcome.sh passes.
 ```
@@ -140,7 +140,7 @@ fleet-outcome.status done, health_after meets tier threshold,
 ## DONE
 
 All in-scope qa-index rows `FIXED` or `WONTFIX` with documented rationale, health threshold met,
-all fix PRs merged, `docs/qa-readiness.md` with fleet-outcome present.
+all fix PRs merged, `<LEDGER_DIR>/qa-readiness.md` with fleet-outcome present.
 
 ## DECISION DEFAULTS (mission-specific)
 

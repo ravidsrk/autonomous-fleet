@@ -71,7 +71,7 @@ Stage-9 cross-vendor rule: @codex builds; fresh @claude reviews without build co
 
 ## Deferred missions
 
-Record in `docs/security-readiness.md` under **Recommended next missions**.
+Record in `<LEDGER_DIR>/security-readiness.md` under **Recommended next missions**.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -86,7 +86,7 @@ Record in `docs/security-readiness.md` under **Recommended next missions**.
 | **daily** | CSO daily pass | 8/10 to report | Routine CI/pre-ship |
 | **comprehensive** | CSO monthly deep | 2/10 to report | Explicit user request |
 
-Record mode in `docs/security-progress.md` frontmatter.
+Record mode in `<LEDGER_DIR>/security-progress.md` frontmatter.
 
 ## GOAL
 
@@ -100,11 +100,11 @@ phantom issues.
 - @claude **skeptic pass** splits confirmed vs refuted; only confirmed enter CLOSE-INDEX.
 - @codex **remediates** one finding per PR with tests where applicable.
 - Fresh build-blind @claude **reviews** each fix.
-- @claude writes `docs/security-readiness.md` with trend vs prior audit if exists.
+- @claude writes `<LEDGER_DIR>/security-readiness.md` with trend vs prior audit if exists.
 
 ## LEDGER
 
-`docs/security-progress.md` — phase flags + audit mode.
+`<LEDGER_DIR>/security-progress.md` — phase flags + audit mode.
 
 Frozen artifacts:
 - `docs/security-findings.md` — ranked findings with Fix + acceptance + CODE vs CODE+OPS tag.
@@ -119,7 +119,7 @@ Frozen artifacts:
 - **T-CLOSE-LOOP [per confirmed finding]** — @codex fix → fresh @claude review → @claude ship →
   CLOSE-INDEX `CLOSED`.
 - **T-FINAL [@claude]** — zero OPEN confirmed findings (or documented accepted risk with owner);
-  output `docs/security-readiness.md` with **`fleet-outcome` YAML** (`findings_confirmed`,
+  output `<LEDGER_DIR>/security-readiness.md` with **`fleet-outcome` YAML** (`findings_confirmed`,
   `findings_closed`, `findings_refuted`, `audit_mode`).
 
 ## THREE-LANE REMEDIATION
@@ -132,14 +132,14 @@ only LANE_A candidates with confidence ≥ 8/10.
 
 ```
 Mission security-cso-audit DONE: docs/security-close-index all confirmed rows CLOSED or
-accepted-risk documented, docs/security-readiness.md fleet-outcome.status done,
+accepted-risk documented, <LEDGER_DIR>/security-readiness.md fleet-outcome.status done,
 ./scripts/validate-fleet-outcome.sh passes.
 ```
 
 ## DONE
 
 Frozen findings addressed, skeptic-refuted items not fixed, all CLOSE-INDEX confirmed rows terminal,
-`docs/security-readiness.md` with valid fleet-outcome.
+`<LEDGER_DIR>/security-readiness.md` with valid fleet-outcome.
 
 ## DECISION DEFAULTS (mission-specific)
 

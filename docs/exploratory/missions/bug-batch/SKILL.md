@@ -54,7 +54,7 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 ## Deferred missions
 
-Record in `docs/bug-batch-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+Record in `<LEDGER_DIR>/bug-batch-readiness.md` under **Recommended next missions** and in DECISIONS.md.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -86,7 +86,7 @@ record it and skip.
 - @claude is the INTEGRATOR: opens PR, merges (conflict-aware), cleans worktree.
 
 ## LEDGER
-`docs/bug-batch-progress.md`. Per-task flags: `REPRO=<t/f> FIXED=<t/f> PR_OPEN=<t/f>
+`<LEDGER_DIR>/bug-batch-progress.md`. Per-task flags: `REPRO=<t/f> FIXED=<t/f> PR_OPEN=<t/f>
 REVIEWED=<t/f> MERGED=<t/f>`. Plus a BUG INDEX: each bug ID/description, `OPEN | FIXED via PR#n |
 SKIPPED (reason)`.
 
@@ -106,7 +106,7 @@ SKIPPED (reason)`.
   Parallelize bugs in non-overlapping files; serialize same-file (hot-file rule). Update the BUG
   INDEX.
 - **T-FINAL [@claude]** — full suite green incl. every new reproducing test; walk the BUG INDEX,
-  every bug `FIXED` or `SKIPPED/NEEDS-INFO` with reason. Output `docs/bug-batch-readiness.md`
+  every bug `FIXED` or `SKIPPED/NEEDS-INFO` with reason. Output `<LEDGER_DIR>/bug-batch-readiness.md`
   with **`fleet-outcome` YAML** (`bugs_open`, `bugs_skipped`), bug
   index resolution, the reproducing test per fix, skips/needs-info, all PRs). Ship as the final
   PR.
@@ -114,18 +114,18 @@ SKIPPED (reason)`.
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/bug-batch-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/bug-batch-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission bug-batch DONE: docs/bug-batch-progress.md all task flags true,
-docs/bug-batch-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission bug-batch DONE: <LEDGER_DIR>/bug-batch-progress.md all task flags true,
+<LEDGER_DIR>/bug-batch-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 ./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
 ```
 
 
 ## DONE
 Every BUG-INDEX item `FIXED` (with its reproducing test) or explicitly `SKIPPED`/`NEEDS-INFO`,
-every fixed task terminal, suite green, `docs/bug-batch-readiness.md` exists. Then send the FINAL
+every fixed task terminal, suite green, `<LEDGER_DIR>/bug-batch-readiness.md` exists. Then send the FINAL
 report.
 
 ## DECISION DEFAULTS (mission-specific)

@@ -104,16 +104,16 @@ does not apply to design/landing missions.
 - @claude is the INTEGRATOR: opens PR, conflict-aware merge, worktree cleanup.
 
 ## LEDGER
-`docs/landing-progress.md`. Per-task flags: `BUILT=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/landing-progress.md`. Per-task flags: `BUILT=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
 MERGED=<t/f>`. Plus the DIVERGENCE CHECKLIST D1..Dn, each `OPEN | CLOSED via PR#n`.
 
 ## VISUAL BASELINE (before/after gate)
 T2 records the exact baseline capture commands/queries that produced the before-state
-screenshots in `docs/landing-diff.md` and `docs/landing-progress.md`: command line or browser
+screenshots in `docs/landing-diff.md` and `<LEDGER_DIR>/landing-progress.md`: command line or browser
 query, URL/route, viewport/device, auth/seed state, screenshot path, and covered section/D-item.
 T-FINAL replays those commands/queries like-for-like after all PRs merge, captures after-state
 screenshots to parallel paths, and writes an explicit before/after comparison in
-`docs/landing-readiness.md`. Passing requires strict visual improvement toward the design for each
+`<LEDGER_DIR>/landing-readiness.md`. Passing requires strict visual improvement toward the design for each
 covered D-item. Screenshot existence alone is not evidence. If a baseline cannot be replayed, the
 covered D-item stays `OPEN` until a replayable baseline exists and passes.
 
@@ -135,25 +135,25 @@ covered D-item stays `OPEN` until a replayable baseline exists and passes.
 - **T-FINAL [@claude]** - build green, lint clean. Walk the page across mobile/tablet/desktop;
   EVERY D-item CLOSED; matches docs/design-extract.md in tokens/spacing/type/layout/section
   structure; fully responsive; no placeholders/dead links/console errors. Replay VISUAL BASELINE
-  commands/queries and include the strict before/after comparison. Output `docs/landing-readiness.md`
+  commands/queries and include the strict before/after comparison. Output `<LEDGER_DIR>/landing-readiness.md`
   with **`fleet-outcome` YAML** (`divergences_open`), D-item summary, **Recommended next
   missions**, all PRs. Ship as the final PR.
 
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/landing-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/landing-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission landing-page-convergence DONE: docs/landing-progress.md all task flags true,
-docs/landing-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission landing-page-convergence DONE: <LEDGER_DIR>/landing-progress.md all task flags true,
+<LEDGER_DIR>/landing-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 ./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
 ```
 
 
 ## DONE
 Every D-item `CLOSED`, every task `BUILT=t PR_OPEN=t REVIEWED=t MERGED=t`, page matches the design
-export, replayed VISUAL BASELINE confirms strict improvement, docs/landing-readiness.md exists.
+export, replayed VISUAL BASELINE confirms strict improvement, <LEDGER_DIR>/landing-readiness.md exists.
 Then send the FINAL report.
 
 ## DECISION DEFAULTS (mission-specific)

@@ -54,7 +54,7 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 ## Deferred missions
 
-Record in `docs/dependency-update-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+Record in `<LEDGER_DIR>/dependency-update-readiness.md` under **Recommended next missions** and in DECISIONS.md.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -82,7 +82,7 @@ MAJOR bumps under the maximal posture below. Never leave the build red or tests 
 - @claude is the INTEGRATOR: opens PR, merges (conflict-aware), cleans worktree.
 
 ## LEDGER
-`docs/dependency-update-progress.md`. Per-task flags: `BUMPED=<t/f> FIXED=<t/f> PR_OPEN=<t/f>
+`<LEDGER_DIR>/dependency-update-progress.md`. Per-task flags: `BUMPED=<t/f> FIXED=<t/f> PR_OPEN=<t/f>
 REVIEWED=<t/f> MERGED=<t/f>`. Plus an UPDATE INDEX: each dep/group with from→to version, security
 flag, `OPEN | DONE via PR#n`.
 
@@ -98,7 +98,7 @@ flag, `OPEN | DONE via PR#n`.
   manifest+lockfile pairs as the universal hot file: serialize manifest-mutating tasks, and
   parallelize only independent ecosystems. Security fixes first. Update the UPDATE INDEX.
 - **T-FINAL [@claude]** — build green, full suite green, no remaining known-vulnerable versions
-  in scope. Output `docs/dependency-update-readiness.md` with **`fleet-outcome` YAML**
+  in scope. Output `<LEDGER_DIR>/dependency-update-readiness.md` with **`fleet-outcome` YAML**
   (`advisories_open`, `majors_deferred`), update index done, versions
   before/after, advisories cleared, any deferred majors with reasoning, all PRs). Ship as the
   final PR.
@@ -106,18 +106,18 @@ flag, `OPEN | DONE via PR#n`.
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/dependency-update-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/dependency-update-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission dependency-update DONE: docs/dependency-update-progress.md all task flags true,
-docs/dependency-update-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission dependency-update DONE: <LEDGER_DIR>/dependency-update-progress.md all task flags true,
+<LEDGER_DIR>/dependency-update-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 ./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
 ```
 
 
 ## DONE
 Every UPDATE-INDEX item `DONE` (or explicitly deferred with reasoning), every task terminal,
-build + suite green, `docs/dependency-update-readiness.md` exists. Then send the FINAL report.
+build + suite green, `<LEDGER_DIR>/dependency-update-readiness.md` exists. Then send the FINAL report.
 
 ## DECISION DEFAULTS (mission-specific)
 - Security advisories first. A bump that fixes a CVE outranks a routine version bump.
