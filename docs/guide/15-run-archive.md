@@ -382,7 +382,8 @@ file entry has a valid `path` (no leading slash, no `..`), a `kind` in the enum,
 ### 2. Mtime ordering
 
 `_validate_ordering` enforces the three cross-cutting invariants from the engine's
-ARCHIVE_ENABLED hard rule. These are the disciplines made auditable:
+ARCHIVE_ENABLED hard rule, and `_validate_independence` adds a fourth. These are the
+disciplines made auditable:
 
 ```
 Invariant 1  blind_fix mtime  <  findings mtime         (strictly, per producer)
@@ -396,6 +397,12 @@ Invariant 2  verify_summary mtime  >  findings mtime     (strictly, per producer
 Invariant 3  readiness mtime  =  max(all file mtimes)
              A violation is a readiness-not-latest violation: some artifact was written
              after the run was declared done.
+
+Invariant 4  findings sha256 unique across producers
+             A violation is an independent-review violation: two findings artifacts
+             from different producers sharing one sha256 mean the "independent second
+             pass" was a copy, not a review (the quarantined first-substrate fixture
+             exhibited exactly this — issues #77/#78).
 ```
 
 A manifest can be schema-clean and still fail here. That is the point. The doctrine is not
