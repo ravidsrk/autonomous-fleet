@@ -35,8 +35,11 @@ check_condition() {
 
   local err=0
 
-  if [[ "$text" != *docs/* ]]; then
-    echo "FAIL $label: must reference docs/ path (file-ledger truth)" >&2
+  # Accept the default docs/ layout, the relocated FLEET_LEDGER_DIR, or the
+  # <LEDGER_DIR> template placeholder (issue #101) — the rule is "reference
+  # the FILE ledger", not "hard-code docs/".
+  if [[ "$text" != *docs/* && "$text" != *"<LEDGER_DIR>/"* && ( -z "${FLEET_LEDGER_DIR:-}" || "$text" != *"${FLEET_LEDGER_DIR:-}/"* ) ]]; then
+    echo "FAIL $label: must reference the ledger dir (docs/, <LEDGER_DIR>/, or \$FLEET_LEDGER_DIR path)" >&2
     err=1
   fi
 

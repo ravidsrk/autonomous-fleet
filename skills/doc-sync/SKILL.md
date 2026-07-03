@@ -15,12 +15,12 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.0.2"
+  version: "1.0.3"
   tier: "1"
   fleet-component: "mission"
 ---
 
-<!-- Corpus: prompts.md L2953-2964 (Stage 8 distillation, Tier 1 grouping at L2961 names doc-sync as run-unattended); see docs/doc-sync-readiness.md for the dogfood run. -->
+<!-- Corpus: prompts.md L2953-2964 (Stage 8 distillation, Tier 1 grouping at L2961 names doc-sync as run-unattended); see <LEDGER_DIR>/doc-sync-readiness.md for the dogfood run. -->
 
 
 # Mission: doc-sync
@@ -55,7 +55,7 @@ Inject per role on DISPATCH (workers load these; coordinator does not):
 
 ## Deferred missions
 
-Record in `docs/doc-sync-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+Record in `<LEDGER_DIR>/doc-sync-readiness.md` under **Recommended next missions** and in DECISIONS.md.
 Do not start another mission in the same run.
 
 | Finding type | Route to |
@@ -85,7 +85,7 @@ DECISIONS.md as a finding for a separate mission.
 - @claude is the INTEGRATOR: opens the PR, merges (conflict-aware), cleans the worktree.
 
 ## LEDGER
-`docs/doc-sync-progress.md`. Per-task flags: `WRITTEN=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/doc-sync-progress.md`. Per-task flags: `WRITTEN=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
 MERGED=<t/f>`. Plus a DRIFT INDEX: every doc-vs-code discrepancy found in T-AUDIT, each `OPEN |
 CLOSED via PR#n`.
 
@@ -93,7 +93,7 @@ CLOSED via PR#n`.
 - **T-AUDIT [@claude]** — read the code and the docs together; produce a complete DRIFT INDEX:
   every discrepancy with the doc location and the code truth it should reflect, grouped by doc
   area (README / setup / API / AGENTS.md / comments / examples). Also flag broken links, dead
-  example commands, and instructions that no longer work. Output `docs/doc-sync-audit.md`.
+  example commands, and instructions that no longer work. Output `<LEDGER_DIR>/doc-sync-audit.md`.
   Independent — this is the only discovery task; freeze it, then fix.
 - **T-FIX… [per doc area, loop]** — each doc area is one PR. @codex rewrites that area to match
   the code (run any example/command to verify it actually works) → fresh build-blind @claude reviews the PR (doc
@@ -125,7 +125,7 @@ CLOSED via PR#n`.
   |----|---------------|----------|------------------------|----------|-------|
   | D-001 | `CONTRIBUTING.md:11` | "Ruby 1.9+" | CI tests 2.7/3.0/3.1 (cite code file:line)  | contributing | OPEN → CLOSED via PR#n |
 - **T-FINAL [@claude]** — verify every DRIFT-INDEX item is CLOSED, all example commands run,
-  all internal links resolve, no stale instruction remains. Output `docs/doc-sync-readiness.md`
+  all internal links resolve, no stale instruction remains. Output `<LEDGER_DIR>/doc-sync-readiness.md`
   starting with **`fleet-outcome` YAML** (`drift_open`, `code_bug_findings` in metrics; see
   `autonomous-fleet-core/references/fleet-outcome.md`), then drift summary + **Recommended next
   missions**. Ship as the final PR.
@@ -133,18 +133,18 @@ CLOSED via PR#n`.
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/doc-sync-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/doc-sync-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission doc-sync DONE: docs/doc-sync-progress.md all task flags true,
-docs/doc-sync-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission doc-sync DONE: <LEDGER_DIR>/doc-sync-progress.md all task flags true,
+<LEDGER_DIR>/doc-sync-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 the readiness fleet-outcome validates (python3 <SUBSTRATE>/validate_fleet_outcome.py per the engine's SUBSTRATE RESOLUTION; skip recorded in the readiness doc when SUBSTRATE=none), all PRs merged into BASE.
 ```
 
 
 ## DONE
 Every DRIFT-INDEX item `CLOSED`, every task `WRITTEN=t PR_OPEN=t REVIEWED=t MERGED=t`,
-`docs/doc-sync-readiness.md` exists, all examples run and links resolve. Then send the FINAL
+`<LEDGER_DIR>/doc-sync-readiness.md` exists, all examples run and links resolve. Then send the FINAL
 report.
 
 ## DECISION DEFAULTS (mission-specific; on top of the engine's)
