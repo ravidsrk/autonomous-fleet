@@ -196,13 +196,16 @@ ${HANDOFF_BODY}
 ===== END HANDOFF DOCUMENT ====="
 else
   if [[ "$MISSION" == "fleet-program" ]]; then
-    GOAL_COND="Campaign DONE: ${FLEET_LEDGER_DIR:-docs}/fleet-program-progress.md PHASE is DONE, every node DONE or SKIPPED, each readiness doc has valid fleet-outcome YAML."
-    PROMPT="Activate fleet-program, autonomous-fleet-core, and the installed runtime adapter. Run the repo-health campaign (or campaign in ${FLEET_LEDGER_DIR:-docs}/fleet-program-progress.md if present). /goal ${GOAL_COND}"
+    PROGRESS="$(registry_path progress_path "fleet-program")"
+    GOAL_COND="Campaign DONE: the run-keyed campaign ledger (${FLEET_LEDGER_DIR:-docs}/fleet-program-<run_short>-progress.md per engine step 9; unkeyed name if the coordinator recorded none) PHASE is DONE, every node DONE or SKIPPED, each readiness doc has valid fleet-outcome YAML."
+    PROMPT="Activate fleet-program, autonomous-fleet-core, and the installed runtime adapter. Run the repo-health campaign (or campaign in ${PROGRESS} if present). /goal ${GOAL_COND}"
   else
     validate_mission "$MISSION"
     PROGRESS="$(registry_path progress_path "$MISSION")"
     READINESS="$(registry_path readiness_path "$MISSION")"
-    GOAL_COND="Mission ${MISSION} DONE: ${PROGRESS} all task flags true, ${READINESS} with fleet-outcome.status done, all PRs merged into BASE."
+    # The agent allocates run_id AFTER this prompt is written; per engine step 9
+    # the real files carry -<run_short>. Phrase the condition run-key-aware.
+    GOAL_COND="Mission ${MISSION} DONE: the run's ledger (${PROGRESS}, run-keyed with -<run_short> per engine step 9) all task flags true, its readiness doc (${READINESS} run-keyed likewise) with fleet-outcome.status done, all PRs merged into BASE."
     PROMPT="Activate mission skill ${MISSION}, autonomous-fleet-core, and the installed runtime adapter. Follow engine.md and runtime-goals.md. /goal ${GOAL_COND}"
   fi
 fi

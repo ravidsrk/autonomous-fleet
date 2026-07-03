@@ -175,3 +175,39 @@ def test_adapters_carry_honest_primitive_matrix() -> None:
         text = (ROOT / "skills" / f"autonomous-fleet-adapter-{name}" / "SKILL.md").read_text(encoding="utf-8")
         assert "**absent**" in text, name
         assert "not the engine primitive" in text, name
+
+
+def test_run_short_keys_ledger_filenames(monkeypatch) -> None:
+    """Issue #96: FLEET_RUN_SHORT keys ledger names per run while keeping the
+    *-progress.md shape every validator globs."""
+    from lib import mission_registry as mr
+
+    monkeypatch.delenv("FLEET_RUN_SHORT", raising=False)
+    monkeypatch.delenv("FLEET_LEDGER_DIR", raising=False)
+    base = mr.progress_path("doc-sync")
+    monkeypatch.setenv("FLEET_RUN_SHORT", "3e8173")
+    keyed = mr.progress_path("doc-sync")
+    assert keyed == "docs/doc-sync-3e8173-progress.md"
+    assert keyed.endswith("-progress.md")
+    assert mr.readiness_path("doc-sync") == "docs/doc-sync-3e8173-readiness.md"
+    monkeypatch.setenv("FLEET_RUN_SHORT", "NOT-HEX")
+    assert mr.progress_path("doc-sync") == base
+
+
+def test_resolve_readiness_prefers_newest_keyed_file(tmp_path, monkeypatch) -> None:
+    """#129 round-2: campaign drivers must find the run-keyed readiness a run
+    actually wrote, not the unkeyed path predicted pre-run."""
+    import os as _os
+    import time as _time
+    from lib import mission_registry as mr
+
+    monkeypatch.delenv("FLEET_RUN_SHORT", raising=False)
+    monkeypatch.delenv("FLEET_LEDGER_DIR", raising=False)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    assert mr.resolve_readiness_file("doc-sync", str(tmp_path)) == "docs/doc-sync-readiness.md"
+    (docs / "doc-sync-readiness.md").write_text("old", encoding="utf-8")
+    keyed = docs / "doc-sync-abc123-readiness.md"
+    keyed.write_text("new", encoding="utf-8")
+    _os.utime(keyed, (_time.time() + 5, _time.time() + 5))
+    assert mr.resolve_readiness_file("doc-sync", str(tmp_path)) == "docs/doc-sync-abc123-readiness.md"

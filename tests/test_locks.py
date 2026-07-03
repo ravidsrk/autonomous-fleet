@@ -312,3 +312,168 @@ def test_steal_with_non_int_pid(tmp_path: Path) -> None:
         assert json.loads(new.lock_path.read_text())["owner"] == "recovery"
     finally:
         new.release()
+
+
+def test_steal_never_clobbers_a_concurrent_rewrite(tmp_path: Path, monkeypatch) -> None:
+    """Issue #96 TOCTOU: after validation but before takeover, the lock is
+    rewritten (revived holder / competing writer). The old os.replace-based
+    steal clobbered it; the CAS-shaped steal must abort and leave the rewrite
+    in place."""
+    held = FileLock(tmp_path, "raced", owner="dead-owner").acquire()
+
+    def fake_kill(pid: int, sig: int) -> None:
+        raise ProcessLookupError("dead")
+
+    monkeypatch.setattr(os, "kill", fake_kill)
+
+    real_rename = os.rename
+    lockfile = held.lock_path
+
+    def racing_rename(src, dst):
+        # Simulate the race at the narrowest window: the moment the stealer
+        # tries to take the stale lock, a competitor has already rewritten it.
+        lockfile.write_text(
+            json.dumps({"owner": "revived", "acquired_at": "now", "pid": os.getpid()}),
+            encoding="utf-8",
+        )
+        return real_rename(src, dst)
+
+    monkeypatch.setattr(os, "rename", racing_rename)
+    with pytest.raises(LockStealError, match="changed before steal"):
+        FileLock.steal(tmp_path, "raced", new_owner="thief")
+    monkeypatch.setattr(os, "rename", real_rename)
+    # The competitor's rewrite survives (restored via link), not the thief's.
+    assert json.loads(lockfile.read_text())["owner"] == "revived"
+
+
+def test_steal_single_winner_among_concurrent_stealers(tmp_path: Path, monkeypatch) -> None:
+    """Two stealers race the same dead lock past validation: the rename is the
+    single-winner point — the loser gets a clean LockStealError (lost race),
+    never a double-grant."""
+    FileLock(tmp_path, "contested", owner="dead-owner").acquire()
+
+    def fake_kill(pid: int, sig: int) -> None:
+        raise ProcessLookupError("dead")
+
+    monkeypatch.setattr(os, "kill", fake_kill)
+
+    real_rename = os.rename
+    lockfile = tmp_path / "locks" / "contested.lock"
+
+    def competitor_wins_rename(src, dst):
+        # The competitor's rename lands first: the stale lock is gone by the
+        # time OUR rename executes.
+        if pathlib.Path(src) == lockfile:
+            lockfile.unlink()
+        return real_rename(src, dst)
+
+    import pathlib
+
+    monkeypatch.setattr(os, "rename", competitor_wins_rename)
+    with pytest.raises(LockStealError, match="lost steal race"):
+        FileLock.steal(tmp_path, "contested", new_owner="thief-2")
+
+
+def test_steal_restores_lock_when_holder_revives_after_tombstone(tmp_path: Path, monkeypatch) -> None:
+    """Pid-reuse guard: dead at validation, alive at re-probe — the lock is
+    restored and the steal aborts."""
+    FileLock(tmp_path, "revive2", owner="flapper").acquire()
+    probes = {"n": 0}
+
+    def flapping_kill(pid: int, sig: int) -> None:
+        probes["n"] += 1
+        if probes["n"] == 1:
+            raise ProcessLookupError("dead")
+        return None  # alive on re-probe
+
+    monkeypatch.setattr(os, "kill", flapping_kill)
+    with pytest.raises(LockStealError, match="revived before steal"):
+        FileLock.steal(tmp_path, "revive2", new_owner="thief")
+    lockfile = tmp_path / "locks" / "revive2.lock"
+    assert json.loads(lockfile.read_text())["owner"] == "flapper"
+    assert not list(lockfile.parent.glob(".*.steal.*"))
+
+
+def test_steal_mismatch_restore_tolerates_existing_fresh_lock(tmp_path: Path, monkeypatch) -> None:
+    """Restore-via-link EEXIST path: a fresh acquirer already owns lock_path
+    when the mismatch restore runs — abort cleanly, never clobber."""
+    FileLock(tmp_path, "raced2", owner="dead-owner").acquire()
+
+    def fake_kill(pid: int, sig: int) -> None:
+        raise ProcessLookupError("dead")
+
+    monkeypatch.setattr(os, "kill", fake_kill)
+    lockfile = tmp_path / "locks" / "raced2.lock"
+    real_rename = os.rename
+
+    def racing_rename(src, dst):
+        rc = real_rename(src, dst)
+        # After our tombstone rename: competitor rewrote content earlier is
+        # simulated by editing the tombstone; a fresh acquirer takes lock_path.
+        Path(dst).write_text(
+            json.dumps({"owner": "other", "acquired_at": "x", "pid": 1}), encoding="utf-8"
+        )
+        lockfile.write_text(
+            json.dumps({"owner": "fresh", "acquired_at": "y", "pid": os.getpid()}),
+            encoding="utf-8",
+        )
+        return rc
+
+    monkeypatch.setattr(os, "rename", racing_rename)
+    with pytest.raises(LockStealError, match="changed before steal"):
+        FileLock.steal(tmp_path, "raced2", new_owner="thief")
+    assert json.loads(lockfile.read_text())["owner"] == "fresh"
+
+
+def test_steal_revive_restore_tolerates_existing_fresh_lock(tmp_path: Path, monkeypatch) -> None:
+    FileLock(tmp_path, "revive3", owner="flapper").acquire()
+    lockfile = tmp_path / "locks" / "revive3.lock"
+    probes = {"n": 0}
+
+    def flapping_kill(pid: int, sig: int) -> None:
+        probes["n"] += 1
+        if probes["n"] == 1:
+            raise ProcessLookupError("dead")
+        return None
+
+    monkeypatch.setattr(os, "kill", flapping_kill)
+    real_rename = os.rename
+
+    def rename_then_fresh(src, dst):
+        rc = real_rename(src, dst)
+        lockfile.write_text(
+            json.dumps({"owner": "fresh", "acquired_at": "y", "pid": os.getpid()}),
+            encoding="utf-8",
+        )
+        return rc
+
+    monkeypatch.setattr(os, "rename", rename_then_fresh)
+    with pytest.raises(LockStealError, match="revived before steal"):
+        FileLock.steal(tmp_path, "revive3", new_owner="thief")
+    assert json.loads(lockfile.read_text())["owner"] == "fresh"
+
+
+def test_steal_loses_race_to_fresh_acquirer(tmp_path: Path, monkeypatch) -> None:
+    """Tombstone verify passes, but a fresh acquirer takes lock_path before
+    our link-acquire: clean 'lost race', no clobber."""
+    FileLock(tmp_path, "fresh-race", owner="dead-owner").acquire()
+    lockfile = tmp_path / "locks" / "fresh-race.lock"
+
+    def fake_kill(pid: int, sig: int) -> None:
+        raise ProcessLookupError("dead")
+
+    monkeypatch.setattr(os, "kill", fake_kill)
+    real_rename = os.rename
+
+    def rename_then_fresh(src, dst):
+        rc = real_rename(src, dst)
+        lockfile.write_text(
+            json.dumps({"owner": "fresh", "acquired_at": "y", "pid": os.getpid()}),
+            encoding="utf-8",
+        )
+        return rc
+
+    monkeypatch.setattr(os, "rename", rename_then_fresh)
+    with pytest.raises(LockStealError, match="lost steal race to a fresh acquirer"):
+        FileLock.steal(tmp_path, "fresh-race", new_owner="thief")
+    assert json.loads(lockfile.read_text())["owner"] == "fresh"
