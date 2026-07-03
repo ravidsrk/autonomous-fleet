@@ -27,7 +27,8 @@ INFERENCE_COST_OUTCOME = {
 }
 
 
-def test_inference_cost_outcome_validates_with_registered_metrics():
+def test_inference_cost_outcome_validates_with_registered_metrics(monkeypatch):
+    monkeypatch.delenv("FLEET_LEDGER_DIR", raising=False)
     assert MISSION_METRICS["inference-cost"] == frozenset(
         {"cost_regressed", "quality_regressed", "levers_open"}
     )
