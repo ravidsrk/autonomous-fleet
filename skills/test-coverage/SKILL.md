@@ -13,7 +13,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.0.1"
+  version: "1.0.2"
   tier: "1"
   fleet-component: "mission"
 ---
@@ -105,7 +105,7 @@ After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-go
 ```
 Mission test-coverage DONE: docs/test-coverage-progress.md all task flags true,
 docs/test-coverage-readiness.md with fleet-outcome.status done and mission metrics satisfied,
-./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
+the readiness fleet-outcome validates (python3 <SUBSTRATE>/validate_fleet_outcome.py per the engine's SUBSTRATE RESOLUTION; skip recorded in the readiness doc when SUBSTRATE=none), all PRs merged into BASE.
 ```
 
 

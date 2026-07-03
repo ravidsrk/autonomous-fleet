@@ -23,7 +23,7 @@ session, a Stop hook fires and scans the repo for evidence:
 - **WT_CLEAN=true** in a progress ledger touched in the last 30min
 - **e2e_verified: true** in a readiness doc touched in the last 30min
 - **status: done** in a readiness doc touched in the last 30min
-- **A passing verify-summary** from `scripts/verify_findings.py` (the findings layer)
+- **A passing verify-summary** from `<SUBSTRATE>/verify_findings.py` (the findings layer)
 - **Test-runner artifacts** (`.pytest_cache`, `coverage/`, junit XMLs)
   touched in the last 30min
 - **End-to-end artifacts** (Playwright PNGs, trace screenshots) touched
@@ -65,9 +65,11 @@ autonomous-fleet checkout root:
 export AUTONOMOUS_FLEET_HOME=/path/to/autonomous-fleet
 ```
 
-This is so the wrapper script can find `scripts/stop_verify.py`. Without
-it, the wrapper walks up from its own location (which works when the
-wrapper is symlinked).
+This is so the wrapper script can find the framework clone's copy of
+`stop_verify.py` (framework clone only). Without it, the wrapper walks up
+from its own location (which works when the wrapper is symlinked). On a
+skills-install repo the bundled copy lives at `<SUBSTRATE>/stop_verify.py`;
+pointing the wrapper there without a clone is tracked by issue #82.
 
 ### Per-repo install
 
@@ -145,7 +147,7 @@ To unblock:
   - Run the test suite end-to-end (pytest / jest / cargo test / go test).
   - Write the readiness doc with `status: done` (and `e2e_verified: true`
     if the mission requires it).
-  - Or, for verified review missions, run scripts/verify_findings.py
+  - Or, for verified review missions, run <SUBSTRATE>/verify_findings.py
     --summary-out.
 
 If this is a no-edit turn (status/diagnostic only), set

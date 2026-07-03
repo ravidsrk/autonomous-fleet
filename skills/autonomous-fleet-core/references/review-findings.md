@@ -39,7 +39,7 @@ Reviewer phase:
 1. The reviewer writes findings to a JSON file conformant to the schema. Path
    convention: `.fleet/runs/<run_id>/<reviewer>-findings.json` (one file per
    reviewer in multi-reviewer setups).
-2. The coordinator runs `python scripts/verify_findings.py <findings.json>
+2. The coordinator runs `python3 <SUBSTRATE>/verify_findings.py <findings.json>
    --repo <REPO_ROOT> --write --summary-out <summary.json>`.
 3. The CLI exits 0 (all verified), 1 (at least one unverified), 2 (schema
    violation), or 3 (usage error). Coordinators MUST treat exit 1 as a fail —

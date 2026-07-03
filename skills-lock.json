@@ -4,8 +4,8 @@
     "adversarial-review-and-fix": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.0.1",
-      "computedHash": "ed294c324bed48e37d48c0ec0d64b103f60435f990f7e6c5708e3fc20809adc5"
+      "version": "1.0.2",
+      "computedHash": "0af00b8dc4976de578551dc8e1bb918df97fe8a212c5ef5a870bcd6f00256a75"
     },
     "autonomous-fleet": {
       "source": "ravidsrk/autonomous-fleet",
@@ -46,20 +46,20 @@
     "autonomous-fleet-core": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.2.0",
-      "computedHash": "41e7d3be804206907be6f07127800f57a70f912d4c70ad808e4aa1ed709e9257"
+      "version": "1.2.1",
+      "computedHash": "ea94d0b07dd596dd66e2d26f1f295aa1dd31bbbcc84160632d5ed1ede9c2b054"
     },
     "doc-sync": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.0.0",
-      "computedHash": "a6e096cc0b9c261bba2ac6908e613cad23e532f1366db0fc074db28921f4fda4"
+      "version": "1.0.1",
+      "computedHash": "ecbcd821cf5f810f383671a08ac1c573f01ca54d25497f57f4715e5f6a5a349e"
     },
     "fleet-program": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.2.0",
-      "computedHash": "abef9e626bdf259f29c747c3822731545e4763cbe0ca56c5facd94ec99a18bdb"
+      "version": "1.2.1",
+      "computedHash": "860a3c9e2d4e98b90072884ce18187c7f0e1eb74e0de31453b6092a6bca9ab4b"
     },
     "setup-autonomous-fleet": {
       "source": "ravidsrk/autonomous-fleet",
@@ -77,8 +77,8 @@
     "test-coverage": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.0.1",
-      "computedHash": "3fd53dd424a52b63ba1946ae03318a5311b9d1b6bb74ec13d56a82520e331236"
+      "version": "1.0.2",
+      "computedHash": "503198927e676c311233ad8de28ead29806825c997a1f72b304a4d1717f70588"
     }
   }
 }

@@ -15,7 +15,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.0.0"
+  version: "1.0.1"
   tier: "1"
   fleet-component: "mission"
 ---
@@ -42,7 +42,7 @@ Activate only when the trigger applies. Do not load unrelated catalog skills.
 
 | Skill | Activate when | If unavailable |
 |-------|---------------|----------------|
-| `skill-creator` | Editing or validating skills in the autonomous-fleet repo itself | Run `./scripts/validate-skills.sh` |
+| `skill-creator` | Editing or validating skills in the autonomous-fleet repo itself | Run `./scripts/validate-skills.sh` (framework clone only) |
 
 ## Worker skills
 
@@ -113,7 +113,7 @@ After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-go
 ```
 Mission doc-sync DONE: docs/doc-sync-progress.md all task flags true,
 docs/doc-sync-readiness.md with fleet-outcome.status done and mission metrics satisfied,
-./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
+the readiness fleet-outcome validates (python3 <SUBSTRATE>/validate_fleet_outcome.py per the engine's SUBSTRATE RESOLUTION; skip recorded in the readiness doc when SUBSTRATE=none), all PRs merged into BASE.
 ```
 
 

@@ -2,7 +2,7 @@
 
 Layer 3 of the verification substrate. Mechanical guard for the anti-anchoring
 protocol defined in [`review-findings.md` § ANTI-ANCHORING](review-findings.md).
-This file is the spec the verifier (`scripts/verify_blind_fix.py`) enforces.
+This file is the spec the verifier (`<SUBSTRATE>/verify_blind_fix.py`) enforces.
 
 Layer 1 (`verify_findings.py`) protects against reviewer **hallucination**
 (quoted lines that don't exist).
@@ -66,8 +66,8 @@ For each finding `<finding-id>` in `<run_id>`:
 
 # Wiring
 
-- `scripts/verify_blind_fix.py` — CLI entrypoint
-- `scripts/lib/verify_blind_fix.py` — library (jsonschema-free, like
+- `<SUBSTRATE>/verify_blind_fix.py` — CLI entrypoint
+- `<SUBSTRATE>/lib/verify_blind_fix.py` — library (jsonschema-free, like
   `verify_findings.py`)
 - `scripts/validate-all.sh` — runs the verifier against the fixture
   archive on every CI run

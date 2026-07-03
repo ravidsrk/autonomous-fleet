@@ -1,5 +1,5 @@
 {
-  "core_version": "1.2.0",
+  "core_version": "1.2.1",
   "files": {
     "emit_trace.py": "88b22b371918540e73f3f2f513a2d47fe74809f9d0ecf5203e70fd4dc8dcad6d",
     "lib/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

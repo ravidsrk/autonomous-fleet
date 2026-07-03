@@ -632,7 +632,7 @@ def test_write_lock_discipline_block_present_with_two_lock_kinds() -> None:
     assert "Stealing without a confirmed-dead signal is a protocol violation" in block
 
     # Implementation pointer so engine readers can find the code.
-    assert "scripts/lib/locks.py" in block
+    assert "<SUBSTRATE>/lib/locks.py" in block
     assert ".fleet/runs/<run_id>/locks/" in block
 
     assert_no_contradiction_markers(block)
@@ -693,7 +693,7 @@ def test_substrate_kill_switch_block_present_and_complete() -> None:
     assert "falsifiable comparator" in block
 
     # Implementation + doctrine pointers.
-    assert "scripts/lib/substrate_disable.py" in block
+    assert "<SUBSTRATE>/lib/substrate_disable.py" in block
     assert "references/substrate-disable-knobs.md" in block
 
     assert_no_contradiction_markers(block)
