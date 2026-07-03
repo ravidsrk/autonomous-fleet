@@ -22,6 +22,8 @@ REPO_ROOT=""
 DRY_RUN=0
 PROBE_FAIL=0
 MAX_TURNS=50
+TIMEOUT_SECS=""
+SKIP_AUTH_CHECK=0
 YOLO=0
 YOLO_ACK=0
 
@@ -38,6 +40,9 @@ Options:
                       p0_open=1, status=blocked) so the failure/blocked branch of every
                       conditional gate is reachability-checked, not just the benign branch
   --max-turns N       Per-node turn budget (default: 50; Grok/Codex only)
+  --timeout SECONDS   Per-node runtime watchdog passed to run-mission-headless.sh
+                      (default: its 5400; 0 disables)
+  --skip-auth-check   Skip the per-node runtime auth pre-check
   --yolo              Auto-approve agent tools (Grok only; default: off)
   --no-yolo           Deprecated alias for default (no auto-approve)
   --yolo-untrusted-acknowledged  Required with --yolo when --repo is outside this clone (accepts RCE risk)
@@ -86,6 +91,14 @@ while [[ $# -gt 0 ]]; do
     --max-turns)
       MAX_TURNS="${2:?}"
       shift 2
+      ;;
+    --timeout)
+      TIMEOUT_SECS="${2:?}"
+      shift 2
+      ;;
+    --skip-auth-check)
+      SKIP_AUTH_CHECK=1
+      shift
       ;;
     --yolo)
       YOLO=1
@@ -340,6 +353,8 @@ while [[ -n "$CURRENT" ]]; do
     fi
   else
     EXTRA=(--repo "$REPO_ROOT")
+    [[ -n "$TIMEOUT_SECS" ]] && EXTRA+=(--timeout "$TIMEOUT_SECS")
+    [[ "$SKIP_AUTH_CHECK" -eq 1 ]] && EXTRA+=(--skip-auth-check)
     [[ "$YOLO" -eq 1 ]] && EXTRA+=(--yolo)
     # Propagate the acknowledgement so the child's RCE gate doesn't re-fire on an external repo.
     [[ "$YOLO_ACK" -eq 1 ]] && EXTRA+=(--yolo-untrusted-acknowledged)
