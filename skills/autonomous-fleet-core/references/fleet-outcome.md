@@ -129,10 +129,12 @@ definition (issue #99). Two coordinators counting the same repo must converge.
   recorded in the readiness doc.
 
 **adversarial-review-and-fix**
-- `p0_open` / `p1_open` — CLOSE-INDEX rows of that severity whose state is not
-  lane-terminal (Lane A `MERGED=true`, Lane B `HUMAN_GATED=true`, Lane 0
+- `p0_open` — CLOSE-INDEX rows of severity P0 whose state is not lane-terminal
+  (Lane A `MERGED=true`, Lane B `HUMAN_GATED=true`, Lane 0
   `CODE_CLOSED=true, OPS_QUEUED=true`). Severities come from the frozen
   findings JSON, never re-graded after freeze.
+- `p1_open` — same lane-terminal rule for severity-P1 CLOSE-INDEX rows; same
+  frozen-severity discipline.
 - `findings_open` — CLOSE-INDEX rows of ANY severity not lane-terminal
   (superset of the two above).
 - `ops_queue_count` — `HUMAN_ACTION_REQUIRED:<id>` rows the run appended to the
