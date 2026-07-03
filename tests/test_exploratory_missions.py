@@ -262,3 +262,18 @@ def test_lint_fails_mission_missing_markers(tmp_path) -> None:
     errors, lines = lint_exploratory_missions(repo)
     assert errors == 1
     assert any("FAIL exploratory/bug-batch" in line and "frontmatter" in line for line in lines)
+
+
+def test_malformed_yaml_frontmatter_reported_as_missing_flag(tmp_path) -> None:
+    """Covers the yaml.YAMLError branch: unparseable frontmatter cannot carry
+    the flag, so it must report the frontmatter marker as missing."""
+    from lib.exploratory_missions import missing_exploratory_markers
+
+    mission = tmp_path / "demo-mission"
+    mission.mkdir()
+    (mission / "SKILL.md").write_text(
+        "---\nname: [unclosed\n---\n\n> **Status: exploratory.** banner ok\n",
+        encoding="utf-8",
+    )
+    missing = missing_exploratory_markers(mission)
+    assert any("frontmatter" in m for m in missing)
