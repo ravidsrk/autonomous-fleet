@@ -52,8 +52,8 @@
     "doc-sync": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.0.1",
-      "computedHash": "ecbcd821cf5f810f383671a08ac1c573f01ca54d25497f57f4715e5f6a5a349e"
+      "version": "1.0.2",
+      "computedHash": "1f1cb4816affd3cabdf3d87d8086e1f5c6a4f9c402c0bf26e641268a61408cb0"
     },
     "fleet-program": {
       "source": "ravidsrk/autonomous-fleet",
@@ -77,8 +77,8 @@
     "test-coverage": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.0.2",
-      "computedHash": "503198927e676c311233ad8de28ead29806825c997a1f72b304a4d1717f70588"
+      "version": "1.0.3",
+      "computedHash": "b774943cef8fdffc9094d891e29597f7ffd47292842a9d1c00dcf62d3a60fcbc"
     }
   }
 }

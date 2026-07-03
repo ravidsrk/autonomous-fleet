@@ -15,7 +15,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.0.1"
+  version: "1.0.2"
   tier: "1"
   fleet-component: "mission"
 ---
@@ -99,6 +99,28 @@ CLOSED via PR#n`.
   the code (run any example/command to verify it actually works) → fresh build-blind @claude reviews the PR (doc
   matches code, examples run, links resolve) → @claude merges. Parallelize across non-overlapping
   doc files; serialize edits to the same file. Update the DRIFT INDEX as items close.
+
+  **PR sizing (issue #100 — the seam that decides spam vs blob):**
+  - A "doc area" is one of: one top-level doc file (README, CONTRIBUTING, a
+    single `docs/<file>.md`), one `docs/` subdirectory, or one code module's
+    comments/docstrings. Group the frozen DRIFT INDEX rows by that unit.
+  - Target diff ≤ ~400 changed lines per PR. An area whose rows exceed that:
+    split by file. An area whose fix is < ~10 lines: MERGE it with another
+    area touching the same file tree rather than opening a one-liner PR.
+  - Never split one file across two PRs; never let one PR touch two areas
+    whose rows could merge-conflict.
+  - Worked example: DRIFT INDEX rows D-001..D-003 all in CONTRIBUTING.md →
+    ONE PR "docs(CONTRIBUTING): …". Rows D-004..D-007 spread across four
+    code files' comments → ONE PR "docs(comments): …" (all < 400 lines,
+    disjoint files, one conceptual unit: comment truth). This is exactly the
+    split the first external run used (gemoji#8/#9).
+
+  **DRIFT INDEX row schema (frozen at T-AUDIT; the reviewer verifies against
+  THESE columns):**
+
+  | ID | Doc file:line | Doc says | Code truth (file:line) | Fix area | State |
+  |----|---------------|----------|------------------------|----------|-------|
+  | D-001 | `CONTRIBUTING.md:11` | "Ruby 1.9+" | CI tests 2.7/3.0/3.1 (`.github/workflows/test.yml:10`) | contributing | OPEN → CLOSED via PR#n |
 - **T-FINAL [@claude]** — verify every DRIFT-INDEX item is CLOSED, all example commands run,
   all internal links resolve, no stale instruction remains. Output `docs/doc-sync-readiness.md`
   starting with **`fleet-outcome` YAML** (`drift_open`, `code_bug_findings` in metrics; see
