@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Grok Build with Task tool, git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.3"
+  version: "1.1.4"
   fleet-component: "adapter"
 ---
 
@@ -27,6 +27,23 @@ core self-orientation (default `fleet/`; recorded in DECISIONS.md).
 This adapter resolves the core's PRIMITIVES to Grok mechanics. Where Grok cannot provide a
 primitive natively (e.g. cross-session blocking message queues), the adapter substitutes the file
 ledger + polling, and says so.
+
+## PRIMITIVE SUPPORT MATRIX (issue #93 — honest per-primitive status)
+
+| Primitive | Status | Mechanic |
+|-----------|--------|----------|
+| PLACE | real | `git worktree add` (+ optional container-use) |
+| SPAWN_WORKER | real | Grok Task tool / subagent spawn |
+| DISPATCH | real | role-scoped prompt |
+| WAIT | **degraded** | no blocking event API — ledger polling |
+| INSPECT | real | shell |
+| WORKER_DONE | real | worker return + ledger write |
+| ASK / REPLY | **absent** | no blocking worker→coordinator question exists on this host; workers get DECISION DEFAULTS up front and write `BLOCKED` to the ledger — a documented FALLBACK, not the engine primitive |
+| OPEN_PR / MERGE_PR / CLEANUP | real | `gh` + worktree remove |
+| SYNC_TASK_STATE | **degraded** | ledger-only |
+| SET_GOAL family (9–12) | real | `/goal`, `update_goal` |
+| LOOP_POLL | real | `/loop`, `scheduler_create` |
+| CONTINUE_WORKER | asserted | sessionId re-attach — verify on your CLI version (#91) |
 
 ## PRECONDITIONS (the core calls for these; here's the Grok form)
 A git repo (REPO_ROOT resolvable) · `gh auth status` via Shell (else local merge-commits into BASE)

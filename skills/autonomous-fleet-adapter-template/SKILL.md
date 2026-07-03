@@ -10,7 +10,7 @@ license: MIT
 compatibility: Reference template for adapter authors; not a runnable mission
 metadata:
   author: "ravidsrk"
-  version: "1.1.3"
+  version: "1.1.4"
   fleet-component: "adapter-template"
   runnable: "false"
 ---
@@ -29,6 +29,19 @@ Pick a `branch prefix` default for your tool. State your tool's CONCURRENCY MODE
 persistent orchestration daemon like Orca, or is the coordinator itself a session like Claude
 Code?) — that determines whether WAIT() is a real blocking call or ledger-polling, and whether the
 file ledger is the sole source of truth or a daemon also holds state.
+
+## PRIMITIVE SUPPORT MATRIX (fill honestly — issue #93)
+
+For each primitive state **real** (a host mechanic exists and is shown below),
+**degraded** (a weaker substitute, e.g. ledger polling for WAIT — say what it
+loses), **absent** (no mechanic; name the documented fallback), **aliased**
+(e.g. CONTINUE_WORKER → SPAWN_WORKER), or **asserted** (command believed to
+exist but not verified on a live host — cite the verification issue). An
+adapter that presents a fallback as the primitive itself will fail review.
+
+| Primitive | Status | Mechanic |
+|-----------|--------|----------|
+| … | … | … |
 
 ## PRECONDITIONS
 List the exact start-up checks for your runtime (runtime reachable / auth / worktree support /
