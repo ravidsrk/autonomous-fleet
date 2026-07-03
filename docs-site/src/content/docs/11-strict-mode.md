@@ -123,42 +123,41 @@ genuinely expensive.
 ## Opting in
 
 Strict mode is per-repo and per-worker. You install it once in any repo a fleet
-worker will run inside. There are two steps: set one env var, then register the
-hook.
+worker will run inside. One step: register the hook.
 
-### One-time setup
+### Per-repo install — skills-install mode (the common case)
 
-Set `AUTONOMOUS_FLEET_HOME` in the worker's environment to the autonomous-fleet
-checkout root:
-
-```bash
-export AUTONOMOUS_FLEET_HOME=/path/to/autonomous-fleet
-```
-
-This lets the wrapper script find `scripts/stop_verify.py`. Without it, the
-wrapper walks up from its own location, which works when the wrapper is symlinked
-but is fragile across worktrees and venvs. Set the env var.
-
-### Per-repo install
-
-The registered Stop command runs the wrapper from the autonomous-fleet checkout
-(resolved via `AUTONOMOUS_FLEET_HOME`), so you only register the hook. There is no
-need to copy `stop-verify.sh` into the target repo.
-
-In any repo a worker will run in:
+No framework clone and no environment variable needed (issue #82): the adapter
+ships the wrapper, and the wrapper resolves `stop_verify.py` from the core
+skill's bundled substrate (`.agents/skills/autonomous-fleet-core/assets/substrate/`).
+In the repo:
 
 ```bash
+HOOKS=.agents/skills/autonomous-fleet-adapter-claude-code/assets/hooks
 mkdir -p .claude
-
 # If .claude/settings.json doesn't exist yet, copy the template wholesale:
-cp "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/hooks.json" \
-   .claude/settings.json
-
+cp "$HOOKS/hooks.json" .claude/settings.json
 # If it already exists, merge the Stop entry into the existing hooks block:
-jq '.hooks.Stop += input.hooks.Stop' .claude/settings.json \
-   "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/hooks.json" \
+jq '.hooks.Stop += input.hooks.Stop' .claude/settings.json "$HOOKS/hooks.json" \
    > .claude/settings.json.tmp && mv .claude/settings.json.tmp .claude/settings.json
 ```
+
+Verify (prints a BLOCK/ALLOW decision, no "not found" warning):
+
+```bash
+echo '{"cwd":"."}' | bash "$HOOKS/stop-verify.sh"
+```
+
+### Per-repo install — framework clone
+
+Identical with the clone's paths
+(`skills/autonomous-fleet-adapter-claude-code/assets/hooks/`); optionally set
+`AUTONOMOUS_FLEET_HOME=/path/to/autonomous-fleet` so the command and wrapper
+resolve the clone explicitly. The wrapper's full resolution order:
+`FLEET_SUBSTRATE` → `AUTONOMOUS_FLEET_HOME/scripts/` → walk-up from the
+wrapper's own location (clone symlink — before the worker repo's copy so a
+stale bundle never shadows the clone) → the worker repo's
+`.agents/.../assets/substrate/`. Missing everywhere = fail-open ALLOW.
 
 The template registers a single Stop hook that invokes the wrapper:
 
