@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Claude Code with Task tool, git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.3"
+  version: "1.1.4"
   fleet-component: "adapter"
 ---
 
@@ -94,6 +94,17 @@ Docker): commands run INSIDE the container (`uname` reports Linux, not the macOS
   role-scoped prompt (builder / reviewer / integrator) that includes the unit spec, the acceptance
   criteria, the ledger path, and the completion contract (write results back to the ledger + return
   a structured summary). Subagents run in auto mode by default.
+
+> **Reviewer isolation on this host — single-vendor caveat (issue #88).**
+> A fresh Claude subagent reviewing a Claude build is build-blind as
+> **instructed** isolation: fresh context, handed only the diff + acceptance
+> criteria, write-isolated. It is NOT the mechanical cross-vendor /
+> separate-process guarantee (Orca's topology) — a same-vendor reviewer can
+> share the builder's blind spots, and nothing in this runtime makes seeing
+> the build session physically impossible. Record
+> `reviewer_mode: same-vendor-instructed` in DECISIONS.md and the run
+> outcome. Scope of the "structural" claim: engine.md REVIEW step.
+
 - Worktree sub-session path (for units needing an isolated long-running checkout): `git worktree
   add` per PLACE(independent), then drive the agent CLI in that directory via Bash. Use the tool's
   non-interactive/auto flag. PLACE(independent) can also bind to native `isolation: worktree`
