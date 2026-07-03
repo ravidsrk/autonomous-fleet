@@ -81,3 +81,16 @@ def test_single_session_adapters_carry_buildblind_caveat() -> None:
         text = (ROOT / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
         assert "single-vendor caveat" in text, name
         assert "reviewer_mode: same-vendor-instructed" in text, name
+
+
+def test_shipped_mission_metrics_have_operational_definitions() -> None:
+    """Issue #99: every metric a shipped mission must report is defined
+    operationally in fleet-outcome.md — an edge that branches on an undefined
+    metric is incantatory."""
+    from lib.fleet_outcome import MISSION_METRICS
+
+    doc = (ROOT / "skills/autonomous-fleet-core/references/fleet-outcome.md").read_text(encoding="utf-8")
+    assert "## Metric definitions" in doc
+    for mission in ("doc-sync", "test-coverage", "adversarial-review-and-fix"):
+        for metric in MISSION_METRICS[mission]:
+            assert f"`{metric}`" in doc, f"{mission}:{metric} lacks a definition"
