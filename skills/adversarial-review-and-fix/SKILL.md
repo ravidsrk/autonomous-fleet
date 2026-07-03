@@ -14,7 +14,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.0.1"
+  version: "1.0.2"
   tier: "2"
   fleet-component: "mission"
 ---
@@ -146,7 +146,7 @@ value, the script that reproduced the race) and sets `EVID=true` only when it no
   `autonomous-fleet-core/assets/fleet-review-findings.schema.json` at
   `.fleet/runs/<run_id>/p0-review-findings.json`. Each finding's `evidence.quoted_line` MUST be the
   EXACT verbatim line from the cited source file. The coordinator immediately runs
-  `python scripts/verify_findings.py .fleet/runs/<run_id>/p0-review-findings.json --repo <REPO_ROOT>
+  `python3 <SUBSTRATE>/verify_findings.py .fleet/runs/<run_id>/p0-review-findings.json --repo <REPO_ROOT>
   --write --summary-out .fleet/runs/<run_id>/p0-verify-summary.json`. If exit != 0 (schema error or
   unverified finding), the run HALTS at P0-REVIEW — unverified findings are likely reviewer
   hallucination and MUST NOT enter the fix loop. The reviewer either fixes the quotes and re-emits,
@@ -160,7 +160,7 @@ value, the script that reproduced the race) and sets `EVID=true` only when it no
   Phase 1 spec; refuted = never fixed.
 
   Emit a parallel JSON skeptic doc at `.fleet/runs/<run_id>/p0-skeptic-findings.json` carrying ONLY
-  the CONFIRMED set, same schema as P0-REVIEW. Re-run `scripts/verify_findings.py` against it; exit
+  the CONFIRMED set, same schema as P0-REVIEW. Re-run `<SUBSTRATE>/verify_findings.py` against it; exit
   != 0 halts (a CONFIRMED finding whose quote no longer locates means the skeptic narrowed scope
   past the original line — re-cite or drop).
 - **BOOTSTRAP** — transcribe confirmed finding IDs into the ledger CLOSE-INDEX (waves from the
@@ -219,9 +219,9 @@ value, the script that reproduced the race) and sets `EVID=true` only when it no
   writes `manifest.json` to the run's archive directory `.fleet/runs/<run_id>/` by walking the
   directory and emitting one entry per first-class artifact (every findings JSON, verifier
   summary, blind-fix file, prompt, response, diff, this readiness doc, the progress doc). Use
-  `python scripts/lib/fleet_run.py` style — typically driven by a worker step that calls
+  `python3 <SUBSTRATE>/lib/fleet_run.py` style — typically driven by a worker step that calls
   `fleet_run.write_manifest(archive_root, run_id=..., mission='adversarial-review-and-fix',
-  files=[...])`. Then run `python scripts/validate_run_archive.py .fleet/runs/<run_id>/`. The
+  files=[...])`. Then run `python3 <SUBSTRATE>/validate_run_archive.py .fleet/runs/<run_id>/`. The
   validator enforces three mtime-ordering invariants from Commits 1-3 disciplines: blind_fix
   before findings (per producer), verify_summary after findings, readiness with the latest mtime
   in the archive. A validator that exits non-zero means the discipline is unsatisfied — fix the
@@ -243,7 +243,7 @@ After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-go
 ```
 Mission adversarial-review-and-fix DONE: docs/arch-build-progress.md all task flags true,
 docs/arch-build-readiness.md with fleet-outcome.status done and mission metrics satisfied,
-./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
+the readiness fleet-outcome validates (python3 <SUBSTRATE>/validate_fleet_outcome.py per the engine's SUBSTRATE RESOLUTION; skip recorded in the readiness doc when SUBSTRATE=none), all PRs merged into BASE.
 ```
 
 

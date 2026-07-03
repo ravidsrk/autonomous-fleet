@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Grok Build with Task tool, git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.1"
+  version: "1.1.2"
   fleet-component: "adapter"
 ---
 
@@ -145,7 +145,7 @@ and readiness paths — not model self-assessment alone.
 done, wave merged, validation passed). Update `LAST_UPDATE` in the ledger.
 
 **GOAL_COMPLETE:** Only after core TERMINATE checks: re-read ledger, readiness exists,
-`./scripts/validate-fleet-outcome.sh` passes. Then
+the readiness fleet-outcome validates (`python3 <SUBSTRATE>/validate_fleet_outcome.py`). Then
 `update_goal(completed: true, message: "<final summary>")`. Clear with `/goal clear` if needed.
 
 **GOAL_BLOCKED:** `update_goal(blocked_reason: "<reason>")` when mission hits hard external
@@ -172,7 +172,7 @@ Background shell: `background: true` on `run_terminal_command`; poll with
 Trace **before** ledger write on every transition (engine.md TRACE EMISSION). Append events with:
 
 ```bash
-python scripts/emit_trace.py emit .fleet/runs/<run_id>/ \
+python3 <SUBSTRATE>/emit_trace.py emit .fleet/runs/<run_id>/ \
   --primitive DISPATCH --role COORDINATOR --status started \
   --task-id <task> --id-only
 ```
@@ -196,7 +196,7 @@ If `manifest.json` is not present yet, add `--mission <slug> --run-id <run_id>`.
 - run_short: every isolated branch and worktree carries the active run's 6-hex suffix
   (`<BRANCH_PREFIX><slug>-<run_short>`, `../<repo>-<slug>-<run_short>`, run_short = the 6-hex tail of
   the run_id) so parallel runs/checkouts never collide on a bare slug.
-  `scripts/validate_namespacing.py` enforces this.
+  `<SUBSTRATE>/validate_namespacing.py` enforces this.
 - CONTINUE_WORKER(role, placement, session_handle): resume the session by its `sessionId` (grok session re-attach); else ALIAS to SPAWN_WORKER. Re-attach only for `live`-classified
   rows (per `recovery_scan.py`); never re-attach a session whose PR merged or branch is gone. When a
   row's `RESUME_COUNT` hits `MAX_RESUME_ATTEMPTS` (3), escalate instead of continuing.

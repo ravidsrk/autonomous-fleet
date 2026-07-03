@@ -10,7 +10,7 @@ license: MIT
 compatibility: Requires Codex with goals enabled (features.goals), git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.1"
+  version: "1.1.2"
   fleet-component: "adapter"
 ---
 
@@ -142,7 +142,7 @@ mission sequencing.
 Before every ledger write, append one JSONL event:
 
 ```bash
-python scripts/emit_trace.py emit .fleet/runs/<run_id>/ \
+python3 <SUBSTRATE>/emit_trace.py emit .fleet/runs/<run_id>/ \
   --primitive WAIT --role COORDINATOR --status started \
   --task-id <task> --id-only
 ```
@@ -162,7 +162,7 @@ Chain worker events with `--parent-event`. See `docs/guide/16-trace-schema.md`.
 - run_short: every isolated branch and worktree carries the active run's 6-hex suffix
   (`<BRANCH_PREFIX><slug>-<run_short>`, `../<repo>-<slug>-<run_short>`, run_short = the 6-hex tail of
   the run_id) so parallel runs/checkouts never collide on a bare slug.
-  `scripts/validate_namespacing.py` enforces this.
+  `<SUBSTRATE>/validate_namespacing.py` enforces this.
 - CONTINUE_WORKER(role, placement, session_handle): resume the worker thread (`codex exec resume <thread>`); else ALIAS to SPAWN_WORKER. Re-attach only for `live`-classified
   rows (per `recovery_scan.py`); never re-attach a session whose PR merged or branch is gone. When a
   row's `RESUME_COUNT` hits `MAX_RESUME_ATTEMPTS` (3), escalate instead of continuing.

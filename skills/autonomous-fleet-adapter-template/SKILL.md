@@ -10,7 +10,7 @@ license: MIT
 compatibility: Reference template for adapter authors; not a runnable mission
 metadata:
   author: "ravidsrk"
-  version: "1.1.1"
+  version: "1.1.2"
   fleet-component: "adapter-template"
   runnable: "false"
 ---
@@ -135,7 +135,7 @@ Do not author a second mission loader — chains and conditional DAGs belong in 
 - run_short: every isolated branch and worktree carries the active run's 6-hex suffix
   (`<BRANCH_PREFIX><slug>-<run_short>`, `../<repo>-<slug>-<run_short>`, run_short = the 6-hex tail of
   the run_id) so parallel runs/checkouts never collide on a bare slug.
-  `scripts/validate_namespacing.py` enforces this.
+  `<SUBSTRATE>/validate_namespacing.py` enforces this.
 - CONTINUE_WORKER(role, placement, session_handle): <declare this runtime's restore command, e.g. sessionId / thread id, or 'none -> alias'>. Re-attach only for `live`-classified
   rows (per `recovery_scan.py`); never re-attach a session whose PR merged or branch is gone. When a
   row's `RESUME_COUNT` hits `MAX_RESUME_ATTEMPTS` (3), escalate instead of continuing.
