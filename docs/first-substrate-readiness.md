@@ -1,7 +1,7 @@
 ---
 fleet-outcome:
   mission: adversarial-review-and-fix
-  status: done
+  status: partial
   repo: ravidsrk/autonomous-fleet
   base_branch: main
   prs_merged: 0
@@ -20,8 +20,13 @@ fleet-outcome:
   cost_estimate: 0
   run:
     duration_min: 45
-    note: first real substrate archive on post-v0.1.0 headless wiring
-  archive_enabled: true
+    note: >-
+      first real substrate archive on post-v0.1.0 headless wiring; demoted
+      done->partial and archive_enabled->false when the archive was
+      quarantined to .fleet/fixtures/first-substrate-8358f1/ (issue #78 —
+      reviewer/skeptic findings byte-identical, no validated run archive
+      remains)
+  archive_enabled: false
   run_id: 20260626T200255Z-adversarial-review-and-fix-8358f1
 ---
 

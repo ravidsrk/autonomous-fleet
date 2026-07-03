@@ -1,3 +1,5 @@
+<!-- promotion-evidence: exclude -->
+
 # First substrate run — real archive on autonomous-fleet (Lane 1)
 
 > **Archive quarantined (issue #78).** The archive this document describes now
@@ -39,7 +41,7 @@ either. Concretely, in this run:
 
 Treat this archive as gate-validation evidence (validators, trace emission, and `fleet_run`
 orchestration over a live session) — not as independent-review or autonomous-landing proof. See the
-fuller disclosure in `.fleet/runs/<run_id>/README.md`.
+fuller disclosure in `.fleet/fixtures/first-substrate-8358f1/README.md`.
 
 ## Reproduction (operator)
 
@@ -105,13 +107,15 @@ validate-first-substrate-archive: all checks passed for 20260626T200255Z-adversa
 
 ## Archive inventory
 
+(Paths reflect the post-quarantine location under `.fleet/fixtures/first-substrate-8358f1/`.)
+
 | Artifact | Layer | Path |
 |----------|-------|------|
-| Findings | 1 | `.fleet/runs/<run_id>/p0-review-findings.json` |
-| Verify summary | 1 | `.fleet/runs/<run_id>/p0-verify-summary.json` |
-| Stop-verify log | 2 | `.fleet/runs/<run_id>/stop-verify-decisions.log` |
-| Blind-fix files | 3 | `.fleet/runs/<run_id>/reviewer-blind-fix-*.md` |
-| Manifest + trace | 4 | `.fleet/runs/<run_id>/manifest.json`, `trace.jsonl` |
+| Findings | 1 | `.fleet/fixtures/first-substrate-8358f1/p0-review-findings.json` |
+| Verify summary | 1 | `.fleet/fixtures/first-substrate-8358f1/p0-verify-summary.json` |
+| Stop-verify log | 2 | `.fleet/fixtures/first-substrate-8358f1/stop-verify-decisions.log` |
+| Blind-fix files | 3 | `.fleet/fixtures/first-substrate-8358f1/reviewer-blind-fix-*.md` |
+| Manifest + trace | 4 | `.fleet/fixtures/first-substrate-8358f1/manifest.json`, `trace.jsonl` |
 | Outcome | — | `docs/first-substrate-readiness.md` |
 
 ## Comparison to example-fixture
