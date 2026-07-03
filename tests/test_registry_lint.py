@@ -92,6 +92,12 @@ def test_adapter_contract_single_source_lint(tmp_path) -> None:
     (bad / "SKILL.md").write_text(canon_src.read_text(encoding="utf-8"), encoding="utf-8")
     errors = lint_adapter_contract_single_source(repo)
     assert any("re-inlines" in e for e in errors)
+    nobind = repo / "skills/autonomous-fleet-adapter-nobind"
+    nobind.mkdir(parents=True)
+    (nobind / "SKILL.md").write_text("see references/adapter-contract.md\n", encoding="utf-8")
+    errors = lint_adapter_contract_single_source(repo)
+    assert any("CONTINUE_WORKER binding" in e and "nobind" in e for e in errors)
+
     good = repo / "skills/autonomous-fleet-adapter-good"
     good.mkdir(parents=True)
     (good / "SKILL.md").write_text(
