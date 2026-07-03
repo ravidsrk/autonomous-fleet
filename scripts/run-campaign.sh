@@ -401,6 +401,10 @@ while [[ -n "$CURRENT" ]]; do
     [[ "$YOLO_ACK" -eq 1 ]] && EXTRA+=(--yolo-untrusted-acknowledged)
     NODE_RC=0
     "$ROOT/scripts/run-mission-headless.sh" "$RUNTIME" "$MISSION" --max-turns "$MAX_TURNS" "${EXTRA[@]}" || NODE_RC=$?
+    # Re-resolve POST-run (codex on #129 round-3): a run-keyed run just wrote
+    # <mission>-<run_short>-readiness.md the pre-run resolution couldn't know.
+    READINESS="$(readiness_for_mission "$MISSION")"
+    READINESS_ABS="$REPO_ROOT/$READINESS"
     emit_campaign_node_archive "$MISSION" || true
     if [[ "$NODE_RC" -ne 0 ]]; then
       if [[ -d "$REPO_ROOT/.fleet/runs" ]] && compgen -G "$REPO_ROOT/.fleet/runs/*" >/dev/null; then
