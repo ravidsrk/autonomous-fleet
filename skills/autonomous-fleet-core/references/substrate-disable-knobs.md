@@ -18,7 +18,7 @@ This exists for two reasons:
 
 The substrate ships **nine** live knobs across three classes. There is
 exactly ONE env var per layer, and the helper
-(`scripts/lib/substrate_disable.py`) is the only place the truthy rule
+(`<SUBSTRATE>/lib/substrate_disable.py`) is the only place the truthy rule
 and the stderr-notice format live.
 
 ## Verification-substrate layers (operator escape hatch)
@@ -28,10 +28,10 @@ treats the layer's verdict as PASS for that run.
 
 | Layer | Script | Env var |
 |---|---|---|
-| 1 — review-findings | `scripts/verify_findings.py` | `FLEET_DISABLE_VERIFY_FINDINGS` |
-| 2 — stop-verify | `scripts/stop_verify.py` | `FLEET_DISABLE_STOP_VERIFY` |
-| 3 — blind-fix | `scripts/verify_blind_fix.py` | `FLEET_DISABLE_BLIND_FIX` |
-| 4 — run-archive | `scripts/validate_run_archive.py` | `FLEET_DISABLE_RUN_ARCHIVE` |
+| 1 — review-findings | `<SUBSTRATE>/verify_findings.py` | `FLEET_DISABLE_VERIFY_FINDINGS` |
+| 2 — stop-verify | `<SUBSTRATE>/stop_verify.py` | `FLEET_DISABLE_STOP_VERIFY` |
+| 3 — blind-fix | `<SUBSTRATE>/verify_blind_fix.py` | `FLEET_DISABLE_BLIND_FIX` |
+| 4 — run-archive | `<SUBSTRATE>/validate_run_archive.py` | `FLEET_DISABLE_RUN_ARCHIVE` |
 
 ## Contract/budget verifiers (operator escape hatch)
 
@@ -41,10 +41,10 @@ can be waved through for a single run.
 | Layer | Script | Env var |
 |---|---|---|
 | registry-lint | `scripts/registry_lint.py` | `FLEET_DISABLE_REGISTRY_LINT` |
-| round-budget | `scripts/verify_round_budget.py` | `FLEET_DISABLE_ROUND_BUDGET` |
-| nudge-dedup | `scripts/verify_nudge_dedup.py` | `FLEET_DISABLE_NUDGE_DEDUP` |
-| stacked-pr | `scripts/verify_stacked_pr.py` | `FLEET_DISABLE_STACKED_PR` |
-| hook-signal | `scripts/verify_hook_signal.py` | `FLEET_DISABLE_HOOK_SIGNAL` |
+| round-budget | `<SUBSTRATE>/verify_round_budget.py` | `FLEET_DISABLE_ROUND_BUDGET` |
+| nudge-dedup | `<SUBSTRATE>/verify_nudge_dedup.py` | `FLEET_DISABLE_NUDGE_DEDUP` |
+| stacked-pr | `<SUBSTRATE>/verify_stacked_pr.py` | `FLEET_DISABLE_STACKED_PR` |
+| hook-signal | `<SUBSTRATE>/verify_hook_signal.py` | `FLEET_DISABLE_HOOK_SIGNAL` |
 
 ## Security / integrity knobs (FAIL-CLOSED — explicit operator override required)
 
@@ -57,9 +57,9 @@ operator decision that must be recorded in `DECISIONS.md`.
 
 | Layer | Script | Env var |
 |---|---|---|
-| sha-pin | `scripts/verify_sha_pin.py` | `FLEET_DISABLE_SHA_PIN` |
-| reviewer-sandbox | `scripts/verify_reviewer_sandbox.py` | `FLEET_DISABLE_REVIEWER_SANDBOX` |
-| namespacing | `scripts/validate_namespacing.py` | `FLEET_DISABLE_NAMESPACING` |
+| sha-pin | `<SUBSTRATE>/verify_sha_pin.py` | `FLEET_DISABLE_SHA_PIN` |
+| reviewer-sandbox | `<SUBSTRATE>/verify_reviewer_sandbox.py` | `FLEET_DISABLE_REVIEWER_SANDBOX` |
+| namespacing | `<SUBSTRATE>/validate_namespacing.py` | `FLEET_DISABLE_NAMESPACING` |
 
 There is exactly ONE env var per layer; no legacy aliases, no fallbacks.
 Do not invent additional `FLEET_DISABLE_*` names — the registry above is
@@ -104,7 +104,7 @@ contract, it does not implement it.)
 
 # Bench-driver wiring
 
-`scripts/bench-adversarial.sh` sets the env vars with `export` (not
+`scripts/bench-adversarial.sh (framework clone only)` sets the env vars with `export` (not
 bare assignment) so they reach the child adapter process. On
 substrate-on mode it `unset`s them, so a stale value from a prior
 off-run doesn't leak into the on-run. The driver toggles only the four
@@ -134,7 +134,7 @@ built the env string and only echo'd it, never exporting it.
 
 # Library helper
 
-Use `scripts/lib/substrate_disable.py`:
+Use `<SUBSTRATE>/lib/substrate_disable.py`:
 
 ```python
 from lib.substrate_disable import announce_disabled, is_disabled

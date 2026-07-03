@@ -53,6 +53,7 @@ CLI_ALLOWLIST = (
     "verify_stacked_pr.py",
     "verify_hook_signal.py",
     "verify_round_budget.py",
+    "verify_reviewer_sandbox.py",
 )
 
 REQUIREMENTS = "PyYAML>=6.0\n"

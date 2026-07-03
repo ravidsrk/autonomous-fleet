@@ -1,5 +1,5 @@
 {
-  "core_version": "1.2.1",
+  "core_version": "1.2.2",
   "files": {
     "emit_trace.py": "88b22b371918540e73f3f2f513a2d47fe74809f9d0ecf5203e70fd4dc8dcad6d",
     "lib/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -42,6 +42,7 @@
     "verify_findings.py": "143c389ec30b36d1e72a2327f51895d11faa65339c3cfbc0ef16da79d028ff33",
     "verify_hook_signal.py": "6d9618d3eb6bc59f63abcfcd3c1596aaaae710288892b2e9e2066ef19cbda6ec",
     "verify_nudge_dedup.py": "223149904d7348fd47f0cfca6117d7bd08dd2a204b4f29a36564108ac2a99858",
+    "verify_reviewer_sandbox.py": "d0b18feedec53ccbb685e3af423ec9d397ac25469c45a85f929b45b9e580d642",
     "verify_round_budget.py": "3ef7366e2a21f8b98ec455dfda2c2af4ade2cd0cdbcb85e89037ea9591e6d114",
     "verify_sha_pin.py": "5fe77b71750d2aeeaefdd9abae920ff177d3003d9e309c4eaecda18a70440198",
     "verify_stacked_pr.py": "3a5d7a7928f30ad5ac474ad956443a0b43ab5596550b4b9072210c620a6490fd"

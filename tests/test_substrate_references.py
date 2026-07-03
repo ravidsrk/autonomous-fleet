@@ -18,24 +18,24 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from sync_substrate_assets import CLI_ALLOWLIST  # noqa: E402
 
-AGENT_FACING_DOCS = (
-    "skills/autonomous-fleet-core/references/engine.md",
-    "skills/autonomous-fleet-core/references/composition.md",
-    "skills/autonomous-fleet-core/references/review-findings.md",
-    "skills/autonomous-fleet-core/references/strict-mode.md",
-    "skills/autonomous-fleet-core/references/run-archive.md",
-    "skills/autonomous-fleet-core/references/runtime-goals.md",
-    "skills/autonomous-fleet-core/references/blind-fix.md",
-    "skills/autonomous-fleet-core/SKILL.md",
-    "skills/doc-sync/SKILL.md",
-    "skills/test-coverage/SKILL.md",
-    "skills/adversarial-review-and-fix/SKILL.md",
-    "skills/fleet-program/SKILL.md",
+# Every doc a coordinator or worker is told to read: ALL skill SKILL.mds and
+# ALL core references (review finding on #112: adapters and fleet-outcome.md
+# were the surfaces most likely to bit-rot and were not listed).
+AGENT_FACING_DOCS = tuple(
+    sorted(
+        str(p.relative_to(ROOT))
+        for pattern in ("skills/*/SKILL.md", "skills/*/references/*.md")
+        for p in ROOT.glob(pattern)
+    )
 )
 
-# scripts/<bundled CLI> or scripts/lib/<module> — the traveling set.
+# scripts/<bundled CLI>, scripts/lib/<module>, or a shell wrapper whose
+# substrate-aware replacement exists — the set that must never appear as a
+# bare scripts/ path (untagged) in agent-facing docs.
+_SHELL_WRAPPERS = ("validate-fleet-outcome.sh",)
 _BUNDLED_REF = re.compile(
-    r"scripts/(?:lib/[a-z_]+\.py|(?:%s))" % "|".join(re.escape(n) for n in CLI_ALLOWLIST)
+    r"scripts/(?:lib/[a-z_]+\.py|(?:%s))"
+    % "|".join(re.escape(n) for n in CLI_ALLOWLIST + _SHELL_WRAPPERS)
 )
 
 
