@@ -108,3 +108,12 @@ def test_shipped_mission_metrics_have_operational_definitions() -> None:
                 )
                 for line in section.splitlines()
             ), f"{mission}:{metric} entry is not a definition"
+
+
+def test_tier1_missions_carry_pr_sizing_heuristics() -> None:
+    """Issue #100: the two Tier-1 workhorses must give a concrete PR unit and
+    size bound, not one sentence of vibes."""
+    for mission in ("doc-sync", "test-coverage"):
+        text = (ROOT / "skills" / mission / "SKILL.md").read_text(encoding="utf-8")
+        assert "PR sizing" in text, mission
+        assert "400" in text, mission
