@@ -752,3 +752,88 @@ def test_shipped_hooks_json_is_valid_json_with_stop_entry():
     cmd_entries = first["hooks"]
     assert any(e.get("type") == "command" for e in cmd_entries)
     assert any("stop-verify.sh" in str(e.get("command", "")) for e in cmd_entries)
+
+
+# --- wrapper resolution on skills-install repos (issue #82) -----------------
+
+
+def test_wrapper_resolves_bundled_substrate_without_env(tmp_path):
+    """A skills-install repo (no framework clone, no AUTONOMOUS_FLEET_HOME)
+    must resolve stop_verify.py from the core skill's bundled substrate via
+    the hook's cwd."""
+    import shutil
+    import subprocess
+
+    repo = tmp_path / "worker-repo"
+    substrate_dst = repo / ".agents" / "skills" / "autonomous-fleet-core" / "assets" / "substrate"
+    shutil.copytree(
+        ROOT / "skills" / "autonomous-fleet-core" / "assets" / "substrate", substrate_dst
+    )
+    hooks_dst = repo / ".agents" / "skills" / "autonomous-fleet-adapter-claude-code" / "assets" / "hooks"
+    hooks_dst.mkdir(parents=True)
+    shutil.copy2(
+        ROOT / "skills" / "autonomous-fleet-adapter-claude-code" / "assets" / "hooks" / "stop-verify.sh",
+        hooks_dst / "stop-verify.sh",
+    )
+
+    env = {k: v for k, v in os.environ.items() if k not in ("AUTONOMOUS_FLEET_HOME", "FLEET_SUBSTRATE")}
+    r = subprocess.run(
+        ["bash", str(hooks_dst / "stop-verify.sh")],
+        input='{"cwd": "."}',
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert "not found" not in r.stderr, r.stderr
+    # No evidence in a fresh repo -> the bundled CLI must BLOCK.
+    assert '"decision": "block"' in r.stdout, r.stdout + r.stderr
+
+
+def test_wrapper_prefers_fleet_substrate_env(tmp_path):
+    import shutil
+    import subprocess
+
+    substrate = tmp_path / "custom-substrate"
+    shutil.copytree(ROOT / "skills" / "autonomous-fleet-core" / "assets" / "substrate", substrate)
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    env = {k: v for k, v in os.environ.items() if k != "AUTONOMOUS_FLEET_HOME"}
+    env["FLEET_SUBSTRATE"] = str(substrate)
+    env["STOP_VERIFY_EXPLAIN"] = "1"
+    r = subprocess.run(
+        ["bash", str(ROOT / "skills" / "autonomous-fleet-adapter-claude-code" / "assets" / "hooks" / "stop-verify.sh")],
+        input='{"cwd": "."}',
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert "not found" not in r.stderr, r.stderr
+    assert '"decision": "block"' in r.stdout, r.stdout + r.stderr
+
+
+def test_wrapper_fail_open_when_cli_missing_everywhere(tmp_path):
+    import shutil
+    import subprocess
+
+    repo = tmp_path / "bare-repo"
+    hooks = repo / ".claude" / "hooks"
+    hooks.mkdir(parents=True)
+    shutil.copy2(
+        ROOT / "skills" / "autonomous-fleet-adapter-claude-code" / "assets" / "hooks" / "stop-verify.sh",
+        hooks / "stop-verify.sh",
+    )
+    env = {k: v for k, v in os.environ.items() if k not in ("AUTONOMOUS_FLEET_HOME", "FLEET_SUBSTRATE")}
+    r = subprocess.run(
+        ["bash", str(hooks / "stop-verify.sh")],
+        input="{}",
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    assert r.returncode == 0
+    assert "allowing session end" in r.stderr
+    assert r.stdout.strip() == ""

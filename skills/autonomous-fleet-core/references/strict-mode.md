@@ -56,46 +56,47 @@ patterns don't have. See `docs/competitor-audit-2026-06-22.md` #2 for the audit.
 Strict mode is per-repo, per-worker. You install it once in any repo a
 fleet worker will run inside.
 
-### One-time setup
+### Per-repo install — skills-install mode (the common case)
 
-Set `AUTONOMOUS_FLEET_HOME` in the worker's environment to the
-autonomous-fleet checkout root:
+No framework clone and no environment variable needed (issue #82): the
+adapter ships the wrapper, and the wrapper resolves `stop_verify.py` from
+the core skill's bundled substrate
+(`.agents/skills/autonomous-fleet-core/assets/substrate/`). In the repo:
+
+```bash
+HOOKS=.agents/skills/autonomous-fleet-adapter-claude-code/assets/hooks
+mkdir -p .claude
+# If .claude/settings.json doesn't exist yet, copy the template wholesale:
+cp "$HOOKS/hooks.json" .claude/settings.json
+# If it already exists, merge the Stop entry into the existing hooks block:
+jq '.hooks.Stop += input.hooks.Stop' .claude/settings.json "$HOOKS/hooks.json" \
+   > .claude/settings.json.tmp && mv .claude/settings.json.tmp .claude/settings.json
+```
+
+Verify it's wired up (with explain on, prints a BLOCK/ALLOW verdict line on
+stderr — BLOCK also emits JSON on stdout; no "not found" warning either way):
+
+```bash
+echo '{"cwd":"."}' | STOP_VERIFY_EXPLAIN=1 bash "$HOOKS/stop-verify.sh"
+```
+
+### Per-repo install — framework clone
+
+Identical, with the clone's paths
+(`skills/autonomous-fleet-adapter-claude-code/assets/hooks/`). Optionally
+set `AUTONOMOUS_FLEET_HOME` to the checkout root so the registered command
+and wrapper resolve the clone explicitly:
 
 ```bash
 export AUTONOMOUS_FLEET_HOME=/path/to/autonomous-fleet
 ```
 
-This is so the wrapper script can find the framework clone's copy of
-`stop_verify.py` (framework clone only). Without it, the wrapper walks up
-from its own location (which works when the wrapper is symlinked). On a
-skills-install repo the bundled copy lives at `<SUBSTRATE>/stop_verify.py`;
-pointing the wrapper there without a clone is tracked by issue #82.
-
-### Per-repo install
-
-The registered Stop command runs the wrapper **from the autonomous-fleet
-checkout** (resolved via `AUTONOMOUS_FLEET_HOME`), so you only register the
-hook — there is no need to copy `stop-verify.sh` into the repo.
-
-In any repo a worker will run in:
-
-```bash
-mkdir -p .claude
-# If .claude/settings.json doesn't exist yet, copy the template wholesale:
-cp "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/hooks.json" \
-   .claude/settings.json
-
-# If it already exists, merge the Stop entry into the existing hooks block:
-jq '.hooks.Stop += input.hooks.Stop' .claude/settings.json \
-   "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/hooks.json" \
-   > .claude/settings.json.tmp && mv .claude/settings.json.tmp .claude/settings.json
-```
-
-Verify it's wired up (prints an `ALLOW` line on stderr, no error):
-
-```bash
-echo '{}' | "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh"
-```
+The wrapper's resolution order is: `FLEET_SUBSTRATE` (explicit substrate
+dir) → `AUTONOMOUS_FLEET_HOME/scripts/` → walk-up from the wrapper's own
+location (clone symlink layout — before the worker repo's copy so a stale
+bundle never shadows the clone) → the worker repo's
+`.agents/.../assets/substrate/` (hook cwd, or copied-into-`.claude/hooks/`). Missing
+everywhere = fail-open ALLOW with a warning.
 
 That's it. The next Claude Code session in this repo will run the gate.
 
@@ -110,6 +111,7 @@ drift across CC versions):
 | `STOP_VERIFY_WINDOW_MIN` | `30` | Freshness window in minutes. Clamped 1..1440. |
 | `STOP_VERIFY_MIN_KINDS` | `1` | Minimum distinct evidence kinds required to allow. |
 | `STOP_VERIFY_STRICT_PROGRESS` | unset | When set (any value), require BOTH `EVID=true` AND `WT_CLEAN=true` in a ledger file (in addition to base threshold). |
+| `FLEET_SUBSTRATE` | unset | Explicit substrate dir containing `stop_verify.py` (first in the wrapper's resolution order). |
 | `STOP_VERIFY_EXPLAIN` | unset | When set, print human-readable verdict to stderr (visible in CC's hook log). |
 | `FLEET_DISABLE_STOP_VERIFY` | unset | Operator kill switch. When set to a truthy value (`1`/`true`/`yes`/`on`, case-insensitive), hook returns ALLOW immediately. Use for adapter test harnesses that need to drive sessions without artifact requirements. See `references/substrate-disable-knobs.md` for the substrate-wide convention. |
 
