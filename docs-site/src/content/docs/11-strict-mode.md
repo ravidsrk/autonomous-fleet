@@ -74,7 +74,7 @@ The hook scans for any of these evidence kinds, all within the freshness window:
   wt_clean_flag   WT_CLEAN=true in a progress ledger touched in the window
   e2e_verified    e2e_verified: true in a readiness doc touched in the window
   status_done     status: done in a readiness doc touched in the window
-  verify_summary  a passing summary from scripts/verify_findings.py
+  verify_summary  a passing summary from <SUBSTRATE>/verify_findings.py
   test_artifact   test-runner output (.pytest_cache, coverage/, junit XMLs)
   e2e_artifact    end-to-end artifacts (Playwright PNGs, trace screenshots)
 ```
@@ -123,42 +123,42 @@ genuinely expensive.
 ## Opting in
 
 Strict mode is per-repo and per-worker. You install it once in any repo a fleet
-worker will run inside. There are two steps: set one env var, then register the
-hook.
+worker will run inside. One step: register the hook.
 
-### One-time setup
+### Per-repo install — skills-install mode (the common case)
 
-Set `AUTONOMOUS_FLEET_HOME` in the worker's environment to the autonomous-fleet
-checkout root:
-
-```bash
-export AUTONOMOUS_FLEET_HOME=/path/to/autonomous-fleet
-```
-
-This lets the wrapper script find `scripts/stop_verify.py`. Without it, the
-wrapper walks up from its own location, which works when the wrapper is symlinked
-but is fragile across worktrees and venvs. Set the env var.
-
-### Per-repo install
-
-The registered Stop command runs the wrapper from the autonomous-fleet checkout
-(resolved via `AUTONOMOUS_FLEET_HOME`), so you only register the hook. There is no
-need to copy `stop-verify.sh` into the target repo.
-
-In any repo a worker will run in:
+No framework clone and no environment variable needed (issue #82): the adapter
+ships the wrapper, and the wrapper resolves `stop_verify.py` from the core
+skill's bundled substrate (`.agents/skills/autonomous-fleet-core/assets/substrate/`).
+In the repo:
 
 ```bash
+HOOKS=.agents/skills/autonomous-fleet-adapter-claude-code/assets/hooks
 mkdir -p .claude
-
 # If .claude/settings.json doesn't exist yet, copy the template wholesale:
-cp "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/hooks.json" \
-   .claude/settings.json
-
+cp "$HOOKS/hooks.json" .claude/settings.json
 # If it already exists, merge the Stop entry into the existing hooks block:
-jq '.hooks.Stop += input.hooks.Stop' .claude/settings.json \
-   "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/hooks.json" \
+jq '.hooks.Stop += input.hooks.Stop' .claude/settings.json "$HOOKS/hooks.json" \
    > .claude/settings.json.tmp && mv .claude/settings.json.tmp .claude/settings.json
 ```
+
+Verify (with explain on, prints a BLOCK/ALLOW verdict line on stderr — BLOCK
+also emits JSON on stdout; no "not found" warning either way):
+
+```bash
+echo '{"cwd":"."}' | STOP_VERIFY_EXPLAIN=1 bash "$HOOKS/stop-verify.sh"
+```
+
+### Per-repo install — framework clone
+
+Identical with the clone's paths
+(`skills/autonomous-fleet-adapter-claude-code/assets/hooks/`); optionally set
+`AUTONOMOUS_FLEET_HOME=/path/to/autonomous-fleet` so the command and wrapper
+resolve the clone explicitly. The wrapper's full resolution order:
+`FLEET_SUBSTRATE` → `AUTONOMOUS_FLEET_HOME/scripts/` → walk-up from the
+wrapper's own location (clone symlink — before the worker repo's copy so a
+stale bundle never shadows the clone) → the worker repo's
+`.agents/.../assets/substrate/`. Missing everywhere = fail-open ALLOW.
 
 The template registers a single Stop hook that invokes the wrapper:
 
@@ -170,7 +170,7 @@ The template registers a single Stop hook that invokes the wrapper:
         "hooks": [
           {
             "type": "command",
-            "command": "${AUTONOMOUS_FLEET_HOME:-${CLAUDE_PROJECT_DIR}}/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh",
+            "command": "sh -c 'for p in \"${AUTONOMOUS_FLEET_HOME:-$CLAUDE_PROJECT_DIR}/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh\" \"$CLAUDE_PROJECT_DIR/.agents/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh\" \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-verify.sh\"; do [ -f \"$p\" ] && exec bash \"$p\"; done; echo \"stop-verify: wrapper not found; allowing\" >&2'",
             "timeout": 60
           }
         ]
@@ -180,10 +180,11 @@ The template registers a single Stop hook that invokes the wrapper:
 }
 ```
 
-That `command` line is the entire change to the adapter's hook config. It points
-Claude Code's Stop event at `stop-verify.sh`, which resolves the checkout (via
-`AUTONOMOUS_FLEET_HOME`, falling back to `CLAUDE_PROJECT_DIR`) and delegates to
-`scripts/stop_verify.py`. The `timeout: 60` caps the gate at 60 seconds so a slow
+That `command` line is the entire change to the adapter's hook config. It tries
+the framework clone's wrapper first (via `AUTONOMOUS_FLEET_HOME`, falling back to
+`CLAUDE_PROJECT_DIR`), then the skills-install copy under `.agents/skills/`, then
+a wrapper copied into `.claude/hooks/` — whichever exists runs under `bash` and
+delegates to the resolved `stop_verify.py`. The `timeout: 60` caps the gate at 60 seconds so a slow
 scan can never wedge a session.
 
 The next Claude Code session in this repo runs the gate.
@@ -191,11 +192,12 @@ The next Claude Code session in this repo runs the gate.
 ## Verifying you actually enabled it
 
 Installing a hook and having the hook actually fire are two different things. Run
-this check after install. It pipes an empty CC payload through the wrapper and
-expects an `ALLOW`/verdict line on stderr with no error:
+this check after install. It pipes a minimal CC payload through the wrapper with
+`STOP_VERIFY_EXPLAIN=1` (the verdict line only prints when explain is on) and
+expects a BLOCK/ALLOW verdict on stderr with no "not found" warning:
 
 ```bash
-echo '{}' | "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh"
+echo '{"cwd":"."}' | STOP_VERIFY_EXPLAIN=1 bash "$HOOKS/stop-verify.sh"   # HOOKS from the install section
 ```
 
 What you should see:
@@ -286,7 +288,7 @@ To unblock:
   - Run the test suite end-to-end (pytest / jest / cargo test / go test).
   - Write the readiness doc with `status: done` (and `e2e_verified: true`
     if the mission requires it).
-  - Or, for verified review missions, run scripts/verify_findings.py
+  - Or, for verified review missions, run <SUBSTRATE>/verify_findings.py
     --summary-out.
 
 If this is a no-edit turn (status/diagnostic only), set

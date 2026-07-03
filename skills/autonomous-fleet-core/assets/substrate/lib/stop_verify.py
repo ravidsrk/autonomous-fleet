@@ -448,7 +448,7 @@ def _format_block_reason(
         "  - Run the test suite end-to-end (pytest / jest / cargo test / go test).",
         "  - Write the readiness doc with `status: done` (and `e2e_verified: true` if the "
         "mission requires it).",
-        "  - Or, for verified review missions, run scripts/verify_findings.py --summary-out.",
+        "  - Or, for verified review missions, run <SUBSTRATE>/verify_findings.py --summary-out.",
         "",
         "If this is a no-edit turn (status/diagnostic only), set FLEET_DISABLE_STOP_VERIFY=1 in "
         "the worker env or remove the Stop hook for that adapter.",
