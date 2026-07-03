@@ -277,6 +277,36 @@ _ROUTING_DOCS = (
 _EXPLORATORY_MARKERS = ("exploratory", "archived", "demoted", "not yet", "pending promotion")
 
 
+_ADAPTER_CONTRACT = "skills/autonomous-fleet-core/references/adapter-contract.md"
+_COPY_SPAN = 160  # chars of canonical text that count as a re-inlined copy
+
+
+def lint_adapter_contract_single_source(root: Path) -> list[str]:
+    """Adapters must POINT at the shared contract, never re-inline it
+    (issue #89): every adapter references adapter-contract.md, and no
+    adapter contains a >=_COPY_SPAN-char verbatim span of it."""
+    errors: list[str] = []
+    canon_path = root / _ADAPTER_CONTRACT
+    if not canon_path.is_file():
+        return [f"{_ADAPTER_CONTRACT}: missing canonical adapter contract"]
+    canon = " ".join(canon_path.read_text(encoding="utf-8").split())
+    spans = [canon[i:i + _COPY_SPAN] for i in range(0, max(1, len(canon) - _COPY_SPAN), 40)]
+    for path in sorted(root.glob("skills/autonomous-fleet-adapter-*/SKILL.md")):
+        rel = path.relative_to(root)
+        text = path.read_text(encoding="utf-8")
+        flat = " ".join(text.split())
+        if "adapter-contract.md" not in text:
+            errors.append(f"{rel}: does not reference references/adapter-contract.md (issue #89)")
+        for span in spans:
+            if span in flat:
+                errors.append(
+                    f"{rel}: re-inlines a {_COPY_SPAN}-char span of adapter-contract.md "
+                    f"(single-source it; drift lint, issue #89)"
+                )
+                break
+    return errors
+
+
 def lint_mission_state_docs(
     root: Path, missions: Mapping[str, Mapping[str, Any]] = MISSIONS
 ) -> list[str]:
@@ -429,6 +459,7 @@ def lint_registry(
         + lint_lock_hashes(root)
         + lint_no_skill_version_literals_in_tests(root)
         + lint_mission_state_docs(root, missions)
+        + lint_adapter_contract_single_source(root)
         + lint_external_source_pins(root)
         + lint_campaign_missions(root, missions)
     )

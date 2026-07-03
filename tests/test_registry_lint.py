@@ -72,3 +72,32 @@ def test_mission_state_lint_clean_on_repo_and_catches_unmarked(tmp_path) -> None
     assert any("bug-batch" in e and "missions.md:5" in e for e in errors)
     # shipped-mission catalog check also fires on this minimal repo
     assert any("shipped mission" in e for e in errors)
+
+
+def test_adapter_contract_single_source_lint(tmp_path) -> None:
+    """Issue #89: adapters must point at adapter-contract.md; a re-inlined
+    canonical span fails."""
+    import shutil
+    from lib.registry_lint import lint_adapter_contract_single_source
+
+    assert lint_adapter_contract_single_source(ROOT) == []
+
+    repo = tmp_path / "repo"
+    canon_src = ROOT / "skills/autonomous-fleet-core/references/adapter-contract.md"
+    canon_dst = repo / "skills/autonomous-fleet-core/references/adapter-contract.md"
+    canon_dst.parent.mkdir(parents=True)
+    shutil.copy2(canon_src, canon_dst)
+    bad = repo / "skills/autonomous-fleet-adapter-demo"
+    bad.mkdir(parents=True)
+    (bad / "SKILL.md").write_text(canon_src.read_text(encoding="utf-8"), encoding="utf-8")
+    errors = lint_adapter_contract_single_source(repo)
+    assert any("re-inlines" in e for e in errors)
+    good = repo / "skills/autonomous-fleet-adapter-good"
+    good.mkdir(parents=True)
+    (good / "SKILL.md").write_text("see references/adapter-contract.md\n", encoding="utf-8")
+    errors = lint_adapter_contract_single_source(repo)
+    assert not any("adapter-good" in e for e in errors)
+    canon_dst.unlink()
+    assert lint_adapter_contract_single_source(repo) == [
+        "skills/autonomous-fleet-core/references/adapter-contract.md: missing canonical adapter contract"
+    ]
