@@ -132,6 +132,24 @@ def test_timeout_kills_hung_runtime_and_still_archives(tmp_path: Path) -> None:
     assert len(runs) == 1, f"transcript archive must still be emitted on timeout, got {runs}"
 
 
+def test_timeout_bash_fallback_normalizes_to_124(tmp_path: Path) -> None:
+    """Codex review finding: during the watchdog's TERM->KILL grace the watchdog is still
+    alive, so PID-liveness misclassified a real timeout as rc 143. The sentinel file must
+    classify it as 124 on the bash fallback path (no GNU timeout)."""
+    repo = _external_repo(tmp_path)
+    fake_bin = _fake_codex(tmp_path, exec_sleep=60)
+    env = _env_with(fake_bin)
+    env["FLEET_FORCE_TIMEOUT_FALLBACK"] = "1"
+
+    r = subprocess.run(
+        [str(SCRIPT), "codex", "doc-sync", "--repo", str(repo), "--timeout", "2"],
+        cwd=ROOT, capture_output=True, text=True, check=False, env=env,
+    )
+
+    assert r.returncode == 124, r.stdout + r.stderr
+    assert "timed out after 2s" in r.stderr
+
+
 def test_timeout_rejects_non_integer(tmp_path: Path) -> None:
     repo = _external_repo(tmp_path)
     fake_bin = _fake_codex(tmp_path)
