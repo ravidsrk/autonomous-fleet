@@ -41,6 +41,12 @@ When intent is vague, suggest `fleet-program` preset: **`<preset-id>`**
 
 Coordinators invoke validators as `python3 <SUBSTRATE_PATH>/<validator>.py …`.
 
+## Ledger placement
+
+| Field | Value |
+|-------|-------|
+| LEDGER_DIR | `docs/` (default) or `.fleet/docs/` when docs/ is a published docs-site tree (Docusaurus/Sphinx/MkDocs/Starlight) |
+
 ## Research tools
 
 | Field | Value |

@@ -13,12 +13,12 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.0.3"
+  version: "1.0.4"
   tier: "1"
   fleet-component: "mission"
 ---
 
-<!-- Corpus: prompts.md L2953-2964 (Stage 8 distillation, Tier 1 grouping at L2961); see docs/test-coverage-progress.md for the dogfood run (SIGNAL RECONCILIATION caught a real gap). -->
+<!-- Corpus: prompts.md L2953-2964 (Stage 8 distillation, Tier 1 grouping at L2961); see <LEDGER_DIR>/test-coverage-progress.md for the dogfood run (SIGNAL RECONCILIATION caught a real gap). -->
 
 # Mission: test-coverage
 
@@ -48,7 +48,7 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 ## Deferred missions
 
-Record in `docs/test-coverage-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+Record in `<LEDGER_DIR>/test-coverage-readiness.md` under **Recommended next missions** and in DECISIONS.md.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -79,7 +79,7 @@ percentage with trivial assertions; do NOT change application logic to make test
 - @claude is the INTEGRATOR: opens PR, merges (conflict-aware), cleans worktree.
 
 ## LEDGER
-`docs/test-coverage-progress.md`. Per-task flags: `WRITTEN=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/test-coverage-progress.md`. Per-task flags: `WRITTEN=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
 MERGED=<t/f>`. Plus a GAP INDEX: each undertested area found in T-MAP, `OPEN | COVERED via PR#n`,
 with before/after coverage where the tooling reports it.
 
@@ -101,25 +101,25 @@ with before/after coverage where the tooling reports it.
   one test file across two concurrent PRs; never combine two source modules'
   tests in one PR (reviewers grade against the frozen GAP INDEX row-by-row).
 - **T-FINAL [@claude]** — full suite green; coverage rose on the mapped areas and did not
-  regress elsewhere. Output `docs/test-coverage-readiness.md` with **`fleet-outcome` YAML**
+  regress elsewhere. Output `<LEDGER_DIR>/test-coverage-readiness.md` with **`fleet-outcome` YAML**
   (`gaps_open`, `coverage_regressed`), gap/coverage summary, **Recommended next missions**, all
   PRs. Ship as the final PR.
 
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/test-coverage-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/test-coverage-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission test-coverage DONE: docs/test-coverage-progress.md all task flags true,
-docs/test-coverage-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission test-coverage DONE: <LEDGER_DIR>/test-coverage-progress.md all task flags true,
+<LEDGER_DIR>/test-coverage-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 the readiness fleet-outcome validates (python3 <SUBSTRATE>/validate_fleet_outcome.py per the engine's SUBSTRATE RESOLUTION; skip recorded in the readiness doc when SUBSTRATE=none), all PRs merged into BASE.
 ```
 
 
 ## DONE
 Every GAP-INDEX item `COVERED`, every task terminal, suite green, coverage not regressed,
-`docs/test-coverage-readiness.md` exists. Then send the FINAL report.
+`<LEDGER_DIR>/test-coverage-readiness.md` exists. Then send the FINAL report.
 
 ## DECISION DEFAULTS (mission-specific)
 - Tests must FAIL if the behaviour they cover breaks. A test that passes against broken code is

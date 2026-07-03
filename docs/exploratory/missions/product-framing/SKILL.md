@@ -76,7 +76,7 @@ No @codex builder in this mission — implementation is explicitly out of scope 
 
 ## Deferred missions
 
-Record in `docs/framing-readiness.md` under **Recommended next missions**.
+Record in `<LEDGER_DIR>/framing-readiness.md` under **Recommended next missions**.
 
 | Outcome | Route to |
 |---------|----------|
@@ -101,12 +101,12 @@ Zero implementation PRs in this mission — only spec artifacts and review evide
 - @claude runs **plan review lenses** (CEO scope, design UX, eng execution, optional DX) — via
   gstack `autoplan` when installed, else sequential T-REVIEWS tasks.
 - A fresh @claude **skeptic pass** narrows scope creep and flags unvalidated assumptions.
-- @claude **FREEZES** `docs/product-spec.md` and writes `docs/framing-readiness.md` with
+- @claude **FREEZES** `docs/product-spec.md` and writes `<LEDGER_DIR>/framing-readiness.md` with
   `fleet-outcome` YAML.
 
 ## LEDGER
 
-`docs/framing-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/framing-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
 SHIPPED=<t/f>`.
 
 Frozen index: `docs/framing-index.md` — table of spec sections with `DRAFT | REVIEWED | FROZEN`
@@ -115,31 +115,31 @@ and links to review notes.
 ## TASK STRUCTURE
 
 - **T-FRAME [@claude]** — office-hours forcing questions; capture answers in
-  `docs/framing-progress.md`. Output draft `docs/product-spec.md` (sections: Problem, Wedge, User,
+  `<LEDGER_DIR>/framing-progress.md`. Output draft `docs/product-spec.md` (sections: Problem, Wedge, User,
   Non-goals, Success metrics, UX principles, Phased roadmap).
 - **T-REVIEWS [@claude, sequential or autoplan]** — run CEO, design, eng (and DX if applicable)
   reviews against the draft. Each lens appends a short verdict block to `docs/framing-index.md`.
 - **T-SKEPTIC [@claude, fresh session]** — challenge assumptions; mark refuted claims in
   `docs/framing-index.md`; trim scope creep in spec.
 - **T-FREEZE [@claude, gated on T-REVIEWS+T-SKEPTIC]** — set spec status FROZEN; no further edits
-  without new mission run. Output `docs/framing-readiness.md` with **`fleet-outcome` YAML**
+  without new mission run. Output `<LEDGER_DIR>/framing-readiness.md` with **`fleet-outcome` YAML**
   (`spec_frozen`, `open_questions`, `recommended_next_missions`).
 
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/framing-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/framing-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission product-framing DONE: docs/framing-progress.md all task flags true,
-docs/framing-readiness.md with fleet-outcome.status done and spec_frozen=true,
+Mission product-framing DONE: <LEDGER_DIR>/framing-progress.md all task flags true,
+<LEDGER_DIR>/framing-readiness.md with fleet-outcome.status done and spec_frozen=true,
 ./scripts/validate-fleet-outcome.sh passes.
 ```
 
 ## DONE
 
 `docs/product-spec.md` marked FROZEN, every framing-index row `FROZEN`, all tasks
-`PLANNED=t REVIEWED=t SHIPPED=t`, `docs/framing-readiness.md` exists with valid fleet-outcome.
+`PLANNED=t REVIEWED=t SHIPPED=t`, `<LEDGER_DIR>/framing-readiness.md` exists with valid fleet-outcome.
 Then send the FINAL report.
 
 ## DECISION DEFAULTS (mission-specific)

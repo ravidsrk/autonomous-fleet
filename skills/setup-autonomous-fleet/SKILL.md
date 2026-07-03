@@ -8,7 +8,7 @@ license: MIT
 compatibility: Requires git; gh CLI recommended for PR workflows
 metadata:
   author: "ravidsrk"
-  version: "1.1.1"
+  version: "1.1.2"
   fleet-component: "setup"
 ---
 
@@ -107,6 +107,11 @@ Resolve where the Python verification substrate lives and record it as
 Offer to install the substrate's Python deps into the repo's environment
 (`python3 -m pip install -r <SUBSTRATE_PATH>/requirements.txt`) — ask before
 touching any environment.
+
+Also probe for a published docs-site toolchain (docusaurus.config.*,
+mkdocs.yml, docs/conf.py, starlight in astro.config.*) and record
+`LEDGER_DIR` accordingly (`.fleet/docs/` when found, else `docs/`) — fleet
+ledgers must never break or publish through a site build.
 
 Also probe which research tools exist on this host (`monid` on PATH, a
 Context7/library-docs MCP, a `deep-research`-class skill) and record them as

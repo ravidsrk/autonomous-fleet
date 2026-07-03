@@ -4,8 +4,8 @@
     "adversarial-review-and-fix": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.0.2",
-      "computedHash": "0af00b8dc4976de578551dc8e1bb918df97fe8a212c5ef5a870bcd6f00256a75"
+      "version": "1.0.3",
+      "computedHash": "13b81426794a0d95c0b71d3fad22be54edcab4a748c4d8b21f9ec05925ebab15"
     },
     "autonomous-fleet": {
       "source": "ravidsrk/autonomous-fleet",
@@ -46,26 +46,26 @@
     "autonomous-fleet-core": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.2.10",
-      "computedHash": "2aa917230440e52f08589ddf048359bf416ae53896cc87dd8f54243a1f7520fb"
+      "version": "1.2.12",
+      "computedHash": "5eb0017c15473e21846ab0268e0964b7995f8636f220fd9a93096ee6378f916c"
     },
     "doc-sync": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.0.2",
-      "computedHash": "59fd9f9f99bf2b768f1e647971c3d17952f587271cfc022c776819f7f60ea64f"
+      "version": "1.0.3",
+      "computedHash": "9d2ac0c8640b6fa410cf34b1bc2d26d9ef0efe8a79c41765a5ff31469eea74f8"
     },
     "fleet-program": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.2.2",
-      "computedHash": "302eb6b53c6bec0b020c465fc1929d27b3484b721b41e3f9e0f702a1534ec737"
+      "version": "1.2.3",
+      "computedHash": "af479ee5d117dff7aef413d8a4df9de995181ea5d22776d2e46533e6989eeff1"
     },
     "setup-autonomous-fleet": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.1.1",
-      "computedHash": "b9864d8e6e5d35293cd5de8302e4e592444e4105f2b07637f7a4287559b6249e"
+      "version": "1.1.2",
+      "computedHash": "b972ee7c88daca21c65fc1967800c0c4667e1903bc6be144fcd661b17c088d48"
     },
     "skill-creator": {
       "source": "anthropics/skills",
@@ -77,8 +77,8 @@
     "test-coverage": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.0.3",
-      "computedHash": "b774943cef8fdffc9094d891e29597f7ffd47292842a9d1c00dcf62d3a60fcbc"
+      "version": "1.0.4",
+      "computedHash": "b81ea033c6866ffccc45d891ee66ee6725a2d3521b4380307e102c47231d33ad"
     }
   }
 }

@@ -35,8 +35,17 @@ check_condition() {
 
   local err=0
 
-  if [[ "$text" != *docs/* ]]; then
-    echo "FAIL $label: must reference docs/ path (file-ledger truth)" >&2
+  # Accept the default docs/ layout, the relocated FLEET_LEDGER_DIR, or the
+  # <LEDGER_DIR> template placeholder (issue #101) — the rule is "reference a
+  # FILE-ledger path", so require an actual <dir>/<file>.md token, not a bare
+  # substring (round-3 hardening: 'docs//' and dangling placeholders fail).
+  ledger_re='(docs|<LEDGER_DIR>)/[A-Za-z0-9_<>-][A-Za-z0-9_<>./-]*\.md'
+  if [[ -n "${FLEET_LEDGER_DIR:-}" ]]; then
+    esc_dir="$(printf '%s' "${FLEET_LEDGER_DIR%/}" | sed 's/[.[\*^$()+?{|]/\\&/g')"
+    ledger_re="(docs|<LEDGER_DIR>|${esc_dir})/[A-Za-z0-9_<>-][A-Za-z0-9_<>./-]*\.md"
+  fi
+  if ! printf '%s' "$text" | grep -qE "$ledger_re"; then
+    echo "FAIL $label: must reference a ledger file path (docs/…​.md, <LEDGER_DIR>/….md, or \$FLEET_LEDGER_DIR/….md)" >&2
     err=1
   fi
 
@@ -108,10 +117,10 @@ scan_docs_ledgers() {
         err=1
       fi
     fi
-  done < <(find docs -maxdepth 1 -name '*-progress.md' -print0 2>/dev/null)
+  done < <(find docs "${FLEET_LEDGER_DIR:-docs}" -maxdepth 1 -name '*-progress.md' -print0 2>/dev/null | sort -zu)
 
   if [[ "$found" -eq 0 ]]; then
-    echo "OK   no ## Runtime goal sections in docs/*-progress.md (nothing to validate)"
+    echo "OK   no ## Runtime goal sections in ledger *-progress.md (docs/ + FLEET_LEDGER_DIR; nothing to validate)"
   fi
   return "$err"
 }

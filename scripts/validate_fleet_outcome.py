@@ -15,8 +15,18 @@ from lib.fleet_outcome import parse_readiness, validate_outcome
 
 
 def collect_readiness_paths(root: Path) -> list[Path]:
-    """Return default readiness docs under docs/, each path at most once."""
-    return sorted(set(root.glob("docs/*-readiness.md")))
+    """Default readiness docs under docs/ AND the relocated ledger dir.
+
+    Issue #101/#123: FLEET_LEDGER_DIR relocates fleet files on docs-site
+    repos; the validator must not silently miss them.
+    """
+    import os
+
+    paths = set(root.glob("docs/*-readiness.md"))
+    ledger = os.environ.get("FLEET_LEDGER_DIR", "").strip().rstrip("/")
+    if ledger and ledger != "docs":
+        paths |= set(root.glob(f"{ledger}/*-readiness.md"))
+    return sorted(paths)
 
 
 def main() -> int:
