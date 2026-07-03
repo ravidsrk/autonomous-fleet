@@ -69,8 +69,9 @@ path, product, maintainer identity, or scope — figure them out and record in D
    TARGET, or open a PR against it.
 3. PRODUCT CONTEXT: read REPO_ROOT/README + manifests (package.json/pyproject/go.mod/Cargo.toml/
    etc.) to derive the product, stack, test command, lint command, build command. Record them.
-4. MAINTAINER IDENTITY: derive from the repo's `git config user.name`/`user.email`, or the most
-   frequent recent author via `git shortlog -sne -1`. Stamp THIS as the author on every commit.
+4. MAINTAINER IDENTITY (operator — never impersonate): derive from the OPERATOR's `git config
+   user.name`/`user.email` (local, then `--global`); NEVER substitute the target repo's top
+   `git shortlog` author or any other human's identity. Stamp THIS as the author on every commit.
 5. MISSION-FIT CHECK: verify the mission's premise matches this repo (grep for the anti-pattern it
    assumes; confirm the capability it assumes is missing). If the repo does NOT match, do NOT
    blindly execute — adapt to what THIS repo needs toward the mission's intent, record the
@@ -92,9 +93,12 @@ path, product, maintainer identity, or scope — figure them out and record in D
    suffix — branch `<prefix><slug>-<run_short>`, worktree `../<repo>-<slug>-<run_short>` (run_short =
    the 6-hex tail of the run_id) — so parallel runs/checkouts never collide on a bare slug.
    `python3 <SUBSTRATE>/validate_namespacing.py` (run by validate-all in a clone) rejects a recorded bare `<prefix><slug>`.
-Everywhere below: REPO_ROOT = resolved path, MAINTAINER = derived author, BRANCH_PREFIX = from
-step 7, BASE = the integration branch the mission specifies (default: a NEW branch off the default
-branch at current HEAD).
+8. AUTHORSHIP_MODE (issue #102): default `attributed`. If `docs/agents/fleet-config.md` exists (from
+   `setup-autonomous-fleet`), use its `AUTHORSHIP_MODE` (`maintainer-only` requires that explicit
+   entry — never assumed). Record the chosen mode in DECISIONS.md before commit #1.
+Everywhere below: REPO_ROOT = resolved path, MAINTAINER = from step 4, AUTHORSHIP_MODE = from
+step 8, BRANCH_PREFIX = from step 7, BASE = the integration branch the mission specifies (default:
+a NEW branch off the default branch at current HEAD).
 
 ═══════════════════════════════════════════════════════════
 ORCHESTRATOR DIRECTIVE — fully autonomous.
@@ -1057,8 +1061,8 @@ COMMIT & AUTHORSHIP — more commits are better; transparent authorship; never s
   item. Review-fix rounds ADD commits, never rewrite history.
 - PRESERVE ALL COMMITS. Merge with a merge commit, NEVER squash, NEVER rebase-collapse, no
   `--amend`, no history-discarding `rebase -i`.
-- AUTHORSHIP_MODE (issue #102 — a deliberate policy, no longer an inherited default). Resolve
-  from `docs/agents/fleet-config.md` `AUTHORSHIP_MODE`; record in DECISIONS.md:
+- AUTHORSHIP_MODE (issue #102 — a deliberate policy, no longer an inherited default). Resolved at
+  SELF-ORIENTATION step 8; recorded in DECISIONS.md:
   - `attributed` (DEFAULT): `git config user.name`/`user.email` = MAINTAINER before commit #1,
     AND every agent-produced commit carries a `Co-Authored-By: <agent> <noreply@…>` trailer
     naming the agent that did the work. Rationale: the fleet's own ethos is provenance —
