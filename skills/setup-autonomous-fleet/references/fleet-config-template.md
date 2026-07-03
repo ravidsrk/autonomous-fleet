@@ -41,6 +41,12 @@ When intent is vague, suggest `fleet-program` preset: **`<preset-id>`**
 
 Coordinators invoke validators as `python3 <SUBSTRATE_PATH>/<validator>.py …`.
 
+## Authorship
+
+| Field | Value |
+|-------|-------|
+| AUTHORSHIP_MODE | `attributed` (default — agent Co-Authored-By trailers) or `maintainer-only` (only when the repo's contribution policy forbids trailers) |
+
 ## Ledger placement
 
 | Field | Value |

@@ -344,7 +344,7 @@ See [Roles and blindness](/08-roles-and-blindness/).
 ### builder
 
 The role that writes code: it implements one task unit on its own branch, commits in small logical
-increments authored as the maintainer with no agent trailers, adds the regression-catching test the
+increments authored as the maintainer with trailers per AUTHORSHIP_MODE (default: attributed Co-Authored-By), adds the regression-catching test the
 mission calls for, and pushes. Bulk builders run at the mid model tier; build-failure triage runs at
 the cheap tier. See [Roles and blindness](/08-roles-and-blindness/).
 

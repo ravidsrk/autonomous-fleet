@@ -69,8 +69,9 @@ path, product, maintainer identity, or scope — figure them out and record in D
    TARGET, or open a PR against it.
 3. PRODUCT CONTEXT: read REPO_ROOT/README + manifests (package.json/pyproject/go.mod/Cargo.toml/
    etc.) to derive the product, stack, test command, lint command, build command. Record them.
-4. MAINTAINER IDENTITY: derive from the repo's `git config user.name`/`user.email`, or the most
-   frequent recent author via `git shortlog -sne -1`. Stamp THIS as the author on every commit.
+4. MAINTAINER IDENTITY (operator — never impersonate): derive from the OPERATOR's `git config
+   user.name`/`user.email` (local, then `--global`); NEVER substitute the target repo's top
+   `git shortlog` author or any other human's identity. Stamp THIS as the author on every commit.
 5. MISSION-FIT CHECK: verify the mission's premise matches this repo (grep for the anti-pattern it
    assumes; confirm the capability it assumes is missing). If the repo does NOT match, do NOT
    blindly execute — adapt to what THIS repo needs toward the mission's intent, record the
@@ -92,9 +93,12 @@ path, product, maintainer identity, or scope — figure them out and record in D
    suffix — branch `<prefix><slug>-<run_short>`, worktree `../<repo>-<slug>-<run_short>` (run_short =
    the 6-hex tail of the run_id) — so parallel runs/checkouts never collide on a bare slug.
    `python3 <SUBSTRATE>/validate_namespacing.py` (run by validate-all in a clone) rejects a recorded bare `<prefix><slug>`.
-Everywhere below: REPO_ROOT = resolved path, MAINTAINER = derived author, BRANCH_PREFIX = from
-step 7, BASE = the integration branch the mission specifies (default: a NEW branch off the default
-branch at current HEAD).
+8. AUTHORSHIP_MODE (issue #102): default `attributed`. If `docs/agents/fleet-config.md` exists (from
+   `setup-autonomous-fleet`), use its `AUTHORSHIP_MODE` (`maintainer-only` requires that explicit
+   entry — never assumed). Record the chosen mode in DECISIONS.md before commit #1.
+Everywhere below: REPO_ROOT = resolved path, MAINTAINER = from step 4, AUTHORSHIP_MODE = from
+step 8, BRANCH_PREFIX = from step 7, BASE = the integration branch the mission specifies (default:
+a NEW branch off the default branch at current HEAD).
 
 ═══════════════════════════════════════════════════════════
 ORCHESTRATOR DIRECTIVE — fully autonomous.
@@ -857,8 +861,9 @@ Default pipeline: BUILD → open PR → REVIEW → FIX → SHIP.
   WT_CLEAN=true. For dependent placement in the active checkout, record WT=<active> and set
   WT_CLEAN=true only after verifying no disposable checkout exists.
 - BUILD (builder) on branch <prefix>/<slug> off BASE (PLACE per rules): set git user.name/email to
-  MAINTAINER before commit #1; commit in SMALL, FREQUENT, logical increments; NO `Co-authored-by`/
-  `Generated with`/`Assisted-by`/agent/tool trailers; run secret-hygiene check before every
+  MAINTAINER before commit #1; commit in SMALL, FREQUENT, logical increments; apply the
+  AUTHORSHIP_MODE trailer policy (default `attributed`: agent Co-Authored-By trailer on every
+  agent-produced commit; `maintainer-only` repos omit trailers); run secret-hygiene check before every
   commit/push. Implement the mission's unit; ADD a test wherever the mission calls for one. Run
   build + lint + affected/new tests green. Set the BUILT flag. PUSH. WORKER_DONE carrying the work
   identifiers + files modified + a short summary.
@@ -911,7 +916,7 @@ asserts that test is present, behavior-exercising, and not coverage padding befo
   equals the SHA-pinned REVIEWED SHA; if it moved, the PASS is outdated — force re-review, do not
   ship stale. Then check conflicts vs BASE. IF
   CONFLICTS: rebase the branch onto updated BASE, resolve preserving BOTH the change intent and
-  what landed on BASE since fork, keep commits authored by MAINTAINER with no trailers; re-run
+  what landed on BASE since fork, keep commits authored by MAINTAINER with the AUTHORSHIP_MODE trailer policy applied; re-run
   lint + affected tests green; if the resolution materially changed logic, dispatch a quick
   reviewer re-review of the rebased diff; force-push. Only when conflict-free + green: MERGE_PR
   with a merge commit (ALL commits preserved, NEVER squash), delete the PR branch. Pull BASE,
@@ -940,7 +945,8 @@ FIRST-MERGE SPOT-CHECK: block later waves on fail.
 ═══════════════════════════════════════════════════════════
 After the first task merges into BASE, run a one-time spot-check before launching or merging later
 waves. Assert the produced merge preserved the branch commit count, every preserved commit is authored
-by MAINTAINER, no commit message contains agent/tool trailers, the PR branch is deleted, and the
+by MAINTAINER, trailer usage matches the recorded AUTHORSHIP_MODE (attributed: agent trailers
+present on agent commits; maintainer-only: none), the PR branch is deleted, and the
 secret-scan ran for the merge path. Record FIRST_MERGE_SPOT_CHECK=PASS or FAIL in DECISIONS.md. On
 FAIL, block later waves and repair the merge pipeline before any further SHIP step.
 
@@ -1049,13 +1055,24 @@ Scrubbing before rotation gives false safety because an already-committed secret
 compromised.
 
 ═══════════════════════════════════════════════════════════
-COMMIT & AUTHORSHIP — more commits are better; clean authorship; never squash.
+COMMIT & AUTHORSHIP — more commits are better; transparent authorship; never squash.
 ═══════════════════════════════════════════════════════════
 - SMALL, FREQUENT, logical commits — one conceptual change each, message referencing the work
   item. Review-fix rounds ADD commits, never rewrite history.
 - PRESERVE ALL COMMITS. Merge with a merge commit, NEVER squash, NEVER rebase-collapse, no
   `--amend`, no history-discarding `rebase -i`.
-- `git config user.name`/`user.email` = MAINTAINER before commit #1. No agent/tool trailers.
+- AUTHORSHIP_MODE (issue #102 — a deliberate policy, no longer an inherited default). Resolved at
+  SELF-ORIENTATION step 8; recorded in DECISIONS.md:
+  - `attributed` (DEFAULT): `git config user.name`/`user.email` = MAINTAINER before commit #1,
+    AND every agent-produced commit carries a `Co-Authored-By: <agent> <noreply@…>` trailer
+    naming the agent that did the work. Rationale: the fleet's own ethos is provenance —
+    erasing agent authorship from git history contradicted every audit-trail discipline in
+    this corpus, and hidden agent authorship conflicts with emerging contribution norms.
+  - `maintainer-only` (legacy): no trailers — ONLY for repos whose recorded contribution
+    policy forbids them; requires the explicit fleet-config entry, never assumed.
+  Either mode: never impersonate a DIFFERENT human (the derived MAINTAINER is the operator's
+  identity, not an arbitrary frequent author of an external repo — on forks/external targets
+  use the OPERATOR's git identity).
 
 ═══════════════════════════════════════════════════════════
 EMPIRICAL RISK TIERS — which missions to trust unattended (cross-agent merge rates from arXiv

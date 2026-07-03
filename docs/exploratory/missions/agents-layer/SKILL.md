@@ -235,6 +235,6 @@ report.
   half-wired reachable state. Keep the stub fixtures wired to the live contract test after removal.
 - The gate is code-complete (`seam_unwired_open == 0`), not a live deploy. Leave deploy as an OPS
   item with `deploy_pending_ops: true`; do not block the mission on infrastructure.
-- Commit as the discovered MAINTAINER; no `Co-authored-by` / "Generated with" / agent trailers.
+- Commit as MAINTAINER (operator identity) with trailers per the engine's AUTHORSHIP_MODE (default: attributed Co-Authored-By).
 - Any ambiguity → the cutover path that keeps the suite green and the seam contract intact while
   wiring one member-group at a time.
