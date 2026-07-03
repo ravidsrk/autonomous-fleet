@@ -522,3 +522,72 @@ def test_blocked_node_halts_campaign(tmp_path: Path):
     assert len(runs) >= 1, "blocked path must emit campaign archive before halt"
     # And it must NOT have advanced to the deps node.
     assert "node=deps" not in (r.stdout + r.stderr)
+
+
+# --- exec-time exploratory gate (issue #94) ---------------------------------
+
+
+def _exploratory_campaign(tmp_path: Path, *, flagged: bool) -> Path:
+    campaign = tmp_path / "exploratory.yaml"
+    flag = "allow_exploratory_nodes: true\n" if flagged else ""
+    campaign.write_text(
+        f"campaign: exp\n{flag}start: a\nnodes:\n  a: {{ mission: bug-batch }}\nedges:\n  a: []\n",
+        encoding="utf-8",
+    )
+    return campaign
+
+
+def test_unflagged_exploratory_campaign_refused_at_exec_time(tmp_path: Path) -> None:
+    """Issue #94: author-time lint alone let hand-written --campaign YAMLs run
+    unproven missions; the runner itself must refuse without the opt-in."""
+    r = subprocess.run(
+        [str(SCRIPT), "grok", "--campaign", str(_exploratory_campaign(tmp_path, flagged=False)), "--dry-run"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    assert r.returncode != 0
+    assert "EXPLORATORY mission 'bug-batch'" in r.stderr
+    assert "allow_exploratory_nodes" in r.stderr
+
+
+def test_flagged_exploratory_campaign_warns_and_proceeds(tmp_path: Path) -> None:
+    r = subprocess.run(
+        [str(SCRIPT), "grok", "--campaign", str(_exploratory_campaign(tmp_path, flagged=True)), "--dry-run"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "warning: node 'a' runs EXPLORATORY mission 'bug-batch'" in r.stderr
+
+
+def test_shipped_missions_unaffected_by_gate(tmp_path: Path) -> None:
+    r = subprocess.run(
+        [str(SCRIPT), "grok", "--campaign", str(_single_node_campaign(tmp_path)), "--dry-run"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "EXPLORATORY" not in r.stderr
+
+
+def test_campaign_yaml_scan_includes_top_level_docs(tmp_path: Path) -> None:
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from lib.registry_lint import _campaign_yaml_paths
+
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs" / "example-campaign.yaml").write_text("campaign: x\n", encoding="utf-8")
+    (tmp_path / "docs" / "external-dogfood").mkdir()
+    (tmp_path / "docs" / "external-dogfood" / "a-campaign.yaml").write_text("campaign: y\n", encoding="utf-8")
+    paths = [p.name for p in _campaign_yaml_paths(tmp_path)]
+    assert "example-campaign.yaml" in paths
+    assert paths.count("a-campaign.yaml") == 1
+
+
+def test_campaign_nodes_must_be_mapping(tmp_path: Path) -> None:
+    """Review observation on #111: a list-valued nodes crashed the loader with
+    a raw AttributeError instead of a polite error."""
+    campaign = tmp_path / "bad-nodes.yaml"
+    campaign.write_text("campaign: x\nstart: a\nnodes:\n  - a\nedges: {}\n", encoding="utf-8")
+    r = subprocess.run(
+        [str(SCRIPT), "grok", "--campaign", str(campaign), "--dry-run"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    assert r.returncode != 0
+    assert "'nodes' must be a mapping" in r.stderr

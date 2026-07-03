@@ -192,3 +192,88 @@ def test_validate_exploratory_missions_dunder_main() -> None:
             run_name="__main__",
         )
     assert exc.value.code == 0
+
+# --- exploratory markers are enforced, not advisory (issue #95) -------------
+
+
+def test_all_exploratory_missions_carry_both_markers() -> None:
+    from lib.exploratory_missions import (
+        list_exploratory_mission_dirs,
+        missing_exploratory_markers,
+    )
+
+    for mission_dir in list_exploratory_mission_dirs(ROOT):
+        assert missing_exploratory_markers(mission_dir) == [], mission_dir.name
+
+
+def test_missing_flag_and_banner_detected(tmp_path) -> None:
+    from lib.exploratory_missions import missing_exploratory_markers
+
+    mission = tmp_path / "demo-mission"
+    mission.mkdir()
+    (mission / "SKILL.md").write_text(
+        "---\nname: demo-mission\nmetadata:\n  version: \"1.0.0\"\n---\n\n# demo\n",
+        encoding="utf-8",
+    )
+    missing = missing_exploratory_markers(mission)
+    assert any("status: exploratory" in m for m in missing)
+    assert any("banner" in m for m in missing)
+
+
+def test_flag_in_body_does_not_satisfy_frontmatter_requirement(tmp_path) -> None:
+    """The flag must be IN the frontmatter (what discovery layers parse), not
+    merely mentioned in prose."""
+    from lib.exploratory_missions import missing_exploratory_markers
+
+    mission = tmp_path / "demo-mission"
+    mission.mkdir()
+    (mission / "SKILL.md").write_text(
+        "---\nname: demo-mission\n---\n\n> **Status: exploratory.** banner ok\n\n"
+        "prose mentioning status: exploratory does not count\n",
+        encoding="utf-8",
+    )
+    missing = missing_exploratory_markers(mission)
+    assert any("frontmatter" in m for m in missing)
+    assert not any("banner" in m for m in missing)
+
+
+def test_unreadable_skill_md_reported(tmp_path) -> None:
+    from lib.exploratory_missions import missing_exploratory_markers
+
+    mission = tmp_path / "demo-mission"
+    mission.mkdir()
+    (mission / "SKILL.md").mkdir()  # read_text -> IsADirectoryError (OSError)
+    assert missing_exploratory_markers(mission) == ["SKILL.md unreadable"]
+
+
+def test_lint_fails_mission_missing_markers(tmp_path) -> None:
+    """End-to-end through lint_exploratory_missions: a marker-less mission FAILs
+    even when skill_lint's structural checks pass."""
+    import shutil
+    from lib.exploratory_missions import lint_exploratory_missions
+
+    repo = tmp_path / "repo"
+    dest = repo / "docs" / "exploratory" / "missions" / "bug-batch"
+    dest.parent.mkdir(parents=True)
+    shutil.copytree(ROOT / "docs" / "exploratory" / "missions" / "bug-batch", dest)
+    text = (dest / "SKILL.md").read_text(encoding="utf-8")
+    text = text.replace("status: exploratory\n", "").replace("> **Status: exploratory.**", "> note:")
+    (dest / "SKILL.md").write_text(text, encoding="utf-8")
+    errors, lines = lint_exploratory_missions(repo)
+    assert errors == 1
+    assert any("FAIL exploratory/bug-batch" in line and "frontmatter" in line for line in lines)
+
+
+def test_malformed_yaml_frontmatter_reported_as_missing_flag(tmp_path) -> None:
+    """Covers the yaml.YAMLError branch: unparseable frontmatter cannot carry
+    the flag, so it must report the frontmatter marker as missing."""
+    from lib.exploratory_missions import missing_exploratory_markers
+
+    mission = tmp_path / "demo-mission"
+    mission.mkdir()
+    (mission / "SKILL.md").write_text(
+        "---\nname: [unclosed\n---\n\n> **Status: exploratory.** banner ok\n",
+        encoding="utf-8",
+    )
+    missing = missing_exploratory_markers(mission)
+    assert any("frontmatter" in m for m in missing)
