@@ -228,8 +228,11 @@ validate_mission() {
 }
 
 readiness_for_mission() {
+  # Post-run discovery: a run-keyed run writes <mission>-<run_short>-readiness.md
+  # the driver cannot predict — resolve the NEWEST on-disk match in the target
+  # repo (falls back to the exact registry path when none exists yet).
   local mission="$1"
-  "$VENV_PYTHON" -c 'import sys; sys.path.insert(0, sys.argv[1]+"/scripts"); from lib.mission_registry import readiness_path; print(readiness_path(sys.argv[2]))' "$ROOT" "$mission"
+  "$VENV_PYTHON" -c 'import sys; sys.path.insert(0, sys.argv[1]+"/scripts"); from lib.mission_registry import resolve_readiness_file; print(resolve_readiness_file(sys.argv[2], sys.argv[3]))' "$ROOT" "$mission" "$REPO_ROOT"
 }
 
 dry_run_next_node() {
