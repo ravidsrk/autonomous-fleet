@@ -134,6 +134,14 @@ def check() -> int:
             errors.append(f"bundle drift: {rel} differs from scripts/ source")
         if listed.get(rel) != _sha256(dst):
             errors.append(f"manifest drift: {rel} hash stale in {MANIFEST_NAME}")
+    req_dst = DEST / "requirements.txt"
+    if not req_dst.is_file():
+        errors.append("missing bundled file: requirements.txt")
+    else:
+        if req_dst.read_text(encoding="utf-8") != REQUIREMENTS:
+            errors.append("bundle drift: requirements.txt differs from expected content")
+        if listed.get("requirements.txt") != _sha256(req_dst):
+            errors.append(f"manifest drift: requirements.txt hash stale in {MANIFEST_NAME}")
     expected = set(sources) | {"requirements.txt"}
     for rel in listed:
         if rel not in expected:
