@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
+
+import yaml
 
 
 def exploratory_missions_root(repo_root: Path) -> Path:
@@ -20,6 +23,7 @@ def list_exploratory_mission_dirs(repo_root: Path) -> list[Path]:
 
 EXPLORATORY_FLAG = "status: exploratory"
 EXPLORATORY_BANNER = "> **Status: exploratory.**"
+FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*(?:\n|$)", re.S)
 
 
 def missing_exploratory_markers(mission_dir: Path) -> list[str]:
@@ -35,9 +39,16 @@ def missing_exploratory_markers(mission_dir: Path) -> list[str]:
     except OSError:
         return ["SKILL.md unreadable"]
     missing: list[str] = []
-    end = text.find("\n---", 3) if text.startswith("---") else -1
-    frontmatter = text[: end + 4] if end >= 0 else ""
-    if EXPLORATORY_FLAG not in frontmatter:
+    match = FRONTMATTER_RE.match(text)
+    status_ok = False
+    if match:
+        try:
+            data = yaml.safe_load(match.group(1))
+            if isinstance(data, dict) and data.get("status") == "exploratory":
+                status_ok = True
+        except yaml.YAMLError:
+            pass
+    if not status_ok:
         missing.append(f"frontmatter missing '{EXPLORATORY_FLAG}'")
     if EXPLORATORY_BANNER not in text:
         missing.append(f"body missing banner '{EXPLORATORY_BANNER}'")
