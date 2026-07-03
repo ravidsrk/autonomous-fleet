@@ -165,21 +165,46 @@ fi
 source "$ROOT/scripts/lib/venv-bootstrap.sh"
 bootstrap_validation_venv "$ROOT"
 
-CAMPAIGN_INFO="$("$VENV_PYTHON" - <<'PY' "$CAMPAIGN_FILE"
+CAMPAIGN_INFO="$("$VENV_PYTHON" - <<'PY' "$CAMPAIGN_FILE" "$ROOT"
 import sys, yaml
 from pathlib import Path
 
 data = yaml.safe_load(Path(sys.argv[1]).read_text(encoding="utf-8"))
+root = Path(sys.argv[2])
 if not isinstance(data, dict):
     print("error: campaign YAML must be a mapping", file=sys.stderr)
     raise SystemExit(1)
 if "start" not in data:
     print("error: campaign missing 'start'", file=sys.stderr)
     raise SystemExit(1)
+allow_exploratory = data.get("allow_exploratory_nodes") is True
 for node, spec in (data.get("nodes") or {}).items():
     if not isinstance(spec, dict) or "mission" not in spec:
         print(f"error: node '{node}' missing 'mission'", file=sys.stderr)
         raise SystemExit(1)
+    # Exec-time exploratory gate (issue #94): author-time lint alone let any
+    # hand-written --campaign YAML run an unproven mission. A node whose
+    # mission is not shipped (skills/) but exists under
+    # docs/exploratory/missions/ requires the campaign to opt in explicitly.
+    mission = spec["mission"]
+    shipped = (root / "skills" / mission / "SKILL.md").is_file()
+    exploratory = (
+        root / "docs" / "exploratory" / "missions" / mission / "SKILL.md"
+    ).is_file()
+    if not shipped and exploratory:
+        if not allow_exploratory:
+            print(
+                f"error: node '{node}' runs EXPLORATORY mission '{mission}' "
+                f"(docs/exploratory/missions/, no shipped run-evidence). Set "
+                f"'allow_exploratory_nodes: true' in the campaign YAML to opt in.",
+                file=sys.stderr,
+            )
+            raise SystemExit(1)
+        print(
+            f"warning: node '{node}' runs EXPLORATORY mission '{mission}' "
+            f"(allow_exploratory_nodes: true — unproven, expect gaps)",
+            file=sys.stderr,
+        )
 print(data["start"])
 for node, spec in data.get("nodes", {}).items():
     print(f"{node}\t{spec['mission']}")
