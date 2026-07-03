@@ -1022,3 +1022,76 @@ def test_size_cap_gitattributes_unreadable(tmp_path):
         check_files_on_disk=False,
     )
     assert any("cap" in e for e in errs)
+
+
+# --- independence invariant (issue #77) ------------------------------------
+
+_IDENTICAL_SHA = "5de7255673c5b84e48e1f2900e213edeaec8cc16f4c556ec60107cec926c3306"
+_OTHER_SHA = "a" * 64
+
+
+def _findings_entry(path: str, producer: str, sha: str) -> dict:
+    return {
+        "path": path,
+        "kind": "findings",
+        "sha256": sha,
+        "mtime_utc": "2026-06-26T20:05:00Z",
+        "producer": producer,
+        "bytes": 10,
+    }
+
+
+def test_independence_rejects_identical_findings_from_different_producers():
+    """Issue #77: the 8358f1 fixture shipped reviewer + skeptic findings with
+    one sha256 and validation passed. Cross-producer identical findings must
+    now fail."""
+    errs = validate_manifest_payload(
+        {
+            "files": [
+                _findings_entry("p0-review-findings.json", "p0-reviewer-grok", _IDENTICAL_SHA),
+                _findings_entry("p0-skeptic-findings.json", "p0-skeptic-grok", _IDENTICAL_SHA),
+            ]
+        }
+    )
+    assert any("independent-review violation" in e for e in errs), errs
+
+
+def test_independence_allows_distinct_findings_from_different_producers():
+    errs = validate_manifest_payload(
+        {
+            "files": [
+                _findings_entry("p0-review-findings.json", "p0-reviewer-grok", _IDENTICAL_SHA),
+                _findings_entry("p0-skeptic-findings.json", "p0-skeptic-grok", _OTHER_SHA),
+            ]
+        }
+    )
+    assert not any("independent-review" in e for e in errs), errs
+
+
+def test_independence_ignores_same_producer_duplicates():
+    """A producer archiving its own findings under two names is not an
+    independence violation (other checks own that); only cross-producer
+    identity is."""
+    errs = validate_manifest_payload(
+        {
+            "files": [
+                _findings_entry("p0-review-findings.json", "p0-reviewer-grok", _IDENTICAL_SHA),
+                _findings_entry("p0-review-findings-copy.json", "p0-reviewer-grok", _IDENTICAL_SHA),
+            ]
+        }
+    )
+    assert not any("independent-review" in e for e in errs), errs
+
+
+def test_independence_skips_non_findings_and_malformed_sha():
+    errs = validate_manifest_payload(
+        {
+            "files": [
+                _findings_entry("a.json", "reviewer", _IDENTICAL_SHA),
+                {**_findings_entry("b.json", "skeptic", _IDENTICAL_SHA), "kind": "other"},
+                {**_findings_entry("c.json", "third", "not-a-sha"), "sha256": "not-a-sha"},
+                "not-a-dict",
+            ]
+        }
+    )
+    assert not any("independent-review" in e for e in errs), errs
