@@ -32,6 +32,7 @@ CORE_MANDATORY = (
     "skills/autonomous-fleet-core/SKILL.md",
     "skills/autonomous-fleet-core/references/engine.md",
     "skills/autonomous-fleet-core/references/composition.md",
+    "skills/autonomous-fleet-core/references/community-skills.md",
     "skills/autonomous-fleet-core/references/fleet-outcome.md",
     "skills/autonomous-fleet-core/references/runtime-goals.md",
 )
