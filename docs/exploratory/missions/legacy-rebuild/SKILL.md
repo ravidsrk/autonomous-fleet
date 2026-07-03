@@ -89,7 +89,7 @@ behaviour, data, and external contracts. Each rebuilt unit lands working and tes
 - @claude SHIPS: opens PR, conflict-aware merge, worktree cleanup.
 
 ## LEDGER
-`docs/rebuild-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/rebuild-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
 SHIPPED=<t/f>`. Plus a UNIT INDEX (each rebuild unit + the floor slice it preserves, `OPEN | DONE
 via PR#n`).
 
@@ -121,7 +121,7 @@ via PR#n`).
 - **T-FINAL [@claude]** — build green (on the NEW build system), lint clean, full suite green. The
   app is fully on the target architecture (no flagged anti-patterns remain); EVERY behaviour in
   docs/legacy-floor.md still works (zero regressions); no dead code/placeholders/console errors;
-  all worktrees cleaned. Output `docs/rebuild-readiness.md` with **`fleet-outcome` YAML**
+  all worktrees cleaned. Output `<LEDGER_DIR>/rebuild-readiness.md` with **`fleet-outcome` YAML**
   (`units_open`, `floor_preserved`), architecture-conformance summary,
   legacy-floor parity matrix complete, stack adopted, residual risks, all PRs). Ship as the final
   PR.
@@ -129,18 +129,18 @@ via PR#n`).
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/rebuild-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/rebuild-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission legacy-rebuild DONE: docs/rebuild-progress.md all task flags true,
-docs/rebuild-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission legacy-rebuild DONE: <LEDGER_DIR>/rebuild-progress.md all task flags true,
+<LEDGER_DIR>/rebuild-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 ./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
 ```
 
 
 ## DONE
 Every UNIT-INDEX item `DONE`, app fully on the target architecture, every legacy-floor behaviour
-preserved, every task terminal, suite green, docs/rebuild-readiness.md exists. Then send the FINAL
+preserved, every task terminal, suite green, <LEDGER_DIR>/rebuild-readiness.md exists. Then send the FINAL
 report.
 
 ## DECISION DEFAULTS (mission-specific)

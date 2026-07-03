@@ -53,7 +53,7 @@ Do not load a second mission skill in the same run. For chained missions, use `f
 
 ## Deferred missions
 
-Record in `docs/migration-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+Record in `<LEDGER_DIR>/migration-readiness.md` under **Recommended next missions** and in DECISIONS.md.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -82,7 +82,7 @@ and shippable per PR; at every merge the app builds and tests pass.
 - @claude is the INTEGRATOR: opens PR, merges (conflict-aware), cleans worktree.
 
 ## LEDGER
-`docs/migration-progress.md`. Per-task flags: `MIGRATED=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/migration-progress.md`. Per-task flags: `MIGRATED=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
 MERGED=<t/f>`. Plus a MIGRATION INDEX: every usage-site/module to move, `OPEN | DONE via PR#n`,
 and the compatibility/cutover strategy.
 
@@ -100,25 +100,25 @@ and the compatibility/cutover strategy.
 - **T-CLEANUP [@claude]** — once every usage is migrated, remove the old axis (dependency,
   adapter/shim, dead compatibility code). Confirm nothing references it.
 - **T-FINAL [@claude]** — build green, full suite green, the old axis fully gone, no
-  half-migrated state. Output `docs/migration-readiness.md` with **`fleet-outcome` YAML**
+  half-migrated state. Output `<LEDGER_DIR>/migration-readiness.md` with **`fleet-outcome` YAML**
   (`migration_items_open`, `old_axis_removed`), migration index done, old axis
   removed, behaviour preserved, all PRs). Ship as the final PR.
 
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/migration-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/migration-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission targeted-migration DONE: docs/migration-progress.md all task flags true,
-docs/migration-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission targeted-migration DONE: <LEDGER_DIR>/migration-progress.md all task flags true,
+<LEDGER_DIR>/migration-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 ./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
 ```
 
 
 ## DONE
 Every MIGRATION-INDEX item `DONE`, old axis removed, every task terminal, suite green,
-`docs/migration-readiness.md` exists. Then send the FINAL report.
+`<LEDGER_DIR>/migration-readiness.md` exists. Then send the FINAL report.
 
 ## DECISION DEFAULTS (mission-specific)
 - Change ONLY the target axis. Any change to other architecture or behaviour is out of scope —

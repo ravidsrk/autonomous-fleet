@@ -82,7 +82,7 @@ Inject per role on DISPATCH (workers load these; coordinator does not). Verified
 
 ## Deferred missions
 
-Record in `docs/agents-layer-readiness.md` under **Recommended next missions** and in
+Record in `<LEDGER_DIR>/agents-layer-readiness.md` under **Recommended next missions** and in
 DECISIONS.md. Do not start another mission in the same run.
 
 | Finding type | Route to |
@@ -130,7 +130,7 @@ other axis are preserved exactly: no interface change, no typed-depth rework.
 
 ## LEDGER
 
-`docs/agents-layer-progress.md`. Per-task flags: `MIGRATED=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/agents-layer-progress.md`. Per-task flags: `MIGRATED=<t/f> PR_OPEN=<t/f> REVIEWED=<t/f>
 MERGED=<t/f>`. Plus a MIGRATION INDEX whose rows are the seam members to wire live (from § Seam
 contract member list) grouped into member-groups, each `OPEN | DONE via PR#n`, PLUS the
 stub-removal item (`OPEN | DONE via PR#n`). The index is frozen from the build plan — it is not
@@ -169,7 +169,7 @@ re-derived.
 - **T-FINAL [@integrator]** — build + lint + full suite green; the contract test passes against
   live for every member; local evals pass; the selector defaults to live; the stub is gone and
   unreferenced; live deploy remains an OPS item (not gated here). Output
-  `docs/agents-layer-readiness.md` starting with the **`fleet-outcome` YAML** block
+  `<LEDGER_DIR>/agents-layer-readiness.md` starting with the **`fleet-outcome` YAML** block
   (`migration_items_open`, `seam_unwired_open`, `old_axis_removed`, `evals_passing`,
   `deploy_pending_ops` in metrics; see `autonomous-fleet-core/references/fleet-outcome.md`), then
   the migration summary + **Recommended next missions**. Ship as the final PR.
@@ -200,11 +200,11 @@ fleet-outcome:
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/agents-layer-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/agents-layer-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission agents-layer DONE: docs/agents-layer-progress.md all task flags true,
-docs/agents-layer-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission agents-layer DONE: <LEDGER_DIR>/agents-layer-progress.md all task flags true,
+<LEDGER_DIR>/agents-layer-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 ./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
 ```
 
@@ -212,7 +212,7 @@ docs/agents-layer-readiness.md with fleet-outcome.status done and mission metric
 ## DONE
 
 Every MIGRATION-INDEX item `DONE` (every seam member wired live + the stub-removal item), every
-task `MIGRATED=t PR_OPEN=t REVIEWED=t MERGED=t`, `docs/agents-layer-readiness.md` exists, the live
+task `MIGRATED=t PR_OPEN=t REVIEWED=t MERGED=t`, `<LEDGER_DIR>/agents-layer-readiness.md` exists, the live
 impl satisfies the stub fixtures for every member, the selector defaults to live, the stub is gone
 and unreferenced, build + suite + local evals green. `seam_unwired_open == 0`. Then send the FINAL
 report.

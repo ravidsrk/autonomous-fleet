@@ -36,10 +36,16 @@ check_condition() {
   local err=0
 
   # Accept the default docs/ layout, the relocated FLEET_LEDGER_DIR, or the
-  # <LEDGER_DIR> template placeholder (issue #101) — the rule is "reference
-  # the FILE ledger", not "hard-code docs/".
-  if [[ "$text" != *docs/* && "$text" != *"<LEDGER_DIR>/"* && ( -z "${FLEET_LEDGER_DIR:-}" || "$text" != *"${FLEET_LEDGER_DIR:-}/"* ) ]]; then
-    echo "FAIL $label: must reference the ledger dir (docs/, <LEDGER_DIR>/, or \$FLEET_LEDGER_DIR path)" >&2
+  # <LEDGER_DIR> template placeholder (issue #101) — the rule is "reference a
+  # FILE-ledger path", so require an actual <dir>/<file>.md token, not a bare
+  # substring (round-3 hardening: 'docs//' and dangling placeholders fail).
+  ledger_re='(docs|<LEDGER_DIR>)/[A-Za-z0-9_<>./-]*[A-Za-z0-9_<>-]\.md'
+  if [[ -n "${FLEET_LEDGER_DIR:-}" ]]; then
+    esc_dir="$(printf '%s' "${FLEET_LEDGER_DIR%/}" | sed 's/[.[\*^$()+?{|]/\\&/g')"
+    ledger_re="(docs|<LEDGER_DIR>|${esc_dir})/[A-Za-z0-9_<>./-]*[A-Za-z0-9_<>-]\.md"
+  fi
+  if ! printf '%s' "$text" | grep -qE "$ledger_re"; then
+    echo "FAIL $label: must reference a ledger file path (docs/…​.md, <LEDGER_DIR>/….md, or \$FLEET_LEDGER_DIR/….md)" >&2
     err=1
   fi
 

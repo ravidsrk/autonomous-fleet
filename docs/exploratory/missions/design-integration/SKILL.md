@@ -60,7 +60,7 @@ skills active (including MCP row).
 
 ## Deferred missions
 
-Record in `docs/parity-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+Record in `<LEDGER_DIR>/parity-readiness.md` under **Recommended next missions** and in DECISIONS.md.
 
 | Finding type | Route to |
 |--------------|----------|
@@ -103,17 +103,17 @@ does not apply to design/landing missions.
 - @claude SHIPS: opens PR, conflict-aware merge, worktree cleanup.
 
 ## LEDGER
-`docs/parity-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/parity-progress.md`. Per-task flags: `PLANNED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
 SHIPPED=<t/f>`. Plus a PARITY MATRIX: every item classified REDESIGN | GAP-FILL | NEW, each `OPEN
 | DONE via PR#n`.
 
 ## VISUAL BASELINE (before/after gate)
 T-A2 records the exact baseline capture commands/queries that produced the before-state
-screenshots in `docs/product-probe.md` and `docs/parity-progress.md`: command line or browser
+screenshots in `docs/product-probe.md` and `<LEDGER_DIR>/parity-progress.md`: command line or browser
 query, route/flow, viewport/device, auth role, seed/data state, screenshot path, and covered
 PARITY MATRIX item. T-FINAL replays those commands/queries like-for-like after all parity PRs
 ship, captures after-state screenshots to parallel paths, and writes an explicit before/after
-comparison in `docs/parity-readiness.md`. Passing requires strict visual improvement toward the
+comparison in `<LEDGER_DIR>/parity-readiness.md`. Passing requires strict visual improvement toward the
 design and zero regression in each recorded flow. Screenshot existence alone is not evidence. If a
 baseline cannot be replayed, the covered matrix item stays `OPEN` until a replayable baseline
 exists and passes.
@@ -139,18 +139,18 @@ exists and passes.
 - **T-FINAL [@claude]** - build green, lint clean, full suite green. Every matrix item DONE; the
   product matches the design everywhere; every product-probe capability still works (zero
   regressions); no half-migrated screens/placeholders/console errors. Replay VISUAL BASELINE
-  commands/queries and include the strict before/after comparison. Output `docs/parity-readiness.md`
+  commands/queries and include the strict before/after comparison. Output `<LEDGER_DIR>/parity-readiness.md`
   with **`fleet-outcome` YAML** (`parity_items_open`, `regressions`), matrix summary,
   **Recommended next missions**, all PRs. Ship as the final PR.
 
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/parity-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/parity-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission design-integration DONE: docs/parity-progress.md all task flags true,
-docs/parity-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission design-integration DONE: <LEDGER_DIR>/parity-progress.md all task flags true,
+<LEDGER_DIR>/parity-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 ./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
 ```
 
@@ -158,7 +158,7 @@ docs/parity-readiness.md with fleet-outcome.status done and mission metrics sati
 ## DONE
 Every PARITY-MATRIX item `DONE`, every task `PLANNED=t BUILT=t REVIEWED=t SHIPPED=t`, product
 matches design visually + feature-wise with zero regressions, replayed VISUAL BASELINE confirms
-strict improvement, docs/parity-readiness.md exists. Then send the FINAL report.
+strict improvement, <LEDGER_DIR>/parity-readiness.md exists. Then send the FINAL report.
 
 ## DECISION DEFAULTS (mission-specific)
 - The design is the visual/UX TARGET; the product's functionality is the FLOOR. Reach both - full

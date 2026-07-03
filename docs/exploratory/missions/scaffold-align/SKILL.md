@@ -80,7 +80,7 @@ Inject per role on DISPATCH (workers load these; coordinator does not). Use only
 
 ## Deferred missions
 
-Record in `docs/scaffold-align-readiness.md` under **Recommended next missions** and in DECISIONS.md.
+Record in `<LEDGER_DIR>/scaffold-align-readiness.md` under **Recommended next missions** and in DECISIONS.md.
 Do not start another mission in the same run.
 
 | Finding type | Route to |
@@ -122,7 +122,7 @@ do not freeze a plan over a red scaffold.
 
 ## LEDGER
 
-`docs/scaffold-align-progress.md`. Per-task flags: `CHECKED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
+`<LEDGER_DIR>/scaffold-align-progress.md`. Per-task flags: `CHECKED=<t/f> BUILT=<t/f> REVIEWED=<t/f>
 MERGED=<t/f>`. Plus the frozen ALIGN INDEX: the invariant checklist (each invariant `OPEN | GREEN`)
 and the seam-member coverage list (every interface member `UNCOVERED | FIXTURED via PR#n`). The
 ALIGN INDEX is closed only when every invariant is GREEN and every seam member is FIXTURED.
@@ -161,7 +161,7 @@ ALIGN INDEX is closed only when every invariant is GREEN and every seam member i
   missions consume it read-only. Sets the `seam_frozen` metric.
 - **T-FINAL [@integrator]** — build, lint, and the full suite green; every ALIGN-INDEX invariant
   GREEN and every seam member FIXTURED; `docs/build-plan.md` exists and is internally consistent.
-  Write `docs/scaffold-align-readiness.md` LED BY the **`fleet-outcome` YAML** block (metrics
+  Write `<LEDGER_DIR>/scaffold-align-readiness.md` LED BY the **`fleet-outcome` YAML** block (metrics
   `align_items_open`, `check_green`, `seam_frozen`, `scaffold_ok`; see
   `autonomous-fleet-core/references/fleet-outcome.md`), then the align summary and **Recommended
   next missions**. Ship as the final PR.
@@ -227,11 +227,11 @@ status: blocked rather than silently re-deriving.
 ## Runtime goal
 
 After ledger init, **SET_GOAL** per `autonomous-fleet-core/references/runtime-goals.md`. Record
-`## Runtime goal` in `docs/scaffold-align-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
+`## Runtime goal` in `<LEDGER_DIR>/scaffold-align-progress.md`. **GOAL_COMPLETE** only after ## DONE below.
 
 ```
-Mission scaffold-align DONE: docs/scaffold-align-progress.md all task flags true,
-docs/scaffold-align-readiness.md with fleet-outcome.status done and mission metrics satisfied,
+Mission scaffold-align DONE: <LEDGER_DIR>/scaffold-align-progress.md all task flags true,
+<LEDGER_DIR>/scaffold-align-readiness.md with fleet-outcome.status done and mission metrics satisfied,
 ./scripts/validate-fleet-outcome.sh passes, all PRs merged into BASE.
 ```
 
@@ -240,7 +240,7 @@ docs/scaffold-align-readiness.md with fleet-outcome.status done and mission metr
 
 Every ALIGN-INDEX invariant `GREEN` and every seam member `FIXTURED`, every task
 `CHECKED=t BUILT=t REVIEWED=t MERGED=t`, `docs/build-plan.md` frozen with every section populated
-and every Work-areas row OPEN, `docs/scaffold-align-readiness.md` exists, the scaffold builds green,
+and every Work-areas row OPEN, `<LEDGER_DIR>/scaffold-align-readiness.md` exists, the scaffold builds green,
 and the live impl is untouched (the seam is still stubbed). Then send the FINAL report.
 
 ## DECISION DEFAULTS (mission-specific; on top of the engine's)
