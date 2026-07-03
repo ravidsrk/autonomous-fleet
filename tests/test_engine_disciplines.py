@@ -580,10 +580,10 @@ def test_archive_enabled_block_anchors_between_strict_mode_and_inflation() -> No
     and INFLATION POST-MORTEM (which chains across archives). The ordering
     encodes the narrative: detection → substrate → cross-run chaining.
     Reordering breaks the reader's path through the doctrine."""
-    text = read_engine()
-    sm_idx = text.index("RUNTIME ENFORCEMENT GATE")
-    arch_idx = text.index("ARCHIVE_ENABLED: every run leaves")
-    inflation_idx = text.index("INFLATION POST-MORTEM")
+    text = ENGINE.read_text(encoding="utf-8")  # stub order IS the narrative (post-#84)
+    sm_idx = banner_pos(text, "RUNTIME ENFORCEMENT GATE")
+    arch_idx = banner_pos(text, "ARCHIVE_ENABLED: every run leaves")
+    inflation_idx = banner_pos(text, "INFLATION POST-MORTEM")
     assert sm_idx < arch_idx < inflation_idx, (
         "ARCHIVE_ENABLED must sit between STRICT MODE and INFLATION "
         "POST-MORTEM to preserve detection -> substrate -> chaining narrative"
