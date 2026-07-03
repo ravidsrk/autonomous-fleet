@@ -55,6 +55,30 @@ MISSION_DOCS: dict[str, dict[str, str]] = {
 }
 
 
+def resolve_readiness_file(mission: str, repo_root: str = ".") -> str:
+    """Post-run readiness discovery (issue #96/#129 round-2): a run-keyed run
+    writes `<mission>-<run_short>-readiness.md`, but campaign drivers resolve
+    the path BEFORE any run_id exists. Return the newest on-disk match of
+    `<mission>*-readiness.md` under the ledger dir (keyed or unkeyed);
+    fall back to the exact (possibly keyed-by-env) registry path when
+    nothing exists yet."""
+    from pathlib import Path as _Path
+
+    base = MISSION_DOCS.get(mission, {}).get(
+        "readiness", f"{mission}-readiness.md"
+    )
+    stem = base.replace("-readiness.md", "")
+    root = _Path(repo_root) / ledger_dir()
+    matches = sorted(
+        root.glob(f"{stem}*-readiness.md"),
+        key=lambda q: q.stat().st_mtime,
+        reverse=True,
+    )
+    if matches:
+        return str(matches[0].relative_to(_Path(repo_root)))
+    return readiness_path(mission)
+
+
 def readiness_path(mission: str) -> str:
     if mission not in MISSION_DOCS:
         return f"{ledger_dir()}/{mission}{run_short_suffix()}-readiness.md"
