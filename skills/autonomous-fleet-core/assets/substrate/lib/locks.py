@@ -209,39 +209,67 @@ class FileLock:
                 f"holder pid {holder_pid} still alive: {lock.lock_path}"
             )
 
-        new_payload = {
-            "owner": lock.owner,
+        # CAS-shaped steal (issue #96 closed the TOCTOU): we NEVER overwrite
+        # lock_path in place. (1) atomically rename the stale lock to a unique
+        # tombstone — exactly one stealer's rename succeeds; (2) verify the
+        # tombstone is byte-identical to what we validated (a mismatch means
+        # we displaced a rewritten lock: restore best-effort and abort);
+        # (3) acquire FRESH through the same link()-based CAS every acquirer
+        # uses — losing that race to a fresh acquirer is a clean failure, not
+        # a clobber.
+        tombstone = lock.lock_path.with_name(
+            f".{lock.lock_path.name}.steal.{os.getpid()}.{time.monotonic_ns()}"
+        )
+        try:
+            os.rename(lock.lock_path, tombstone)
+        except FileNotFoundError as exc:
+            raise LockStealError(
+                f"lost steal race (lock vanished): {lock.lock_path}"
+            ) from exc
+        stolen_text = tombstone.read_text(encoding="utf-8")
+        # Pid-reuse guard: re-probe liveness AFTER winning the tombstone — a
+        # holder that came alive between validation and takeover gets its
+        # lock restored (same guarantee the pre-#96 protocol re-checked).
+        recheck_pid = payload.get("pid")
+        if isinstance(recheck_pid, int) and _pid_alive(recheck_pid):
+            try:
+                os.link(tombstone, lock.lock_path)
+            except OSError:
+                pass
+            tombstone.unlink(missing_ok=True)
+            raise LockStealError(
+                f"holder pid {recheck_pid} revived before steal: {lock.lock_path}"
+            )
+        if stolen_text != text:
+            # We displaced a lock rewritten after validation. Restore it if
+            # nobody re-acquired meanwhile; either way, abort the steal.
+            try:
+                os.link(tombstone, lock.lock_path)
+            except OSError:
+                pass
+            tombstone.unlink(missing_ok=True)
+            raise LockStealError(f"lock changed before steal: {lock.lock_path}")
+        try:
+            fresh = cls(run_dir, name, owner=lock.owner, timeout_s=0.0).acquire()
+        except LockTimeoutError as exc:
+            tombstone.unlink(missing_ok=True)
+            raise LockStealError(
+                f"lost steal race to a fresh acquirer: {lock.lock_path}"
+            ) from exc
+        tombstone.unlink(missing_ok=True)
+        # We now HOLD the lock; annotating our own file is race-free.
+        annotated = {
+            "owner": fresh.owner,
             "acquired_at": _now_iso(),
             "pid": os.getpid(),
             "stolen_from": payload.get("owner"),
         }
-        tmp = lock.lock_path.with_name(
-            f".{lock.lock_path.name}.{os.getpid()}.{time.monotonic_ns()}.tmp"
+        tmp = fresh.lock_path.with_name(
+            f".{fresh.lock_path.name}.{os.getpid()}.{time.monotonic_ns()}.tmp"
         )
-        try:
-            tmp.write_text(json.dumps(new_payload, sort_keys=True), encoding="utf-8")
-            try:
-                current_text, current_payload = _read_steal_payload(lock.lock_path)
-            except FileNotFoundError as exc:
-                raise LockStealError(
-                    f"lock vanished during steal: {lock.lock_path}"
-                ) from exc
-            if current_text != text:
-                raise LockStealError(f"lock changed before steal: {lock.lock_path}")
-            current_holder_pid = current_payload.get("pid")
-            if isinstance(current_holder_pid, int):
-                if _pid_alive(current_holder_pid):
-                    raise LockStealError(
-                        f"holder pid {current_holder_pid} revived before steal: "
-                        f"{lock.lock_path}"
-                    )
-            # Revalidated dead/indeterminate holder; os.replace is atomic but not CAS.
-            os.replace(tmp, lock.lock_path)
-        except Exception:
-            tmp.unlink(missing_ok=True)
-            raise
-        lock._held = True
-        return lock
+        tmp.write_text(json.dumps(annotated, sort_keys=True), encoding="utf-8")
+        os.replace(tmp, fresh.lock_path)
+        return fresh
 
     # --- Context manager --------------------------------------------------
 
