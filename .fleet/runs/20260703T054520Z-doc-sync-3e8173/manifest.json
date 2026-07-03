@@ -1,0 +1,139 @@
+{
+  "schema_version": "1.0",
+  "run_id": "20260703T054520Z-doc-sync-3e8173",
+  "mission": "doc-sync",
+  "created_utc": "2026-07-03T05:45:20Z",
+  "files": [
+    {
+      "path": "doc-sync-audit.md",
+      "kind": "other",
+      "sha256": "7bc53af9757418dd18ceed59eda1b35600a94c1a1b911d4d1f9090581c85db76",
+      "mtime_utc": "2026-07-03T06:13:18.617872Z",
+      "producer": "t-audit-codex",
+      "bytes": 2167
+    },
+    {
+      "path": "doc-sync-progress.md",
+      "kind": "progress",
+      "sha256": "fa11c4b7538c6dfac0c7eaf5e4fc2968ca73b8b0e6500533abd33459f9f12a3f",
+      "mtime_utc": "2026-07-03T06:13:18.618120Z",
+      "producer": "coordinator",
+      "bytes": 2802
+    },
+    {
+      "path": "doc-sync-readiness.md",
+      "kind": "readiness",
+      "sha256": "49ff60395f12d34b75d440547659723a274f49f745edd7376d500236848cda94",
+      "mtime_utc": "2026-07-03T06:14:49.451905Z",
+      "producer": "t-final",
+      "bytes": 2807
+    },
+    {
+      "path": "trace.jsonl",
+      "kind": "other",
+      "sha256": "ac25b91272d604684db8a215e3ed29272c5c0be4d0755efe249b9e1b1ad7c015",
+      "mtime_utc": "2026-07-03T06:14:17.117175Z",
+      "producer": "coordinator",
+      "bytes": 6827
+    },
+    {
+      "path": "sha-pin-pr8.json",
+      "kind": "other",
+      "sha256": "c485f279fb008bee4b8911166f249d9e6020b241df38c00c0c44725ec61627e8",
+      "mtime_utc": "2026-07-03T05:56:39.634050Z",
+      "producer": "reviewer-pr8",
+      "bytes": 254
+    },
+    {
+      "path": "sha-pin-pr9.json",
+      "kind": "other",
+      "sha256": "dc10d5b757fd272d3eadd7a39a5d0d31d8007e82ede29ac7e9dea29e2f251bcf",
+      "mtime_utc": "2026-07-03T06:02:21.994584Z",
+      "producer": "reviewer-pr9",
+      "bytes": 250
+    },
+    {
+      "path": "sha-pin-pr10.json",
+      "kind": "other",
+      "sha256": "7c8f3d1d778ab9f46aca13f2194de67930ae082253439351a7d60730e682b67e",
+      "mtime_utc": "2026-07-03T06:13:12.254803Z",
+      "producer": "reviewer-pr10",
+      "bytes": 341
+    },
+    {
+      "path": "review-pr8-verdict.md",
+      "kind": "response",
+      "sha256": "86850468fdb2af8fac60d28fd901322ca630eb593cce3732681a70de4baaafb0",
+      "mtime_utc": "2026-07-03T06:14:17.116048Z",
+      "producer": "reviewer-pr8",
+      "bytes": 82
+    },
+    {
+      "path": "review-pr9-verdict.md",
+      "kind": "response",
+      "sha256": "578b62abbd4da0ed3ff0da7afb5abce73f75b24ab741a7952004b846a8ef472b",
+      "mtime_utc": "2026-07-03T06:14:17.116105Z",
+      "producer": "reviewer-pr9",
+      "bytes": 86
+    },
+    {
+      "path": "review-pr10-verdict.md",
+      "kind": "response",
+      "sha256": "25a097029728769bd36ac695f2de8cacfb485e7a5e666bfdc102f2935910486e",
+      "mtime_utc": "2026-07-03T06:14:17.116167Z",
+      "producer": "reviewer-pr10",
+      "bytes": 270
+    },
+    {
+      "path": "prompt-t-audit.md",
+      "kind": "prompt",
+      "sha256": "b3f0f6589846c51703a606c10063a1f043f59bc6d722cd8a06de89bedd668df9",
+      "mtime_utc": "2026-07-03T06:14:17.115619Z",
+      "producer": "coordinator",
+      "bytes": 205
+    },
+    {
+      "path": "prompt-t-fix-contributing.md",
+      "kind": "prompt",
+      "sha256": "f8fb929ddd581f69ce22423f9e4b3ba9d5092b7d5d1aa6d1a29d8e8403e89a7a",
+      "mtime_utc": "2026-07-03T06:14:17.115713Z",
+      "producer": "coordinator",
+      "bytes": 164
+    },
+    {
+      "path": "prompt-t-fix-comments.md",
+      "kind": "prompt",
+      "sha256": "6d9d285c92adc60026a4d75356e5a3f825e3634102c75b9a8dd6ed96363e27fd",
+      "mtime_utc": "2026-07-03T06:14:17.115780Z",
+      "producer": "coordinator",
+      "bytes": 218
+    },
+    {
+      "path": "prompt-review-pr8.md",
+      "kind": "prompt",
+      "sha256": "a90787424ea24a274904151c41125e937922eb49159eff616c3d2a05ee656122",
+      "mtime_utc": "2026-07-03T06:14:17.115839Z",
+      "producer": "coordinator",
+      "bytes": 167
+    },
+    {
+      "path": "prompt-review-pr9.md",
+      "kind": "prompt",
+      "sha256": "77f3d0984e902e15ac56bc052a3c9c53e2bf1b1f82d2be2c508d61239f4f841d",
+      "mtime_utc": "2026-07-03T06:14:17.115898Z",
+      "producer": "coordinator",
+      "bytes": 127
+    },
+    {
+      "path": "prompt-review-pr10.md",
+      "kind": "prompt",
+      "sha256": "3802ba4c091890940d8117c479ab2eda57745bbdcf5efdede53f70073dd6cb4b",
+      "mtime_utc": "2026-07-03T06:14:17.115989Z",
+      "producer": "coordinator",
+      "bytes": 240
+    }
+  ],
+  "coordinator": "claude-code-interactive",
+  "base_branch": "master",
+  "notes": "first external run with autonomously-landed PRs (framework issue #76); topology: claude coordinator + sandboxed codex builders + fresh codex build-blind reviewers; headless sandbox-bypass path denied by host permission layer, recorded in DECISIONS"
+}

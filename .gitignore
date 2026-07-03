@@ -4,6 +4,7 @@
 # Ephemeral headless dry-run archives (example-fixture is committed intentionally)
 .fleet/runs/*
 !.fleet/runs/example-fixture/
+!.fleet/runs/20260703T054520Z-doc-sync-3e8173/
 __pycache__/
 .pytest_cache/
 .coverage
