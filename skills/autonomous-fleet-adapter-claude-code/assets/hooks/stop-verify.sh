@@ -51,11 +51,14 @@ this_script="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || python3 -c "import
 walkup_root="$(cd "$(dirname "$this_script")/../../../.." && pwd)"
 hookdir_root="$(cd "$(dirname "$this_script")/../.." && pwd)"  # <repo>/.claude/hooks -> <repo>
 CLI=""
+# Order note (codex review on #114): the clone walk-up comes BEFORE the
+# cwd .agents substrate so a wrapper invoked from a framework clone never
+# gets shadowed by a stale bundled copy in the worker repo.
 for candidate in \
   "${FLEET_SUBSTRATE:+$FLEET_SUBSTRATE/stop_verify.py}" \
   "${AUTONOMOUS_FLEET_HOME:+$AUTONOMOUS_FLEET_HOME/scripts/stop_verify.py}" \
-  "$PWD/.agents/skills/autonomous-fleet-core/assets/substrate/stop_verify.py" \
   "$walkup_root/scripts/stop_verify.py" \
+  "$PWD/.agents/skills/autonomous-fleet-core/assets/substrate/stop_verify.py" \
   "$hookdir_root/.agents/skills/autonomous-fleet-core/assets/substrate/stop_verify.py"; do
   if [ -n "$candidate" ] && [ -f "$candidate" ]; then
     CLI="$candidate"

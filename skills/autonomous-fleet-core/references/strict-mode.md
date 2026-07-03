@@ -91,9 +91,10 @@ export AUTONOMOUS_FLEET_HOME=/path/to/autonomous-fleet
 ```
 
 The wrapper's resolution order is: `FLEET_SUBSTRATE` (explicit substrate
-dir) → `AUTONOMOUS_FLEET_HOME/scripts/` → the worker repo's
-`.agents/.../assets/substrate/` (hook cwd) → walk-up from the wrapper's own
-location (clone symlink or copied-into-`.claude/hooks/` layouts). Missing
+dir) → `AUTONOMOUS_FLEET_HOME/scripts/` → walk-up from the wrapper's own
+location (clone symlink layout — before the worker repo's copy so a stale
+bundle never shadows the clone) → the worker repo's
+`.agents/.../assets/substrate/` (hook cwd, or copied-into-`.claude/hooks/`). Missing
 everywhere = fail-open ALLOW with a warning.
 
 That's it. The next Claude Code session in this repo will run the gate.

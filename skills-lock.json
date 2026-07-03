@@ -17,7 +17,7 @@
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
       "version": "1.1.3",
-      "computedHash": "3bad419e413bc3487d4cded25c62ad16b44daeb9fefd92de42400af4b99b11c1"
+      "computedHash": "d988690fbb3ef6df562e15db8cf3f1b4e336d64cdce915aa507e2800f3e8fb48"
     },
     "autonomous-fleet-adapter-codex": {
       "source": "ravidsrk/autonomous-fleet",
@@ -47,7 +47,7 @@
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
       "version": "1.2.3",
-      "computedHash": "19b4f3bda745e9eba56802994141b9ca09b4b373b9c57a51ef58f6f60f23b306"
+      "computedHash": "5e61796b1a2ce5b0c37a555de4b92ee1b75f6b5fc24b3d43ea7806411949182a"
     },
     "doc-sync": {
       "source": "ravidsrk/autonomous-fleet",
