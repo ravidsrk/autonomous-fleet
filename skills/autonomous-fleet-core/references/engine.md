@@ -514,10 +514,12 @@ The trace stream is ONE JSONL line per state transition in the ledger, written t
 are interchangeable consumers — owning the format, not the renderer, is what keeps live observability
 free of UI debt. Landscape Gap 8 ("no live dashboard") is closed by emitting the stream and letting
 existing readers render it, not by building a GUI.
-- Every state transition that writes to the ledger MUST emit a trace event BEFORE the ledger write
-  commits. The trace is the source of truth for "what happened"; the ledger is derived state. Trace
-  first, ledger second — never the reverse, or a crashed coordinator leaves a row with no
-  externally-visible cause.
+- Every state transition that writes to the ledger SHOULD emit a trace event BEFORE the ledger
+  write commits (trace first, ledger second) so a crashed coordinator rarely leaves a row with no
+  externally-visible cause. AUTHORITY: the LEDGER is the authoritative loop state; the trace is
+  best-effort causal TELEMETRY. (These were previously stated the other way around in this block
+  while the failure-handling bullet below made emission fail-soft — an internal contradiction,
+  issue #85. Telemetry that can be skipped on I/O error cannot be a source of truth.)
 - The mechanism is the `emit_trace.TraceEmitter` library, which the coordinator and each adapter call
   at every transition; `fleet_run.write_manifest(..., emitter=...)` is the reference in-code
   integration (it emits the `T-FINAL` archive transition, test + mutation covered). Enforcement is the
@@ -577,11 +579,13 @@ SUBSTRATE KILL-SWITCH CONVENTION — operator escape hatch + bench comparator.
 ═══════════════════════════════════════════════════════════
 Each verification-substrate layer honors a `FLEET_DISABLE_*` env var. When set truthy
 (case-insensitive `1`/`true`/`yes`/`on`), the layer's CLI exits 0 with a `<layer>: DISABLED via
-<NAME>=1 (no-op exit 0)` stderr notice, BEFORE arg parsing. Registry:
-- Layer 1 (review-findings) → `FLEET_DISABLE_VERIFY_FINDINGS`
-- Layer 2 (stop-verify)     → `FLEET_DISABLE_STOP_VERIFY`
-- Layer 3 (blind-fix)       → `FLEET_DISABLE_BLIND_FIX`
-- Layer 4 (run-archive)     → `FLEET_DISABLE_RUN_ARCHIVE`
+<NAME>=1 (no-op exit 0)` stderr notice, BEFORE arg parsing. The four core-layer knobs are
+`FLEET_DISABLE_VERIFY_FINDINGS` / `FLEET_DISABLE_STOP_VERIFY` / `FLEET_DISABLE_BLIND_FIX` /
+`FLEET_DISABLE_RUN_ARCHIVE`; the COMPLETE authoritative registry (nine knobs across three
+classes, including the security-class knobs that additionally require an explicit
+acknowledgement env var) lives in `references/substrate-disable-knobs.md` — this block
+deliberately does NOT duplicate it (a stale copy here caused a documented contradiction,
+issue #85).
 "Disabled" means "treat the layer's verdict as PASS for this run" — explicit operator contract.
 Strict truthy allow-list prevents typos from silent-disabling. Used by
 `scripts/bench-adversarial.sh` (framework clone only) to flip substrate off/on for the falsifiable comparator that defends
