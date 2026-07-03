@@ -1072,8 +1072,11 @@ skills-install repo (no `scripts/`), verify the adapter's `requires:` block manu
 PATH, auth commands) and record the check in DECISIONS.md.
 ═══════════════════════════════════════════════════════════
 The orchestration runtime is up and reachable; any required experimental feature is enabled; `gh
-auth status` (if unauthenticated, note in DECISIONS.md and use local merge-commits into BASE —
-commits preserved, branches deleted, conflicts resolved locally before merge); gitleaks
+auth status` — if unauthenticated, the detour is LOUD, not silent (issue #97): note it in
+DECISIONS.md, use local merge-commits into BASE (commits preserved, branches deleted, conflicts
+resolved locally before merge), AND record `degraded_mode: no_scm_auth` in the readiness
+fleet-outcome. Under that mode the PR/review pipeline never ran, so the run reports at most
+`status: partial` — the outcome validator REJECTS `done` + `no_scm_auth`; gitleaks
 availability checked; BASE exists (create from the default branch at current HEAD if absent).
 
 When a mission + adapter are active, apply ALL of the above with the mission's GOAL, ROLE PIPELINE,

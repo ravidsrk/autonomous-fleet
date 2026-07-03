@@ -107,6 +107,18 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
             "must be one of done, partial, blocked"
         )
 
+    degraded = outcome.get("degraded_mode")
+    if degraded is not None and not isinstance(degraded, str):
+        errors.append(f"{prefix}: degraded_mode must be a string when present")
+    if degraded == "no_scm_auth" and outcome.get("status") == "done":
+        # engine.md PRECONDITIONS (issue #97): an unauthenticated-gh run
+        # detours to local merges — no PRs, no reviewer pass, no SHA-pin.
+        # That run must not report an undifferentiated done.
+        errors.append(
+            f"{prefix}: cannot be done under degraded_mode 'no_scm_auth' — "
+            "the PR/review pipeline never ran; report status 'partial'"
+        )
+
     if "prs_merged" in outcome:
         prs_merged = outcome["prs_merged"]
         if type(prs_merged) is not int:

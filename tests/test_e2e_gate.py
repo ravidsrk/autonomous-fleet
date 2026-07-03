@@ -66,3 +66,19 @@ def test_completion_done_accepts_true_e2e_verified():
 
 def test_non_completion_done_has_no_e2e_requirement():
     assert validate_outcome(DOC_SYNC_OUTCOME) == []
+
+
+def test_degraded_no_scm_auth_incompatible_with_done() -> None:
+    """Issue #97: an unauthenticated-gh run (local-merge detour) must not
+    report an undifferentiated done."""
+    outcome = {**DOC_SYNC_OUTCOME, "degraded_mode": "no_scm_auth", "status": "done"}
+    errors = validate_outcome(outcome)
+    assert any("no_scm_auth" in e for e in errors)
+
+    outcome = {**DOC_SYNC_OUTCOME, "degraded_mode": "no_scm_auth", "status": "partial"}
+    assert not any("no_scm_auth" in e for e in validate_outcome(outcome))
+
+
+def test_degraded_mode_must_be_string() -> None:
+    outcome = {**DOC_SYNC_OUTCOME, "degraded_mode": 7}
+    assert any("degraded_mode must be a string" in e for e in validate_outcome(outcome))
