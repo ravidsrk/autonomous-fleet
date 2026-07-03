@@ -200,3 +200,38 @@ stop-verify hook) and is post-hoc auditable.
 
 The schema is one more layer on top of the existing disciplines, not a
 replacement for any of them.
+
+<!-- demoted from engine.md (issue #84) -->
+═══════════════════════════════════════════════════════════
+ROOT_CAUSE_DEPTH: a fix at the wrong call-stack depth is a symptom fix, no matter how green tests are.
+═══════════════════════════════════════════════════════════
+EVID asks "does the original reproduction stop reproducing?" e2e_verified asks "does the real
+end-to-end flow work?" ROOT_CAUSE_DEPTH asks an upstream question both can MISS: is the patch at
+the SAME call-stack depth as the bug's root cause, or does it guard a symptom one frame above?
+A null guard at the caller silences the crash and turns CI green but leaves the source of the null
+intact — any other caller of that source hits the same bug. A test that only exercises the patched
+path keeps EVID=true forever even though the fix is wrong.
+
+HARD RULE — symptom-fix detection. The reviewer marks a finding `category: root_cause_depth` and
+verdict `request_changes` if ANY of these match, EVEN WHEN TESTS PASS:
+
+- The patch is at a different/shallower location than the reviewer's identified root cause.
+- The reviewer finds itself thinking "this doesn't fix the root cause but it prevents the crash."
+- The patch adds a guard/check/conversion at the point of USE instead of fixing the point of
+  CREATION.
+- The patch fixes ONE manifestation but the root cause can trigger the same issue via other paths
+  (a `cascade_impact` field naming those other paths is REQUIRED when this finding is filed —
+  a root-cause-depth finding without a cascade is almost always a symptom-fix finding in disguise,
+  miscategorised).
+
+Where this lands mechanically: in the schema-verified findings shape (see
+`references/review-findings.md`), `category: root_cause_depth` REQUIRES `cascade_impact`. A
+finding tagged `root_cause_depth` with no cascade is a schema violation — the verifier rejects it
+the same way it rejects an unverified `quoted_line`. The builder fixes the cited POINT OF CREATION
+and re-runs EVID across every cascade path named in `cascade_impact`; closing only the originally
+reported path does not satisfy the finding.
+
+Lineage: SWE-Review (Wang et al., 2026) `prompts/agentic_review.md` HARD RULE, the most-cited
+reviewer rubric in the academic literature. Composed for the fleet via the `cascade_impact`
+required-field gate so the discipline is schema-enforced rather than prose-aspirational. See
+`docs/competitor-audit-2026-06-22.md` #3.

@@ -81,3 +81,38 @@ For each finding `<finding-id>` in `<run_id>`:
 - `engine.md` SIGNAL RECONCILIATION (Layer 3 is one of the reconciled
   signals, alongside Layer 1 verification and Layer 2 stop-verify
   decisions)
+
+<!-- demoted from engine.md (issue #84) -->
+═══════════════════════════════════════════════════════════
+ANTI-ANCHORING: reviewer commits its own fix BEFORE reading the candidate patch.
+═══════════════════════════════════════════════════════════
+The cross-vendor build-blind reviewer rule says the reviewer never sees the build conversation.
+That's necessary but not sufficient: even WITH no build context, a reviewer handed a patch and
+asked "is this correct?" anchors on whatever it sees. The reviewer rationalises the existing fix,
+because rationalising an artifact is cognitively cheaper than independently re-deriving the
+correct one. SWE-Review's empirical result: reviewers given the same patch in two orders — patch
+first vs root-cause-first — produce systematically different decisions on the same case.
+
+The mechanical countermeasure: BEFORE the reviewer opens the candidate diff, it writes its
+INDEPENDENT proposed fix to `.fleet/runs/<run_id>/reviewer-blind-fix-<finding-id>.md` (one file
+per reviewer in multi-reviewer setups). The blind fix names:
+
+- The POINT OF CREATION (file:function:line — same call-stack-depth language as ROOT_CAUSE_DEPTH).
+- The shape of the change the reviewer would make (a paragraph; no code required).
+- The reviewer's pre-commit confidence (0–100).
+
+ONLY THEN does the reviewer open the candidate patch. The review then compares the candidate to
+its own pre-committed blind fix and writes findings accordingly. A candidate that agrees with the
+blind fix at the same call-stack depth gets weight; a candidate at a different depth triggers the
+ROOT_CAUSE_DEPTH HARD RULE (engine.md stub; full doctrine in `review-findings.md`).
+
+The blind-fix file is a first-class fleet artifact: it lands in `.fleet/runs/<run_id>/`
+alongside the findings JSON, ships with the readiness doc's archive bundle, and is auditable
+post-hoc. A review run whose blind-fix file is missing or is mtime-AFTER the candidate-findings
+file is structurally suspect — the protocol requires blind-fix BEFORE patch read, and the
+filesystem must reflect that order.
+
+Lineage: SWE-Review's "Step 3: Write YOUR Proposed Fix (BEFORE reading the patch)" prompt step
+(`prompts/agentic_review.md` Step 3). The committed-in-writing-first technique is the
+proven anti-anchoring scaffold from the academic literature. See
+`docs/competitor-audit-2026-06-22.md` #4.
