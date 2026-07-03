@@ -125,8 +125,11 @@ class of problem; do not reintroduce it.
   1. **Any content change bumps `metadata.version`** in the same commit and
      refreshes `skills-lock.json` (`lib.registry_lint.content_hash`) — the
      lock-version-sync lint fails otherwise.
-  2. **Tests must never hard-code a skill version string** (`version: "X.Y.Z"`)
-     — two incidents (ebd33d3, PR #112) broke CI on routine bumps. Use
-     version-agnostic regexes; `registry_lint` fails on literals (schema
-     versions like `schema_version: "1.0"` are pinned contracts and exempt).
+  2. **Tests must never hard-code a skill version string** — two incidents
+     (ebd33d3, PR #112) broke CI on routine bumps. Use version-agnostic
+     regexes. `registry_lint` mechanically catches the most common shape:
+     a `version: "X.Y.Z"` literal matching any CURRENT skills-lock version
+     (schema pins like `schema_version: "1.0"` and self-contained fixture
+     versions such as `0.0.1` are exempt). Other shapes — split strings,
+     bare version assertions — are reviewer-caught, not lint-caught.
   3. Version rationale goes in the commit message, not a per-skill changelog.
