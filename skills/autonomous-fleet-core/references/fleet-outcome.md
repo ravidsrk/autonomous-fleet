@@ -104,6 +104,46 @@ knows them) so a promotion run can land without schema churn.
 | `take-product-to-completion` (exploratory) | `docs/completion-readiness.md` | `in_items_open: 0`, `roadmap_count: <n>`, `stubs_remaining: 0`, `e2e_verified: true` |
 | `inference-cost` (exploratory) | `docs/inference-cost-readiness.md` | `cost_regressed: false`, `quality_regressed: false`, `levers_open: 0` |
 
+## Metric definitions (shipped missions — operational, not vibes)
+
+A campaign edge that branches on a metric is only as real as the metric's
+definition (issue #99). Two coordinators counting the same repo must converge.
+
+**doc-sync**
+- `drift_open` — the number of DRIFT INDEX rows in `docs/doc-sync-audit.md`
+  whose state is not `CLOSED via PR#n`. Counted FROM THE FROZEN AUDIT: rows are
+  transcribed verbatim at T-AUDIT freeze; no invented, dropped, or renumbered
+  rows. Zero means every frozen row is closed — not "no drift exists anywhere".
+- `code_bug_findings` — the number of DECISIONS.md entries recorded during this
+  run where a doc revealed wrong CODE behaviour (deferred to `bug-batch`, never
+  fixed here). Informational; not done-gated.
+
+**test-coverage**
+- `gaps_open` — the number of rows in the frozen T-MAP gap list (the ledger's
+  coverage-gap index: one row per file/function the freeze declared
+  under-tested) not yet closed by a merged PR whose tests exercise that gap.
+  Frozen at T-MAP; zero = every frozen row closed.
+- `coverage_regressed` — boolean: the mission's final coverage measurement (the
+  same tool/flags recorded in DECISIONS.md at T-MAP) is strictly lower than the
+  T-MAP baseline for any file the run touched. Baseline and final numbers are
+  recorded in the readiness doc.
+
+**adversarial-review-and-fix**
+- `p0_open` — CLOSE-INDEX rows of severity P0 whose state is not lane-terminal
+  (Lane A `MERGED=true`, Lane B `HUMAN_GATED=true`, Lane 0
+  `CODE_CLOSED=true, OPS_QUEUED=true`). Severities come from the frozen
+  findings JSON, never re-graded after freeze.
+- `p1_open` — same lane-terminal rule for severity-P1 CLOSE-INDEX rows; same
+  frozen-severity discipline.
+- `findings_open` — CLOSE-INDEX rows of ANY severity not lane-terminal
+  (superset of the two above).
+- `ops_queue_count` — `HUMAN_ACTION_REQUIRED:<id>` rows the run appended to the
+  ops queue (`docs/arch-ops-actions.md` or the mission's equivalent).
+  Informational; not done-gated.
+
+Exploratory missions define their metrics in their own SKILL.md the same way
+before promotion; a metric without an operational definition does not gate.
+
 ## Schema-verified review findings (optional, cross-cutting)
 
 Review missions that emit findings to the JSON shape in
