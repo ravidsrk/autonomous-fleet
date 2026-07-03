@@ -436,19 +436,21 @@ case "$RUNTIME" in
     exit $?
     ;;
   codex)
+    CMD=(codex exec --cd "$REPO_ROOT")
+    # --yolo on codex = full autonomy: without it `codex exec` sandboxes writes
+    # and cannot push branches or open PRs, which is why prior headless codex
+    # attempts could never land work. Gated by the same RCE guard as grok
+    # (--yolo-untrusted-acknowledged required for an external --repo).
+    [[ "$YOLO" -eq 1 ]] && CMD+=(--dangerously-bypass-approvals-and-sandbox)
     if [[ "$DRY_RUN" -eq 1 ]]; then
-      echo "would run: codex exec --cd $(printf '%q' "$REPO_ROOT") <prompt>"
+      # Print the REAL flag set (including the yolo bypass) — the dry-run is
+      # the preflight operators use to see exactly what would execute.
+      echo "would run: ${CMD[*]} <prompt>"
       emit_and_cleanup_dryrun_trace "$(dryrun_emit_mission)"
       echo "headless dry-run complete (codex not invoked; runtime auth not required)"
       exit 0
     fi
     if command -v codex >/dev/null 2>&1; then
-      CMD=(codex exec --cd "$REPO_ROOT")
-      # --yolo on codex = full autonomy: without it `codex exec` sandboxes writes
-      # and cannot push branches or open PRs, which is why prior headless codex
-      # attempts could never land work. Gated by the same RCE guard as grok
-      # (--yolo-untrusted-acknowledged required for an external --repo).
-      [[ "$YOLO" -eq 1 ]] && CMD+=(--dangerously-bypass-approvals-and-sandbox)
       CMD+=("$PROMPT")
       run_runtime_emit "${CMD[@]}"
       exit $?

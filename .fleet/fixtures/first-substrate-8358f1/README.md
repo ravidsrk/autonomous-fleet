@@ -34,7 +34,9 @@ cross-pass review or of build-blindness. Specifically:
   guarantee applies only to the cross-vendor / separate-process (Orca) case. The shipped
   headless path runs one agent process per mission; on a single session it is fresh-context
   isolation (instructed), not a mechanical guarantee. No external run-archive with
-  `prs_merged > 0` exists yet.
+  `prs_merged > 0` existed when this fixture was produced (superseded 2026-07-03 by
+  `.fleet/runs/20260703T054520Z-doc-sync-3e8173/` — see
+  `docs/external-dogfood/gemoji-autonomous-run.md`).
 
 This archive's value is that it shows the validators, trace emission, and `fleet_run`
 orchestration running over a live session — gate-validation, not an independent-review or
