@@ -60,7 +60,7 @@ campaign: audit-branch
 start: audit
 nodes:
   audit: { mission: adversarial-review-and-fix }
-  deps: { mission: dependency-update } *(exploratory)*
+  deps: { mission: dependency-update }  # exploratory
   tests: { mission: test-coverage }
   docs: { mission: doc-sync }
 edges:
@@ -79,7 +79,7 @@ campaign: docs-if-bugs
 start: docs
 nodes:
   docs: { mission: doc-sync }
-  bugs: { mission: bug-batch } *(exploratory)*
+  bugs: { mission: bug-batch }  # exploratory
   tests: { mission: test-coverage }
 edges:
   docs:
@@ -101,7 +101,7 @@ campaign: secure-ship
 start: audit
 nodes:
   audit: { mission: adversarial-review-and-fix }
-  deps: { mission: dependency-update } *(exploratory)*
+  deps: { mission: dependency-update }  # exploratory
   docs: { mission: doc-sync }
 edges:
   audit:
@@ -153,7 +153,7 @@ pre_gates:
   - grill-with-docs
   - office-hours
 nodes:
-  complete: { mission: take-product-to-completion } *(exploratory)*
+  complete: { mission: take-product-to-completion }  # exploratory
 post_gates:
   - qa
 edges:
