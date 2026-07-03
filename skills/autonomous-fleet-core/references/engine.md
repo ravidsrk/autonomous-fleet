@@ -70,7 +70,10 @@ path, product, maintainer identity, or scope — figure them out and record in D
 3. PRODUCT CONTEXT: read REPO_ROOT/README + manifests (package.json/pyproject/go.mod/Cargo.toml/
    etc.) to derive the product, stack, test command, lint command, build command. Record them.
 4. MAINTAINER IDENTITY: derive from the repo's `git config user.name`/`user.email`, or the most
-   frequent recent author via `git shortlog -sne -1`. Stamp THIS as the author on every commit.
+   frequent recent author via `git shortlog -sne -1` — BUT on a fork/external target where that
+   frequent author is NOT the operator, use the OPERATOR's git identity instead (COMMIT &
+   AUTHORSHIP's never-impersonate rule applies here too). Stamp the resolved identity as the
+   author on every commit.
 5. MISSION-FIT CHECK: verify the mission's premise matches this repo (grep for the anti-pattern it
    assumes; confirm the capability it assumes is missing). If the repo does NOT match, do NOT
    blindly execute — adapt to what THIS repo needs toward the mission's intent, record the
