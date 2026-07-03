@@ -118,7 +118,7 @@ emitted BEFORE the manifest write per the trace-first doctrine). See [The engine
 
 The optional 14th engine primitive (`engine.md`, THE PRIMITIVES). It re-attaches an existing
 resumable agent session for an in-flight task instead of spawning a fresh one. Adapters whose
-runtime exposes a restore command (Grok `sessionId`, a Codex thread, an opencode session) implement
+runtime exposes a restore command (`grok --resume`, `codex exec resume`, `claude --resume`) implement
 it; adapters without one ALIAS it to `SPAWN_WORKER`, the documented idempotent-relaunch fallback. It
 is constrained to `live`-classified rows only (per `recovery_scan.py`): the engine never re-attaches
 a session whose PR merged or whose branch is gone. The resume budget is bounded: when a row's

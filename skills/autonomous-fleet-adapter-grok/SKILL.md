@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Grok Build with Task tool, git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.4"
+  version: "1.1.5"
   fleet-component: "adapter"
 ---
 
@@ -43,7 +43,7 @@ ledger + polling, and says so.
 | SYNC_TASK_STATE | **degraded** | ledger-only |
 | SET_GOAL family (9–12) | real | `/goal`, `update_goal` |
 | LOOP_POLL | real | `/loop`, `scheduler_create` |
-| CONTINUE_WORKER | asserted | sessionId re-attach — verify on your CLI version (#91) |
+| CONTINUE_WORKER | real | `grok --resume <SESSION_ID>` / `-c` for most-recent (VERIFIED grok 0.2.82, issue #91) |
 
 ## PRECONDITIONS (the core calls for these; here's the Grok form)
 A git repo (REPO_ROOT resolvable) · `gh auth status` via Shell (else local merge-commits into BASE)
@@ -225,7 +225,7 @@ If `manifest.json` is not present yet, add `--mission <slug> --run-id <run_id>`.
   (`<BRANCH_PREFIX><slug>-<run_short>`, `../<repo>-<slug>-<run_short>`, run_short = the 6-hex tail of
   the run_id) so parallel runs/checkouts never collide on a bare slug.
   `<SUBSTRATE>/validate_namespacing.py` enforces this.
-- CONTINUE_WORKER(role, placement, session_handle): resume the session by its `sessionId` (grok session re-attach); else ALIAS to SPAWN_WORKER. Re-attach only for `live`-classified
+- CONTINUE_WORKER(role, placement, session_handle): resume with `grok --resume <SESSION_ID>` (or `-c`/`--continue` for the cwd's most recent; `--fork-session` to branch) — VERIFIED grok 0.2.82; else ALIAS to SPAWN_WORKER. Re-attach only for `live`-classified
   rows (per `recovery_scan.py`); never re-attach a session whose PR merged or branch is gone. When a
   row's `RESUME_COUNT` hits `MAX_RESUME_ATTEMPTS` (3), escalate instead of continuing.
 - Reviewer isolation: when role==reviewer, launch the worker via
