@@ -116,3 +116,20 @@ class of problem; do not reintroduce it.
    readiness doc to `docs/<mission>-readiness.md`.
 4. Open the PR with corpus citations in the body.
 5. CI must pass (`./scripts/validate-all.sh`).
+
+
+## Skill versioning policy (issue #90)
+
+- Skills version **independently** (semver-ish; adapters need not move in
+  lockstep — Orca legitimately leads). What IS enforced:
+  1. **Any content change bumps `metadata.version`** in the same commit and
+     refreshes `skills-lock.json` (`lib.registry_lint.content_hash`) — the
+     lock-version-sync lint fails otherwise.
+  2. **Tests must never hard-code a skill version string** — two incidents
+     (ebd33d3, PR #112) broke CI on routine bumps. Use version-agnostic
+     regexes. `registry_lint` mechanically catches the most common shape:
+     a `version: "X.Y.Z"` literal matching any CURRENT skills-lock version
+     (schema pins like `schema_version: "1.0"` and self-contained fixture
+     versions such as `0.0.1` are exempt). Other shapes — split strings,
+     bare version assertions — are reviewer-caught, not lint-caught.
+  3. Version rationale goes in the commit message, not a per-skill changelog.
