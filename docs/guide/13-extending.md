@@ -467,11 +467,11 @@ PRIMITIVES, and it is OPTIONAL like the goal/loop ones (9 to 13). It re-attaches
 agent session for an in-flight task instead of spawning a fresh one. Your adapter declares how it
 implements the primitive, and there are two honest answers:
 
-- If your runtime exposes a restore command (Grok's `sessionId`, a Codex thread, an opencode
-  session), bind `CONTINUE_WORKER` to it: re-attach the live session.
-- If it does not, ALIAS `CONTINUE_WORKER` to `SPAWN_WORKER`. That is the documented idempotent-relaunch
-  fallback the Claude Code adapter uses ("no documented restore command -> ALIAS to SPAWN_WORKER"). It
-  is a real, valid implementation, not a stub.
+- If your runtime exposes a restore command (`grok --resume <SESSION_ID>`, `codex exec resume
+  [SESSION_ID]`, `claude --resume <session-id>` — all live-verified, issue #91), bind
+  `CONTINUE_WORKER` to it: re-attach the live session.
+- If it does not (or on older CLI versions), ALIAS `CONTINUE_WORKER` to `SPAWN_WORKER` — the
+  documented idempotent-relaunch fallback. It is a real, valid implementation, not a stub.
 
 Either way, the two guard rails are the same and come straight from the engine, so do not weaken them
 in your adapter:
