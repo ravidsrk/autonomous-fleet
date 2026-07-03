@@ -72,7 +72,19 @@ Each run takes minutes to hours depending on scope. You get GitHub notifications
 
 # Try it
 
-> Install takes about a minute. The first PR usually shows up in a few minutes.
+> Install takes about a minute. In interactive dogfood runs the first PR has
+> shown up within minutes — but see the evidence status below: **no fully
+> autonomous end-to-end run on an external repo has landed a PR yet**
+> ([#76](https://github.com/ravidsrk/autonomous-fleet/issues/76) tracks it).
+
+> **Evidence status (2026-07-03).** What's validated today: the validators,
+> archive/trace substrate, and campaign wiring (self-dogfood + gate-validation
+> on an external checkout — see
+> [`docs/external-dogfood/`](docs/external-dogfood/README.md)). What isn't
+> yet: an external run-archive with `prs_merged > 0`, and adversarial-bench
+> numbers. Claims in this README about unattended runs describe the design
+> and the interactive-dogfood behaviour, not yet an externally-evidenced
+> autonomous pipeline.
 
 ### Before you start
 
@@ -133,9 +145,11 @@ The docs are out of date, fix them
 What you'll see, in order:
 1. A plan written to a file you can read and abort if you don't like it.
 2. Worker agents kicked off (you'll see them spawn).
-3. PRs appear in GitHub as each one finishes — usually within a few minutes.
+3. PRs appear in GitHub as each one finishes (within minutes in interactive
+   dogfood runs; the fully-autonomous external path is still being evidenced —
+   see the evidence status above).
 
-Each PR has a readiness doc explaining what was done, why, and how it was verified — **and a different agent than the one that built it has already signed off on the review**. You're the final reviewer; the first reviewer was a fresh build-blind agent who never saw the builder's session.
+Each PR has a readiness doc explaining what was done, why, and how it was verified — **and the run's reviewer role has signed off before you see it**. You're the final reviewer. On Orca (cross-vendor, separate terminals) that first reviewer is mechanically build-blind — a different process that never saw the builder's session. On single-session hosts (Claude Code, Codex, Grok) it is a fresh same-vendor pass with instructed isolation, not a mechanical guarantee (see the role topology above).
 
 To stop a run mid-flight, close the chat (workers check in with the ledger and exit). The file ledger survives, so you can pick up where you left off in a new chat.
 
