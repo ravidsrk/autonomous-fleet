@@ -43,7 +43,7 @@ Options:
   --timeout SECONDS   Per-node runtime watchdog passed to run-mission-headless.sh
                       (default: its 5400; 0 disables)
   --skip-auth-check   Skip the per-node runtime auth pre-check
-  --yolo              Auto-approve agent tools (Grok only; default: off)
+  --yolo              Auto-approve agent tools (Grok: --yolo; Codex: --dangerously-bypass-approvals-and-sandbox; default: off)
   --no-yolo           Deprecated alias for default (no auto-approve)
   --yolo-untrusted-acknowledged  Required with --yolo when --repo is outside this clone (accepts RCE risk)
 

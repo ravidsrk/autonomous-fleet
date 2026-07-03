@@ -39,10 +39,12 @@ campaign YAML, setup steps, and success criteria.
 
 **Operator runs:** Headless driver + `--repo` + archive emission are wired (v0.2.0). Gemoji
 ship-with-proof has interactive evidence (`1541ce9`) and a headless **gate-validation** pass
-(Lane 2, 2026-06-27) that **re-validated pre-existing `DONE` ledgers** — the headless attempt hit
-an auth failure and the landing work was completed by hand, so no PR was autonomously landed
-(`prs_merged = 0`). Independent adversarial bench A/B **numbers**, and any external run-archive with
-`prs_merged > 0`, remain ⬜ pending authenticated operator sessions.
+(Lane 2, 2026-06-27) that **re-validated pre-existing `DONE` ledgers** — that headless attempt hit
+an auth failure and its landing work was completed by hand (`prs_merged = 0`). The external
+run-archive with `prs_merged > 0` landed 2026-07-03
+([gemoji-autonomous-run.md](gemoji-autonomous-run.md)). Independent adversarial bench A/B
+**numbers**, and a single-process fully-headless external run, remain ⬜ pending
+explicit operator opt-in sessions.
 
 ## Before first run on any external repo
 
