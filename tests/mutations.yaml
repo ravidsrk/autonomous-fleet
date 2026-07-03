@@ -84,10 +84,22 @@ mutations:
     replace: 'unverified >= 0'
     guards: [tests/test_stop_verify.py]
 
+  - id: verify-findings-min-length-floor-off
+    file: scripts/lib/verify_findings.py
+    find: 'if len(quoted_norm) < MIN_QUOTE_NORM_LEN:'
+    replace: 'if False and len(quoted_norm) < MIN_QUOTE_NORM_LEN:'
+    guards: [tests/test_verify_findings.py]
+
+  - id: verify-findings-line-anchor-off
+    file: scripts/lib/verify_findings.py
+    find: 'if quoted_norm in window_norm:'
+    replace: 'if quoted_norm in _normalize_whitespace(source):'
+    guards: [tests/test_verify_findings.py]
+
   - id: verify-findings-hallucination-gate-off
     file: scripts/lib/verify_findings.py
-    find: 'quoted_norm and quoted_norm in source_norm'
-    replace: 'True'
+    find: 'if quoted_norm in source_norm:'
+    replace: 'if True:'
     guards: [tests/test_verify_findings.py]
 
   - id: verify-findings-path-containment-off

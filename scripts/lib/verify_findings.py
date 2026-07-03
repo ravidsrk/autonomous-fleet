@@ -22,6 +22,8 @@ from typing import Any
 
 # Cap source-file reads so a hostile or pathological repo can't OOM the verifier
 # when a finding cites a multi-GB file (or a symlink to one).
+MIN_QUOTE_NORM_LEN = 12
+LINE_ANCHOR_SLACK = 2
 MAX_SOURCE_BYTES = 8_000_000
 
 # Schema fields the verifier touches. Full schema is the JSON Schema file; this
@@ -333,9 +335,41 @@ def verify_finding_against_source(
     source = raw.decode("utf-8", errors="replace")
 
     quoted_norm = _normalize_whitespace(quoted)
-    source_norm = _normalize_whitespace(source)
 
-    if quoted_norm and quoted_norm in source_norm:
+    # Issue #98: specificity must come from the anchor OR the length. A
+    # line-anchored quote may be short (the line number pins it); an
+    # UN-anchored quote needs MIN_QUOTE_NORM_LEN normalized chars, because a
+    # whitespace-tolerant whole-file substring match let "return" "verify"
+    # against almost any file.
+    line_number = evidence.get("line_number")
+    if isinstance(line_number, int) and line_number >= 1:
+        # Line-anchored: the quote must appear within ±LINE_ANCHOR_SLACK
+        # lines of the cited line (small drift tolerated, global match not).
+        lines = source.splitlines()
+        lo = max(0, line_number - 1 - LINE_ANCHOR_SLACK)
+        hi = min(len(lines), line_number + LINE_ANCHOR_SLACK)
+        window_norm = _normalize_whitespace("\n".join(lines[lo:hi]))
+        if quoted_norm in window_norm:
+            finding["verified"] = True
+            finding.pop("verify_reason", None)
+        else:
+            finding["verified"] = False
+            finding["verify_reason"] = (
+                f"quoted_line not found within ±{LINE_ANCHOR_SLACK} lines of "
+                f"line_number {line_number}"
+            )
+        return finding
+
+    if len(quoted_norm) < MIN_QUOTE_NORM_LEN:
+        finding["verified"] = False
+        finding["verify_reason"] = (
+            f"quoted_line too short to verify un-anchored "
+            f"(<{MIN_QUOTE_NORM_LEN} normalized chars; add evidence.line_number)"
+        )
+        return finding
+
+    source_norm = _normalize_whitespace(source)
+    if quoted_norm in source_norm:
         finding["verified"] = True
         # Remove any stale verify_reason from a prior verify pass.
         finding.pop("verify_reason", None)

@@ -1,5 +1,5 @@
 {
-  "core_version": "1.2.8",
+  "core_version": "1.2.9",
   "files": {
     "emit_trace.py": "88b22b371918540e73f3f2f513a2d47fe74809f9d0ecf5203e70fd4dc8dcad6d",
     "lib/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -29,7 +29,7 @@
     "lib/stop_verify.py": "8504fa56971abd202a18ac9f19889de1c88c7528e85e2959b4c2345895583f5d",
     "lib/substrate_disable.py": "6152ca8ea33f99e21e0e7a546111310c0066c70addce441ec3ce971cd7fb3425",
     "lib/verify_blind_fix.py": "a6212f776806b04aea83b151defe4fd1ea8516941610baa503118be8f5e2ecc4",
-    "lib/verify_findings.py": "45fe4c6056c35bbcef9a56d1fe8a2a5166bd34cf5c07f9e78307c3e06b6fbfa7",
+    "lib/verify_findings.py": "a7c443a895bd02925291f900b9f97271cd1aa21cdfd1ff7bdb5838a22d477377",
     "lib/verify_round_budget.py": "73af14f4572cabd7d079043ced70d65c55400318e1245747a1ebebdb9b034c09",
     "lib/verify_sha_pin.py": "10c4d68983c4185d9d3006a030ffef6055cfd1690028bc66a64c7324c3205123",
     "recovery_scan.py": "e816bc52cf8215047c9fd63eda8b25aebe2e0c94126e07a45ea33b1e2aabdb7a",
