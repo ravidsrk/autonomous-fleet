@@ -91,6 +91,15 @@ def test_shipped_mission_metrics_have_operational_definitions() -> None:
 
     doc = (ROOT / "skills/autonomous-fleet-core/references/fleet-outcome.md").read_text(encoding="utf-8")
     assert "## Metric definitions" in doc
+    # Scope the check to the definitions SECTION (codex on #121: a doc-wide
+    # backtick match was satisfied by the metrics table, so deleting the
+    # definitions still passed).
+    section = doc.split("## Metric definitions", 1)[1].split("\n## ", 1)[0]
     for mission in ("doc-sync", "test-coverage", "adversarial-review-and-fix"):
         for metric in MISSION_METRICS[mission]:
-            assert f"`{metric}`" in doc, f"{mission}:{metric} lacks a definition"
+            assert f"`{metric}`" in section, f"{mission}:{metric} lacks a definition"
+            # A definition is a dash-led entry with prose, not a bare mention.
+            assert any(
+                line.strip().startswith(f"- `{metric}`") and len(line) > 40
+                for line in section.splitlines()
+            ), f"{mission}:{metric} entry is not a definition"
