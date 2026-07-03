@@ -13,7 +13,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.0.2"
+  version: "1.0.3"
   tier: "1"
   fleet-component: "mission"
 ---
@@ -92,6 +92,14 @@ with before/after coverage where the tooling reports it.
   for that area (verify they FAIL against intentionally-broken code, then pass) → fresh build-blind @claude reviews
   (real assertions, meaningful paths, no padding) → @claude merges. Parallelize across
   non-overlapping test files; serialize same-file. Update the GAP INDEX + coverage deltas.
+
+  **PR sizing (issue #100):** one PR per SOURCE file under test (its new/extended
+  test file(s) ride along) — the study's high-merge-rate unit. Target ≤ ~400
+  changed lines; a source file needing more test code than that splits by
+  test class/behaviour cluster into sequential PRs on the same area. Gaps of
+  < ~10 lines of test code merge into the nearest same-module PR. Never split
+  one test file across two concurrent PRs; never combine two source modules'
+  tests in one PR (reviewers grade against the frozen GAP INDEX row-by-row).
 - **T-FINAL [@claude]** — full suite green; coverage rose on the mapped areas and did not
   regress elsewhere. Output `docs/test-coverage-readiness.md` with **`fleet-outcome` YAML**
   (`gaps_open`, `coverage_regressed`), gap/coverage summary, **Recommended next missions**, all
