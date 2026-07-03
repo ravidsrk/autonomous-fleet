@@ -10,7 +10,7 @@ license: MIT
 compatibility: Requires Codex with goals enabled (features.goals), git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.5"
+  version: "1.1.6"
   fleet-component: "adapter"
 ---
 
@@ -187,13 +187,9 @@ Chain worker events with `--parent-event`. See `docs/guide/16-trace-schema.md`.
 
 ## RESUMABILITY + REVIEWER ISOLATION (Wave 3 contract)
 
-- run_short: every isolated branch and worktree carries the active run's 6-hex suffix
-  (`<BRANCH_PREFIX><slug>-<run_short>`, `../<repo>-<slug>-<run_short>`, run_short = the 6-hex tail of
-  the run_id) so parallel runs/checkouts never collide on a bare slug.
-  `<SUBSTRATE>/validate_namespacing.py` enforces this.
-- CONTINUE_WORKER(role, placement, session_handle): resume the worker thread (`codex exec resume <SESSION_ID>`); else ALIAS to SPAWN_WORKER. Re-attach only for `live`-classified
-  rows (per `recovery_scan.py`); never re-attach a session whose PR merged or branch is gone. When a
-  row's `RESUME_COUNT` hits `MAX_RESUME_ATTEMPTS` (3), escalate instead of continuing.
-- Reviewer isolation: when role==reviewer, launch the worker via
-  `scripts/run-sandboxed.sh --role reviewer -- <reviewer-cli>` so the candidate tree is read-only and
-  only `.fleet/runs/<run_id>/` is writable.
+Follow the single-sourced contract in
+`autonomous-fleet-core` → `references/adapter-contract.md` (issue #89 — do
+NOT re-inline it here; the drift lint fails copies). This adapter's only
+runtime-specific binding:
+
+- CONTINUE_WORKER binding: `codex exec resume <SESSION_ID>` (VERIFIED codex-cli 0.140.0); else ALIAS to SPAWN_WORKER
