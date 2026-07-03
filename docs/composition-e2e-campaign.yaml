@@ -1,4 +1,7 @@
 campaign: composition-e2e
+# bug-batch is EXPLORATORY (docs/exploratory/missions/) — this example opts in
+# explicitly; without this flag run-campaign.sh refuses the node (issue #94).
+allow_exploratory_nodes: true
 repo: single
 base: fleet/composition-e2e-base
 start: docs
