@@ -6,16 +6,52 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ENGINE = ROOT / "skills" / "autonomous-fleet-core" / "references" / "engine.md"
+_REFS_DIR = ROOT / "skills" / "autonomous-fleet-core" / "references"
 
 
 def read_engine() -> str:
-    return ENGINE.read_text(encoding="utf-8")
+    # Issue #84: engine.md is the slim core; demoted doctrine lives in
+    # trigger-loaded references. Discipline pins guard the WHOLE corpus —
+    # a block may move between files but may not vanish or invert.
+    corpus = [ENGINE.read_text(encoding="utf-8")]
+    for ref in sorted(_REFS_DIR.glob("*.md")):
+        if ref.name != "engine.md":
+            corpus.append(ref.read_text(encoding="utf-8"))
+    return "\n".join(corpus)
 
 
 def section(text: str, heading: str, next_heading: str) -> str:
-    start = text.index(heading)
-    end = text.index(next_heading, start)
-    return text[start:end]
+    """Span from a banner-anchored `heading` to `next_heading`.
+
+    Post-#84 the corpus holds a slim engine stub AND the full demoted block
+    under one banner, and incidental mid-text mentions must not anchor.
+    Candidates start at banner titles matching `heading`; each span runs to
+    the next occurrence of `next_heading` (wide engine spans) or, when that
+    never follows (demoted blocks), to the block's own closing banner. The
+    largest candidate wins — stub loses to full doctrine."""
+    import re as _re
+
+    headers = [
+        m
+        for m in _re.finditer(r"═+\n(.+?)\n═+\n", text, _re.S)
+        if m.group(1).strip().startswith(heading)
+    ]
+    best = ""
+    for m in headers:
+        s = m.start()
+        try:
+            e = text.index(next_heading, m.end())
+        except ValueError:
+            nb = _re.compile(r"\n═+\n").search(text, m.end())
+            e = nb.start() + 1 if nb else len(text)
+        candidate = text[s:e]
+        if len(candidate) > len(best):
+            best = candidate
+    if best:
+        return best
+    s = text.index(heading)
+    e = text.index(next_heading, s)
+    return text[s:e]
 
 
 def squash(text: str) -> str:
@@ -34,6 +70,17 @@ CONTRADICTION_MARKERS = (
 def assert_no_contradiction_markers(text: str) -> None:
     for marker in CONTRADICTION_MARKERS:
         assert marker not in text
+
+
+def banner_pos(text: str, title_prefix: str) -> int:
+    """Position of a banner-anchored section title (TOC/prose mentions don't
+    count — post-#84 the engine has a Contents block naming every section)."""
+    import re as _re
+
+    for m in _re.finditer(r"═+\n(.+?)\n═+\n", text, _re.S):
+        if m.group(1).strip().startswith(title_prefix):
+            return m.start()
+    raise ValueError(f"banner not found: {title_prefix!r}")
 
 
 def test_continue_worker_is_optional_with_spawn_fallback() -> None:
@@ -347,10 +394,10 @@ def test_strict_mode_block_anchors_after_result_state_termination_gate() -> None
     isn't enough", STRICT MODE gives the mechanical enforcement. They MUST
     sit next to each other so a reader gets the disciplinary motivation
     before the mechanism."""
-    text = read_engine()
-    rs_idx = text.index("RESULT-STATE TERMINATION GATE")
-    sm_idx = text.index("RUNTIME ENFORCEMENT GATE")
-    inflation_idx = text.index("INFLATION POST-MORTEM")
+    text = ENGINE.read_text(encoding="utf-8")  # stub order IS the narrative (post-#84)
+    rs_idx = banner_pos(text, "RESULT-STATE TERMINATION GATE")
+    sm_idx = banner_pos(text, "RUNTIME ENFORCEMENT GATE")
+    inflation_idx = banner_pos(text, "INFLATION POST-MORTEM")
     assert rs_idx < sm_idx < inflation_idx, (
         "STRICT MODE must sit between RESULT-STATE TERMINATION GATE and "
         "INFLATION POST-MORTEM to preserve the result-state -> enforcement "
@@ -444,12 +491,12 @@ def test_new_disciplines_anchor_before_result_state_termination_gate() -> None:
     symptom-fix from happening) whereas RESULT-STATE TERMINATION GATE is the
     post-hoc check (the fix may have passed CI but didn't fix reality). The
     upstream-then-downstream narrative ordering MUST be preserved."""
-    text = read_engine()
-    rcd_idx = text.index("ROOT_CAUSE_DEPTH: a fix at the wrong call-stack depth")
-    aa_idx = text.index("ANTI-ANCHORING: reviewer commits its own fix")
-    rs_idx = text.index("RESULT-STATE TERMINATION GATE")
-    sm_idx = text.index("RUNTIME ENFORCEMENT GATE")
-    inflation_idx = text.index("INFLATION POST-MORTEM")
+    text = ENGINE.read_text(encoding="utf-8")  # stub order IS the narrative (post-#84)
+    rcd_idx = banner_pos(text, "ROOT_CAUSE_DEPTH: a fix at the wrong call-stack depth")
+    aa_idx = banner_pos(text, "ANTI-ANCHORING: reviewer commits its own fix")
+    rs_idx = banner_pos(text, "RESULT-STATE TERMINATION GATE")
+    sm_idx = banner_pos(text, "RUNTIME ENFORCEMENT GATE")
+    inflation_idx = banner_pos(text, "INFLATION POST-MORTEM")
     # All five blocks live in this exact order.
     assert rcd_idx < aa_idx < rs_idx < sm_idx < inflation_idx, (
         "ROOT_CAUSE_DEPTH and ANTI-ANCHORING must sit before RESULT-STATE "
@@ -593,10 +640,10 @@ def test_trace_emission_block_anchors_after_signal_reconciliation() -> None:
     """TRACE EMISSION sits AFTER SIGNAL RECONCILIATION and BEFORE CONTEXT
     HANDOFF. The ordering encodes the narrative: reconciled state ->
     emit the transition -> survive context limits."""
-    text = read_engine()
-    sig_idx = text.index("SIGNAL RECONCILIATION")
-    trace_idx = text.index("TRACE EMISSION")
-    handoff_idx = text.index("CONTEXT HANDOFF")
+    text = ENGINE.read_text(encoding="utf-8")  # stub order IS the narrative (post-#84)
+    sig_idx = banner_pos(text, "SIGNAL RECONCILIATION")
+    trace_idx = banner_pos(text, "TRACE EMISSION")
+    handoff_idx = banner_pos(text, "CONTEXT HANDOFF")
     assert sig_idx < trace_idx < handoff_idx, (
         "TRACE EMISSION must sit between SIGNAL RECONCILIATION and "
         "CONTEXT HANDOFF to preserve reconcile -> emit -> survive narrative"
@@ -644,10 +691,10 @@ def test_write_lock_discipline_block_anchors_after_trace_emission() -> None:
     CONTEXT HANDOFF. The ordering encodes the narrative: emit the
     transition -> serialize the mutation -> survive context limits.
     """
-    text = read_engine()
-    trace_idx = text.index("TRACE EMISSION")
-    lock_idx = text.index("WRITE-LOCK DISCIPLINE")
-    handoff_idx = text.index("CONTEXT HANDOFF")
+    text = ENGINE.read_text(encoding="utf-8")  # stub order IS the narrative (post-#84)
+    trace_idx = banner_pos(text, "TRACE EMISSION")
+    lock_idx = banner_pos(text, "WRITE-LOCK DISCIPLINE")
+    handoff_idx = banner_pos(text, "CONTEXT HANDOFF")
     assert trace_idx < lock_idx < handoff_idx, (
         "WRITE-LOCK DISCIPLINE must sit between TRACE EMISSION and "
         "CONTEXT HANDOFF to preserve emit -> serialize -> survive narrative"
@@ -705,9 +752,9 @@ def test_substrate_kill_switch_block_anchors_after_write_lock() -> None:
     CONTEXT HANDOFF. Ordering encodes: serialize -> escape-hatch ->
     survive."""
     text = read_engine()
-    lock_idx = text.index("WRITE-LOCK DISCIPLINE")
-    kill_idx = text.index("SUBSTRATE KILL-SWITCH CONVENTION")
-    handoff_idx = text.index("CONTEXT HANDOFF")
+    lock_idx = banner_pos(text, "WRITE-LOCK DISCIPLINE")
+    kill_idx = banner_pos(text, "SUBSTRATE KILL-SWITCH CONVENTION")
+    handoff_idx = banner_pos(text, "CONTEXT HANDOFF")
     assert lock_idx < kill_idx < handoff_idx
 
 
@@ -726,10 +773,13 @@ def test_engine_defers_knob_registry_and_ledger_authority() -> None:
     contradiction) and must state ledger-authoritative / trace-telemetry
     consistently with the fail-soft emission bullet."""
     engine = (ROOT / "skills/autonomous-fleet-core/references/engine.md").read_text(encoding="utf-8")
+    corpus = read_engine()
     assert "substrate-disable-knobs.md" in engine
     assert "nine knobs" in engine
-    assert "the LEDGER is the authoritative loop state" in engine
-    assert 'trace is the source of truth for "what happened"' not in engine
+    # ledger-authority doctrine moved to references/trace.md in #84; the
+    # corpus must state it exactly once-and-consistently, nowhere the inverse.
+    assert "the LEDGER is the authoritative loop state" in corpus
+    assert 'trace is the source of truth for "what happened"' not in corpus
 
 
 def test_research_discipline_is_host_conditional() -> None:

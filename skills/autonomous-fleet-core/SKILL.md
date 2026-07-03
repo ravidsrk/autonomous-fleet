@@ -17,7 +17,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.2.16"
+  version: "1.3.0"
   fleet-component: "core"
 ---
 # Autonomous Fleet — Core Engine (tool-agnostic)
@@ -34,7 +34,7 @@ runtime mechanics.
 
 ## Instructions
 
-Read and follow [references/engine.md](references/engine.md) in full before coordinating any run.
+Read and follow [references/engine.md](references/engine.md) in full before coordinating any run — it is the slim ALWAYS-READ core; sections marked TRIGGER point at references you load only when their trigger applies (issue #84).
 It contains self-orientation, autonomy enforcement, worker placement, the PR pipeline, safety
 rails, and all other engine rules.
 
