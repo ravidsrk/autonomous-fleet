@@ -1,5 +1,12 @@
 # First substrate run — real archive on autonomous-fleet (Lane 1)
 
+> **Archive quarantined (issue #78).** The archive this document describes now
+> lives at `.fleet/fixtures/first-substrate-8358f1/` (formerly
+> `.fleet/runs/20260626T200255Z-adversarial-review-and-fix-8358f1/`). Its
+> reviewer and skeptic findings are byte-identical, so it demonstrates substrate
+> **wiring only** — do not cite it as evidence of build-blind or independent
+> review. Transcript excerpts below predate the move and show the original path.
+
 **Status:** DONE (operator run completed 2026-06-27)  
 **Closes gap:** A-real (way-ahead Commit A operator half)  
 **Mission:** `adversarial-review-and-fix` on this repo (`main`)
