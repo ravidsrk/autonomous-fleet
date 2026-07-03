@@ -215,6 +215,16 @@ if ! "$VENV_PYTHON" scripts/sync_guide_starlight.py --check; then
 fi
 
 echo ""
+echo "== sync-substrate-assets (bundled substrate parity) =="
+# The Python enforcement substrate ships as autonomous-fleet-core assets so it
+# reaches skills-install users (issue #80). The committed bundle must match
+# scripts/ byte-for-byte; --check fails on drift instead of mutating the tree.
+if ! "$VENV_PYTHON" scripts/sync_substrate_assets.py --check; then
+  echo "sync-substrate-assets: bundle drifted; run scripts/sync_substrate_assets.py and commit" >&2
+  exit 1
+fi
+
+echo ""
 echo "== validate-headless (mechanical dry-run wiring) =="
 ./scripts/validate-headless.sh
 

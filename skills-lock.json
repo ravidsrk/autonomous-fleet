@@ -46,8 +46,8 @@
     "autonomous-fleet-core": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.1.2",
-      "computedHash": "1515c943022ff754a326d742979a8b97b7fc4217bced14b5947a87fd632e5be2"
+      "version": "1.2.0",
+      "computedHash": "41e7d3be804206907be6f07127800f57a70f912d4c70ad808e4aa1ed709e9257"
     },
     "doc-sync": {
       "source": "ravidsrk/autonomous-fleet",
@@ -64,8 +64,8 @@
     "setup-autonomous-fleet": {
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
-      "version": "1.0.1",
-      "computedHash": "2b676ee0ed2db33d3097bd95665857519e640a95a46e17fbe5fe811837c802fc"
+      "version": "1.1.0",
+      "computedHash": "b5a378d969078331b8e84f894def91586df15c75a17690a0ce4844250e5bf8e7"
     },
     "skill-creator": {
       "source": "anthropics/skills",

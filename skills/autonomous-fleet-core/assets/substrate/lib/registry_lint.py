@@ -1,0 +1,327 @@
+"""Consistency checks for the fleet mission registry and shipped skill catalogs."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from json import JSONDecodeError
+from pathlib import Path
+from typing import Any, Mapping
+
+import yaml
+
+from .fleet_registry import MISSIONS
+
+LOCAL_LOCK_SOURCE = "ravidsrk/autonomous-fleet"
+_MISSION_COMPONENT_RE = re.compile(r"fleet-component:\s*[\"']?mission[\"']?")
+
+# Fields that, if present on a lock row, count as pinning an external source to a
+# concrete revision. The external `npx skills` installer records a bare repo slug
+# ("anthropics/skills") with no revision, so without one of these the vendored copy
+# is unpinned and can drift silently against upstream.
+_PIN_FIELDS = ("ref", "commit", "tag", "sha")
+
+
+def content_hash(skill_dir: Path) -> str:
+    """Deterministic sha256 over a skill directory's tracked content.
+
+    Hashes every regular file under ``skill_dir`` in sorted POSIX-relative-path
+    order, mixing in the path itself so a rename changes the digest. This is the
+    canonical hash the lock's ``computedHash`` values are reconciled against; it
+    is self-consistent (recomputable offline) rather than a reproduction of the
+    external installer's opaque hashing.
+    """
+    digest = hashlib.sha256()
+    files = sorted(p for p in skill_dir.rglob("*") if p.is_file())
+    for path in files:
+        rel = path.relative_to(skill_dir).as_posix()
+        digest.update(rel.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def shipped_missions(
+    missions: Mapping[str, Mapping[str, Any]] = MISSIONS,
+) -> dict[str, Mapping[str, Any]]:
+    return {
+        mission_id: row
+        for mission_id, row in missions.items()
+        if row.get("shipped") is True
+    }
+
+
+def _skill_dirs_on_disk(root: Path) -> set[str]:
+    return {path.parent.name for path in (root / "skills").glob("*/SKILL.md")}
+
+
+def _mission_skill_dirs_on_disk(root: Path) -> set[str]:
+    dirs: set[str] = set()
+    for skill_path in sorted((root / "skills").glob("*/SKILL.md")):
+        text = skill_path.read_text(encoding="utf-8")
+        if _MISSION_COMPONENT_RE.search(text):
+            dirs.add(skill_path.parent.name)
+    return dirs
+
+
+def lint_shipped_mission_dirs(
+    root: Path, missions: Mapping[str, Mapping[str, Any]] = MISSIONS
+) -> list[str]:
+    errors: list[str] = []
+    shipped = shipped_missions(missions)
+    shipped_dirs = {str(row["skill_dir"]) for row in shipped.values()}
+
+    for mission_id, row in shipped.items():
+        skill_dir = str(row["skill_dir"])
+        skill_file = root / "skills" / skill_dir / "SKILL.md"
+        if not skill_file.is_file():
+            errors.append(
+                f"{mission_id}: shipped:true points to missing skills/{skill_dir}/SKILL.md"
+            )
+
+    for skill_dir in sorted(_mission_skill_dirs_on_disk(root) - shipped_dirs):
+        errors.append(
+            f"skills/{skill_dir}/SKILL.md is a mission skill but has no shipped:true registry row"
+        )
+
+    return errors
+
+
+def lint_catalog_mentions(
+    root: Path, missions: Mapping[str, Mapping[str, Any]] = MISSIONS
+) -> list[str]:
+    errors: list[str] = []
+    catalogs = {
+        "README.md": root / "README.md",
+        "skills/autonomous-fleet/SKILL.md": root / "skills" / "autonomous-fleet" / "SKILL.md",
+    }
+
+    for label, path in catalogs.items():
+        if not path.is_file():
+            errors.append(f"{label}: missing catalog file")
+            continue
+        text = path.read_text(encoding="utf-8")
+        for mission_id in sorted(shipped_missions(missions)):
+            if mission_id not in text:
+                errors.append(f"{label}: missing shipped mission {mission_id}")
+
+    return errors
+
+
+def _load_lock_skills(root: Path) -> tuple[dict[str, Any], list[str]]:
+    lock_path = root / "skills-lock.json"
+    if not lock_path.is_file():
+        return {}, ["skills-lock.json: missing"]
+    try:
+        data = json.loads(lock_path.read_text(encoding="utf-8"))
+    except JSONDecodeError as exc:
+        return {}, [f"skills-lock.json: invalid JSON: {exc.msg}"]
+    skills = data.get("skills") if isinstance(data, dict) else None
+    if not isinstance(skills, dict):
+        return {}, ["skills-lock.json: missing skills mapping"]
+    return skills, []
+
+
+def _local_lock_skill_dirs(skills: Mapping[str, Any]) -> set[str]:
+    dirs: set[str] = set()
+    for name, row in skills.items():
+        source = row.get("source") if isinstance(row, dict) else None
+        if source in (None, LOCAL_LOCK_SOURCE):
+            dirs.add(name)
+    return dirs
+
+
+def lint_skills_lock(root: Path) -> list[str]:
+    skills, errors = _load_lock_skills(root)
+    if errors:
+        return errors
+
+    # Skills installed from another source (e.g. anthropics/skills -> skill-creator,
+    # which CI vendors into skills/) are legitimately on disk without a local lock row.
+    # Exclude them from the on-disk set so the check stays apples-to-apples with the
+    # local-source lock dirs; only fleet-owned drift should surface here.
+    external = {
+        name
+        for name, row in skills.items()
+        if isinstance(row, dict) and row.get("source") not in (None, LOCAL_LOCK_SOURCE)
+    }
+    expected = _skill_dirs_on_disk(root) - external
+    actual = _local_lock_skill_dirs(skills)
+    missing = sorted(expected - actual)
+    stale = sorted(actual - expected)
+
+    if missing:
+        errors.append(f"skills-lock.json: missing shipped skill dirs: {', '.join(missing)}")
+    if stale:
+        errors.append(f"skills-lock.json: stale skill dirs not on disk: {', '.join(stale)}")
+
+    return errors
+
+
+def lint_lock_hashes(root: Path) -> list[str]:
+    """Verify each locked ``computedHash`` matches the on-disk skill content.
+
+    Recomputes :func:`content_hash` for every locally-sourced skill row that
+    carries a ``computedHash`` and fails on any drift. Rows without a hash (e.g.
+    externally-vendored skills or minimal synthetic fixtures) are skipped here;
+    directory-name reconciliation is handled by :func:`lint_skills_lock`.
+    """
+    skills, errors = _load_lock_skills(root)
+    if errors:
+        return errors
+
+    for name in sorted(skills):
+        row = skills[name]
+        if not isinstance(row, dict):
+            continue
+        if row.get("source") not in (None, LOCAL_LOCK_SOURCE):
+            continue
+        expected = row.get("computedHash")
+        if not isinstance(expected, str):
+            continue
+        skill_dir = root / "skills" / name
+        if not (skill_dir / "SKILL.md").is_file():
+            errors.append(
+                f"skills-lock.json: {name} has computedHash but no skills/{name}/ on disk"
+            )
+            continue
+        actual = content_hash(skill_dir)
+        if actual != expected:
+            errors.append(
+                f"skills-lock.json: {name} computedHash mismatch "
+                f"(locked {expected[:12]}…, on disk {actual[:12]}…); "
+                f"refresh the lock or revert the content change"
+            )
+
+    return errors
+
+
+def lint_external_source_pins(root: Path) -> list[str]:
+    """Flag external lock rows that are not pinned to a concrete revision.
+
+    A bare ``"anthropics/skills"`` slug tracks a moving branch; require a
+    ``ref``/``commit``/``tag``/``sha`` so the vendored copy is reproducible.
+    """
+    skills, errors = _load_lock_skills(root)
+    if errors:
+        return errors
+
+    for name in sorted(skills):
+        row = skills[name]
+        if not isinstance(row, dict):
+            continue
+        source = row.get("source")
+        if source in (None, LOCAL_LOCK_SOURCE):
+            continue
+        pin_value = next(
+            (row[field] for field in _PIN_FIELDS if isinstance(row.get(field), str) and row[field]),
+            None,
+        )
+        if not pin_value:
+            errors.append(
+                f"skills-lock.json: external source {source!r} for {name} is not pinned "
+                f"(add one of {', '.join(_PIN_FIELDS)})"
+            )
+            continue
+        upper = pin_value.upper()
+        if "TODO" in upper or "PLACEHOLDER" in upper:
+            errors.append(
+                f"skills-lock.json: external source {source!r} for {name} uses placeholder pin {pin_value!r}"
+            )
+
+    return errors
+
+
+def _campaign_yaml_paths(root: Path) -> list[Path]:
+    paths: list[Path] = []
+    campaigns_dir = root / "scripts" / "campaigns"
+    if campaigns_dir.is_dir():
+        paths.extend(sorted(campaigns_dir.glob("*.yaml")))
+    dogfood_dir = root / "docs" / "external-dogfood"
+    if dogfood_dir.is_dir():
+        paths.extend(sorted(dogfood_dir.glob("*campaign*.yaml")))
+    # Top-level docs/ examples too (issue #94): docs/composition-e2e-campaign.yaml
+    # is advertised as a --campaign example and previously evaded this scan.
+    docs_dir = root / "docs"
+    if docs_dir.is_dir():
+        for path in sorted(docs_dir.glob("*.yaml")):
+            if path not in paths:
+                paths.append(path)
+    return paths
+
+
+def _campaign_allows_exploratory_nodes(spec: Mapping[str, Any]) -> bool:
+    return spec.get("allow_exploratory_nodes") is True or spec.get("exploratory") is True
+
+
+def _exploratory_mission_skill_exists(root: Path, mission: str) -> bool:
+    return (
+        root / "docs" / "exploratory" / "missions" / mission / "SKILL.md"
+    ).is_file()
+
+
+def _campaign_is_archived(spec: Mapping[str, Any]) -> bool:
+    status = spec.get("status")
+    if isinstance(status, str) and "archived" in status.lower():
+        return True
+    nodes = spec.get("nodes")
+    return not isinstance(nodes, dict) or not nodes
+
+
+def lint_campaign_missions(
+    root: Path, missions: Mapping[str, Mapping[str, Any]] = MISSIONS
+) -> list[str]:
+    errors: list[str] = []
+    shipped_ids = set(shipped_missions(missions))
+
+    for path in _campaign_yaml_paths(root):
+        try:
+            spec = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:
+            errors.append(f"{path.relative_to(root)}: invalid YAML: {exc}")
+            continue
+        if not isinstance(spec, dict):
+            continue
+        if _campaign_is_archived(spec):
+            continue
+        nodes = spec.get("nodes") or {}
+        campaign_id = spec.get("campaign", path.stem)
+        for node_id, node in nodes.items():
+            if not isinstance(node, dict):
+                continue
+            mission = node.get("mission")
+            if not isinstance(mission, str) or not mission:
+                continue
+            if mission not in missions:
+                errors.append(
+                    f"{path.relative_to(root)}: node {node_id!r} references unknown mission {mission!r}"
+                )
+            elif mission not in shipped_ids:
+                if _campaign_allows_exploratory_nodes(spec):
+                    if not _exploratory_mission_skill_exists(root, mission):
+                        errors.append(
+                            f"{path.relative_to(root)}: node {node_id!r} references exploratory "
+                            f"mission {mission!r} but docs/exploratory/missions/{mission}/SKILL.md "
+                            f"is missing"
+                        )
+                else:
+                    errors.append(
+                        f"{path.relative_to(root)}: node {node_id!r} references unshipped mission {mission!r} "
+                        f"(campaign {campaign_id!r}; archive the campaign or promote the mission)"
+                    )
+    return errors
+
+
+def lint_registry(
+    root: Path, missions: Mapping[str, Mapping[str, Any]] = MISSIONS
+) -> list[str]:
+    return (
+        lint_shipped_mission_dirs(root, missions)
+        + lint_catalog_mentions(root, missions)
+        + lint_skills_lock(root)
+        + lint_lock_hashes(root)
+        + lint_external_source_pins(root)
+        + lint_campaign_missions(root, missions)
+    )

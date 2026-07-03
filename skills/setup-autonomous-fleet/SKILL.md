@@ -8,7 +8,7 @@ license: MIT
 compatibility: Requires git; gh CLI recommended for PR workflows
 metadata:
   author: "ravidsrk"
-  version: "1.0.1"
+  version: "1.1.0"
   fleet-component: "setup"
 ---
 
@@ -32,8 +32,9 @@ Read what already exists; do not assume:
 
 ### 2. Present findings — one section at a time
 
-Walk the user through **three decisions** sequentially. Each section: short explainer, choices,
-default.
+Walk the user through the sections sequentially — A–C are decisions, D is an
+optional install, E is detect-and-record only. Each section: short explainer,
+choices, default.
 
 **Section A — Runtime adapter.**
 
@@ -89,6 +90,23 @@ When the user confirms, print or run:
 # after explicit consent:
 ./scripts/install-community.sh <bundle-id> --execute --host <adapter-host>
 ```
+
+**Section E — Substrate path (no user decision; detect and record).**
+
+Resolve where the Python verification substrate lives and record it as
+`SUBSTRATE_PATH` in `fleet-config.md`:
+
+- Framework clone (`./scripts/validate_run_archive.py` exists) → `scripts/`.
+- Skills-install → `.agents/skills/autonomous-fleet-core/assets/substrate/`
+  (ships with `autonomous-fleet-core`; version pinned in its
+  `substrate-manifest.json`).
+- Neither present → record `SUBSTRATE_PATH: none` and note that the four
+  verification layers run as prose-only disciplines until the core skill is
+  installed.
+
+Offer to install the substrate's Python deps into the repo's environment
+(`python3 -m pip install -r <SUBSTRATE_PATH>/requirements.txt`) — ask before
+touching any environment.
 
 ### 3. Confirm draft
 
