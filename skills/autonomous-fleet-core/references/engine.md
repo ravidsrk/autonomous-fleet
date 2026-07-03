@@ -37,7 +37,8 @@ never hard-codes a tool command — it calls the primitive by name and lets the 
 
 14. `CONTINUE_WORKER(role, placement, session_handle)` → re-attach an EXISTING resumable agent
     session for an in-flight task instead of spawning fresh. Adapters whose runtime exposes a
-    restore command (Grok `sessionId`, Codex thread, opencode session) implement it; adapters
+    restore command (`grok --resume <SESSION_ID>`, `codex exec resume [SESSION_ID]`,
+    `claude --resume <session-id>` — live-verified, issue #91) implement it; adapters
     without one ALIAS it to `SPAWN_WORKER` (the documented idempotent-relaunch fallback).
     OPTIONAL, like 9–13. Constrained to `live`-classified rows only (per `<SUBSTRATE>/recovery_scan.py`): never
     re-attach a session whose PR merged or whose branch is gone. Resume budget is bounded by a
