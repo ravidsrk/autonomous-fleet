@@ -303,10 +303,9 @@ run_with_timeout() {
   if kill -0 "$watch_pid" 2>/dev/null; then
     kill "$watch_pid" 2>/dev/null
     wait "$watch_pid" 2>/dev/null || true
-  else
-    # Watchdog already fired: normalize the kill signal to timeout's rc contract.
-    [[ "$rc" -eq 143 || "$rc" -eq 137 ]] && rc=124
   fi
+  # Normalize SIGTERM/SIGKILL from the watchdog to timeout's rc contract (124).
+  [[ "$rc" -eq 143 || "$rc" -eq 137 ]] && rc=124
   return "$rc"
 }
 
