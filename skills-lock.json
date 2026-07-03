@@ -65,7 +65,7 @@
       "source": "ravidsrk/autonomous-fleet",
       "sourceType": "github",
       "version": "1.1.0",
-      "computedHash": "b428b3b05ae256605eec9bdc4ca6a7f6d1b8bd89b6380e9629d81f219cab16d5"
+      "computedHash": "b5a378d969078331b8e84f894def91586df15c75a17690a0ce4844250e5bf8e7"
     },
     "skill-creator": {
       "source": "anthropics/skills",

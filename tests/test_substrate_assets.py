@@ -173,3 +173,16 @@ def test_main_check_and_sync_modes(tmp_path: Path, monkeypatch) -> None:
     assert ssa.main() == 0
     monkeypatch.setattr(sys, "argv", ["sync_substrate_assets.py", "--check"])
     assert ssa.main() == 0
+
+
+def test_check_flags_orphan_file_on_disk(tmp_path: Path, monkeypatch) -> None:
+    """Review finding (PR #109): a stray file ON DISK in the bundle (absent
+    from the manifest) must fail --check, not ship silently."""
+    import sync_substrate_assets as ssa
+
+    dest = tmp_path / "bundle"
+    monkeypatch.setattr(ssa, "DEST", dest)
+    ssa.sync()
+    (dest / "definitely_not_supposed_to_be_here.py").write_text("x = 1\n", encoding="utf-8")
+    (dest / "lib" / "rogue_lib.py").write_text("y = 2\n", encoding="utf-8")
+    assert ssa.check() == 1

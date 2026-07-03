@@ -138,6 +138,14 @@ def check() -> int:
     for rel in listed:
         if rel not in expected:
             errors.append(f"orphan bundled file listed: {rel}")
+    # Walk the bundle itself: a stray file ON DISK (bad merge, manual edit,
+    # renamed CLI) must not ship silently even when the manifest looks clean.
+    for path in sorted(DEST.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(DEST).as_posix()
+        if rel not in expected and rel != MANIFEST_NAME:
+            errors.append(f"orphan file on disk in bundle: {rel}")
     if manifest.get("core_version") != _core_version():
         errors.append(
             f"manifest core_version {manifest.get('core_version')!r} != SKILL.md {_core_version()!r}"
