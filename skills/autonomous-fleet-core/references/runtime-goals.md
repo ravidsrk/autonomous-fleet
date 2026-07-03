@@ -76,7 +76,7 @@ python3 <SUBSTRATE>/validate_fleet_outcome.py <readiness> passes on every readin
 ```
 Mission <mission-id> DONE: docs/<mission>-progress.md shows all mission task flags true,
 docs/<mission>-readiness.md exists with fleet-outcome.status done and mission metrics satisfied,
-all PRs merged into BASE, validate-fleet-outcome.sh passes.
+all PRs merged into BASE, the readiness fleet-outcome validates (python3 <SUBSTRATE>/validate_fleet_outcome.py per the engine's SUBSTRATE RESOLUTION; skip recorded when SUBSTRATE=none).
 ```
 
 ### Task unit (worker dispatch footer)
