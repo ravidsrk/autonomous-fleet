@@ -164,7 +164,7 @@ The template registers a single Stop hook that invokes the wrapper:
         "hooks": [
           {
             "type": "command",
-            "command": "${AUTONOMOUS_FLEET_HOME:-${CLAUDE_PROJECT_DIR}}/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh",
+            "command": "sh -c 'for p in \"${AUTONOMOUS_FLEET_HOME:-$CLAUDE_PROJECT_DIR}/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh\" \"$CLAUDE_PROJECT_DIR/.agents/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh\" \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-verify.sh\"; do [ -f \"$p\" ] && exec bash \"$p\"; done; echo \"stop-verify: wrapper not found; allowing\" >&2'",
             "timeout": 60
           }
         ]
@@ -174,10 +174,11 @@ The template registers a single Stop hook that invokes the wrapper:
 }
 ```
 
-That `command` line is the entire change to the adapter's hook config. It points
-Claude Code's Stop event at `stop-verify.sh`, which resolves the checkout (via
-`AUTONOMOUS_FLEET_HOME`, falling back to `CLAUDE_PROJECT_DIR`) and delegates to
-`scripts/stop_verify.py`. The `timeout: 60` caps the gate at 60 seconds so a slow
+That `command` line is the entire change to the adapter's hook config. It tries
+the framework clone's wrapper first (via `AUTONOMOUS_FLEET_HOME`, falling back to
+`CLAUDE_PROJECT_DIR`), then the skills-install copy under `.agents/skills/`, then
+a wrapper copied into `.claude/hooks/` — whichever exists runs under `bash` and
+delegates to the resolved `stop_verify.py`. The `timeout: 60` caps the gate at 60 seconds so a slow
 scan can never wedge a session.
 
 The next Claude Code session in this repo runs the gate.
@@ -189,7 +190,7 @@ this check after install. It pipes an empty CC payload through the wrapper and
 expects an `ALLOW`/verdict line on stderr with no error:
 
 ```bash
-echo '{}' | "$AUTONOMOUS_FLEET_HOME/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh"
+echo '{"cwd":"."}' | bash "$HOOKS/stop-verify.sh"   # HOOKS from the install section above
 ```
 
 What you should see:
