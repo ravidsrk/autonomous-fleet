@@ -1,0 +1,1 @@
+{"reviewed_sha": "3c245f7f238cfe65296720f9087758d2cb3e267c", "branch": "fleet/doc-sync-final-3e8173", "pr": 10, "verdict": "PASS", "review_rounds": 2, "round1": "FAIL (self-attested merge state; stale-ref deletion claims)", "reviewer": "codex-exec-fresh", "reviewer_mode": "separate-process same-vendor (build-blind: diff+acceptance only)"}
