@@ -100,6 +100,11 @@ def test_shipped_mission_metrics_have_operational_definitions() -> None:
             assert f"`{metric}`" in section, f"{mission}:{metric} lacks a definition"
             # A definition is a dash-led entry with prose, not a bare mention.
             assert any(
-                line.strip().startswith(f"- `{metric}`") and len(line) > 40
+                (s := line.strip()).startswith("- `")
+                and len(s) > 40
+                and (
+                    s.startswith(f"- `{metric}`")
+                    or f" / `{metric}`" in s.split(" — ", 1)[0]
+                )
                 for line in section.splitlines()
             ), f"{mission}:{metric} entry is not a definition"
