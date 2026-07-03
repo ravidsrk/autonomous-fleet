@@ -186,3 +186,15 @@ def test_check_flags_orphan_file_on_disk(tmp_path: Path, monkeypatch) -> None:
     (dest / "definitely_not_supposed_to_be_here.py").write_text("x = 1\n", encoding="utf-8")
     (dest / "lib" / "rogue_lib.py").write_text("y = 2\n", encoding="utf-8")
     assert ssa.check() == 1
+
+
+def test_check_flags_requirements_missing_or_drifted(tmp_path: Path, monkeypatch) -> None:
+    import sync_substrate_assets as ssa
+
+    dest = tmp_path / "bundle"
+    monkeypatch.setattr(ssa, "DEST", dest)
+    ssa.sync()
+    (dest / "requirements.txt").write_text("SomethingElse==1\n", encoding="utf-8")
+    assert ssa.check() == 1
+    (dest / "requirements.txt").unlink()
+    assert ssa.check() == 1
