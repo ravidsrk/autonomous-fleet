@@ -242,6 +242,13 @@ def _campaign_yaml_paths(root: Path) -> list[Path]:
     dogfood_dir = root / "docs" / "external-dogfood"
     if dogfood_dir.is_dir():
         paths.extend(sorted(dogfood_dir.glob("*campaign*.yaml")))
+    # Top-level docs/ examples too (issue #94): docs/composition-e2e-campaign.yaml
+    # is advertised as a --campaign example and previously evaded this scan.
+    docs_dir = root / "docs"
+    if docs_dir.is_dir():
+        for path in sorted(docs_dir.glob("*.yaml")):
+            if path not in paths:
+                paths.append(path)
     return paths
 
 
