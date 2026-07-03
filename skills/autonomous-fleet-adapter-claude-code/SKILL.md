@@ -12,7 +12,7 @@ license: MIT
 compatibility: Requires Claude Code with Task tool, git worktrees, and gh CLI
 metadata:
   author: "ravidsrk"
-  version: "1.1.6"
+  version: "1.1.7"
   fleet-component: "adapter"
 ---
 
@@ -248,13 +248,11 @@ freshness window. It is OPT-IN and fail-open (a broken gate degrades to loose mo
 
 ## RESUMABILITY + REVIEWER ISOLATION (Wave 3 contract)
 
-- run_short: every isolated branch and worktree carries the active run's 6-hex suffix
-  (`<BRANCH_PREFIX><slug>-<run_short>`, `../<repo>-<slug>-<run_short>`, run_short = the 6-hex tail of
-  the run_id) so parallel runs/checkouts never collide on a bare slug.
-  `<SUBSTRATE>/validate_namespacing.py` enforces this.
-- CONTINUE_WORKER(role, placement, session_handle): `claude --resume <session-id>` (VERIFIED Claude Code 2.1.200, issue #91; `-c` re-attaches the cwd's most recent, `--from-pr <n>` by PR). On older CLIs without --resume, ALIAS to SPAWN_WORKER (idempotent relaunch). Re-attach only for `live`-classified
-  rows (per `recovery_scan.py`); never re-attach a session whose PR merged or branch is gone. When a
-  row's `RESUME_COUNT` hits `MAX_RESUME_ATTEMPTS` (3), escalate instead of continuing.
-- Reviewer isolation: when role==reviewer, launch the worker via
-  `scripts/run-sandboxed.sh --role reviewer -- <reviewer-cli>` so the candidate tree is read-only and
-  only `.fleet/runs/<run_id>/` is writable.
+Follow the single-sourced contract in
+`autonomous-fleet-core` → `references/adapter-contract.md` (issue #89 — do
+NOT re-inline it here; the drift lint fails copies). It covers run_short
+branch/worktree namespacing, the CONTINUE_WORKER resume discipline
+(RESUME_COUNT / MAX_RESUME_ATTEMPTS), and reviewer write-isolation. This
+adapter's only runtime-specific binding:
+
+- CONTINUE_WORKER binding: `claude --resume <session-id>` (VERIFIED Claude Code 2.1.200, issue #91; `-c` re-attaches the cwd's most recent, `--from-pr <n>` by PR); older CLIs ALIAS to SPAWN_WORKER

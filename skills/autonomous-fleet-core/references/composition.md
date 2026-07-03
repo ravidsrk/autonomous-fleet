@@ -92,7 +92,7 @@ Use `fleet-program` for sequential chains **and** conditional DAGs (campaigns). 
 |------|---------|-------------|
 | 1 | name + description | Catalog at session start |
 | 2 | SKILL.md body | On activation (core + adapter + mission) |
-| 3 | references/, scripts/ | `engine.md`, mission-specific refs, on demand |
+| 3 | references/, scripts/ | `engine.md`, `adapter-contract.md` (shared adapter contract — adapters point here), mission-specific refs, on demand |
 
 Keep mission `SKILL.md` under ~500 lines; move bulky reference material to `references/`.
 
