@@ -21,14 +21,37 @@ def test_shipped_missions_are_not_in_exploratory_list() -> None:
         assert shipped not in exploratory
 
 
-def test_adversarial_has_archive_evidence() -> None:
+def test_adversarial_archive_evidence_excludes_quarantined_run() -> None:
+    """Issue #78: the 8358f1 archive was quarantined to .fleet/fixtures/ and its
+    dogfood doc carries the promotion-evidence exclusion marker — neither may
+    count as archive evidence anymore. Other dogfood docs (bench, gemoji) still
+    reference the mission and remain the discoverable refs."""
     from lib.mission_promotion import assess_promotion
 
     report = assess_promotion(ROOT, "adversarial-review-and-fix")
-    assert report.archive_refs
-    assert "first-substrate" in " ".join(report.archive_refs) or any(
-        ".fleet/runs" in ref for ref in report.archive_refs
+    joined = " ".join(report.archive_refs)
+    assert "first-substrate" not in joined
+    assert "8358f1" not in joined
+
+
+def test_evidence_exclusion_marker_skips_doc(tmp_path: Path) -> None:
+    """A dogfood doc with the exclusion marker must not count as archive
+    evidence even when it names the mission and a run-id."""
+    from lib.mission_promotion import _archive_evidence
+
+    dogfood = tmp_path / "docs" / "external-dogfood"
+    dogfood.mkdir(parents=True)
+    body = (
+        "# run notes\nmission demo-mission ran as "
+        "20260101T000000Z-demo-mission-abc123 under .fleet/runs/\n"
     )
+    (dogfood / "counted.md").write_text(body, encoding="utf-8")
+    (dogfood / "excluded.md").write_text(
+        "<!-- promotion-evidence: exclude -->\n" + body, encoding="utf-8"
+    )
+
+    refs = _archive_evidence(tmp_path, "demo-mission")
+    assert refs == ["docs/external-dogfood/counted.md"]
 
 
 def test_cleanup_not_promotion_ready() -> None:

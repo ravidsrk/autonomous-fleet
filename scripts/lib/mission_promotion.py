@@ -17,6 +17,9 @@ _PROGRESS_RE = re.compile(r"PHASE:\s*(DONE|BLOCKED)", re.IGNORECASE)
 _ARCHIVE_RUN_ID_RE = re.compile(
     r"[0-9]{8}T[0-9]{6}Z-[a-z][a-z0-9-]*[a-z0-9]-[0-9a-f]{6}"
 )
+# A dogfood doc carrying this marker describes a quarantined/withdrawn archive
+# (e.g. .fleet/fixtures/first-substrate-8358f1) and must not count as evidence.
+_EVIDENCE_EXCLUDE_MARKER = "<!-- promotion-evidence: exclude -->"
 
 
 @dataclass(frozen=True)
@@ -89,6 +92,8 @@ def _archive_evidence(repo_root: Path, mission: str) -> list[str]:
             try:
                 text = md.read_text(encoding="utf-8")
             except OSError:
+                continue
+            if _EVIDENCE_EXCLUDE_MARKER in text:
                 continue
             if mission not in text and mission.replace("-", "_") not in text:
                 continue
