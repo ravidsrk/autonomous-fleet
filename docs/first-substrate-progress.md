@@ -4,7 +4,7 @@ PHASE: DONE
 MISSION: adversarial-review-and-fix   REPO: autonomous-fleet   BASE: main
 REVIEW_DOC: docs/first-substrate-review.md
 COORDINATOR: grok headless via run-mission-headless.sh
-RUN_ARCHIVE: .fleet/runs/20260626T200255Z-adversarial-review-and-fix-8358f1/
+RUN_ARCHIVE: .fleet/fixtures/first-substrate-8358f1/ (quarantined from .fleet/runs/20260626T200255Z-adversarial-review-and-fix-8358f1/ — issue #78; wiring fixture, not review evidence)
 
 ## SCOPE (frozen at kickoff)
 

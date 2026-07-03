@@ -41,7 +41,11 @@ fleet-outcome:
 
 ## Archive
 
-Validated at `.fleet/runs/20260626T200255Z-adversarial-review-and-fix-8358f1/`.
+Validated at the time of the run as
+`.fleet/runs/20260626T200255Z-adversarial-review-and-fix-8358f1/`; since
+**quarantined to `.fleet/fixtures/first-substrate-8358f1/`** (issue #78) because its
+reviewer and skeptic findings are byte-identical — a wiring fixture, not evidence of
+independent review (see the fixture's README disclosure).
 
 ## Recommended next missions
 
