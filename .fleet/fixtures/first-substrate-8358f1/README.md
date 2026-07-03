@@ -1,4 +1,12 @@
-# Run archive 20260626T200255Z-adversarial-review-and-fix-8358f1
+# QUARANTINED WIRING FIXTURE — formerly run archive 20260626T200255Z-adversarial-review-and-fix-8358f1
+
+> **Quarantined out of `.fleet/runs/` (issue #78).** This directory is a
+> wiring-validation fixture, **not** a run archive: never cite it as evidence of
+> build-blind review, independent skeptic review, or autonomous PR landing. It
+> was moved to `.fleet/fixtures/` so the run-archive validators and the
+> promotion-evidence scan no longer treat it as a first-class run — its reviewer
+> and skeptic findings are byte-identical (see Disclosure below), which a
+> validated run archive must never exhibit (issue #77 adds that invariant).
 
 First real substrate archive (Lane 1 dogfood).
 
