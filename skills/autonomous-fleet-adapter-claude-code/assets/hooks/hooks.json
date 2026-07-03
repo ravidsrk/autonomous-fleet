@@ -1,5 +1,5 @@
 {
-  "_comment": "autonomous-fleet Claude Code hooks template — opt-in 'strict mode'. Install: copy this file to .claude/settings.json (or merge into the existing hooks block). The Stop hook refuses session termination when no EVID / WT_CLEAN / e2e_verified / verify_summary / test_artifact / e2e_artifact evidence exists in the last 30min. See references/strict-mode.md for the full walkthrough.",
+  "_comment": "autonomous-fleet Claude Code hooks template \u2014 opt-in 'strict mode'. Install: copy this file to .claude/settings.json (or merge into the existing hooks block). Works in BOTH install modes: the command tries the framework clone (AUTONOMOUS_FLEET_HOME) and the skills-install copy under .agents/skills/ (issue #82). The Stop hook refuses session termination when no EVID / WT_CLEAN / e2e_verified / verify_summary / test_artifact / e2e_artifact evidence exists in the last 30min. See references/strict-mode.md for the full walkthrough.",
   "_lineage": "Hook contract follows Claude Code Stop-hook spec. Pattern adapted from claude-code-orchestra/.claude/hooks/stop-verify.sh and multi-llm-plugin-cc/plugins/llm/hooks/hooks.json. See docs/competitor-audit-2026-06-22.md #2.",
   "hooks": {
     "Stop": [
@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${AUTONOMOUS_FLEET_HOME:-${CLAUDE_PROJECT_DIR}}/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh",
+            "command": "sh -c 'for p in \"${AUTONOMOUS_FLEET_HOME:-$CLAUDE_PROJECT_DIR}/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh\" \"$CLAUDE_PROJECT_DIR/.agents/skills/autonomous-fleet-adapter-claude-code/assets/hooks/stop-verify.sh\" \"$CLAUDE_PROJECT_DIR/.claude/hooks/stop-verify.sh\"; do [ -f \"$p\" ] && exec bash \"$p\"; done; echo \"stop-verify: wrapper not found; allowing\" >&2'",
             "timeout": 60
           }
         ]
