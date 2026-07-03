@@ -223,7 +223,9 @@ If `manifest.json` is not present yet, add `--mission <slug> --run-id <run_id>`.
 
 Follow the single-sourced contract in
 `autonomous-fleet-core` → `references/adapter-contract.md` (issue #89 — do
-NOT re-inline it here; the drift lint fails copies). This adapter's only
-runtime-specific binding:
+NOT re-inline it here; the drift lint fails copies). It covers run_short
+branch/worktree namespacing, the CONTINUE_WORKER resume discipline
+(RESUME_COUNT / MAX_RESUME_ATTEMPTS), and reviewer write-isolation. This
+adapter's only runtime-specific binding:
 
 - CONTINUE_WORKER binding: `grok --resume <SESSION_ID>` (or `-c`/`--continue` for the cwd's most recent; `--fork-session` to branch) — VERIFIED grok 0.2.82; else ALIAS to SPAWN_WORKER

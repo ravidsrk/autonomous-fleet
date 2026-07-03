@@ -249,7 +249,9 @@ on them.
 
 Follow the single-sourced contract in
 `autonomous-fleet-core` → `references/adapter-contract.md` (issue #89 — do
-NOT re-inline it here; the drift lint fails copies). This adapter's only
-runtime-specific binding:
+NOT re-inline it here; the drift lint fails copies). It covers run_short
+branch/worktree namespacing, the CONTINUE_WORKER resume discipline
+(RESUME_COUNT / MAX_RESUME_ATTEMPTS), and reviewer write-isolation. This
+adapter's only runtime-specific binding:
 
 - CONTINUE_WORKER binding: none documented -> ALIAS to SPAWN_WORKER (idempotent relaunch)

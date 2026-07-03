@@ -250,7 +250,9 @@ freshness window. It is OPT-IN and fail-open (a broken gate degrades to loose mo
 
 Follow the single-sourced contract in
 `autonomous-fleet-core` → `references/adapter-contract.md` (issue #89 — do
-NOT re-inline it here; the drift lint fails copies). This adapter's only
-runtime-specific binding:
+NOT re-inline it here; the drift lint fails copies). It covers run_short
+branch/worktree namespacing, the CONTINUE_WORKER resume discipline
+(RESUME_COUNT / MAX_RESUME_ATTEMPTS), and reviewer write-isolation. This
+adapter's only runtime-specific binding:
 
 - CONTINUE_WORKER binding: `claude --resume <session-id>` (VERIFIED Claude Code 2.1.200, issue #91; `-c` re-attaches the cwd's most recent, `--from-pr <n>` by PR); older CLIs ALIAS to SPAWN_WORKER

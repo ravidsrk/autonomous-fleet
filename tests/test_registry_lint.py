@@ -94,7 +94,10 @@ def test_adapter_contract_single_source_lint(tmp_path) -> None:
     assert any("re-inlines" in e for e in errors)
     good = repo / "skills/autonomous-fleet-adapter-good"
     good.mkdir(parents=True)
-    (good / "SKILL.md").write_text("see references/adapter-contract.md\n", encoding="utf-8")
+    (good / "SKILL.md").write_text(
+        "see references/adapter-contract.md\nCONTINUE_WORKER binding: none -> ALIAS\n",
+        encoding="utf-8",
+    )
     errors = lint_adapter_contract_single_source(repo)
     assert not any("adapter-good" in e for e in errors)
     canon_dst.unlink()

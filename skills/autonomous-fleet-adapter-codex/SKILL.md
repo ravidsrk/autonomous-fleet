@@ -189,7 +189,9 @@ Chain worker events with `--parent-event`. See `docs/guide/16-trace-schema.md`.
 
 Follow the single-sourced contract in
 `autonomous-fleet-core` → `references/adapter-contract.md` (issue #89 — do
-NOT re-inline it here; the drift lint fails copies). This adapter's only
-runtime-specific binding:
+NOT re-inline it here; the drift lint fails copies). It covers run_short
+branch/worktree namespacing, the CONTINUE_WORKER resume discipline
+(RESUME_COUNT / MAX_RESUME_ATTEMPTS), and reviewer write-isolation. This
+adapter's only runtime-specific binding:
 
 - CONTINUE_WORKER binding: `codex exec resume <SESSION_ID>` (VERIFIED codex-cli 0.140.0); else ALIAS to SPAWN_WORKER
