@@ -10,7 +10,7 @@ license: MIT
 compatibility: Reference template for adapter authors; not a runnable mission
 metadata:
   author: "ravidsrk"
-  version: "1.1.2"
+  version: "1.1.3"
   fleet-component: "adapter-template"
   runnable: "false"
 ---
@@ -108,7 +108,7 @@ context limit via the CONTEXT HANDOFF block in the ledger.>
 
 ## NON-NEGOTIABLES THAT DO NOT CHANGE PER TOOL
 These come from the core and your adapter must NOT weaken them:
-- One PR per unit, commits preserved, NEVER squash, authored by MAINTAINER, no agent/tool trailers.
+- One PR per unit, commits preserved, NEVER squash, authored by MAINTAINER, trailers per the engine's AUTHORSHIP_MODE (default attributed).
 - Conflict-aware merge (never force a merge over conflicts or a red suite).
 - Checkout cleanup on every merge.
 - Safety rails (testnet/staging/fixtures only; merge ≠ deploy; infra-is-code).
