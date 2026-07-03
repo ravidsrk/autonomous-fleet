@@ -49,3 +49,26 @@ def test_version_literal_lint_skips_on_lock_errors(tmp_path) -> None:
     (tmp_path / "tests").mkdir()
     (tmp_path / "skills-lock.json").write_text("{not json", encoding="utf-8")
     assert lint_no_skill_version_literals_in_tests(tmp_path) == []
+
+
+def test_mission_state_lint_clean_on_repo_and_catches_unmarked(tmp_path) -> None:
+    """Issue #92: routing docs presenting an exploratory mission without a
+    marker fail; the real repo is clean."""
+    import shutil
+    from lib.registry_lint import lint_mission_state_docs
+
+    assert lint_mission_state_docs(ROOT) == []
+
+    repo = tmp_path / "repo"
+    (repo / "scripts").mkdir(parents=True)
+    shutil.copytree(ROOT / "scripts" / "lib", repo / "scripts" / "lib")
+    doc = repo / "skills" / "autonomous-fleet" / "references"
+    doc.mkdir(parents=True)
+    (doc / "missions.md").write_text(
+        "# catalog\n\n| intent | mission |\n|---|---|\n| find bugs | `bug-batch` |\n",
+        encoding="utf-8",
+    )
+    errors = lint_mission_state_docs(repo)
+    assert any("bug-batch" in e and "missions.md:5" in e for e in errors)
+    # shipped-mission catalog check also fires on this minimal repo
+    assert any("shipped mission" in e for e in errors)
