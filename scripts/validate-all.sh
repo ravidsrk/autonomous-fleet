@@ -225,6 +225,15 @@ if ! "$VENV_PYTHON" scripts/sync_substrate_assets.py --check; then
 fi
 
 echo ""
+echo "== instruction-budget (composed mandatory surface cap) =="
+# Counterpressure against doctrine growth (issue #87): the composed per-run
+# instruction surface must stay within docs/instruction-budget.json.
+if ! "$VENV_PYTHON" scripts/check_instruction_budget.py; then
+  echo "instruction-budget: over budget; slim the corpus or raise the budget deliberately" >&2
+  exit 1
+fi
+
+echo ""
 echo "== validate-headless (mechanical dry-run wiring) =="
 ./scripts/validate-headless.sh
 

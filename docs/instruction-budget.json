@@ -1,0 +1,4 @@
+{
+  "max_bytes": 170000,
+  "note": "Composed mandatory instruction surface cap (issue #87). Raising this is a deliberate act \u2014 justify it in the commit that grows the corpus. Measured by scripts/check_instruction_budget.py."
+}
