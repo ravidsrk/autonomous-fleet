@@ -31,6 +31,16 @@ When intent is vague, suggest `fleet-program` preset: **`<preset-id>`**
 | align-then-ship | take-product-to-completion (+ pre-gate) |
 | quality-gate | adversarial-review-and-fix → test-coverage |
 
+## Substrate
+
+| Field | Value |
+|-------|-------|
+| SUBSTRATE_PATH | `scripts/` (framework clone) or `.agents/skills/autonomous-fleet-core/assets/substrate/` (skills-install) |
+| Substrate version | from `<SUBSTRATE_PATH>/substrate-manifest.json` `core_version` (clone: core SKILL.md version) |
+| Python deps | installed from `<SUBSTRATE_PATH>/requirements.txt` — yes / no |
+
+Coordinators invoke validators as `python3 <SUBSTRATE_PATH>/<validator>.py …`.
+
 ## Community skills
 
 | Bundle id | Installed | Mode | Notes |
