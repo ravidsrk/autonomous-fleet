@@ -72,9 +72,27 @@ def validate_archive_path(archive: Path) -> list[str]:
 
 
 def main() -> int:
-    from lib.substrate_disable import announce_disabled, is_disabled
+    from lib.substrate_disable import (
+        SECURITY_OVERRIDE_ACK_ENV,
+        announce_disabled,
+        is_disabled,
+        is_security_disable_acknowledged,
+    )
 
     if is_disabled("FLEET_DISABLE_NAMESPACING"):
+        # Namespacing is classed fail-closed in substrate-disable-knobs.md:
+        # collisions between parallel runs are an integrity hazard, so a bare
+        # env var must not drop the check (codex review on #117 found the
+        # implementation contradicted the registry). Require the explicit ack.
+        if not is_security_disable_acknowledged():
+            print(
+                "validate-namespacing: REFUSING to disable a fail-closed check "
+                "via FLEET_DISABLE_NAMESPACING without explicit operator "
+                f"override. Set {SECURITY_OVERRIDE_ACK_ENV}=1 to acknowledge "
+                "(record in DECISIONS.md); failing closed.",
+                file=sys.stderr,
+            )
+            return 1
         return announce_disabled("validate-namespacing", "FLEET_DISABLE_NAMESPACING")
 
     parser = argparse.ArgumentParser(
