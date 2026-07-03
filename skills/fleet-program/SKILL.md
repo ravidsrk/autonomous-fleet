@@ -15,7 +15,7 @@ license: MIT
 compatibility: Requires git and gh CLI; install mission skills via npx skills
 metadata:
   author: "ravidsrk"
-  version: "1.2.3"
+  version: "1.2.4"
   fleet-component: "program"
 ---
 
