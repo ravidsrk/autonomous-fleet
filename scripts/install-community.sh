@@ -2,8 +2,6 @@
 # Install documented community skill bundles (opt-in; no surprise execution without --execute).
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-
 usage() {
   cat <<'EOF'
 Usage: install-community.sh <bundle|gstack|agent-skills|mattpocock> [options]
@@ -36,7 +34,6 @@ EOF
 
 BUNDLE=""
 HOST="grok"
-DRY_RUN=1
 EXECUTE=0
 RECORD=""
 
@@ -47,12 +44,10 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --dry-run)
-      DRY_RUN=1
       EXECUTE=0
       shift
       ;;
     --execute)
-      DRY_RUN=0
       EXECUTE=1
       shift
       ;;
