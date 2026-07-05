@@ -17,7 +17,9 @@ run records** — useful as an audit trail, but read each with its date in mind.
 - [`adopt-container-use.md`](adopt-container-use.md) — notes on the `container-use` placement option.
 
 ## Research (point-in-time explorations)
-- [`research-skill-composition.md`](research-skill-composition.md), [`research-community-skills.md`](research-community-skills.md), [`research-runtime-loops-and-goals.md`](research-runtime-loops-and-goals.md), [`research-notes.md`](research-notes.md), [`gap-analysis-genesis-prompts.md`](gap-analysis-genesis-prompts.md)
+- [`research-community-skills.md`](research-community-skills.md), [`research-notes.md`](research-notes.md)
+- Superseded research (skill composition, runtime loops/goals, genesis-prompt gap analysis) was
+  removed once its content shipped into `references/` and the close-gaps run — see git history.
 
 ## Run records — ledgers & readiness (load-bearing; validators read these)
 - Progress ledgers: `arch-build-progress.md`, `doc-sync-progress.md`, `test-coverage-progress.md`, `fleet-program-progress.md`, `composition-e2e-goals.md`
