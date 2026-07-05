@@ -278,14 +278,12 @@ run_one_mode() {
   fi
 
   local runs_before_id=""
-  local runs_before_score=-1
   local runs_dir="$clone_dir/.fleet/runs"
   mkdir -p "$runs_dir"
   if [[ -n "$(latest_archive_in "$runs_dir" || true)" ]]; then
     local before_archive
     before_archive="$(latest_archive_in "$runs_dir")"
     runs_before_id="$(basename "$before_archive")"
-    runs_before_score="$(archive_score "$before_archive")"
   fi
 
   if [[ "$mode" == "off" ]]; then
