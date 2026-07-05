@@ -206,14 +206,12 @@ post_run_validate() {
   local blind_fix_rc=0
 
   echo "  post-run validate: $archive"
-  "$VENV_PYTHON" "$ROOT/scripts/validate_run_archive.py" "$archive"
-  validate_rc=$?
+  "$VENV_PYTHON" "$ROOT/scripts/validate_run_archive.py" "$archive" || validate_rc=$?
   if [[ "$validate_rc" -ne 0 ]]; then
     echo "  warning: validate_run_archive.py failed (rc=$validate_rc)" >&2
   fi
   if [[ "$mode" == "on" ]]; then
-    "$VENV_PYTHON" "$ROOT/scripts/verify_blind_fix.py" "$archive"
-    blind_fix_rc=$?
+    "$VENV_PYTHON" "$ROOT/scripts/verify_blind_fix.py" "$archive" || blind_fix_rc=$?
     if [[ "$blind_fix_rc" -ne 0 ]]; then
       echo "  warning: verify_blind_fix.py failed (rc=$blind_fix_rc)" >&2
     fi
@@ -329,9 +327,7 @@ run_one_mode() {
     record_run_summary "$name" "$mode" "" 1 1
     return 1
   fi
-  local score_now
-  score_now="$(archive_score "$archive")"
-  if [[ -n "$runs_before_id" && ( "$(basename "$archive")" == "$runs_before_id" || "$score_now" -le "$runs_before_score" ) ]]; then
+  if [[ -n "$runs_before_id" && "$(basename "$archive")" == "$runs_before_id" ]]; then
     # Prefer any non-dryrun archive with mission findings (not the prior run id).
     local candidate candidate_path
     shopt -s nullglob
