@@ -188,8 +188,6 @@ Rule: humans pick **bundle + repo**; fleet picks **mission**; workers pick **dom
 
 | Doc | Topic |
 |-----|-------|
-| `docs/research-skill-composition.md` | Fleet composition model |
-| `docs/research-runtime-loops-and-goals.md` | Native goal binding |
 | `skills/autonomous-fleet-core/references/composition.md` | Required / Optional / Worker |
 | `skills/autonomous-fleet-core/references/community-skills.md` | Install + mix-and-match catalog |
 | `skills/fleet-program/references/campaigns.md` | Campaign DAG presets |
