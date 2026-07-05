@@ -5,9 +5,59 @@
 All notable changes to `autonomous-fleet` are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Dates are merge dates in IST.
 
-**On this page:** [Unreleased](#unreleased) · [0.2.2](#022---2026-06-27) · [0.2.1](#021---2026-06-27) · [0.2.0](#020---2026-06-27) · [0.1.0](#010---2026-06-26) · [Conventions](#conventions)
+**On this page:** [Unreleased](#unreleased) · [0.3.0](#030---2026-07-05) · [0.2.3](#023---2026-06-29) · [0.2.2](#022---2026-06-27) · [0.2.1](#021---2026-06-27) · [0.2.0](#020---2026-06-27) · [0.1.0](#010---2026-06-26) · [Conventions](#conventions)
 
 ## [Unreleased]
+
+## [0.3.0] - 2026-07-05
+
+Trust-layer repositioning: standalone verification, mechanical gates for the shipped
+surface, an instruction-budget diet, and a pruned mission catalog.
+
+### Added
+
+- **`fleet-verify` CLI + GitHub Action** — `scripts/fleet_verify.py` replays every
+  verification layer (findings re-quote, blind-fix anti-anchoring, archive manifest +
+  sha256, `fleet-outcome` gates, trace schema) against one `.fleet/runs/<run_id>/`
+  directory, from this framework or any agent's artifacts. Truly-absent artifacts SKIP
+  by name, but a missing manifest (or a manifest naming evidence a layer then can't
+  verify) is a hard fail; an empty or manifest-less run dir exits 2 (empty verification
+  is not success). Ships with a
+  composite `action.yml` for PR-side gating and a mutation guard
+  (`fleet-verify-empty-run-not-success`).
+- **`reviewer_mode` in `fleet-outcome`** — enum (`cross-vendor-structural` |
+  `same-vendor-instructed` | `single-process-instructed`) enforced by the validator:
+  invalid values fail, absence warns. Spec in `references/fleet-outcome.md`; example
+  fixture records `cross-vendor-structural`; mutation guard
+  (`reviewer-mode-enum-guard-off`).
+- **Shipped-mission evidence gate** — `validate_mission_promotion.py --require-shipped`
+  asserts every mission in `skills/` carries the progress + readiness + archive triple,
+  resolving ledger names through the mission registry (adversarial's `arch-build-*`
+  prefix included); wired into `validate-all.sh` with zero escapes. A documented
+  `--known-gap` hatch exists but is unused.
+- **Trigger-loaded engine references** — `engine-autonomy.md`, `engine-workers.md`,
+  `engine-review.md`, `engine-recovery.md` under `autonomous-fleet-core/references/`.
+
+### Changed
+
+- **`engine.md` 944 → 264 lines** — always-read core capped at 300 lines by
+  `check_instruction_budget.py` (`docs/instruction-budget.json` ratchet); all doctrine
+  moved verbatim into the four trigger-loaded references; every deep link retargeted.
+- **README repositioned** — leads with the verification substrate, answers the
+  single-agent-first critique, documents `fleet-verify`, and fixes the dead Orca link
+  (`diggerhq/orca` → `stablyai/orca`).
+- Architecture/menu counts, plugin description, and guide/docs-site catalog updated to
+  12 exploratory + 6 archived; test suite now 72 files / 1522 tests.
+
+### Removed
+
+- **Six exploratory missions parked** to `docs/exploratory/missions/archive/` —
+  `release-document`, `devex-audit`, `landing-page-convergence`, `product-framing`,
+  `security-cso-audit`, `legacy-rebuild` — for overlap with the shipped surface or
+  missing enforcement machinery. Un-parking requires the evidence triple plus a written
+  differentiation case (see the archive README). `gstack-quality` campaign is now an
+  archived stub; active gstack community-preflight slugs reduce to `browser-qa-fix` +
+  `incident-investigate`.
 
 ## [0.2.3] - 2026-06-29
 

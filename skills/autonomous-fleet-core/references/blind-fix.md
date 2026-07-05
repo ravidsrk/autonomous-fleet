@@ -46,7 +46,7 @@ For each finding `<finding-id>` in `<run_id>`:
   measure how close the reviewer's pre-commit guess matches the eventual
   fix. The protocol is about ordering, not accuracy.
 - Multi-reviewer agreement. That's a separate concern (cross-vendor
-  diversity audit, see `engine.md` SIGNAL RECONCILIATION).
+  diversity audit, see `signals.md` SIGNAL RECONCILIATION).
 
 # Failure modes the verifier catches
 
@@ -76,9 +76,9 @@ For each finding `<finding-id>` in `<run_id>`:
 # Lineage
 
 - `review-findings.md` § ANTI-ANCHORING (the protocol)
-- `engine.md` ROLE TIER (reviewer is STRONG tier; this verifier protects
+- `cost-routing.md` ROLE TIER (reviewer is STRONG tier; this verifier protects
   the most-expensive reviewer slot)
-- `engine.md` SIGNAL RECONCILIATION (Layer 3 is one of the reconciled
+- `signals.md` SIGNAL RECONCILIATION (Layer 3 is one of the reconciled
   signals, alongside Layer 1 verification and Layer 2 stop-verify
   decisions)
 

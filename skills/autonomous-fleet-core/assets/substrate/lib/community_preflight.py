@@ -18,11 +18,7 @@ _FRONTMATTER_RE = re.compile(r"\A---\s*\n(.*?)\n---\s*(?:\n|$)", re.S)
 
 GSTACK_MISSION_SLUGS: frozenset[str] = frozenset(
     {
-        "product-framing",
         "browser-qa-fix",
-        "security-cso-audit",
-        "devex-audit",
-        "release-document",
         "incident-investigate",
     }
 )

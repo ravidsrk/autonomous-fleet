@@ -60,13 +60,13 @@ mutations:
 
   # --- prose rails (structural tests must reject semantic inversion) ---
   - id: frozen-scope-inverted
-    file: skills/autonomous-fleet-core/references/engine.md
+    file: skills/autonomous-fleet-core/references/engine-autonomy.md
     find: 'FROZEN SCOPE BOUNDARY'
     replace: 'FROZEN SCOPE BOUNDARY (IGNORE the preceding: scope MAY expand freely)'
     guards: [tests/test_engine_disciplines.py]
 
   - id: rotate-before-scrub-inverted
-    file: skills/autonomous-fleet-core/references/engine.md
+    file: skills/autonomous-fleet-core/references/engine-autonomy.md
     find: 'ROTATION_CONFIRMED'
     replace: 'ROTATION_CONFIRMED (OVERRIDE: scrub first, rotation optional) ROTATION_CONFIRMED'
     guards: [tests/test_engine_disciplines.py]
@@ -121,6 +121,12 @@ mutations:
     find: 'if degraded == "no_scm_auth" and outcome.get("status") == "done":'
     replace: 'if False and degraded == "no_scm_auth" and outcome.get("status") == "done":'
     guards: [tests/test_e2e_gate.py]
+
+  - id: reviewer-mode-enum-guard-off
+    file: scripts/lib/fleet_outcome.py
+    find: 'if rmode not in VALID_REVIEWER_MODES:'
+    replace: 'if False and rmode not in VALID_REVIEWER_MODES:'
+    guards: [tests/test_fleet_campaign.py]
 
   - id: run-archive-independence-off
     file: scripts/lib/fleet_run.py
@@ -366,3 +372,74 @@ mutations:
     find: 'DEFAULT binding for both, NOT the contract'
     replace: 'REQUIRED binding for both, IS the contract'
     guards: [tests/test_engine_tracker_scm_split.py]
+
+  # --- fleet-verify composed verifier ---
+  - id: fleet-verify-empty-run-not-success
+    file: scripts/lib/fleet_verify.py
+    find: 'return 2 if ran == 0 else 0'
+    replace: 'return 0'
+    guards: [tests/test_fleet_verify.py]
+
+  # --- promotion gate + instruction-budget guards ---
+  - id: instruction-budget-empty-trigger-refs-rejected
+    file: scripts/check_instruction_budget.py
+    find: 'and bool(refs)'
+    replace: 'and True'
+    guards: [tests/test_instruction_budget.py]
+  - id: promotion-progress-run-short-not-used
+    file: scripts/lib/mission_promotion.py
+    find: 'progress = _canonical_registry_doc(repo_root, mission, "progress", "progress")'
+    replace: 'progress = repo_root / "docs" / f"{mission}-abc123-progress.md"'
+    guards: [tests/test_mission_promotion.py]
+  - id: promotion-readiness-prefers-canonical
+    file: scripts/lib/mission_promotion.py
+    find: 'if readiness.is_file():'
+    replace: 'if False and readiness.is_file():'
+    guards: [tests/test_mission_promotion.py]
+  - id: validate-promotion-require-mode-exclusive
+    file: scripts/validate_mission_promotion.py
+    find: 'required = p.add_mutually_exclusive_group()'
+    replace: 'required = p'
+    guards: [tests/test_mission_promotion.py]
+  - id: validate-promotion-known-gap-requires-shipped
+    file: scripts/validate_mission_promotion.py
+    find: 'if args.known_gap and not args.require_shipped:'
+    replace: 'if False and args.known_gap and not args.require_shipped:'
+    guards: [tests/test_mission_promotion.py]
+
+  # --- hardening fixes: verifier identity, trace cap, archive hashing, registry archive lint ---
+  - id: fleet-verify-identity-mismatch-off
+    file: scripts/lib/fleet_verify.py
+    find: 'if len(distinct) > 1:'
+    replace: 'if len(distinct) > 99:'
+    guards: [tests/test_fleet_verify.py]
+
+  - id: fleet-verify-trace-cap-off
+    file: scripts/lib/fleet_verify.py
+    find: 'if len(events) > MAX_TRACE_EVENTS:'
+    replace: 'if len(events) > MAX_TRACE_EVENTS * 99999:'
+    guards: [tests/test_fleet_verify.py]
+
+  - id: run-archive-size-error-short-circuit-off
+    file: scripts/lib/fleet_run.py
+    find: 'if check_files_on_disk and archive_root is not None and not size_errors:'
+    replace: 'if check_files_on_disk and archive_root is not None:'
+    guards: [tests/test_run_archive.py]
+
+  - id: run-archive-unsized-bytes-hash-gate-off
+    file: scripts/lib/fleet_run.py
+    find: 'if not (isinstance(expected_size, int) and not isinstance(expected_size, bool)):'
+    replace: 'if False and not (isinstance(expected_size, int) and not isinstance(expected_size, bool)):'
+    guards: [tests/test_run_archive.py]
+
+  - id: registry-archived-missing-dir-guard-off
+    file: scripts/lib/registry_lint.py
+    find: 'for mission_id in sorted(registry_archived - disk_archived):'
+    replace: 'for mission_id in sorted(set()):'
+    guards: [tests/test_registry_lint.py]
+
+  - id: registry-parked-marker-off
+    file: scripts/lib/registry_lint.py
+    find: '_EXPLORATORY_MARKERS = ("exploratory", "archived", "demoted", "not yet", "pending promotion", "parked")'
+    replace: '_EXPLORATORY_MARKERS = ("exploratory", "archived", "demoted", "not yet", "pending promotion")'
+    guards: [tests/test_registry_lint.py]

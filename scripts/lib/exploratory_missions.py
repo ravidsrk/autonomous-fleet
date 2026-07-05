@@ -1,4 +1,4 @@
-"""List and validate exploratory mission SKILL.md trees under docs/exploratory/missions/."""
+"""List and validate active/archived exploratory mission SKILL.md trees."""
 
 from __future__ import annotations
 
@@ -9,16 +9,29 @@ from pathlib import Path
 
 import yaml
 
+ARCHIVE_DIR_NAME = "archive"
+
 
 def exploratory_missions_root(repo_root: Path) -> Path:
     return repo_root / "docs" / "exploratory" / "missions"
 
 
-def list_exploratory_mission_dirs(repo_root: Path) -> list[Path]:
-    root = exploratory_missions_root(repo_root)
+def archived_missions_root(repo_root: Path) -> Path:
+    return exploratory_missions_root(repo_root) / ARCHIVE_DIR_NAME
+
+
+def _mission_dirs_under(root: Path) -> list[Path]:
     if not root.is_dir():
         return []
     return sorted(p for p in root.iterdir() if p.is_dir() and (p / "SKILL.md").is_file())
+
+
+def list_exploratory_mission_dirs(repo_root: Path) -> list[Path]:
+    return _mission_dirs_under(exploratory_missions_root(repo_root))
+
+
+def list_archived_mission_dirs(repo_root: Path) -> list[Path]:
+    return _mission_dirs_under(archived_missions_root(repo_root))
 
 
 EXPLORATORY_FLAG = "status: exploratory"

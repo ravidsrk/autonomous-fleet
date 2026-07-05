@@ -24,5 +24,5 @@ Exploratory only — see `docs/exploratory/missions/README.md` promotion criteri
 
 # See also
 
-- [`docs/gstack-missions-research.md`](../../../gstack-missions-research.md)
+- [`docs/gstack-missions-research.md`](../../../../gstack-missions-research.md)
 - [gstack `cso`](https://github.com/garrytan/gstack/tree/main/cso)

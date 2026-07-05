@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import pytest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +30,7 @@ fleet-outcome:
   status: done
   repo: /tmp/r
   base_branch: fleet/b
+  reviewer_mode: cross-vendor-structural
   prs_merged: 1
   metrics:
     drift_open: 0
@@ -44,6 +46,7 @@ fleet-outcome:
   repo: /tmp/r
   base_branch: fleet/b
   prs_merged: 1
+  reviewer_mode: cross-vendor-structural
   metrics:
     drift_open: 0
     code_bug_findings: 0
@@ -59,7 +62,7 @@ fleet-outcome:
   repo: /tmp/r
   base_branch: fleet/b
   prs_merged: 1
-  reviewer_mode: cross_vendor
+  reviewer_mode: same-vendor-instructed
   metrics:
     drift_open: 0
     code_bug_findings: 0
@@ -123,15 +126,19 @@ def test_reviewer_mode_present_invalid_returns_one_with_fail(
     out = capsys.readouterr().out
     assert "FAIL" in out
     assert "invalid reviewer_mode 'solo'" in out
-    assert "cross_vendor, single_vendor" in out
+    assert "cross-vendor-structural, same-vendor-instructed, single-process-instructed" in out
 
 
 def test_reviewer_mode_absent_still_validates(tmp_path, monkeypatch, capsys):
-    # The field is optional: existing archives without reviewer_mode must pass.
+    # Historical archives without reviewer_mode still pass, but new runs must record topology.
     doc = tmp_path / "doc-sync-readiness.md"
-    doc.write_text(VALID)
+    doc.write_text(VALID.replace("  reviewer_mode: cross-vendor-structural\n", ""))
     monkeypatch.setattr(sys, "argv", ["validate", str(doc)])
-    rc = vfo.main()
+    with pytest.warns(
+        UserWarning,
+        match="reviewer_mode missing — recording the review topology is required for new runs",
+    ):
+        rc = vfo.main()
     assert rc == 0
     assert "OK" in capsys.readouterr().out
 

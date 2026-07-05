@@ -9,8 +9,8 @@ EMPIRICAL RISK TIERS — which missions to trust unattended (cross-agent merge r
   (~61.5% test), dependency-update (~74% build / ~84% chore), cleanup (~84% chore).
 - Tier 2 (~64–79% cross-agent, full review gate, glance at the control artifact): bug-batch
   (~64% fix, reproduce-first), adversarial-review-and-fix, targeted-migration,
-  design-integration, landing-page-convergence (no direct category in the study — treat as Tier 2).
+  design-integration (no direct category in the study — treat as Tier 2).
 - Tier 3 (high blast radius, review the frozen scope/architecture artifact, expect rework):
-  legacy-rebuild, take-product-to-completion (no direct category in the study).
+  take-product-to-completion (no direct category in the study).
 - No standalone performance mission — performance is the worst category (~55% cross-agent); keep
   human-gated.

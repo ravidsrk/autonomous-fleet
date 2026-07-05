@@ -96,7 +96,7 @@ acceptance is demonstrated on staging/testnet/fixtures. Converge to the confirme
 reinterpret beyond them; never fix a refuted non-issue.
 
 ## THREE-LANE REMEDIATION
-Engine definition: see `engine.md` → LANE PATTERN. The engine defines Lane A IMPLEMENT+MERGE,
+Engine definition: see `engine-autonomy.md` → LANE PATTERN. The engine defines Lane A IMPLEMENT+MERGE,
 Lane B DRAFT-BOTH+HUMAN-GATE, and Lane 0 REFUSE+SURFACE as the three terminal lanes. This mission
 inherits them; below are the mission-specific ledger flags that go in the CLOSE-INDEX.
 
@@ -120,7 +120,7 @@ record its lane in the CLOSE-INDEX (`lane: A|B|0`):
   @claude never writes code; the integrator never authors fixes.
 
 ## LEDGER
-Engine definition: see `engine.md` → FROZEN-ARTIFACT CLOSE TEST (EVID). The engine defines EVID as
+Engine definition: see `engine-autonomy.md` → FROZEN-ARTIFACT CLOSE TEST (EVID). The engine defines EVID as
 the standard close-test boolean for any frozen-artifact item; this mission's ledger uses it.
 
 `<LEDGER_DIR>/arch-build-progress.md`. PHASE marker (REVIEW | REVIEW_FROZEN | FIXING | VERIFY); a FINDING
@@ -183,7 +183,7 @@ value, the script that reproduced the race) and sets `EVID=true` only when it no
   builder's good faith.
 
   **ANTI-ANCHORING — fresh build-blind reviewer commits its blind fix BEFORE reading the PR diff
-  (engine.md ANTI-ANCHORING).** When a builder's PR is handed to the fresh @claude reviewer, the
+  (blind-fix.md ANTI-ANCHORING).** When a builder's PR is handed to the fresh @claude reviewer, the
   reviewer FIRST reads only the finding (the cited file:line + cascade paths from the schema-
   verified findings doc), forms an independent hypothesis about the correct point-of-creation fix,
   and writes that blind fix to `.fleet/runs/<run_id>/reviewer-blind-fix-<finding-id>.md` BEFORE
@@ -207,7 +207,7 @@ value, the script that reproduced the race) and sets `EVID=true` only when it no
   for `status: done` — a T-FINAL that ships with unverified findings still in flight is a
   reviewer-hallucination leak and MUST be `status: partial` instead.
 
-  **ROOT_CAUSE_DEPTH attestation (engine.md ROOT_CAUSE_DEPTH).** Set top-level
+  **ROOT_CAUSE_DEPTH attestation (review-findings.md ROOT_CAUSE_DEPTH).** Set top-level
   `root_cause_audited: true` in the fleet-outcome WHEN every `category: root_cause_depth` finding
   closed in this mission had its `cascade_impact` paths re-EVIDed by the builder (each cited
   cascade path's own reproduction was run and stopped reproducing). Set `root_cause_audited: false`
@@ -215,7 +215,7 @@ value, the script that reproduced the race) and sets `EVID=true` only when it no
   `deferred_missions`). Omit the field entirely when no root-cause-depth findings were filed.
   This makes the discipline auditable across runs without bloating non-applicable readiness docs.
 
-  **Run-archive manifest (engine.md ARCHIVE_ENABLED).** Before opening the final PR, T-FINAL
+  **Run-archive manifest (engine-recovery.md ARCHIVE_ENABLED).** Before opening the final PR, T-FINAL
   writes `manifest.json` to the run's archive directory `.fleet/runs/<run_id>/` by walking the
   directory and emitting one entry per first-class artifact (every findings JSON, verifier
   summary, blind-fix file, prompt, response, diff, this readiness doc, the progress doc). Use

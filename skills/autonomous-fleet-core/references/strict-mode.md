@@ -13,7 +13,7 @@ making the engine's three discipline flags (`EVID`, `WT_CLEAN`,
 
 ## Why this exists
 
-The engine.md disciplines are aspirational by default. A worker that
+The engine-recovery.md disciplines are aspirational by default. A worker that
 declares `status: done` in a readiness doc is trusted on its word that
 `e2e_verified: true` actually corresponds to a production-grade
 end-to-end run. In practice, the second most common failure mode in

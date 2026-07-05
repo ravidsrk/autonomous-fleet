@@ -351,10 +351,11 @@ and in the frontmatter:
 
 > (@grok builds design missions)
 
-The two missions this applies to are `design-integration` and `landing-page-convergence`. The engine
-classes both as Tier 2 work in its risk tiers:
+The active exploratory mission this applies to is `design-integration`. A narrower single-page
+design variant is parked in the exploratory archive and no longer defines active routing. The engine
+classes active design-integration work as Tier 2:
 
-> design-integration, landing-page-convergence (no direct category in the study, treat as Tier 2).
+> design-integration (no direct category in the study, treat as Tier 2).
 
 Why a different builder for design. The choice of `@grok` as the builder for these missions is a
 mission-level role-pipeline override, not a change to the topology. The roles are still

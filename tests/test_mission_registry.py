@@ -29,6 +29,11 @@ def test_known_mission_remapped_names():
     assert progress_path("adversarial-review-and-fix") == "docs/arch-build-progress.md"
 
 
+def test_archived_known_mission_paths_still_resolve():
+    assert readiness_path("legacy-rebuild") == "docs/rebuild-readiness.md"
+    assert progress_path("legacy-rebuild") == "docs/rebuild-progress.md"
+
+
 def test_unknown_mission_falls_back_to_slug():
     assert readiness_path("made-up-mission") == "docs/made-up-mission-readiness.md"
     assert progress_path("made-up-mission") == "docs/made-up-mission-progress.md"

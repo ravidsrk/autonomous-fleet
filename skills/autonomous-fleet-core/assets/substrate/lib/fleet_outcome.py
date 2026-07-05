@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import re
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,17 @@ from .fleet_registry import MISSIONS
 
 REQUIRED_TOP = frozenset({"mission", "status", "repo", "base_branch", "prs_merged"})
 VALID_STATUSES = frozenset({"done", "partial", "blocked"})
-VALID_REVIEWER_MODES = frozenset({"cross_vendor", "single_vendor"})
+VALID_REVIEWER_MODES = frozenset(
+    {
+        "cross-vendor-structural",
+        "same-vendor-instructed",
+        "single-process-instructed",
+    }
+)
+VALID_REVIEWER_MODES_TEXT = ", ".join(sorted(VALID_REVIEWER_MODES))
+REVIEWER_MODE_MISSING_WARNING = (
+    "reviewer_mode missing — recording the review topology is required for new runs"
+)
 
 MISSION_METRICS: dict[str, frozenset[str]] = {
     mission_id: frozenset(str(metric) for metric in row["metrics"])
@@ -120,7 +131,7 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
             f"valid: {sorted(VALID_DEGRADED_MODES)}"
         )
     if degraded == "no_scm_auth" and outcome.get("status") == "done":
-        # engine.md PRECONDITIONS (issue #97): an unauthenticated-gh run
+        # engine-autonomy.md PRECONDITIONS (issue #97): an unauthenticated-gh run
         # detours to local merges — no PRs, no reviewer pass, no SHA-pin.
         # That run must not report an undifferentiated done.
         errors.append(
@@ -191,7 +202,7 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
         errors.append(f"{prefix}: deferred_missions must be a list")
 
     # Research discipline gate (optional, cross-cutting): every external fact the
-    # build relied on must have a logged source. See engine.md RESEARCH DISCIPLINE.
+    # build relied on must have a logged source. See engine-workers.md RESEARCH DISCIPLINE.
     for rkey in ("unverified_assumptions", "sources_logged"):
         if rkey in outcome:
             rval = outcome[rkey]
@@ -225,7 +236,7 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
         elif ae is False and outcome.get("status") == "done":
             errors.append(
                 f"{prefix}: cannot be done with archive_enabled=false: the "
-                "run-archive manifest is the audit trail (engine.md "
+                "run-archive manifest is the audit trail (engine-recovery.md "
                 "ARCHIVE_ENABLED); a status=done without a passing archive "
                 "is not auditable. Set status=partial instead, or fix the "
                 "manifest so archive_enabled=true."
@@ -247,7 +258,7 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
             )
 
     # Root-cause-depth audit telemetry (optional, cross-cutting): when a review
-    # mission has reckoned with the ROOT_CAUSE_DEPTH discipline (engine.md), it
+    # mission has reckoned with the ROOT_CAUSE_DEPTH discipline (review-findings.md), it
     # records the result at the outcome level. true = every root_cause_depth
     # finding had its cascade_impact paths re-EVIDed; false = at least one cascade
     # path was deferred. Optional so non-review missions don't need to assert it.
@@ -262,7 +273,7 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
             )
 
     # Cost routing telemetry (optional, cross-cutting): running spend estimate for
-    # the run. May be fractional. See engine.md MODEL & COST ROUTING.
+    # the run. May be fractional. See cost-routing.md MODEL & COST ROUTING.
     if "cost_estimate" in outcome:
         cval = outcome["cost_estimate"]
         if (
@@ -275,21 +286,28 @@ def validate_outcome(outcome: dict[str, Any], path: Path | None = None) -> list[
                 f"{prefix}: cost_estimate must be a non-negative finite number, got {cval!r}"
             )
 
-    # Reviewer-mode disclosure (optional, cross-cutting): which review topology
-    # the run actually ran under. cross_vendor = the reviewer ran as a separate
-    # process / different model family (a mechanical context barrier, e.g. the
-    # Orca case); single_vendor = a single-session adapter where reviewer
-    # blindness is fresh-context isolation (instructed), not a separate process.
-    # Optional so existing archives without the field still validate; when
-    # present it must be one of the two disclosed modes. Lives at the top level
-    # (not in metrics) because it's a disclosure assertion, not a count.
+    # Reviewer-mode disclosure (required for new runs, warning-only for
+    # historical archives): which review topology the run actually used.
+    # cross-vendor-structural = builder/reviewer split across vendor/model
+    # families and separate processes/terminals (mechanical context barrier);
+    # same-vendor-instructed = same vendor in a fresh reviewer session handed
+    # only the diff + acceptance criteria; single-process-instructed = headless
+    # or collapsed single-process review where blindness is prompt discipline,
+    # not a mechanical process barrier. Lives at the top level (not in metrics)
+    # because it's a disclosure assertion, not a count.
     if "reviewer_mode" in outcome:
         rmode = outcome["reviewer_mode"]
         if rmode not in VALID_REVIEWER_MODES:
             errors.append(
                 f"{prefix}: invalid reviewer_mode {rmode!r}, "
-                "must be one of cross_vendor, single_vendor"
+                f"must be one of {VALID_REVIEWER_MODES_TEXT}"
             )
+    else:
+        warnings.warn(
+            f"{prefix}: {REVIEWER_MODE_MISSING_WARNING}",
+            UserWarning,
+            stacklevel=2,
+        )
 
     # Optional flat-ledger row invariants. The markdown ledger remains the
     # source of narrative loop memory; this only rejects impossible booleans

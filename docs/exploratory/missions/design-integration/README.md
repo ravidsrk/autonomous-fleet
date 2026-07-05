@@ -10,7 +10,7 @@
 
 # Full description
 
-[Tier 2 · moderate autonomy · full review gate] Adopt a fresh design across an existing product to full parity - VISUAL and FEATURE-WISE. Import the design (Claude Design export/URL or the claude_design MCP connector), reskin every existing screen to it, and where the design implies a feature the product lacks, design-and-build it; nothing the old product did is lost. Use for a whole-app redesign adoption, not a single page (that's landing-page-convergence). Reuses the existing backend; rewires the UI to the new design and fills gaps to full depth. Runs via the autonomous-fleet-core engine. Trigger on: "adopt this design across the product", "integrate the new design end to end", "make the app match this design fully", "redesign the whole app to this".
+[Tier 2 · moderate autonomy · full review gate] Adopt a fresh design across an existing product to full parity - VISUAL and FEATURE-WISE. Import the design (Claude Design export/URL or the claude_design MCP connector), reskin every existing screen to it, and where the design implies a feature the product lacks, design-and-build it; nothing the old product did is lost. Use for a whole-app redesign adoption, not a single page (the parked single-page variant lives under docs/exploratory/missions/archive/landing-page-convergence/). Reuses the existing backend; rewires the UI to the new design and fills gaps to full depth. Runs via the autonomous-fleet-core engine. Trigger on: "adopt this design across the product", "integrate the new design end to end", "make the app match this design fully", "redesign the whole app to this".
 
 # Source of truth
 

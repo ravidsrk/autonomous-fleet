@@ -78,10 +78,10 @@ Default: `repo-health`.
 > bundle, not the full catalog. Gstack-derived missions declare `community-recommends` with
 > `mode: warn`; `preflight-community.sh` prints hints when bundles are absent.
 
-Ask which **bundle ids** apply (`gstack-browser`, `gstack-framing`, `gstack-security`,
-`gstack-devex`, `gstack-ship`, `gstack`, `agent-skills`, `mattpocock`). Map the default
-campaign preset (Section C) to bundles when obvious (e.g. `gstack-quality` → framing + browser +
-security + devex). Record choices in `fleet-config.md`; do not install without user consent.
+Ask which **bundle ids** apply (`gstack-browser`, `gstack-security`, `gstack`,
+`agent-skills`, `mattpocock`). Map the default campaign preset (Section C) to bundles when
+obvious (e.g. `quality-gate` → `gstack-browser`). Record choices in `fleet-config.md`; do not
+install without user consent.
 
 When the user confirms, print or run:
 
@@ -123,7 +123,7 @@ ledgers must never break or publish through a site build.
 Also probe which research tools exist on this host (`monid` on PATH, a
 Context7/library-docs MCP, a `deep-research`-class skill) and record them as
 `RESEARCH_TOOLS` in `fleet-config.md`; record `native-web` when none are
-found (engine.md RESEARCH LOOP resolves through this field first).
+found (engine-workers.md RESEARCH DISCIPLINE resolves through this field first).
 
 ### 3. Confirm draft
 

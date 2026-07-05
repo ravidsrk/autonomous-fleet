@@ -152,7 +152,7 @@ flowchart TB
 
   subgraph fleet [autonomous-fleet layers]
     FP[fleet-program coordinator]
-    ENG[engine.md AUTONOMY ENFORCEMENT]
+    ENG[engine-recovery.md AUTONOMY ENFORCEMENT]
     MIS[mission DONE + task DAG]
     LED[file ledger + fleet-outcome YAML]
   end
@@ -198,7 +198,7 @@ flowchart TB
 
 ### 4.1 New engine primitives (adapter-facing)
 
-Add to `engine.md` § PRIMITIVES (optional tier — adapters implement when host supports):
+Add to `engine-workers.md` § THE PRIMITIVES (optional tier — adapters implement when host supports):
 
 ```
 9. SET_GOAL(condition)     → bind runtime goal to mission/campaign DONE (paraphrase ledger gates)

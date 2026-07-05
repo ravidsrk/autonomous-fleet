@@ -149,7 +149,7 @@ A portable framework for **fully-autonomous coding runs across orchestration too
 
 🟪 **Adapters (5)** — `claude-code`, `codex`, `grok`, `orca`, and a template for adding new runtimes. Each adapter maps the portable engine to one runtime's real commands.
 
-🟧 **Missions (3 shipped)** — `doc-sync`, `test-coverage`, `adversarial-review-and-fix`. Twelve missions live in `docs/exploratory/missions/`: the 9 demoted in this pass (`dependency-update`, `cleanup`, `bug-batch`, `targeted-migration`, `design-integration`, `landing-page-convergence`, `legacy-rebuild`, `take-product-to-completion`, `inference-cost`) plus 3 earlier (`agents-layer`, `contract-first-build`, `scaffold-align`).
+🟧 **Missions (3 shipped)** — `doc-sync`, `test-coverage`, `adversarial-review-and-fix`. Twelve active exploratory missions live in `docs/exploratory/missions/`: 7 demoted in the 2026-06-23 pass, 2 active gstack-derived designs, and 3 earlier demotions. Six additional designs are parked under `docs/exploratory/missions/archive/`.
 
 Shipped missions compose into campaigns via `fleet-program` DAGs. Built-in presets: `repo-health`, `ship-with-proof`, `quality-gate`.
 

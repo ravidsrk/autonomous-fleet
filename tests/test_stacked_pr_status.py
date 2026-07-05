@@ -84,6 +84,28 @@ def test_aggregate_suppresses_child_mergeable() -> None:
     ]
     assert sp.aggregate_pr_status(prs) == "mergeable"
 
+    # Discriminating case: the child carries a WORSE but non-actionable status
+    # (review_pending, severity 3 < mergeable 6). With suppression on, the
+    # parent's "mergeable" wins; if suppression is disabled, worst-wins would
+    # surface "review_pending" — so this pins the suppression branch itself
+    # (mutation guard: stacked-pr-child-suppression-off).
+    prs_worse_child = [
+        _pr(
+            url="p1",
+            source_branch="fleet/parent",
+            target_branch="main",
+            mergeability="mergeable",
+            review="approved",
+        ),
+        _pr(
+            url="p2",
+            source_branch="fleet/child",
+            target_branch="fleet/parent",
+            review="required",
+        ),
+    ]
+    assert sp.aggregate_pr_status(prs_worse_child) == "mergeable"
+
 
 def test_child_ci_failure_still_surfaces() -> None:
     prs = [
