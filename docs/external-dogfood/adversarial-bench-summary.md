@@ -1,6 +1,7 @@
 # Adversarial bench — public summary
 
-**Status:** Infrastructure ready for operator runs to produce real A/B numbers; headline metrics ⬜ pending.
+**Status:** Tier A numbers published (2026-07-05) — `github/gemoji` + `pallets/click`.
+Tier B (remaining three targets) pending.
 
 # What this is
 
@@ -13,14 +14,14 @@ Methodology: [`adversarial-bench-2026-06.md`](adversarial-bench-2026-06.md).
 Targets: [`adversarial-bench-targets.yaml`](adversarial-bench-targets.yaml).
 Per-target archives: [`adversarial-bench/`](adversarial-bench/).
 
-# Headline (when ready)
+# Headline (Tier A, 2026-07-05)
 
 | Metric | Off → On Delta |
 |---|---|
-| Precision (verified / emitted) | ⬜ pending |
-| Close-rate after blind-fix | ⬜ pending |
-| Cost per closed finding | ⬜ pending |
-| Stop-verify activations | ⬜ pending |
+| Precision (verified / emitted) | **+100pp** avg (0% off → 100% on, both targets) |
+| Close-rate after blind-fix | not scored (chains incomplete / archive reuse) |
+| Cost per closed finding | N/A (`cost_estimate` 0) |
+| Stop-verify activations | 0 (no blocks in either mode) |
 
 # Reproducing
 
@@ -46,9 +47,16 @@ Each archive validates against the schemas in
 `skills/autonomous-fleet-core/assets/`. Auditors can re-score with
 their own weights via `scripts/analyze_seat.py`.
 
-# Status as of 2026-06-27
+# Status as of 2026-07-05
 
-Driver, targets YAML, methodology, per-target stubs, headless `--repo` path, and unconditional
-archive emission (v0.2.0) are shipped. Lane 2 validated `run-campaign.sh` on
-`ravidsrk/gemoji`. Real A/B numbers gated on authenticated operator sessions per target.
-See `gemoji-headless-run.md` and plan §3 Commit C in `docs/plans/way-ahead-2026-06-23.md`.
+Lane 3 Tier A operator sessions complete (`issue #62`). `bench-adversarial.sh` now auto-dispatches
+`run-mission-headless.sh` (install skills → substrate env → headless mission → validate →
+`analyze_seat.py`). Reproduce:
+
+```bash
+./scripts/bench-adversarial.sh --target github/gemoji --both --adapter grok
+./scripts/bench-adversarial.sh --target pallets/click --both --adapter grok
+```
+
+Full methodology: `adversarial-bench-2026-06.md`. Tier B targets remain in
+`adversarial-bench-targets.yaml`.
