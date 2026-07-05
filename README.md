@@ -267,6 +267,12 @@ Or as a CI step via the bundled [`action.yml`](action.yml):
     run-dir: .fleet/runs/${{ env.RUN_ID }}
 ```
 
+Or install it standalone — no clone, isolated env — via [`uvx`](https://docs.astral.sh/uv/):
+
+```bash
+uvx --from git+https://github.com/ravidsrk/autonomous-fleet fleet-verify <run-dir> --repo .
+```
+
 ---
 
 # What every run is built to do

@@ -21,3 +21,19 @@ omit = ["scripts/_build_example_fixture.py"]
 [tool.coverage.report]
 fail_under = 100
 show_missing = true
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+# Expose `fleet-verify` as a standalone console tool without disturbing the
+# scripts/ + lib layout the test suite and 100%-coverage gate depend on.
+# `uvx --from git+https://github.com/ravidsrk/autonomous-fleet fleet-verify <run-dir>`
+# installs into an isolated env, so shipping the `lib` package here is safe;
+# a PyPI publish (a separate, mechanical rename) is the only reason to namespace it.
+[tool.setuptools]
+package-dir = {"" = "scripts"}
+packages = ["lib"]
+
+[project.scripts]
+fleet-verify = "lib.fleet_verify:main"

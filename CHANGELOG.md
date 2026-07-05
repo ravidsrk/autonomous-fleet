@@ -16,6 +16,11 @@ All notable changes to `autonomous-fleet` are recorded here. The format follows
   `analyze_seat.py`). Operator handoff: `docs/handoff-adversarial-bench.md`.
   Published A/B numbers for `github/gemoji` and `pallets/click` in
   `docs/external-dogfood/adversarial-bench-2026-06.md` (closes issue #62 Tier A).
+- **`fleet-verify` installable as a standalone console tool** — `pyproject.toml`
+  gains a `setuptools` build + `[project.scripts] fleet-verify` entry point, so
+  `uvx --from git+https://github.com/ravidsrk/autonomous-fleet fleet-verify <run-dir>`
+  runs the verifier in an isolated env with no clone. Additive: the `scripts/`+`lib`
+  layout, pytest `pythonpath`, and the 100%-coverage gate are untouched.
 
 ### Changed
 
