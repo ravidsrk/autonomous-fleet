@@ -65,7 +65,7 @@ intent_gated:
 - `independent` → <how your tool makes an isolated checkout on its own branch off BASE>.
 - `independent` via container-use (OPTIONAL) → if your runtime can register the container-use MCP
   (`<tool> mcp add container-use -- container-use stdio`, needs Docker), reuse the canonical sandboxed
-  loop in core `engine.md` → CONTAINER-USE-PLACEMENT and record your registration command +
+  loop in core `engine-workers.md` → CONTAINER-USE-PLACEMENT and record your registration command +
   verification status here. Omit this bullet if unsupported.
 - `dependent` → <how your tool runs a fresh worker in the current checkout/branch>.
 
@@ -83,7 +83,7 @@ record the single-vendor mode.
 ### DISPATCH(task, handle)
 <how a task spec is handed to a worker so it will report completion. If your tool injects a
 preamble, say so; if not, how the worker learns the completion contract.>
-**Required:** prepend mission `## Worker skills` for the worker's role (see core engine.md WORKER
+**Required:** prepend mission `## Worker skills` for the worker's role (see core engine-workers.md WORKER
 SKILLS block) before the task spec in every dispatch/inject payload.
 
 ### WAIT(types, timeout)

@@ -97,5 +97,5 @@ User-specified order wins. Rules:
 - Max one active mission.
 - Carry **Recommended next missions** from each readiness doc into the next mission's discovery
   task (T-AUDIT, T-MAP, T-SCAN, etc.).
-- Do not insert `legacy-rebuild` or `take-product-to-completion` unless the user explicitly asks *(exploratory)*
-  (Tier 3 blast radius).
+- Do not insert the archived full-rebuild design (`legacy-rebuild`) or `take-product-to-completion`
+  unless the user explicitly asks (Tier 3 blast radius).

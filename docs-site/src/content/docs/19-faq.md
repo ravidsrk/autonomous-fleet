@@ -103,11 +103,13 @@ treat an exploratory mission as production-ready because it has a SKILL.md.
 
 ### Why are there exploratory missions if I cannot run them?
 
-They are distilled designs awaiting promotion. The roster includes `bug-batch`, `cleanup`,
-`dependency-update`, `design-integration`, `inference-cost`, `landing-page-convergence`,
-`legacy-rebuild`, `take-product-to-completion`, and `targeted-migration`. The promotion criteria
-(the three-artifact rule) live in `docs/exploratory/missions/README.md`. Documenting a design before
-it ships is deliberate, not an oversight.
+They are distilled designs awaiting promotion. The active roster includes `agents-layer`,
+`browser-qa-fix`, `bug-batch`, `cleanup`, `contract-first-build`, `dependency-update`,
+`design-integration`, `incident-investigate`, `inference-cost`, `scaffold-align`,
+`take-product-to-completion`, and `targeted-migration`. Parked designs live under
+`docs/exploratory/missions/archive/`. The promotion criteria (the three-artifact rule) live in
+`docs/exploratory/missions/README.md`. Documenting a design before it ships is deliberate, not an
+oversight.
 
 ### Can I run two missions on the same repo at once?
 

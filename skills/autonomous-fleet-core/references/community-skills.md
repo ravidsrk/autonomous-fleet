@@ -41,7 +41,7 @@ Install **per bundle** — not all three repos unless you need them.
 
 ```bash
 ./scripts/install-community.sh gstack-browser --dry-run
-./scripts/install-community.sh gstack-framing --execute --host grok
+./scripts/install-community.sh gstack-security --execute --host grok
 ./scripts/install-skills.sh --all --with-community gstack-browser --execute
 ```
 
@@ -54,11 +54,8 @@ Record installs in `docs/agents/fleet-config.md` (see `setup-autonomous-fleet` S
 | Bundle id | gstack skill ids | Fleet missions / presets |
 |-----------|------------------|--------------------------|
 | `gstack-browser` | `browse`, `qa`, `qa-only`, `health` | `browser-qa-fix`; post-gate on `ship-with-proof` *(exploratory)* |
-| `gstack-framing` | `office-hours`, `autoplan`, `plan-ceo-review`, `plan-eng-review`, `plan-design-review` | `product-framing`; pre-gate on `gstack-quality` *(exploratory)* |
-| `gstack-security` | `cso`, `investigate` | `security-cso-audit`, `incident-investigate` *(exploratory)* |
-| `gstack-devex` | `plan-devex-review`, `devex-review` | `devex-audit` *(exploratory)* |
-| `gstack-ship` | `ship`, `review`, `document-release`, `health` | `release-document`; post-gates on ship presets *(exploratory)* |
-| `gstack` | full clone + `./setup` | All bundles above |
+| `gstack-security` | `cso`, `investigate` | `incident-investigate` *(exploratory)* |
+| `gstack` | full clone + `./setup` | All active bundles above; parked designs may still name older bundles in archive |
 
 Gstack-derived exploratory missions declare machine-readable recommends:
 
@@ -73,15 +70,11 @@ mode: warn
 `scripts/preflight-community.sh` prints install hints when skills are absent (warn tier);
 missions still complete via TASK fallbacks. See [composition.md](composition.md) dependency tiers.
 
-### Pre-gate table (gstack-derived missions)
+### Pre-gate table (gstack-derived active missions)
 
 | Mission | Pre-gate (user-invoked) | gstack `benefits-from` analogue |
 |---------|-------------------------|----------------------------------|
-| `product-framing` | `office-hours` | `autoplan` chain *(exploratory)* |
 | `browser-qa-fix` | — | — *(exploratory)* |
-| `security-cso-audit` | — | — *(exploratory)* |
-| `devex-audit` | — | `plan-devex-review` optional *(exploratory)* |
-| `release-document` | — | `document-release` optional *(exploratory)* |
 | `incident-investigate` | — | `investigate` optional *(exploratory)* |
 
 ---
@@ -94,8 +87,10 @@ missions still complete via TASK fallbacks. See [composition.md](composition.md)
 | Ship safely | preset `ship-with-proof` | gstack (`ship`, `qa`) optional |
 | Finish product | preset `align-then-ship` (ARCHIVED until `take-product-to-completion` is promoted) | mattpocock `grill-with-docs` or gstack `office-hours` |
 | Production readiness | preset `quality-gate` | gstack `qa-only`, `health` optional |
-| Gstack mission pack | preset `gstack-quality` | `gstack-framing` + `gstack-browser` + `gstack-security` + `gstack-devex` |
 | Greenfield feature | Human `/spec` + `/plan`, then one mission | agent-skills plugin |
+
+Archived in-place: `gstack-quality` references demoted or parked missions and is intentionally
+empty until those missions are promoted. Do not route it as a live starter bundle.
 
 Headless:
 
@@ -132,7 +127,7 @@ Invoke explicitly; record output path in `docs/fleet-program-progress.md` **Hand
 | `test-driven-development` | agent-skills | `test-coverage` (and `bug-batch` once promoted) | @builder |
 | `incremental-implementation` | agent-skills | build-heavy missions | @builder |
 | `security-and-hardening` | agent-skills | `adversarial-review-and-fix` | @reviewer |
-| `frontend-ui-engineering` | agent-skills | `design-integration`, `landing-page-convergence` (both exploratory; attach when those missions are promoted) | @builder |
+| `frontend-ui-engineering` | agent-skills | `design-integration` (exploratory; attach when promoted) | @builder |
 | `domain-modeling` | mattpocock | `doc-sync` (and `take-product-to-completion` once promoted) | @planner |
 | `qa` | gstack | UI missions (exploratory until promoted) | @builder (fix loop) |
 | `qa-only` | gstack | UI missions (exploratory until promoted) | @reviewer (report only) |
@@ -175,7 +170,9 @@ and `validate-fleet-outcome.sh` passes.
 | `ship-with-proof` | audit → tests → docs | — | `ship`, `qa` |
 | `align-then-ship` | `take-product-to-completion` | `grill-with-docs`, `office-hours` | `qa` *(exploratory)* |
 | `quality-gate` | audit → tests | — | `qa-only`, `health` |
-| `gstack-quality` | framing → browser QA → security → devex | `office-hours` | `qa-only`, `health` |
+
+Archived in-place: `gstack-quality` references demoted or parked missions and is intentionally
+empty until those missions are promoted; do not list it as a usable community preset.
 
 YAML: `scripts/campaigns/<preset>.yaml` and
 `skills/fleet-program/references/campaigns.md`.

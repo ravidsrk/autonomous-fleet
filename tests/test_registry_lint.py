@@ -110,3 +110,236 @@ def test_adapter_contract_single_source_lint(tmp_path) -> None:
     assert lint_adapter_contract_single_source(repo) == [
         "skills/autonomous-fleet-core/references/adapter-contract.md: missing canonical adapter contract"
     ]
+
+
+def test_archived_missions_are_not_active_exploratory() -> None:
+    from lib.registry_lint import active_exploratory_missions, archived_missions
+
+    missions = {
+        "doc-sync": {"shipped": True},
+        "bug-batch": {"shipped": False},
+        "legacy-rebuild": {"shipped": False, "archived": True},
+    }
+
+    assert set(active_exploratory_missions(missions)) == {"bug-batch"}
+    assert set(archived_missions(missions)) == {"legacy-rebuild"}
+
+
+def test_archived_mission_dirs_clean_on_real_repo() -> None:
+    from lib.registry_lint import lint_archived_mission_dirs
+
+    assert lint_archived_mission_dirs(ROOT) == []
+
+
+def test_archived_true_missing_archive_dir_fails(tmp_path) -> None:
+    from lib.registry_lint import lint_archived_mission_dirs
+
+    missions = {"legacy-rebuild": {"shipped": False, "archived": True}}
+
+    errors = lint_archived_mission_dirs(tmp_path, missions)
+
+    assert errors == [
+        "legacy-rebuild: archived:true but no "
+        "docs/exploratory/missions/archive/legacy-rebuild/ on disk"
+    ]
+
+
+def test_archive_dir_without_archived_registry_row_fails(tmp_path) -> None:
+    from lib.registry_lint import lint_archived_mission_dirs, lint_registry
+
+    archived = tmp_path / "docs" / "exploratory" / "missions" / "archive" / "orphan"
+    archived.mkdir(parents=True)
+    (archived / "SKILL.md").write_text("# Orphan\n", encoding="utf-8")
+
+    errors = lint_archived_mission_dirs(tmp_path, {})
+
+    assert errors == [
+        "docs/exploratory/missions/archive/orphan/ exists but has no "
+        "archived:true registry row"
+    ]
+    assert any(
+        "docs/exploratory/missions/archive/orphan/ exists but has no "
+        "archived:true registry row" in error
+        for error in lint_registry(tmp_path, {})
+    )
+
+
+def test_parked_marker_marks_unshipped_mission_references(tmp_path) -> None:
+    from lib.registry_lint import lint_mission_state_docs
+
+    doc = tmp_path / "skills" / "autonomous-fleet" / "references"
+    doc.mkdir(parents=True)
+    (doc / "missions.md").write_text(
+        "# Mission routing\n\n`legacy-rebuild` is parked while evidence is rebuilt.\n",
+        encoding="utf-8",
+    )
+    missions = {"legacy-rebuild": {"shipped": False, "archived": True}}
+
+    assert lint_mission_state_docs(tmp_path, missions) == []
+
+
+def test_shipped_catalog_and_lock_lints_report_registry_drift(tmp_path) -> None:
+    import json
+    from lib import registry_lint
+
+    def write_skill(name: str, text: str = "fleet-component: mission\n") -> Path:
+        skill = tmp_path / "skills" / name
+        skill.mkdir(parents=True, exist_ok=True)
+        (skill / "SKILL.md").write_text(text, encoding="utf-8")
+        return skill
+
+    local = write_skill("local")
+    (local / "nested.txt").write_text("payload", encoding="utf-8")
+    original_hash = registry_lint.content_hash(local)
+    (local / "nested.txt").rename(local / "renamed.txt")
+    assert registry_lint.content_hash(local) != original_hash
+    locked_hash = registry_lint.content_hash(local)
+    drift = write_skill("drift")
+    write_skill("unregistered")
+
+    shipped_errors = registry_lint.lint_shipped_mission_dirs(
+        tmp_path,
+        {"ghost": {"shipped": True, "skill_dir": "ghost"}},
+    )
+    assert "ghost: shipped:true points to missing skills/ghost/SKILL.md" in shipped_errors
+    assert (
+        "skills/unregistered/SKILL.md is a mission skill but has no shipped:true registry row"
+        in shipped_errors
+    )
+
+    (tmp_path / "README.md").write_text("local\n", encoding="utf-8")
+    catalog = tmp_path / "skills" / "autonomous-fleet"
+    catalog.mkdir(parents=True, exist_ok=True)
+    (catalog / "SKILL.md").write_text("local\n", encoding="utf-8")
+    catalog_errors = registry_lint.lint_catalog_mentions(
+        tmp_path,
+        {
+            "local": {"shipped": True, "skill_dir": "local"},
+            "missing-catalog": {"shipped": True, "skill_dir": "missing-catalog"},
+        },
+    )
+    assert "README.md: missing shipped mission missing-catalog" in catalog_errors
+    assert "skills/autonomous-fleet/SKILL.md: missing shipped mission missing-catalog" in catalog_errors
+
+    (tmp_path / "skills-lock.json").write_text(json.dumps({"skills": []}), encoding="utf-8")
+    assert registry_lint.lint_skills_lock(tmp_path) == [
+        "skills-lock.json: missing skills mapping"
+    ]
+
+    lock = {
+        "skills": {
+            "local": {
+                "source": registry_lint.LOCAL_LOCK_SOURCE,
+                "computedHash": locked_hash,
+            },
+            "drift": {
+                "source": registry_lint.LOCAL_LOCK_SOURCE,
+                "computedHash": "0" * 64,
+            },
+            "missing-dir": {
+                "source": registry_lint.LOCAL_LOCK_SOURCE,
+                "computedHash": "1" * 64,
+            },
+            "stale": {"source": registry_lint.LOCAL_LOCK_SOURCE},
+            "external-unpinned": {"source": "anthropics/skills"},
+            "external-placeholder": {
+                "source": "anthropics/skills",
+                "ref": "TODO-pin-me",
+            },
+            "external-pinned": {"source": "anthropics/skills", "commit": "abc123"},
+            "not-a-row": "bad",
+        }
+    }
+    (tmp_path / "skills-lock.json").write_text(json.dumps(lock), encoding="utf-8")
+
+    lock_errors = registry_lint.lint_skills_lock(tmp_path)
+    assert any("missing shipped skill dirs: autonomous-fleet" in e for e in lock_errors), lock_errors
+    assert any("stale skill dirs not on disk" in e and "stale" in e for e in lock_errors), lock_errors
+
+    hash_errors = registry_lint.lint_lock_hashes(tmp_path)
+    assert any("missing-dir has computedHash but no skills/missing-dir/" in e for e in hash_errors)
+    assert any("drift computedHash mismatch" in e for e in hash_errors)
+
+    pin_errors = registry_lint.lint_external_source_pins(tmp_path)
+    assert any("external source 'anthropics/skills' for external-unpinned is not pinned" in e for e in pin_errors)
+    assert any("uses placeholder pin 'TODO-pin-me'" in e for e in pin_errors)
+
+
+def test_campaign_lint_reports_yaml_and_mission_state_errors(tmp_path) -> None:
+    from lib.registry_lint import lint_campaign_missions
+
+    campaigns = tmp_path / "scripts" / "campaigns"
+    campaigns.mkdir(parents=True)
+    (campaigns / "invalid.yaml").write_text("nodes: [\n", encoding="utf-8")
+    (campaigns / "list.yaml").write_text("- not a mapping\n", encoding="utf-8")
+    (campaigns / "archived.yaml").write_text(
+        "status: archived\nnodes:\n  unknown: { mission: no-such }\n",
+        encoding="utf-8",
+    )
+    (campaigns / "empty.yaml").write_text("nodes: []\n", encoding="utf-8")
+    (campaigns / "main.yaml").write_text(
+        "campaign: main\n"
+        "nodes:\n"
+        "  not_mapping: just-a-string\n"
+        "  no_mission: { mission: 123 }\n"
+        "  unknown: { mission: no-such }\n"
+        "  archived: { mission: legacy-rebuild }\n"
+        "  exploratory_blocked: { mission: bug-batch }\n"
+        "  shipped: { mission: doc-sync }\n",
+        encoding="utf-8",
+    )
+
+    dogfood = tmp_path / "docs" / "external-dogfood"
+    dogfood.mkdir(parents=True)
+    (dogfood / "dogfood-campaign.yaml").write_text(
+        "campaign: dogfood\n"
+        "exploratory: true\n"
+        "nodes:\n"
+        "  missing_doc: { mission: bug-batch }\n"
+        "  has_doc: { mission: targeted-migration }\n",
+        encoding="utf-8",
+    )
+    exploratory_doc = tmp_path / "docs" / "exploratory" / "missions" / "targeted-migration"
+    exploratory_doc.mkdir(parents=True)
+    (exploratory_doc / "SKILL.md").write_text("# Targeted migration\n", encoding="utf-8")
+
+    (tmp_path / "docs" / "composition-e2e-campaign.yaml").write_text(
+        "campaign: top\nallow_exploratory_nodes: true\nnodes:\n  ok: { mission: targeted-migration }\n",
+        encoding="utf-8",
+    )
+
+    missions = {
+        "doc-sync": {"shipped": True},
+        "bug-batch": {"shipped": False},
+        "targeted-migration": {"shipped": False},
+        "legacy-rebuild": {"shipped": False, "archived": True},
+    }
+
+    errors = lint_campaign_missions(tmp_path, missions)
+
+    assert any("invalid.yaml: invalid YAML" in e for e in errors), errors
+    assert any("main.yaml: node 'unknown' references unknown mission 'no-such'" in e for e in errors), errors
+    assert any("main.yaml: node 'archived' references archived mission 'legacy-rebuild'" in e for e in errors), errors
+    assert any("main.yaml: node 'exploratory_blocked' references unshipped mission 'bug-batch'" in e for e in errors), errors
+    assert any("dogfood-campaign.yaml: node 'missing_doc' references exploratory mission 'bug-batch'" in e for e in errors), errors
+    assert not any("has_doc" in e or "composition-e2e-campaign.yaml" in e for e in errors), errors
+
+
+def test_archived_campaign_nodes_are_rejected_even_with_exploratory_opt_in(tmp_path) -> None:
+    from lib.registry_lint import lint_campaign_missions
+
+    campaigns = tmp_path / "scripts" / "campaigns"
+    campaigns.mkdir(parents=True)
+    (campaigns / "archived-node.yaml").write_text(
+        "campaign: archived-node\n"
+        "allow_exploratory_nodes: true\n"
+        "nodes:\n  rebuild: { mission: legacy-rebuild }\n"
+        "edges:\n  rebuild: []\n",
+        encoding="utf-8",
+    )
+    missions = {"legacy-rebuild": {"shipped": False, "archived": True}}
+
+    errors = lint_campaign_missions(tmp_path, missions)
+
+    assert len(errors) == 1
+    assert "archived mission 'legacy-rebuild'" in errors[0]

@@ -172,10 +172,10 @@ def test_lint_gstack_mission_non_gstack_slug_returns_after_mission_lint(tmp_path
 
 
 def test_lint_gstack_value_error_wrapped(tmp_path: Path) -> None:
-    skill = tmp_path / "product-framing"
+    skill = tmp_path / "browser-qa-fix"
     skill.mkdir()
     (skill / "SKILL.md").write_text(
-        "---\nname: product-framing\nmetadata:\n  author: t\n  version: '1'\n"
+        "---\nname: browser-qa-fix\nmetadata:\n  author: t\n  version: '1'\n"
         "  tier: '2'\n  fleet-component: mission\n  recommended-bundle: b\n"
         "status: exploratory\n---\n\n"
         "# Mission\n\n## Required skills\n\n1. core\n\n"
@@ -191,8 +191,8 @@ def test_lint_gstack_value_error_wrapped(tmp_path: Path) -> None:
 
 def test_lint_gstack_invalid_recommends_block_fails(tmp_path: Path) -> None:
     skill = _copy_skill(
-        ROOT / "docs" / "exploratory" / "missions" / "product-framing",
-        tmp_path / "product-framing",
+        ROOT / "docs" / "exploratory" / "missions" / "browser-qa-fix",
+        tmp_path / "browser-qa-fix",
     )
     path = skill / "SKILL.md"
     text = path.read_text(encoding="utf-8")
@@ -215,7 +215,7 @@ def test_lint_gstack_invalid_recommends_block_fails(tmp_path: Path) -> None:
 
 
 def test_lint_skill_dispatches_gstack_mission() -> None:
-    sl.lint_skill(ROOT / "docs" / "exploratory" / "missions" / "product-framing")
+    sl.lint_skill(ROOT / "docs" / "exploratory" / "missions" / "browser-qa-fix")
 
 
 def test_skill_lint_import_bootstrap_from_lib_dir() -> None:
@@ -231,7 +231,7 @@ def test_skill_lint_import_bootstrap_from_lib_dir() -> None:
         assert spec and spec.loader
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        mod.lint_gstack_mission(ROOT / "docs" / "exploratory" / "missions" / "product-framing")
+        mod.lint_gstack_mission(ROOT / "docs" / "exploratory" / "missions" / "browser-qa-fix")
     finally:
         sys.path[:] = saved
 
@@ -249,7 +249,7 @@ def test_skill_lint_script_entrypoint_runs(tmp_path: Path) -> None:
 
     r = subprocess.run(
         [sys.executable, str(ROOT / "scripts" / "lib" / "skill_lint.py"), str(
-            ROOT / "docs" / "exploratory" / "missions" / "product-framing"
+            ROOT / "docs" / "exploratory" / "missions" / "browser-qa-fix"
         )],
         cwd=ROOT,
         capture_output=True,
@@ -262,11 +262,7 @@ def test_skill_lint_script_entrypoint_runs(tmp_path: Path) -> None:
 def test_gstack_exploratory_missions_pass_structural_lint() -> None:
     gstack_dir = ROOT / "docs" / "exploratory" / "missions"
     for slug in (
-        "product-framing",
         "browser-qa-fix",
-        "security-cso-audit",
-        "devex-audit",
-        "release-document",
         "incident-investigate",
     ):
         sl.lint_gstack_mission(gstack_dir / slug)
@@ -274,8 +270,8 @@ def test_gstack_exploratory_missions_pass_structural_lint() -> None:
 
 def test_gstack_mission_wrong_mode_fails(tmp_path: Path) -> None:
     skill = _copy_skill(
-        ROOT / "docs" / "exploratory" / "missions" / "product-framing",
-        tmp_path / "product-framing",
+        ROOT / "docs" / "exploratory" / "missions" / "browser-qa-fix",
+        tmp_path / "browser-qa-fix",
     )
     path = skill / "SKILL.md"
     path.write_text(
@@ -288,13 +284,13 @@ def test_gstack_mission_wrong_mode_fails(tmp_path: Path) -> None:
 
 def test_gstack_mission_bundle_mismatch_fails(tmp_path: Path) -> None:
     skill = _copy_skill(
-        ROOT / "docs" / "exploratory" / "missions" / "product-framing",
-        tmp_path / "product-framing",
+        ROOT / "docs" / "exploratory" / "missions" / "browser-qa-fix",
+        tmp_path / "browser-qa-fix",
     )
     path = skill / "SKILL.md"
     path.write_text(
         path.read_text(encoding="utf-8").replace(
-            "recommended-bundle: gstack-framing", "recommended-bundle: wrong"
+            "recommended-bundle: gstack-browser", "recommended-bundle: wrong"
         ),
         encoding="utf-8",
     )
@@ -304,8 +300,8 @@ def test_gstack_mission_bundle_mismatch_fails(tmp_path: Path) -> None:
 
 def test_gstack_mission_missing_community_recommends_fails(tmp_path: Path) -> None:
     skill = _copy_skill(
-        ROOT / "docs" / "exploratory" / "missions" / "product-framing",
-        tmp_path / "product-framing",
+        ROOT / "docs" / "exploratory" / "missions" / "browser-qa-fix",
+        tmp_path / "browser-qa-fix",
     )
     path = skill / "SKILL.md"
     text = path.read_text(encoding="utf-8")

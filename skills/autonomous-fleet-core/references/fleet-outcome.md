@@ -12,6 +12,7 @@ fleet-outcome:
   status: done                    # done | partial | blocked
   repo: <REPO_ROOT>               # absolute path
   base_branch: <BASE>             # integration branch used
+  reviewer_mode: <mode>           # required for new runs; see closed enum below
   prs_merged: <n>                 # count merged this run
   deferred_missions:              # same rows as Recommended next missions
     - id: bug-batch
@@ -33,18 +34,18 @@ fleet-outcome:
 `run` is optional. Record when the host exposes timing/retries; use for dogfood comparisons and
 tier validation. Do not branch campaign edges on `run` fields.
 
-`unverified_assumptions` / `sources_logged` are the research-discipline gate (see engine.md
-RESEARCH DISCIPLINE). Optional and cross-cutting: when present each must be a non-negative int.
+`unverified_assumptions` / `sources_logged` are the research-discipline gate (see
+engine-workers.md RESEARCH DISCIPLINE). Optional and cross-cutting: when present each must be a non-negative int.
 T-FINAL records `unverified_assumptions: 0` once every external fact the build relied on has a
 logged source in `docs/research-notes.md`; a campaign edge MAY branch on `unverified_assumptions
 == 0`. Unlike `run` fields, these are branchable.
 
-`cost_estimate` is the running spend estimate for the run (see engine.md MODEL & COST ROUTING).
+`cost_estimate` is the running spend estimate for the run (see cost-routing.md MODEL & COST ROUTING).
 Optional; when present it must be a non-negative number (may be fractional). T-FINAL records it as
 telemetry; a campaign edge MAY branch on it (e.g. `cost_estimate > <budget>`). A coordinator with no
 cost signal omits it.
 
-`root_cause_audited` is the ROOT_CAUSE_DEPTH discipline assertion (see engine.md ROOT_CAUSE_DEPTH).
+`root_cause_audited` is the ROOT_CAUSE_DEPTH discipline assertion (see review-findings.md ROOT_CAUSE_DEPTH).
 Optional and cross-cutting: when present it must be a bool. T-FINAL of a review mission records
 `root_cause_audited: true` once every `category: root_cause_depth` finding closed in this mission
 had its `cascade_impact` paths re-EVIDed; `false` when any cascade path was deferred to a follow-up
@@ -53,7 +54,7 @@ findings OMIT the field entirely — this keeps non-applicable readiness docs fr
 discipline assertions they don't substantiate. Branchable; a campaign edge MAY branch on
 `root_cause_audited == true`.
 
-`archive_enabled` is the ARCHIVE_ENABLED discipline assertion (see engine.md ARCHIVE_ENABLED and
+`archive_enabled` is the ARCHIVE_ENABLED discipline assertion (see engine-recovery.md ARCHIVE_ENABLED and
 references/run-archive.md). Optional and cross-cutting: when present it must be a bool. T-FINAL of
 a mission that emitted any first-class artifact (findings JSON, verifier summary, blind-fix file,
 etc.) records `archive_enabled: true` ONLY AFTER `<SUBSTRATE>/validate_run_archive.py
@@ -70,6 +71,26 @@ when present it must match `YYYYMMDDTHHMMSSZ-<mission>-<6-hex>`, mirroring
 `scripts.lib.fleet_run.RUN_ID_PATTERN`. Allows post-hoc tools (INFLATION POST-MORTEM, dashboards)
 to jump straight to the archive without re-deriving the run_id from filesystem scans. Set when
 `archive_enabled` is set.
+
+### reviewer_mode (required for new runs, closed enum)
+
+`reviewer_mode` records the review topology the run actually used. It is REQUIRED for new
+T-FINAL outcomes. The validator still accepts historical outcomes that omit it, but emits this
+non-fatal warning: `reviewer_mode missing — recording the review topology is required for new runs`.
+Unknown values are rejected.
+
+Canonical enum:
+
+| Value | Applies when |
+|-------|--------------|
+| `cross-vendor-structural` | The reviewer is build-blind by topology: a separate process / terminal from the builder, using a different vendor or model family (the Orca reference case). |
+| `same-vendor-instructed` | The builder and reviewer use the same vendor, but the reviewer is a fresh session/subagent handed only the diff and acceptance criteria; isolation is instructed fresh-context / write-isolated, not a mechanical cross-vendor barrier. |
+| `single-process-instructed` | A headless or otherwise collapsed single-process run represents review inside one process / continuation loop; blindness is an instructed discipline rather than process separation. |
+
+Derivation note (issue #88): the adapter corpus already spells
+`reviewer_mode: same-vendor-instructed`; Orca docs describe the separate-process
+`cross-vendor` + `structural` guarantee; headless adapter docs describe the single-process
+instructed path. The enum preserves those existing terms with one hyphenated YAML-safe spelling.
 
 Then markdown body: human summary, indexes, **Recommended next missions** table (duplicate of
 `deferred_missions` for readers).
@@ -99,8 +120,8 @@ knows them) so a promotion run can land without schema churn.
 | `bug-batch` (exploratory) | `docs/bug-batch-readiness.md` | `bugs_open: 0`, `bugs_skipped: <n>` |
 | `targeted-migration` (exploratory) | `docs/migration-readiness.md` | `migration_items_open: 0`, `old_axis_removed: true` |
 | `design-integration` (exploratory) | `docs/parity-readiness.md` | `parity_items_open: 0`, `regressions: 0` |
-| `landing-page-convergence` (exploratory) | `docs/landing-readiness.md` | `divergences_open: 0` |
-| `legacy-rebuild` (exploratory) | `docs/rebuild-readiness.md` | `units_open: 0`, `floor_preserved: true`, `e2e_verified: true` |
+| `landing-page-convergence` (archived) | `docs/landing-readiness.md` | `divergences_open: 0` |
+| `legacy-rebuild` (archived) | `docs/rebuild-readiness.md` | `units_open: 0`, `floor_preserved: true`, `e2e_verified: true` |
 | `take-product-to-completion` (exploratory) | `docs/completion-readiness.md` | `in_items_open: 0`, `roadmap_count: <n>`, `stubs_remaining: 0`, `e2e_verified: true` |
 | `inference-cost` (exploratory) | `docs/inference-cost-readiness.md` | `cost_regressed: false`, `quality_regressed: false`, `levers_open: 0` |
 
@@ -175,6 +196,7 @@ fleet-outcome:
   status: done
   repo: /Users/me/my-app
   base_branch: fleet/secure-ship-base
+  reviewer_mode: cross-vendor-structural
   prs_merged: 14
   metrics:
     p0_open: 0

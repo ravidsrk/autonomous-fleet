@@ -8,7 +8,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-ACTIVE_PRESETS=(repo-health ship-with-proof quality-gate audit-gated gstack-quality)
+ACTIVE_PRESETS=(repo-health ship-with-proof quality-gate audit-gated)
 # audit-gated ships a LIVE conditional edge (`if: findings_open == 0` / `> 0`), so it is the
 # only preset whose failure/blocked branch is reachable. Probe it twice: the benign all-zero
 # pass exercises the clean branch, and --probe-fail forces failure-shaped metrics so the
@@ -61,7 +61,7 @@ cleanup_probe_home() {
 trap cleanup_probe_home EXIT
 export COMMUNITY_PROBE_HOME
 
-COMMUNITY_OUT="$(./scripts/preflight-community.sh product-framing --dry-run 2>&1)"
+COMMUNITY_OUT="$(./scripts/preflight-community.sh browser-qa-fix --dry-run 2>&1)"
 echo "$COMMUNITY_OUT"
 echo "$COMMUNITY_OUT" | grep -q "recommended community bundle" || {
   echo "validate-headless: preflight-community must print recommended bundle" >&2
@@ -76,8 +76,8 @@ echo "$COMMUNITY_OUT" | grep -q "^WARN" || {
   exit 1
 }
 
-echo "  gstack mission: product-framing (community hints)"
-GSTACK_HEADLESS_OUT="$(./scripts/run-mission-headless.sh grok product-framing --dry-run --repo "$ROOT" 2>&1)"
+echo "  gstack mission: browser-qa-fix (community hints)"
+GSTACK_HEADLESS_OUT="$(./scripts/run-mission-headless.sh grok browser-qa-fix --dry-run --repo "$ROOT" 2>&1)"
 echo "$GSTACK_HEADLESS_OUT"
 echo "$GSTACK_HEADLESS_OUT" | grep -q "install-community.sh" || {
   echo "validate-headless: gstack mission dry-run must surface install-community hint" >&2

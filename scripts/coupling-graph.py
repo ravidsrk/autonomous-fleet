@@ -4,7 +4,7 @@
 A coordinator calls this during DECOMPOSITION to obey the coupling-aware
 partitioning rule (Co-Coder, arXiv 2606.00953: +14% pass, -35% cost on
 dependency-dense repos): cluster tightly-coupled files into ONE task, mark
-hub files serialize-always (upstream of the hot-file rule). See engine.md
+hub files serialize-always (upstream of the hot-file rule). See engine-workers.md
 DECOMPOSITION.
 
 Stdlib only: `ast` for python, regex for JS/TS. No third-party deps, no network.

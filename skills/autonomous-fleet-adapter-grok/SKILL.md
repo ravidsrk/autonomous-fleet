@@ -85,7 +85,7 @@ There is no persistent external task daemon, so:
 ### PLACE(independent) via container-use (optional: isolated container + branch + sandbox)
 Register: `grok mcp add container-use -- container-use stdio` (needs Docker). PLACE(independent) MAY
 then use a container-use ENVIRONMENT instead of a host `git worktree` — the canonical loop is in
-`engine.md` → CONTAINER-USE-PLACEMENT. The registration is verified on this host; a full live run is
+`engine-workers.md` → CONTAINER-USE-PLACEMENT. The registration is verified on this host; a full live run is
 gated by Grok's own auth (headless Grok hits `Auth(AuthorizationRequired)`), so exercise it once Grok
 login is configured. The engine and loop are proven on the Claude Code and Codex adapters.
 
@@ -186,7 +186,7 @@ Background shell: `background: true` on `run_terminal_command`; poll with
 
 ## TRACE EMISSION (live coordinator)
 
-Trace **before** ledger write on every transition (engine.md TRACE EMISSION). Append events with:
+Trace **before** ledger write on every transition (trace.md TRACE EMISSION). Append events with:
 
 ```bash
 python3 <SUBSTRATE>/emit_trace.py emit .fleet/runs/<run_id>/ \
@@ -215,7 +215,7 @@ If `manifest.json` is not present yet, add `--mission <slug> --run-id <run_id>`.
 > share the builder's blind spots, and nothing in this runtime makes seeing
 > the build session physically impossible. Record
 > `reviewer_mode: same-vendor-instructed` in DECISIONS.md and the run
-> outcome. Scope of the "structural" claim: engine.md REVIEW step.
+> outcome. Scope of the "structural" claim: engine-review.md REVIEW step.
 
 
 

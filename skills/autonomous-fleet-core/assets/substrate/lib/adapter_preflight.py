@@ -78,7 +78,7 @@ def activity_hooks_advisory(requires: Mapping[str, Any]) -> str | None:
     if requires.get("activity_hooks") is True:
         return (
             "activity_hooks: INSPECT must treat >90s post-spawn silence as no_signal "
-            "(see engine.md AO MECHANISMS; verify_hook_signal.py)"
+            "(see ao-adoptions.md AO MECHANISMS; verify_hook_signal.py)"
         )
     return None
 

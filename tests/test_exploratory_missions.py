@@ -10,30 +10,49 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-GSTACK_SLUGS = (
+PARKED_SLUGS = (
+    "release-document",
+    "devex-audit",
+    "landing-page-convergence",
     "product-framing",
-    "browser-qa-fix",
+    "security-cso-audit",
+    "legacy-rebuild",
+)
+ACTIVE_GSTACK_SLUGS = ("browser-qa-fix", "incident-investigate")
+ARCHIVED_GSTACK_SLUGS = (
+    "product-framing",
     "security-cso-audit",
     "devex-audit",
     "release-document",
-    "incident-investigate",
 )
+ALL_GSTACK_SLUGS = ARCHIVED_GSTACK_SLUGS + ACTIVE_GSTACK_SLUGS
 DESIGN_INTEGRATION_BANNER = (
     ROOT / "docs" / "exploratory" / "missions" / "design-integration" / "assets" / "banner.png"
 )
+
+
+def _mission_dir(slug: str) -> Path:
+    base = ROOT / "docs" / "exploratory" / "missions"
+    return base / "archive" / slug if slug in PARKED_SLUGS else base / slug
 
 
 def _md5(path: Path) -> str:
     return hashlib.md5(path.read_bytes()).hexdigest()
 
 
-def test_list_exploratory_mission_dirs_includes_gstack_missions() -> None:
+def test_list_exploratory_mission_dirs_splits_active_from_archive() -> None:
     sys.path.insert(0, str(ROOT / "scripts"))
-    from lib.exploratory_missions import list_exploratory_mission_dirs
+    from lib.exploratory_missions import (
+        list_archived_mission_dirs,
+        list_exploratory_mission_dirs,
+    )
 
     names = {p.name for p in list_exploratory_mission_dirs(ROOT)}
-    for slug in GSTACK_SLUGS:
+    archived = {p.name for p in list_archived_mission_dirs(ROOT)}
+    for slug in ACTIVE_GSTACK_SLUGS:
         assert slug in names
+    assert names.isdisjoint(PARKED_SLUGS)
+    assert archived == set(PARKED_SLUGS)
 
 
 def test_validate_exploratory_missions_cli_exits_zero() -> None:
@@ -46,23 +65,25 @@ def test_validate_exploratory_missions_cli_exits_zero() -> None:
     )
     assert r.returncode == 0, r.stderr
     assert "exploratory missions passed validation" in r.stdout
-    for slug in GSTACK_SLUGS:
+    for slug in ACTIVE_GSTACK_SLUGS:
         assert f"exploratory/{slug}" in r.stdout
+    for slug in PARKED_SLUGS:
+        assert f"exploratory/{slug}" not in r.stdout
 
 
 def test_gstack_banners_differ_from_design_integration() -> None:
     ref = _md5(DESIGN_INTEGRATION_BANNER)
-    digests = {_md5(ROOT / "docs/exploratory/missions" / s / "assets" / "banner.png") for s in GSTACK_SLUGS}
+    digests = {_md5(_mission_dir(s) / "assets" / "banner.png") for s in ALL_GSTACK_SLUGS}
     assert ref not in digests
-    assert len(digests) == len(GSTACK_SLUGS)
+    assert len(digests) == len(ALL_GSTACK_SLUGS)
 
 
 def test_gstack_banners_are_png_1200x600() -> None:
     sys.path.insert(0, str(ROOT / "scripts"))
     from lib.png_banner import png_dimensions
 
-    for slug in GSTACK_SLUGS:
-        path = ROOT / "docs/exploratory/missions" / slug / "assets" / "banner.png"
+    for slug in ALL_GSTACK_SLUGS:
+        path = _mission_dir(slug) / "assets" / "banner.png"
         assert path.read_bytes()[:4] == b"\x89PNG", f"{slug}: expected PNG magic"
         assert png_dimensions(path) == (1200, 600), slug
 
@@ -78,7 +99,7 @@ def test_gstack_new_mission_banners_are_schematic_not_placeholders() -> None:
 
     new_slugs = ("devex-audit", "release-document", "incident-investigate")
     for slug in new_slugs:
-        path = ROOT / "docs/exploratory/missions" / slug / "assets" / "banner.png"
+        path = _mission_dir(slug) / "assets" / "banner.png"
         assert path.stat().st_size >= MIN_BANNER_BYTES, f"{slug}: banner too small"
         assert png_unique_color_count(path, sample=4) >= 10, f"{slug}: too few colors"
         assert not is_placeholder_banner(path), f"{slug}: still placeholder"
@@ -115,19 +136,12 @@ def test_sniff_script_uses_python_magic_probe_not_xxd() -> None:
     assert 'magic "$1"' in text or "magic \"$1\"" in text
 
 
-@pytest.mark.parametrize("slug,label", [
-    ("product-framing", "skills/product-framing"),
-    ("browser-qa-fix", "skills/browser-qa-fix"),
-    ("security-cso-audit", "skills/security-cso-audit"),
-    ("devex-audit", "skills/devex-audit"),
-    ("release-document", "skills/release-document"),
-    ("incident-investigate", "skills/incident-investigate"),
-])
-def test_banner_prompt_declares_skill_label(slug: str, label: str) -> None:
-    prompt = (
-        ROOT / "docs" / "exploratory/missions" / slug / "assets" / "banner-prompt.txt"
-    ).read_text(encoding="utf-8")
-    assert label in prompt
+@pytest.mark.parametrize("slug", ALL_GSTACK_SLUGS)
+def test_banner_prompt_declares_skill_label(slug: str) -> None:
+    prompt = (_mission_dir(slug) / "assets" / "banner-prompt.txt").read_text(
+        encoding="utf-8"
+    )
+    assert f"skills/{slug}" in prompt
 
 
 def test_lint_exploratory_missions_zero_errors() -> None:
@@ -136,7 +150,8 @@ def test_lint_exploratory_missions_zero_errors() -> None:
 
     errors, lines = lint_exploratory_missions(ROOT)
     assert errors == 0
-    assert any("exploratory/product-framing" in ln for ln in lines)
+    assert any("exploratory/browser-qa-fix" in ln for ln in lines)
+    assert not any("exploratory/product-framing" in ln for ln in lines)
 
 
 def test_validate_exploratory_missions_main_import() -> None:
@@ -204,6 +219,19 @@ def test_all_exploratory_missions_carry_both_markers() -> None:
 
     for mission_dir in list_exploratory_mission_dirs(ROOT):
         assert missing_exploratory_markers(mission_dir) == [], mission_dir.name
+
+
+def test_archived_missions_still_pass_lint() -> None:
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from lib.exploratory_missions import (
+        list_archived_mission_dirs,
+        missing_exploratory_markers,
+    )
+    from lib.skill_lint import lint_mission
+
+    for mission_dir in list_archived_mission_dirs(ROOT):
+        assert missing_exploratory_markers(mission_dir) == [], mission_dir.name
+        lint_mission(mission_dir)
 
 
 def test_missing_flag_and_banner_detected(tmp_path) -> None:

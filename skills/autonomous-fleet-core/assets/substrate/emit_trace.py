@@ -10,7 +10,7 @@ Subcommands:
   by primitive, role, and status. Same exit-code convention.
 - ``emit <run_dir>`` — append one live coordinator event (trace before ledger).
 
-Lineage: see ``skills/autonomous-fleet-core/references/engine.md`` § TRACE
+Lineage: see ``skills/autonomous-fleet-core/references/trace.md`` § TRACE
 EMISSION and ``assets/fleet-trace.schema.json``.
 """
 from __future__ import annotations

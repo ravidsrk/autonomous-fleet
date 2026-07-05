@@ -44,7 +44,7 @@ def test_png_dimensions_rejects_missing_ihdr(tmp_path: Path) -> None:
 
 
 def test_png_banner_cli_dimensions() -> None:
-    banner = ROOT / "docs/exploratory/missions/product-framing/assets/banner.png"
+    banner = ROOT / "docs/exploratory/missions/archive/product-framing/assets/banner.png"
     r = subprocess.run(
         [sys.executable, str(PNG_PY), "dimensions", str(banner)],
         capture_output=True,
@@ -66,7 +66,7 @@ def test_png_banner_main_dimensions_inprocess(capsys) -> None:
     sys.path.insert(0, str(ROOT / "scripts"))
     from lib.png_banner import _main
 
-    banner = ROOT / "docs/exploratory/missions/product-framing/assets/banner.png"
+    banner = ROOT / "docs/exploratory/missions/archive/product-framing/assets/banner.png"
     assert _main(["dimensions", str(banner)]) == 0
     assert capsys.readouterr().out.strip() == "1200 600"
 
@@ -81,7 +81,7 @@ def test_png_magic_hex() -> None:
     sys.path.insert(0, str(ROOT / "scripts"))
     from lib.png_banner import png_magic_hex
 
-    banner = ROOT / "docs/exploratory/missions/devex-audit/assets/banner.png"
+    banner = ROOT / "docs/exploratory/missions/archive/devex-audit/assets/banner.png"
     assert png_magic_hex(banner) == "89504e47"
 
 
@@ -142,7 +142,7 @@ def test_png_dimensions_errors(tmp_path: Path) -> None:
 
 
 def test_png_banner_magic_cli() -> None:
-    banner = ROOT / "docs/exploratory/missions/devex-audit/assets/banner.png"
+    banner = ROOT / "docs/exploratory/missions/archive/devex-audit/assets/banner.png"
     r = subprocess.run(
         [sys.executable, str(PNG_PY), "magic", str(banner)],
         capture_output=True,
@@ -191,7 +191,7 @@ def test_main_magic_inprocess(capsys) -> None:
     sys.path.insert(0, str(ROOT / "scripts"))
     from lib.png_banner import _main
 
-    banner = ROOT / "docs/exploratory/missions/devex-audit/assets/banner.png"
+    banner = ROOT / "docs/exploratory/missions/archive/devex-audit/assets/banner.png"
     assert _main(["magic", str(banner)]) == 0
     assert capsys.readouterr().out.strip() == "89504e47"
 

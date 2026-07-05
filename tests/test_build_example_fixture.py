@@ -74,6 +74,7 @@ def test_generator_runs_end_to_end(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     # Fleet-outcome carries archive_enabled per the substrate spec.
     outcome_text = (fixture_dir / "fleet-outcome.yaml").read_text()
     assert "archive_enabled: true" in outcome_text
+    assert "reviewer_mode: cross-vendor-structural" in outcome_text
 
     # Findings doc must be valid JSON with at least 1 finding.
     findings = json.loads((fixture_dir / "p0-review-findings.json").read_text())

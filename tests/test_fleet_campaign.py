@@ -25,6 +25,7 @@ DOC_SYNC_OUTCOME = {
     "repo": "/tmp/repo",
     "base_branch": "fleet/base",
     "prs_merged": 1,
+    "reviewer_mode": "cross-vendor-structural",
     "metrics": {"drift_open": 0, "code_bug_findings": 0},
     "deferred_missions": [],
 }
@@ -155,7 +156,13 @@ def test_pick_next_docs_if_bugs_includes_bug_batch():
 
 
 def test_validate_outcome_requires_metrics():
-    errors = validate_outcome({"mission": "doc-sync", "status": "done"})
+    errors = validate_outcome(
+        {
+            "mission": "doc-sync",
+            "status": "done",
+            "reviewer_mode": "cross-vendor-structural",
+        }
+    )
     assert any("metrics" in e for e in errors)
 
 
@@ -197,6 +204,7 @@ def test_validate_outcome_done_gates_adversarial_findings_without_closing_info_m
         "repo": "/tmp/repo",
         "base_branch": "fleet/base",
         "prs_merged": 1,
+        "reviewer_mode": "cross-vendor-structural",
         "metrics": {
             "p0_open": 0,
             "p1_open": 2,
@@ -224,6 +232,7 @@ def test_validate_outcome_rejects_done_with_unverified_findings_when_reported():
         "repo": "/tmp/repo",
         "base_branch": "fleet/base",
         "prs_merged": 1,
+        "reviewer_mode": "cross-vendor-structural",
         "metrics": {
             "p0_open": 0,
             "p1_open": 0,
@@ -284,6 +293,7 @@ def test_validate_outcome_rejects_invalid_types_and_enums():
         "mission": "doc-sync",
         "repo": "/tmp",
         "base_branch": "main",
+        "reviewer_mode": "cross-vendor-structural",
         "metrics": {"drift_open": 0, "code_bug_findings": 0},
         "deferred_missions": [],
     }
@@ -305,6 +315,33 @@ def test_validate_outcome_rejects_invalid_types_and_enums():
 
     errors = validate_outcome({**base, "status": "done", "prs_merged": 1, "mission": "doc-snyc"})
     assert any("unknown mission" in e for e in errors)
+
+
+def test_validate_outcome_reviewer_mode_accepts_canonical_modes():
+    for mode in (
+        "cross-vendor-structural",
+        "same-vendor-instructed",
+        "single-process-instructed",
+    ):
+        assert validate_outcome({**DOC_SYNC_OUTCOME, "reviewer_mode": mode}) == []
+
+
+def test_validate_outcome_reviewer_mode_rejects_unknown_mode():
+    errors = validate_outcome({**DOC_SYNC_OUTCOME, "reviewer_mode": "nonsense"})
+
+    assert any("reviewer_mode" in e and "nonsense" in e for e in errors), errors
+
+
+def test_validate_outcome_reviewer_mode_missing_warns_but_validates():
+    outcome = {k: v for k, v in DOC_SYNC_OUTCOME.items() if k != "reviewer_mode"}
+
+    with pytest.warns(
+        UserWarning,
+        match="reviewer_mode missing — recording the review topology is required for new runs",
+    ):
+        errors = validate_outcome(outcome)
+
+    assert errors == []
 
 
 def test_split_frontmatter_leading_blank_line():
@@ -466,6 +503,7 @@ fleet-outcome:
   repo: /x
   base_branch: fleet/b
   prs_merged: 0
+  reviewer_mode: cross-vendor-structural
   metrics:
     drift_open: 0
     code_bug_findings: 0

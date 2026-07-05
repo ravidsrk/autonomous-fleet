@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://autonomous-fleet.dev/schemas/fleet-trace.schema.json",
   "title": "Autonomous Fleet — trace event",
-  "description": "One JSONL line per state transition in the run ledger. The trace stream is the dashboard contract: vibe-kanban, Claude Code Agent View, and custom dashboards are interchangeable consumers. See engine.md TRACE EMISSION doctrine and references/run-archive.md for the archive layout. Schema is pinned at 1.0; breaking changes require a new $id.",
+  "description": "One JSONL line per state transition in the run ledger. The trace stream is the dashboard contract: vibe-kanban, Claude Code Agent View, and custom dashboards are interchangeable consumers. See trace.md TRACE EMISSION doctrine and references/run-archive.md for the archive layout. Schema is pinned at 1.0; breaking changes require a new $id.",
   "type": "object",
   "additionalProperties": false,
   "required": [

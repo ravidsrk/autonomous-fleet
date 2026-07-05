@@ -178,7 +178,7 @@ PR. The mission's adversarial-review-and-fix SKILL wires this into Phase 1
 explicitly.
 
 The blind fix is a first-class fleet artifact: it ships with the readiness
-doc's archive bundle (see `engine.md` STRICT MODE evidence kinds — a
+doc's archive bundle (see `strict-mode.md` evidence kinds — a
 blind-fix file qualifies as an `e2e_artifact`-grade fleet output for the
 stop-verify hook) and is post-hoc auditable.
 
@@ -186,7 +186,7 @@ stop-verify hook) and is post-hoc auditable.
 
 - The `EVID` discipline still applies. A finding only CLOSES when its own
   reproduction stops reproducing — `verified: true` is necessary but not
-  sufficient for closure. See `engine.md` FROZEN-ARTIFACT CLOSE TEST. For
+  sufficient for closure. See `engine-autonomy.md` FROZEN-ARTIFACT CLOSE TEST. For
   `category: root_cause_depth` findings, EVID applies separately to EACH
   cascade path named in `cascade_impact`, not just the originally reported
   reproduction.

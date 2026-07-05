@@ -1,7 +1,7 @@
 # Run-archive scheme
 
 Reference for the `.fleet/runs/<run_id>/` archive directory and its
-`manifest.json`. The engine.md ARCHIVE_ENABLED block has the doctrine;
+`manifest.json`. The engine-recovery.md ARCHIVE_ENABLED block has the doctrine;
 this doc has the operational detail.
 
 ## What's an archive?

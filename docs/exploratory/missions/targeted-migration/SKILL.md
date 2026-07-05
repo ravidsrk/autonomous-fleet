@@ -57,7 +57,7 @@ Record in `<LEDGER_DIR>/migration-readiness.md` under **Recommended next mission
 
 | Finding type | Route to |
 |--------------|----------|
-| Full rebuild required (multi-axis) | `legacy-rebuild` |
+| Full rebuild required (multi-axis) | `docs/exploratory/missions/archive/legacy-rebuild/` (parked) |
 | Pre-migration test gap | `test-coverage` (often prior program step) |
 | Migration docs / setup instructions | `doc-sync` |
 

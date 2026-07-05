@@ -4,6 +4,7 @@ fleet-outcome:
   status: partial
   repo: ravidsrk/autonomous-fleet
   base_branch: roadmap/post-substrate-impl
+  reviewer_mode: cross-vendor-structural
   prs_merged: 0
   archive_enabled: true
   run_id: 20260623T000000Z-adversarial-review-and-fix-000001

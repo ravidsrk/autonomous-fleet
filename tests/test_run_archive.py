@@ -28,6 +28,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+import lib.fleet_run as fleet_run  # noqa: E402
 
 from lib.fleet_run import (  # noqa: E402
     MAX_ARCHIVE_BYTES,
@@ -825,6 +826,7 @@ _BASE_OUTCOME = {
     "repo": "/r",
     "base_branch": "b",
     "prs_merged": 1,
+    "reviewer_mode": "cross-vendor-structural",
     "metrics": {"drift_open": 0, "code_bug_findings": 0},
 }
 
@@ -1023,6 +1025,247 @@ def test_size_cap_gitattributes_unreadable(tmp_path):
     )
     assert any("cap" in e for e in errs)
 
+
+def test_over_cap_manifest_skips_on_disk_hash_and_size_walk(tmp_path, monkeypatch):
+    """Once the manifest declares too many non-LFS bytes, validation must stop
+    before touching attacker-controlled archive files. A wrong on-disk file
+    proves the disk walk did not add size or sha errors after the cap failure."""
+    (tmp_path / "p0-review-findings.json").write_text("wrong content", encoding="utf-8")
+
+    def fail_if_hashed(path: Path) -> str:
+        raise AssertionError(f"unexpected hash of {path}")
+
+    monkeypatch.setattr(fleet_run, "_sha256_file", fail_if_hashed)
+
+    errs = validate_manifest_payload(
+        _cap_manifest(MAX_ARCHIVE_BYTES + 1),
+        archive_root=tmp_path,
+        check_files_on_disk=True,
+    )
+
+    assert any("exceed the" in e and "byte cap" in e for e in errs), errs
+    assert not any("size mismatch" in e or "sha256 mismatch" in e for e in errs), errs
+
+
+def test_manifest_entry_with_bool_bytes_refuses_to_hash_unsized_file(tmp_path, monkeypatch):
+    """A bool is an int subclass in Python; the disk validator must still reject
+    it before size comparison/hashing, or a one-byte hostile file can be hashed
+    despite lacking a trustworthy integer byte count."""
+    (tmp_path / "p0-review-findings.json").write_text("x", encoding="utf-8")
+
+    def fail_if_hashed(path: Path) -> str:
+        raise AssertionError(f"unexpected hash of {path}")
+
+    monkeypatch.setattr(fleet_run, "_sha256_file", fail_if_hashed)
+    manifest = _cap_manifest(1)
+    manifest["files"][0]["bytes"] = True
+
+    errs = validate_manifest_payload(
+        manifest,
+        archive_root=tmp_path,
+        check_files_on_disk=True,
+    )
+
+    assert any("bytes must be a non-negative int" in e for e in errs), errs
+    assert any("missing or non-integer 'bytes'; refusing to hash" in e for e in errs), errs
+    assert not any("sha256 mismatch" in e for e in errs), errs
+
+
+
+def test_worker_lifeline_and_synthetic_lifecycle_trace_preserve_causal_edges():
+    """The dry-run trace helpers emit externally visible primitive ordering:
+    COMMIT must point at the worker spawn, and the optional T-FINAL event must
+    be present only when the caller asks the helper to emit it."""
+
+    class FakeEmitter:
+        def __init__(self) -> None:
+            self.calls: list[tuple[str, str, str, dict]] = []
+
+        def emit(self, primitive: str, role: str, status: str, **kwargs) -> str:
+            self.calls.append((primitive, role, status, kwargs))
+            return f"event-{len(self.calls)}"
+
+    emitter = FakeEmitter()
+    spawn_id, commit_id = fleet_run.emit_worker_commit_lifeline(
+        emitter, task_id="task-1", worker_role="FIXER"
+    )
+
+    assert (spawn_id, commit_id) == ("event-1", "event-2")
+    assert emitter.calls[1] == (
+        "COMMIT",
+        "FIXER",
+        "succeeded",
+        {"task_id": "task-1", "parent_event": spawn_id},
+    )
+
+    ids = fleet_run.emit_dryrun_lifecycle_trace(
+        emitter,
+        mission="doc-sync",
+        task_id="task-2",
+        runtime="codex",
+        include_t_final=True,
+        manifest_name="manifest.json",
+        file_count=3,
+        abort_status="blocked",
+    )
+
+    assert ids["dispatch"] == "event-3"
+    assert ids["t_final"] == "event-13"
+    assert emitter.calls[-1] == (
+        "T-FINAL",
+        "INTEGRATOR",
+        "succeeded",
+        {"details": {"manifest": "manifest.json", "files": 3}},
+    )
+
+
+def test_progress_parsing_and_headless_archive_capture_runtime_response(tmp_path):
+    """A headless dry-run archive is the public audit artifact for a runtime
+    probe: progress text drives trace statuses, JSON runtime output is archived,
+    and the manifest validates after T-FINAL refreshes the trace checksum."""
+    source = tmp_path / "source"
+    progress = source / "docs" / "doc-sync-progress.md"
+    progress.parent.mkdir(parents=True)
+    progress.write_text(
+        "TASK task-9\nPHASE: DONE\nREVIEWED=t\nMERGED=f\nMISSION: doc-sync\n"
+        + ("x" * 3000),
+        encoding="utf-8",
+    )
+    runtime_response = tmp_path / "response.out"
+    runtime_response.write_text('{"ok": true}\n', encoding="utf-8")
+
+    assert fleet_run.progress_text_for_mission(source, "doc-sync").startswith("TASK task-9")
+    assert len(fleet_run.progress_excerpt_for_mission(source, "doc-sync")) == 2500
+    fallback = fleet_run.progress_text_for_mission(source, "unknown-mission")
+    assert "MISSION: unknown-mission" in fallback
+
+    plan = fleet_run.plan_dryrun_trace_from_progress(
+        progress.read_text(encoding="utf-8"), mission="doc-sync", runtime="grok"
+    )
+    assert plan.task_id == "task-9"
+    assert plan.inspect_status == "succeeded"
+    assert plan.merge_status == "started"
+    assert plan.goal_blocked_status == "skipped"
+    assert "MISSION:doc-sync" in plan.note
+
+    arch, run_id, primitives = fleet_run.write_headless_dryrun_archive(
+        tmp_path,
+        mission="doc-sync",
+        runtime="grok",
+        progress_source_root=source,
+        runtime_response_path=runtime_response,
+    )
+
+    assert parse_run_id(run_id)[1] == "doc-sync"
+    assert "T-FINAL" in primitives
+    assert (arch / "headless-runtime-response.json").is_file()
+    payload, errs = load_and_validate_manifest(arch)
+    assert errs == [], errs
+    assert payload is not None
+    assert payload["coordinator"] == "headless-dryrun-grok"
+    assert payload["base_branch"] == "main"
+    assert "Runtime capture: headless-runtime-response.json." in payload["notes"]
+    assert any(entry["path"] == "headless-runtime-response.json" for entry in payload["files"])
+
+    empty_response = tmp_path / "empty-response.out"
+    empty_response.write_text("", encoding="utf-8")
+    alias_arch, _alias_run_id, alias_primitives = fleet_run.record_headless_run(
+        tmp_path / "alias",
+        mission="doc-sync",
+        runtime="codex",
+        progress_source_root=tmp_path / "missing-source",
+        runtime_response_path=empty_response,
+    )
+    assert alias_arch.is_dir()
+    assert "T-FINAL" in alias_primitives
+    assert not (alias_arch / "headless-runtime-response.txt").exists()
+
+
+def test_runtime_response_archive_name_uses_first_byte_without_parsing(tmp_path):
+    json_response = tmp_path / "json.out"
+    json_response.write_text("[1]\n", encoding="utf-8")
+    text_response = tmp_path / "text.out"
+    text_response.write_text("\n{\"json_after_newline\": true}\n", encoding="utf-8")
+    empty_response = tmp_path / "empty.out"
+    empty_response.write_text("", encoding="utf-8")
+
+    class StatRaises:
+        def is_file(self) -> bool:
+            return True
+
+        def stat(self):
+            raise OSError("stat failed")
+
+    class OpenRaises:
+        def open(self, mode: str):
+            raise OSError("open failed")
+
+    assert fleet_run._runtime_response_has_content(json_response) is True
+    assert fleet_run._runtime_response_has_content(empty_response) is False
+    assert fleet_run._runtime_response_has_content(StatRaises()) is False
+    assert fleet_run._runtime_response_archive_name(json_response) == "headless-runtime-response.json"
+    assert fleet_run._runtime_response_archive_name(text_response) == "headless-runtime-response.txt"
+    assert fleet_run._runtime_response_archive_name(empty_response) == "headless-runtime-response.txt"
+    assert fleet_run._runtime_response_archive_name(OpenRaises()) == "headless-runtime-response.txt"
+
+
+def test_manifest_writer_and_payload_shape_surface_actionable_errors(tmp_path):
+    rid = allocate_run_id("doc-sync")
+    arch = ensure_archive_dir(tmp_path, rid)
+    artifact = arch / "a.txt"
+    artifact.write_text("x", encoding="utf-8")
+    entry = file_entry_for(artifact, arch, kind="other", producer="writer")
+
+    with pytest.raises(ValueError, match="invalid run_id"):
+        write_manifest(arch, run_id="not-a-run-id", mission="doc-sync", files=[entry])
+
+    assert validate_manifest_payload(["not", "a", "manifest"]) == [
+        "manifest: manifest must be an object"
+    ]
+
+    bad = {
+        "schema_version": "9.9",
+        "run_id": "bad-run-id",
+        "mission": "doc-sync",
+        "created_utc": "not-a-date",
+        "files": [
+            "not-a-dict",
+            {
+                "path": "",
+                "kind": "other",
+                "sha256": "0" * 64,
+                "mtime_utc": "2026-01-01T00:00:00Z",
+                "producer": "writer",
+                "bytes": 0,
+            },
+            {
+                "path": "bad-metadata.txt",
+                "kind": "other",
+                "sha256": "0" * 64,
+                "mtime_utc": "not-a-date",
+                "producer": "writer",
+            },
+            {
+                "path": "missing.txt",
+                "kind": "other",
+                "sha256": "0" * 64,
+                "mtime_utc": "2026-99-99T00:00:00Z",
+                "producer": " ",
+                "bytes": 1,
+            },
+        ],
+    }
+
+    errs = validate_manifest_payload(bad, archive_root=arch)
+
+    assert any("schema_version must be" in e for e in errs), errs
+    assert any("run_id 'bad-run-id' does not match" in e for e in errs), errs
+    assert any("created_utc 'not-a-date' not a valid" in e for e in errs), errs
+    assert any("manifest.files[0]: must be an object" in e for e in errs), errs
+    assert any("manifest.files[2]: missing field 'bytes'" in e for e in errs), errs
+    assert any("manifest.files[2]: mtime_utc not a valid" in e for e in errs), errs
+    assert any("producer must be a non-empty string" in e for e in errs), errs
+    assert any("file not found" in e and "missing.txt" in e for e in errs), errs
 
 # --- independence invariant (issue #77) ------------------------------------
 

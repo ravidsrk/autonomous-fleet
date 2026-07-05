@@ -276,7 +276,7 @@ def test_close_is_idempotent(tmp_path: Path) -> None:
 
 
 def test_doctrine_emit_before_ledger_write(tmp_path: Path) -> None:
-    """Enforces engine.md § TRACE EMISSION: trace event MUST land before
+    """Enforces trace.md § TRACE EMISSION: trace event MUST land before
     the ledger row commits. Simulated by a ledger-write callback that, at
     the moment it would commit, asserts the trace file already contains
     the matching line.

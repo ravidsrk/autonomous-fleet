@@ -1,20 +1,18 @@
+# gstack-quality: ARCHIVED.
+#
+# This campaign was archived because three of its four mission nodes moved to
+# docs/exploratory/missions/archive/:
+#   - product-framing     → docs/exploratory/missions/archive/product-framing
+#   - security-cso-audit  → docs/exploratory/missions/archive/security-cso-audit
+#   - devex-audit         → docs/exploratory/missions/archive/devex-audit
+#
+# The remaining browser-qa-fix node is still active exploratory, but the
+# original campaign shape depended on the parked framing/security/DX sequence.
+#
+# Un-park those missions per docs/exploratory/missions/archive/README.md, then
+# restore the DAG from git history.
+#
+# Until then this campaign is intentionally empty so the autoplan / edge linter
+# does not bind to archived missions.
 campaign: gstack-quality
-repo: single
-allow_exploratory_nodes: true
-base: fleet/gstack-quality-base
-start: frame
-pre_gates:
-  - office-hours
-nodes:
-  frame: { mission: product-framing }
-  qa: { mission: browser-qa-fix }
-  security: { mission: security-cso-audit }
-  devex: { mission: devex-audit }
-post_gates:
-  - qa-only
-  - health
-edges:
-  frame: [{ to: qa, if: always }]
-  qa: [{ to: security, if: always }]
-  security: [{ to: devex, if: always }]
-  devex: []
+status: archived-pending-exploratory-promotion

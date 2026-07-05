@@ -20,9 +20,9 @@ with changelog, deploy, and canary rows. Trigger on: "document this release", "p
 
 # Quick install
 
-Not shipped — exploratory only. Copy from `docs/exploratory/missions/release-document/` when promoting.
+Parked — un-archive from `docs/exploratory/missions/archive/release-document/` before promoting.
 
 # See also
 
-- [`docs/gstack-missions-research.md`](../../../gstack-missions-research.md)
+- [`docs/gstack-missions-research.md`](../../../../gstack-missions-research.md)
 - [gstack `document-release`](https://github.com/garrytan/gstack/tree/main/document-release)
