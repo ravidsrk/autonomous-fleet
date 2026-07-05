@@ -20,9 +20,9 @@
 
 # Quick install
 
-Not shipped — exploratory only. Copy from `docs/exploratory/missions/devex-audit/` when promoting.
+Parked — un-archive from `docs/exploratory/missions/archive/devex-audit/` before promoting.
 
 # See also
 
-- [`docs/gstack-missions-research.md`](../../../gstack-missions-research.md)
+- [`docs/gstack-missions-research.md`](../../../../gstack-missions-research.md)
 - [gstack `devex-review`](https://github.com/garrytan/gstack/tree/main/devex-review)

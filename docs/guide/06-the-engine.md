@@ -548,7 +548,7 @@ transition. The ordering is visible in the source, and it is the right way aroun
 ```python
 # scripts/lib/fleet_run.py, write_manifest()
 manifest_path = archive_root / "manifest.json"
-# Doctrine (engine.md TRACE EMISSION): trace first, ledger second, never the reverse,
+# Doctrine (trace.md TRACE EMISSION): trace first, ledger second, never the reverse,
 # or a crash leaves the manifest on disk with no externally-visible cause. Emit BEFORE write.
 if emitter is not None:
     emitter.emit(

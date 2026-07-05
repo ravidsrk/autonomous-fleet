@@ -84,24 +84,20 @@ use `autonomous-fleet-adapter-grok`.
 
 Other intents that previously routed to a dedicated mission
 (`bug-batch`, `cleanup`, `dependency-update`, `design-integration`,
-`inference-cost`, `landing-page-convergence`, `legacy-rebuild`,
-`take-product-to-completion`, `targeted-migration`) are exploratory at
-the moment — see `docs/exploratory/missions/`. Until they are promoted
-back to `skills/`, route those intents to `adversarial-review-and-fix`
-(which can file the work as a deferred mission in its outcome) or fall
-back to a manual operator pass. Re-route directly once a mission is
-promoted.
+`inference-cost`, `take-product-to-completion`, `targeted-migration`) are
+exploratory at the moment — see `docs/exploratory/missions/`. Parked
+mission designs live under `docs/exploratory/missions/archive/`. Until a
+mission is promoted back to `skills/`, route those intents to
+`adversarial-review-and-fix` (which can file the work as a deferred
+mission in its outcome) or fall back to a manual operator pass. Re-route
+directly once a mission is promoted.
 
-**gstack-derived exploratory missions (2026-06-27)** — documented in
-`docs/exploratory/missions/`, not active until promoted:
+**gstack-derived exploratory missions (2026-06-27)** — active designs are
+documented in `docs/exploratory/missions/`, not active until promoted:
 
 | User says | Exploratory mission |
 |-----------|---------------------|
-| frame the product, office hours, freeze spec before code | `product-framing` |
 | browser QA, test the site and fix, dogfood staging | `browser-qa-fix` |
-| CSO audit, OWASP, threat model, supply chain security | `security-cso-audit` |
-| DX audit, developer experience, score onboarding | `devex-audit` |
-| post-ship docs, document release, deploy checklist | `release-document` |
 | incident RCA, root cause, regression test for outage | `incident-investigate` |
 
 Research: [`docs/gstack-missions-research.md`](../../docs/gstack-missions-research.md).

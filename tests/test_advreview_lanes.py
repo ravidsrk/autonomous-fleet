@@ -43,8 +43,9 @@ def test_three_lane_remediation_section_has_all_lanes() -> None:
     lanes = section(text, "THREE-LANE REMEDIATION", "ROLE PIPELINE")
     lanes_flat = squash(lanes)
 
-    # Engine reference present — LANE PATTERN now lives in engine.md.
-    assert "engine.md" in lanes
+    # Engine reference present — LANE PATTERN lives in the trigger-loaded
+    # engine-autonomy.md (engine.md core split, 0.3.0).
+    assert "engine-autonomy.md" in lanes
     assert "LANE PATTERN" in lanes
     # Mission-specific ledger flags still recorded per lane.
     assert "Lane A" in lanes
@@ -70,8 +71,9 @@ def test_evid_flag_is_ledger_and_fix_loop_gate() -> None:
     ledger_flat = squash(ledger)
     tasks = section(text, "TASK STRUCTURE", "Runtime goal")
 
-    # Engine reference for EVID definition.
-    assert "engine.md" in ledger
+    # Engine reference for EVID definition (relocated to engine-autonomy.md
+    # by the engine.md core split, 0.3.0).
+    assert "engine-autonomy.md" in ledger
     assert "FROZEN-ARTIFACT CLOSE TEST" in ledger
     # Mission-specific ledger flags still present.
     assert "`CODED EVID PR_OPEN REVIEWED MERGED ACCEPT`" in ledger
@@ -237,9 +239,9 @@ def test_fix_loop_wires_anti_anchoring_blind_fix_protocol() -> None:
     # a protocol violation. Without this, the order is unenforceable.
     assert "mtime" in flat.lower()
 
-    # Engine cross-reference, so doctrine readers know where the canonical
-    # discipline lives.
-    assert "engine.md" in fix_loop
+    # Canonical-discipline cross-reference, so doctrine readers know where the
+    # protocol lives (blind-fix.md carries ANTI-ANCHORING after the engine split).
+    assert "blind-fix.md" in fix_loop
     assert "ANTI-ANCHORING" in fix_loop
     assert_no_contradiction_markers(fix_loop)
 
@@ -289,7 +291,7 @@ def test_t_final_writes_run_archive_manifest_before_shipping() -> None:
     flat = squash(tasks)
 
     # Engine cross-reference — the canonical discipline lives in engine.md.
-    assert "engine.md ARCHIVE_ENABLED" in tasks
+    assert "engine-recovery.md ARCHIVE_ENABLED" in tasks
 
     # The mechanics: write_manifest + validate_run_archive.py. Pin both
     # names so a rename doesn't silently break operator scripts.

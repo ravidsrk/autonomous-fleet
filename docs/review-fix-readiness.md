@@ -39,7 +39,7 @@ Status: COMPLETE on BASE. Every finding in the frozen review
 | H2 | H | fix-validators | dd21695 | `validate-fleet-outcome.sh /does/not/exist.md` → exit 1; `validate-skills.sh` → exit 1 (exit 0 with `VALIDATE_SKILLS_OPTIONAL=1`); `run-campaign.sh banana` → exit 1 |
 | M1 | M | fix-validators | dd21695 | custom campaign with `gaps_open > 0` edge dry-runs exit 0, no traceback |
 | M3 | M | fix-engine-lib | d735e19 | `contains "bug-batch"` → True; real known-prefix+metachar injection test (no marker created); pick_next_node + dedup coverage |
-| H3 | H | fix-safety | 97e84e3 | engine.md TRUST BOUNDARIES (+ documented residual); `run-sandboxed.sh` denies `terraform apply` (exit 2) + scrubs secret env; `--handoff` fenced as DATA; LOOP_POLL promoted |
+| H3 | H | fix-safety | 97e84e3 | engine-autonomy.md TRUST BOUNDARIES (+ documented residual); `run-sandboxed.sh` denies `terraform apply` (exit 2) + scrubs secret env; `--handoff` fenced as DATA; LOOP_POLL promoted |
 | L2 | L | fix-safety | 97e84e3 | `LOOP_POLL` in engine.md primitives summary |
 | L1 | L | fix-skills-meta | 1a3f4b1 | no `claude-code``` double-backtick in any mission SKILL.md |
 | L5 | L | fix-skills-meta | 1a3f4b1 | codex adapter `version: 1.1.0`; `compatibility:` on 11/11 missions; frontmatter still valid YAML |

@@ -103,7 +103,7 @@ Register: `claude mcp add container-use -- container-use stdio` (needs Docker), 
 subagent the `mcp__container-use__environment_*` tools. PLACE(independent) MAY then use a
 container-use ENVIRONMENT instead of a host `git worktree` — the canonical loop (SPAWN_WORKER /
 INSPECT / OPEN_PR / CLEANUP / FALLBACK and the `merge`-bypasses-the-PR-gate warning) lives in
-`engine.md` → CONTAINER-USE-PLACEMENT. Verified end to end on a live host (container-use v0.4.2 +
+`engine-workers.md` → CONTAINER-USE-PLACEMENT. Verified end to end on a live host (container-use v0.4.2 +
 Docker): commands run INSIDE the container (`uname` reports Linux, not the macOS host).
 
 ### SPAWN_WORKER(role, placement)
@@ -120,7 +120,7 @@ Docker): commands run INSIDE the container (`uname` reports Linux, not the macOS
 > share the builder's blind spots, and nothing in this runtime makes seeing
 > the build session physically impossible. Record
 > `reviewer_mode: same-vendor-instructed` in DECISIONS.md and the run
-> outcome. Scope of the "structural" claim: engine.md REVIEW step.
+> outcome. Scope of the "structural" claim: engine-review.md REVIEW step.
 
 - Worktree sub-session path (for units needing an isolated long-running checkout): `git worktree
   add` per PLACE(independent), then drive the agent CLI in that directory via Bash. Use the tool's

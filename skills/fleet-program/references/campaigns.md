@@ -164,35 +164,14 @@ edges:
 
 Headless: `./scripts/run-campaign.sh <runtime> --preset align-then-ship`
 
-## Preset: gstack-quality (gstack-derived exploratory chain)
+## Preset: gstack-quality (archived)
 
-**When:** "run gstack missions", "product framing then browser QA", "gstack quality pack".
+This preset is archived because its original chain depended on parked exploratory designs. The
+remaining browser QA mission is still available as a single exploratory mission, but the four-node
+gstack-quality DAG is intentionally empty until the parked nodes are un-archived with evidence.
 
-Chains four gstack-derived exploratory missions. **Pre-gate:** `office-hours` (user-invoked).
-**Post-gates:** `qa-only`, `health`. Install bundles: `gstack-framing`, `gstack-browser`,
-`gstack-security`, `gstack-devex` via `./scripts/install-community.sh`.
+Headless: `scripts/campaigns/gstack-quality.yaml` is an archived stub and is not runnable.
 
-```yaml
-campaign: gstack-quality
-start: frame
-pre_gates:
-  - office-hours
-nodes:
-  frame: { mission: product-framing }
-  qa: { mission: browser-qa-fix }
-  security: { mission: security-cso-audit }
-  devex: { mission: devex-audit }
-post_gates:
-  - qa-only
-  - health
-edges:
-  frame: [{ to: qa, if: always }]
-  qa: [{ to: security, if: always }]
-  security: [{ to: devex, if: always }]
-  devex: []
-```
-
-Headless: `./scripts/run-campaign.sh <runtime> --preset gstack-quality --dry-run`
 
 ## Preset: quality-gate (linear + post-gates)
 

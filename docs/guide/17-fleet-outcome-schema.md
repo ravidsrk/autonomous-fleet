@@ -128,17 +128,17 @@ table in `fleet_outcome.py`. This is the exact table the validator enforces:
   adversarial-review-and-fix      p0_open, p1_open, findings_open, ops_queue_count
   targeted-migration              migration_items_open, old_axis_removed
   design-integration              parity_items_open, regressions
-  landing-page-convergence        divergences_open
-  legacy-rebuild                  units_open, floor_preserved, e2e_verified
+  landing-page-convergence        divergences_open                         (archived)
+  legacy-rebuild                  units_open, floor_preserved, e2e_verified (archived)
   take-product-to-completion      in_items_open, roadmap_count, stubs_remaining,
                                   e2e_verified
   inference-cost                  cost_regressed, quality_regressed, levers_open
 ```
 
 > Three of these are shipped missions (`doc-sync`, `test-coverage`,
-> `adversarial-review-and-fix`); the rest are exploratory. The validator knows all of them so a
-> promotion run can land without schema churn. See the [Mission catalog](09-mission-catalog.md) for
-> which are shipped today.
+> `adversarial-review-and-fix`); the rest are active exploratory or archived registry rows. The
+> validator knows all of them so a promotion or historical archive check can land without schema
+> churn. See the [Mission catalog](09-mission-catalog.md) for which are active today.
 
 Two rules govern the metrics mapping. First: a required metric that is absent produces
 `metrics missing '<key>' for <mission>`, one per missing key. So a `doc-sync` outcome with
@@ -150,9 +150,9 @@ non-finite float (`inf`, `nan`) is rejected with `metric '<key>' must be finite`
 in a metric: campaign edges compare metrics numerically. Use numeric metrics for branching, avoid
 parsing free text.
 
-The end-to-end gate. Two missions, `take-product-to-completion` and `legacy-rebuild`, are in
-`E2E_VERIFIED_MISSIONS`. For these, a `status: done` outcome whose `metrics.e2e_verified` is not
-exactly `True` is rejected:
+The end-to-end gate. `take-product-to-completion` and the archived full-rebuild registry row are in
+`E2E_VERIFIED_MISSIONS`. For these, a `status: done` outcome whose
+`metrics.e2e_verified` is not exactly `True` is rejected:
 
 ```
   cannot be done without end-to-end verification: a green test suite is not
@@ -222,7 +222,7 @@ This is the one cross-cutting field that is hard-gated against `status: done`. I
 
 ```
   cannot be done with archive_enabled=false: the run-archive manifest is the
-  audit trail (engine.md ARCHIVE_ENABLED); a status=done without a passing
+  audit trail (engine-recovery.md ARCHIVE_ENABLED); a status=done without a passing
   archive is not auditable. Set status=partial instead, or fix the manifest so
   archive_enabled=true.
 ```

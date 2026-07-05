@@ -1,6 +1,6 @@
 """Write-lock discipline for fleet workers.
 
-Implements the WRITE-LOCK DISCIPLINE doctrine from engine.md. Two lock
+Implements the WRITE-LOCK DISCIPLINE doctrine from locks.md / engine core. Two lock
 kinds with different lifetimes:
 
 - ``ConstructionLock``: long-held. Acquired before a worker starts

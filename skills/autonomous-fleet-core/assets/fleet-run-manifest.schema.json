@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://autonomous-fleet.dev/schemas/fleet-run-manifest.schema.json",
   "title": "Autonomous Fleet — run-archive manifest",
-  "description": "Manifest for a single run-archive directory (.fleet/runs/<run_id>/manifest.json). One entry per first-class artifact the run produced (findings JSONs, verifier summaries, blind-fix files, prompts, responses, diffs, readiness doc, progress doc). The manifest is the audit trail: post-hoc, the entire run can be reconstructed from the listed files + their checksums. See engine.md ARCHIVE_ENABLED HARD RULES (layout, manifest, mtime ordering, archive_enabled precondition).",
+  "description": "Manifest for a single run-archive directory (.fleet/runs/<run_id>/manifest.json). One entry per first-class artifact the run produced (findings JSONs, verifier summaries, blind-fix files, prompts, responses, diffs, readiness doc, progress doc). The manifest is the audit trail: post-hoc, the entire run can be reconstructed from the listed files + their checksums. See engine-recovery.md ARCHIVE_ENABLED HARD RULES (layout, manifest, mtime ordering, archive_enabled precondition).",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -46,7 +46,7 @@
     "files": {
       "type": "array",
       "minItems": 1,
-      "description": "Every first-class artifact the run produced. Empty arrays are forbidden: a run that produced zero artifacts has no archive, hence no manifest. The `engine.md` archive_enabled precondition is gated on `len(files) > 0`.",
+      "description": "Every first-class artifact the run produced. Empty arrays are forbidden: a run that produced zero artifacts has no archive, hence no manifest. The `engine-recovery.md` archive_enabled precondition is gated on `len(files) > 0`.",
       "items": { "$ref": "#/$defs/file_entry" }
     },
     "notes": {
@@ -78,7 +78,7 @@
             "progress",
             "other"
           ],
-          "description": "Categorical kind. Drives the mtime-ordering invariants (see engine.md ARCHIVE_ENABLED): blind_fix < findings, verify_summary > findings, readiness has the latest mtime. `other` exists as an escape hatch but does NOT participate in ordering checks — a kind=other file with mtime claims is a smell."
+          "description": "Categorical kind. Drives the mtime-ordering invariants (see engine-recovery.md ARCHIVE_ENABLED): blind_fix < findings, verify_summary > findings, readiness has the latest mtime. `other` exists as an escape hatch but does NOT participate in ordering checks — a kind=other file with mtime claims is a smell."
         },
         "sha256": {
           "type": "string",

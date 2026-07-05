@@ -270,7 +270,7 @@ surfaces work it is not allowed to do, record it as a finding, do not do it.
 ```
 
 The `## Worker skills` block is not optional decoration. The engine's WORKER SKILLS doctrine (see
-`skills/autonomous-fleet-core/references/engine.md`) requires the adapter to prepend the mission's
+`skills/autonomous-fleet-core/references/engine-workers.md`) requires the adapter to prepend the mission's
 per-role `## Worker skills` to the task spec on every DISPATCH. If your mission omits the block, the
 adapter has nothing to inject and your workers run skill-blind. Even an empty table (with `, ` for
 skills) is a deliberate declaration that the role needs no extra skills, and it is what `doc-sync`
@@ -420,7 +420,7 @@ both, and keep them agreeing.
 ### The primitive-by-primitive mapping
 
 The core calls primitives by name and lets your adapter resolve each to a command. The
-authoritative list is in `skills/autonomous-fleet-core/references/engine.md` under "THE PRIMITIVES";
+authoritative list is in `skills/autonomous-fleet-core/references/engine-workers.md` under "THE PRIMITIVES";
 the template's "PRIMITIVE → <TOOL> MAPPING" section is the form you fill in. Here is the mapping
 surface, with what the core means by each and what your adapter must supply:
 
@@ -448,7 +448,7 @@ surface, with what the core means by each and what your adapter must supply:
 ```
 
 The goal/loop primitives (`SET_GOAL`, `UPDATE_GOAL`, `GOAL_COMPLETE`, `GOAL_BLOCKED`, and the
-`LOOP_POLL` polling primitive in engine.md) are optional. The core says so directly: they are
+`LOOP_POLL` polling primitive in `engine-workers.md`) are optional. The core says so directly: they are
 optional when the host has no goal/loop API, and an Orca-style daemon coordinator using the ledger
 plus a `check --wait` loop is sufficient. Document the exact command for each primitive you do
 support, and if your tool offers a primitive in several syntaxes across versions, the template's
@@ -467,8 +467,8 @@ the same agent told to "pretend you didn't write this."
 
 ### Declaring CONTINUE_WORKER support
 
-`CONTINUE_WORKER(role, placement, session_handle)` is the 14th primitive in engine.md's THE
-PRIMITIVES, and it is OPTIONAL like the goal/loop ones (9 to 13). It re-attaches an EXISTING resumable
+`CONTINUE_WORKER(role, placement, session_handle)` is the 14th primitive in `engine-workers.md`'s
+THE PRIMITIVES, and it is OPTIONAL like the goal/loop ones (9 to 13). It re-attaches an EXISTING resumable
 agent session for an in-flight task instead of spawning a fresh one. Your adapter declares how it
 implements the primitive, and there are two honest answers:
 
@@ -737,7 +737,7 @@ guards, and asserts they fail. The `--id` flag is repeatable, so you can scope a
 entries while iterating. The full gate runs as part of `./scripts/validate-all.sh`.
 
 > A mutation entry is also how you catch DOC drift against code, not just test weakness. The manifest
-> already pins prose rails: it mutates a sentence in `engine.md` (for example inverting `FROZEN SCOPE
+> already pins prose rails: it mutates a sentence in `engine-autonomy.md` (for example inverting `FROZEN SCOPE
 BOUNDARY`) and asserts a structural test rejects the inversion. If your extension adds a doctrine
 > sentence that a test depends on, pin it the same way.
 
@@ -800,8 +800,8 @@ The README's closing line is the whole philosophy in one sentence:
 The same evidence bar applies to a new adapter, by the same logic. An adapter that has never driven
 a real run is an unproven claim. Prove it with an archived run before you present it as shipped.
 
-> The twelve missions currently in `docs/exploratory/missions/` (for example `bug-batch`,
-> `cleanup`, `dependency-update`, `legacy-rebuild`) are the worked examples of this rule. Each one's
+> The twelve active missions currently in `docs/exploratory/missions/` (for example `bug-batch`,
+> `cleanup`, `dependency-update`, `browser-qa-fix`) are the worked examples of this rule. Each one's
 > entry in the README states exactly which of the three artifacts it is missing. Read them before
 > you write a new mission; they show you what "not yet proven" looks like in practice.
 

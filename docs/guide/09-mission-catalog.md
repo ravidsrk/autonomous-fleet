@@ -579,7 +579,7 @@ external-repo run-archive all three, which is exactly why they are here.
 cleanup
   Would do:  A behaviour-preserving code-health pass (dead-code removal, duplication kill,
              named anti-pattern fix) without re-architecting. The lightest counterpart to
-             legacy-rebuild.
+             the archived full-rebuild design.
   Missing:   A readiness doc exists (docs/cleanup-readiness.md) but there is no progress doc
              and no external-repo run-archive. Demoted because the three-artifact rule
              requires BOTH a progress doc AND an external archive.
@@ -604,20 +604,14 @@ targeted-migration
   Would do:  Migrate ONE axis of a codebase (framework version, library swap, language/runtime
              bump, DB/ORM change, API-version move) while preserving everything else and
              keeping the suite green. The one-axis-at-a-time slot between dependency-update and
-             full legacy-rebuild.
+             the archived full-rebuild design.
   Missing:   No progress doc, no readiness doc, no external archive.
 
 design-integration
   Would do:  Adopt a fresh design across an existing product to full parity (visual AND
              feature-wise): reskin every screen and build the features the design implies but
-             the product lacks. The whole-app-redesign counterpart to single-page
-             landing-page-convergence.
-  Missing:   No progress doc, no readiness doc, no external archive.
-
-landing-page-convergence
-  Would do:  Force a production landing page that has DIVERGED from an approved design back to
-             full fidelity, section by section, with a named divergence checklist as the
-             forcing function. The single-page sibling to design-integration.
+             the product lacks. The whole-app-redesign counterpart to the archived single-page
+             design-convergence variant.
   Missing:   No progress doc, no readiness doc, no external archive.
 
 inference-cost
@@ -625,18 +619,20 @@ inference-cost
              cost optimization with a baseline cost+quality harness, sanctioned levers only, and
              a hard refusal of subscription-token-as-backend hacks.
   Missing:   No progress doc, no readiness doc, no external archive.
+
+browser-qa-fix
+  Would do:  Browser-grounded QA with screenshot evidence and a fix loop until the target health
+             threshold is met.
+  Missing:   No progress doc, no readiness doc, no external archive.
+
+incident-investigate
+  Would do:  Root-cause analysis with a frozen incident RCA and a mandatory regression test.
+  Missing:   No progress doc, no readiness doc, no external archive.
 ```
 
 ### Tier 3 candidates
 
 ```
-legacy-rebuild
-  Would do:  Adversarially review a legacy app, research the best current architecture, and
-             rebuild end-to-end on a modern foundation while preserving everything it currently
-             does, incremental and shippable per PR, against a captured behaviour floor. The
-             highest-blast-radius mission with the strongest preservation guarantee.
-  Missing:   No progress doc, no readiness doc, no external archive.
-
 take-product-to-completion
   Would do:  Drive a STALLED product to a full-fledged, shippable state via adversarial review +
              market research + a FROZEN COHERENT PRODUCT BOUNDARY + full-depth build inside that
@@ -648,11 +644,11 @@ Three more missions (`scaffold-align`, `contract-first-build`, `agents-layer`) w
 `docs/exploratory/missions/` earlier, on 2026-06-22, for the same reason: they are not on the
 Stage 8 distillation list and have no real-run evidence. They are not in the shipped surface.
 
-> Note on archived campaigns. Because some of these exploratory missions were nodes in campaign
-> presets, the affected presets are archived in place. `align-then-ship`, `handoff-to-product`, and
-> `secure-ship` reference demoted missions and are intentionally empty until those missions are
-> promoted. Only `repo-health`, `ship-with-proof`, and `quality-gate` remain populated. See
-> [Campaigns](10-campaigns.md).
+> Note on archived campaigns. Because some exploratory or parked missions were nodes in campaign
+> presets, the affected presets are archived in place. `align-then-ship`, `handoff-to-product`,
+> `secure-ship`, and `gstack-quality` reference demoted or parked missions and are intentionally
+> empty until those missions are promoted. Only `repo-health`, `ship-with-proof`, and `quality-gate`
+> remain populated. See [Campaigns](10-campaigns.md).
 
 ## Promotion criteria
 

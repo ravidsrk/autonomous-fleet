@@ -13,7 +13,7 @@ validation. If a disabled layer parsed those garbage args we'd see a
 nonzero exit code.
 
 Lineage: docs/external-dogfood/adversarial-bench-2026-06.md methodology
-section; engine.md SUBSTRATE KILL-SWITCH CONVENTION block.
+section; engine-recovery.md SUBSTRATE KILL-SWITCH CONVENTION block.
 """
 from __future__ import annotations
 

@@ -48,12 +48,14 @@ skills/test-coverage/
 skills/adversarial-review-and-fix/
 ```
 
-There are nine more missions whose `fleet-outcome` shape is still known to the schema validator but
-whose SKILL.md has been demoted to `docs/exploratory/missions/` (`dependency-update`, `cleanup`,
-`bug-batch`, `targeted-migration`, `design-integration`, `landing-page-convergence`,
-`legacy-rebuild`, `take-product-to-completion`, `inference-cost`). They are not shipped: you cannot
-invoke them as a mission until they are promoted. The [Mission catalog](09-mission-catalog.md) covers
-the shipped three in depth and explains what each exploratory one would do if promoted.
+Beyond those shipped three, twelve active exploratory mission docs live under
+`docs/exploratory/missions/`: seven from the 2026-06-23 demotion (`dependency-update`, `cleanup`,
+`bug-batch`, `targeted-migration`, `design-integration`, `take-product-to-completion`,
+`inference-cost`), two active gstack-derived designs (`browser-qa-fix`, `incident-investigate`), and
+three earlier demotions (`agents-layer`, `contract-first-build`, `scaffold-align`). They are not
+shipped: you cannot invoke them as a mission until they are promoted. Parked designs live under
+`docs/exploratory/missions/archive/`. The [Mission catalog](09-mission-catalog.md) covers the
+shipped three in depth and explains what each active exploratory one would do if promoted.
 
 The defining feature of a mission, the thing that makes the next section possible, is what it leaves
 behind. Every mission's T-FINAL readiness doc begins with a `fleet-outcome` YAML block. That block is

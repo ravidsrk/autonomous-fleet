@@ -356,7 +356,7 @@ trace-first doctrine:
 ```python
 # scripts/lib/fleet_run.py, inside write_manifest(...)
 manifest_path = archive_root / "manifest.json"
-# Doctrine (engine.md TRACE EMISSION): trace first, ledger second. Emit BEFORE write.
+# Doctrine (trace.md TRACE EMISSION): trace first, ledger second. Emit BEFORE write.
 if emitter is not None:
     emitter.emit(
         "T-FINAL",

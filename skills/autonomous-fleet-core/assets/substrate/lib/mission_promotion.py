@@ -13,6 +13,8 @@ from pathlib import Path
 
 import yaml
 
+from .mission_registry import MISSION_DOCS
+
 _PROGRESS_RE = re.compile(r"PHASE:\s*(DONE|BLOCKED)", re.IGNORECASE)
 _ARCHIVE_RUN_ID_RE = re.compile(
     r"[0-9]{8}T[0-9]{6}Z-[a-z][a-z0-9-]*[a-z0-9]-[0-9a-f]{6}"
@@ -67,6 +69,27 @@ def _progress_substantive(progress: Path) -> bool:
     return True
 
 
+
+def _canonical_registry_doc(
+    repo_root: Path, mission: str, key: str, suffix: str
+) -> Path:
+    doc = MISSION_DOCS.get(mission, {}).get(key, f"{mission}-{suffix}.md")
+    return repo_root / "docs" / doc
+
+
+def _promotion_readiness_path(repo_root: Path, mission: str) -> Path:
+    readiness = _canonical_registry_doc(repo_root, mission, "readiness", "readiness")
+    if readiness.is_file():
+        return readiness
+    stem = readiness.name.removesuffix("-readiness.md")
+    matches = sorted(
+        readiness.parent.glob(f"{stem}*-readiness.md"),
+        key=lambda path: (path.stat().st_mtime, path.name),
+        reverse=True,
+    )
+    return matches[0] if matches else readiness
+
+
 def _archive_evidence(repo_root: Path, mission: str) -> list[str]:
     refs: list[str] = []
     runs = repo_root / ".fleet" / "runs"
@@ -106,8 +129,8 @@ def _archive_evidence(repo_root: Path, mission: str) -> list[str]:
 def assess_promotion(repo_root: Path, mission: str) -> PromotionReport:
     """Return promotion readiness for one exploratory mission slug."""
     repo_root = Path(repo_root)
-    progress = repo_root / "docs" / f"{mission}-progress.md"
-    readiness = repo_root / "docs" / f"{mission}-readiness.md"
+    progress = _canonical_registry_doc(repo_root, mission, "progress", "progress")
+    readiness = _promotion_readiness_path(repo_root, mission)
     missing: list[str] = []
 
     progress_ok = progress.is_file() and _progress_substantive(progress)

@@ -60,14 +60,14 @@ mission skill mid-session.
 
 | Scope | Allowed? | Mechanism |
 |-------|----------|-----------|
-| Tasks inside one mission | Yes | `PLACE(independent)` + hot-file rule (see engine.md) |
+| Tasks inside one mission | Yes | `PLACE(independent)` + hot-file rule (see `engine-workers.md`) |
 | Missions on same repo | No | One BASE, one ledger, one coordinator |
 | Missions on different repos | Yes | Independent runs |
 
 ## Runtime goals (native loop binding)
 
 Hosts with goal APIs (Grok `/goal` + `update_goal`, Claude `/goal`, Codex `/goal`) bind them to
-ledger DONE via primitives 9–12 in `engine.md`. See [runtime-goals.md](runtime-goals.md).
+ledger DONE via primitives 9–12 in `engine-workers.md`. See [runtime-goals.md](runtime-goals.md).
 
 - **File ledger** = authoritative completion (survives compaction).
 - **Native goal** = turn-continuation harness (prevents early stop).
@@ -107,7 +107,7 @@ remain runnable via TASK fallbacks when community skills are absent.
 | 0 | Required stack | `autonomous-fleet-core` + adapter + one mission | Block — invalid run |
 | 1 | Environment | `gh` auth, TARGET URL, MCP connector | HARD EXTERNAL DEPENDENCY — pause ledger |
 | 2 | Recommended community | gstack `qa` on `browser-qa-fix` | Warn + mission TASK fallback; `preflight-community.sh` prints install hint |
-| 3 | Pre-gate community | `office-hours` before `product-framing` | Skip pre-gate; mission T-* phases run |
+| 3 | Pre-gate community | user-invoked planning/research before a mission | Skip pre-gate; mission T-* phases run |
 | 4 | Worker community | `browse` on DISPATCH | Worker uses adapter browser tools |
 
 **Enforcement:** Tier 0–1 are hard. Tier 2–4 are advisory unless the operator opts into
@@ -119,7 +119,7 @@ with `./scripts/install-community.sh <bundle>` or `./scripts/install-skills.sh -
 
 Attach gstack, agent-skills, mattpocock/skills, and other catalogs **only** as Optional
 (coordinator) or Worker (DISPATCH) — never as a second mission skill. Use `fleet-program`
-presets (`ship-with-proof`, `align-then-ship`, `quality-gate`, `gstack-quality`) for
+presets (`ship-with-proof`, `align-then-ship`, `quality-gate`) for
 multi-step runs that optionally call community **pre-gates** and **post-gates**.
 
 Full install matrix, bundles, and anti-patterns: [community-skills.md](community-skills.md).

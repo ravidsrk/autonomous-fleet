@@ -10,14 +10,19 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 RESEARCH = ROOT / "docs" / "gstack-missions-research.md"
-GSTACK_SLUGS = (
+ACTIVE_GSTACK_SLUGS = ("browser-qa-fix", "incident-investigate")
+ARCHIVED_GSTACK_SLUGS = (
     "product-framing",
-    "browser-qa-fix",
     "security-cso-audit",
     "devex-audit",
     "release-document",
-    "incident-investigate",
 )
+GSTACK_SLUGS = ARCHIVED_GSTACK_SLUGS + ACTIVE_GSTACK_SLUGS
+
+
+def _mission_dir(slug: str) -> Path:
+    base = ROOT / "docs" / "exploratory" / "missions"
+    return base / "archive" / slug if slug in ARCHIVED_GSTACK_SLUGS else base / slug
 
 
 def test_gstack_research_doc_exists_and_names_missions() -> None:
@@ -32,7 +37,7 @@ def test_gstack_research_doc_exists_and_names_missions() -> None:
 
 def test_gstack_mission_dirs_have_skill_and_banner() -> None:
     for slug in GSTACK_SLUGS:
-        base = ROOT / "docs" / "exploratory" / "missions" / slug
+        base = _mission_dir(slug)
         skill = base / "SKILL.md"
         assert skill.is_file(), slug
         body = skill.read_text(encoding="utf-8")
@@ -56,7 +61,7 @@ def test_gstack_missions_lint_clean() -> None:
     for slug in GSTACK_SLUGS:
         r = subprocess.run(
             [sys.executable, str(ROOT / "scripts" / "lib" / "skill_lint.py"), str(
-                ROOT / "docs" / "exploratory" / "missions" / slug
+                _mission_dir(slug)
             )],
             cwd=ROOT,
             capture_output=True,
@@ -71,9 +76,12 @@ def test_catalog_references_gstack_missions() -> None:
     catalog = (ROOT / "skills" / "autonomous-fleet" / "references" / "missions.md").read_text(
         encoding="utf-8"
     )
-    for slug in GSTACK_SLUGS:
+    for slug in ACTIVE_GSTACK_SLUGS:
         assert slug in umbrella, slug
         assert slug in catalog, slug
+    for slug in ARCHIVED_GSTACK_SLUGS:
+        assert slug not in umbrella, slug
+        assert slug not in catalog, slug
 
 
 @pytest.mark.parametrize("slug", GSTACK_SLUGS)

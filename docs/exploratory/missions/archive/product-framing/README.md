@@ -20,10 +20,10 @@ mission. Trigger on: "frame this product", "office hours on this idea", "freeze 
 
 # Quick install
 
-Not shipped — exploratory only. Copy from `docs/exploratory/missions/product-framing/` when
-promoting, or invoke manually as a one-off operator pass.
+Parked — un-archive from `docs/exploratory/missions/archive/product-framing/` before promoting or
+invoking manually as a one-off operator pass.
 
 # See also
 
-- [`docs/gstack-missions-research.md`](../../../gstack-missions-research.md)
+- [`docs/gstack-missions-research.md`](../../../../gstack-missions-research.md)
 - [gstack `office-hours`](https://github.com/garrytan/gstack/tree/main/office-hours)

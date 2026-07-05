@@ -70,7 +70,7 @@ ROADMAP list in boundary doc + **Recommended next missions** in `<LEDGER_DIR>/co
 |--------------|----------|
 | ROADMAP feature (explicit future scope) | User picks mission on next run |
 | Deep security hardening beyond FIX list | `adversarial-review-and-fix` |
-| Legacy stack blocks completion | `legacy-rebuild` |
+| Legacy stack blocks completion | `docs/exploratory/missions/archive/legacy-rebuild/` (parked) |
 
 **Empirical note:** this is the highest-blast-radius mission. Feature and cross-module work has
 no direct category in arXiv 2601.15195 — Ehsani et al., MSR 2026, AIDev dataset of ~33k PRs (where
@@ -146,7 +146,7 @@ and a ROADMAP list (deferred, never built this run).
 - **T_FINAL [@claude]** — build green, lint clean, full suite green. Walk the product as a new
   user end to end, zero dead ends; confirm every IN item fully implemented (zero stubs), every
   prior capability still works, ROADMAP is honest future scope.
-  **RESULT-STATE TERMINATION GATE (engine: `engine.md` → RESULT-STATE TERMINATION GATE).** Green
+  **RESULT-STATE TERMINATION GATE (engine: `engine-recovery.md` → RESULT-STATE TERMINATION GATE).** Green
   CI ≠ done. Walk the product as a new user end to end, then QUERY THE ACTUAL RESULT STATE —
   direct DB queries, API responses, on-chain state, audit rows — to confirm the action HAPPENED.
   Example from the Aula run (prompts.md L3013): approving an item in the UI must produce

@@ -111,7 +111,7 @@ emitted BEFORE the manifest write per the trace-first doctrine). See [The engine
 
 ### CONTINUE_WORKER
 
-The optional 14th engine primitive (`engine.md`, THE PRIMITIVES). It re-attaches an existing
+The optional 14th engine primitive (`engine-workers.md`, THE PRIMITIVES). It re-attaches an existing
 resumable agent session for an in-flight task instead of spawning a fresh one. Adapters whose
 runtime exposes a restore command (`grok --resume`, `codex exec resume`, `claude --resume`) implement
 it; adapters without one ALIAS it to `SPAWN_WORKER`, the documented idempotent-relaunch fallback. It

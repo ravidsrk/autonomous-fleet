@@ -102,7 +102,7 @@
       "additionalProperties": false,
       "allOf": [
         {
-          "$comment": "ROOT_CAUSE_DEPTH discipline (engine.md): findings tagged category=root_cause_depth MUST name the other call paths the root cause can trigger. A root_cause_depth finding without cascade_impact is almost always a symptom-fix finding miscategorised \u2014 the schema rejects it the same way it rejects an unverified quoted_line. Source: SWE-Review HARD RULE.",
+          "$comment": "ROOT_CAUSE_DEPTH discipline (review-findings.md): findings tagged category=root_cause_depth MUST name the other call paths the root cause can trigger. A root_cause_depth finding without cascade_impact is almost always a symptom-fix finding miscategorised \u2014 the schema rejects it the same way it rejects an unverified quoted_line. Source: SWE-Review HARD RULE.",
           "if": {
             "properties": {
               "category": {
