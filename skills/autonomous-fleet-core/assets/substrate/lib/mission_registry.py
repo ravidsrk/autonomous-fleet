@@ -1,8 +1,9 @@
 """Mission id → ledger and readiness doc paths under docs/.
 
 `MISSION_DOCS` is the schema-level registry: every documented mission, including
-the ones demoted to `docs/exploratory/missions/` in Commit D (2026-06-23). Their
-`fleet-outcome` shape is still valid; only their shipped status changed.
+active exploratory missions under `docs/exploratory/missions/` and parked ones
+under `docs/exploratory/missions/archive/`. Their `fleet-outcome` shape is still
+valid; only their shipped/active status changed.
 
 `SHIPPED_MISSIONS` is the subset of `MISSION_DOCS` whose SKILL.md actually lives
 under `skills/<mission>/`. Tests that read a mission's SKILL.md from `skills/`

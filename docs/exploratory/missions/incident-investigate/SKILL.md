@@ -79,7 +79,7 @@ Record in `<LEDGER_DIR>/incident-readiness.md` under **Recommended next missions
 | Finding type | Route to |
 |--------------|----------|
 | Multiple unrelated bugs | `bug-batch` (exploratory) |
-| Security root cause | `security-cso-audit` (exploratory) |
+| Security root cause | `adversarial-review-and-fix` (shipped) |
 | Missing coverage broadly | `test-coverage` (shipped) |
 | Browser-only repro | `browser-qa-fix` (exploratory) |
 

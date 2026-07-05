@@ -3,7 +3,8 @@ name: cleanup
 description: >-
   [Tier 1 · merge-friendly chore-category work · lower-risk when scoped] Targeted
   code-health pass — remove dead code, kill duplication, fix a named anti-pattern, tidy
-  structure — WITHOUT re-architecting. The light counterpart to legacy-rebuild: improves the
+  structure — WITHOUT re-architecting. The light counterpart to the archived
+  docs/exploratory/missions/archive/legacy-rebuild/ design: improves the
   code as it is, preserves all behaviour, no big structural change. Use for "clean up this
   mess", tech-debt paydown, removing cruft after a feature, or eliminating a specific smell.
   Behaviour-preserving by definition; every change covered by existing or added tests
@@ -58,7 +59,7 @@ Record in `<LEDGER_DIR>/cleanup-readiness.md` under **Recommended next missions*
 
 | Finding type | Route to |
 |--------------|----------|
-| Re-architecture / framework swap needed | `legacy-rebuild` |
+| Re-architecture / framework swap needed | `docs/exploratory/missions/archive/legacy-rebuild/` (parked) |
 | Bug exposed by deletion risk | `bug-batch` |
 | Untested risky area | `test-coverage` first |
 
@@ -66,14 +67,14 @@ Record in `<LEDGER_DIR>/cleanup-readiness.md` under **Recommended next missions*
 categories (chore ~84% in arXiv 2601.15195, Ehsani et al., MSR 2026) — lower-risk when scoped and
 behaviour-preserving. There is no published category-level merge rate for this mission as scoped,
 and per-task merge rates vary by agent, so treat the tier ordering as qualitative. The risk is
-scope creep into a rewrite; this mission explicitly does NOT re-architect (that's legacy-rebuild).
+scope creep into a rewrite; this mission explicitly does NOT re-architect (that's the archived docs/exploratory/missions/archive/legacy-rebuild/ design).
 
 ## GOAL
 Improve code health while preserving ALL behaviour: remove dead/unreachable code, eliminate
 duplication (extract shared helpers), fix the specific anti-pattern(s) in scope, tidy structure
 and naming, remove cruft. This is NOT a re-architecture — no framework changes, no new build
 system, no sweeping structural redesign (if that's needed, this is the wrong mission — record it
-and point to legacy-rebuild). Every change is behaviour-preserving and proven so by tests.
+and point to `docs/exploratory/missions/archive/legacy-rebuild/`). Every change is behaviour-preserving and proven so by tests.
 
 ## ROLE PIPELINE
 - @claude identifies cleanup targets (the frozen CLEANUP INDEX).
@@ -124,7 +125,7 @@ Every CLEANUP-INDEX item `DONE`, every task terminal, suite green, behaviour pre
 - Before deleting "dead" code, confirm it's truly unreachable (check dynamic/reflective/string
   references, public API surface, build entry points). When unsure, leave it and note it.
 - Do NOT re-architect. No framework swap, no new build system, no structural redesign — that's
-  legacy-rebuild. Record such needs and point there.
+  `docs/exploratory/missions/archive/legacy-rebuild/`. Record such needs and point there.
 - For risky untested areas, add a characterization test capturing current behaviour BEFORE
   refactoring, so the test proves you preserved it.
 - Prefer many small scoped PRs over one sweeping cleanup.

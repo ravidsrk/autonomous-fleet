@@ -81,7 +81,7 @@ There is no persistent external task daemon, so:
 ### PLACE(independent) via container-use (optional: isolated container + branch + sandbox)
 Register: `codex mcp add container-use -- container-use stdio` (needs Docker). PLACE(independent) MAY
 then use a container-use ENVIRONMENT instead of a host `git worktree` — the canonical loop is in
-`engine.md` → CONTAINER-USE-PLACEMENT. VERIFIED on a live host: a `codex exec` worker created an
+`engine-workers.md` → CONTAINER-USE-PLACEMENT. VERIFIED on a live host: a `codex exec` worker created an
 isolated `ubuntu` container on its own branch `container-use/<env>`.
 
 ### SPAWN_WORKER(role, placement)
@@ -179,7 +179,7 @@ Chain worker events with `--parent-event`. See `docs/guide/16-trace-schema.md`.
 > share the builder's blind spots, and nothing in this runtime makes seeing
 > the build session physically impossible. Record
 > `reviewer_mode: same-vendor-instructed` in DECISIONS.md and the run
-> outcome. Scope of the "structural" claim: engine.md REVIEW step.
+> outcome. Scope of the "structural" claim: engine-review.md REVIEW step.
 
 - File ledger is sacred — update at every lifecycle change before yielding the turn.
 - One in-flight unit per hot file; parallelize across non-overlapping files.

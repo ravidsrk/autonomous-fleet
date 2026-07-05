@@ -95,8 +95,8 @@ Sub-goal: Task <task-id> done when ledger row <task-id> has MERGED=true and PR n
 | `GOAL_BLOCKED` | `update_goal(blocked_reason: "...")` | `/goal clear` + blocked report | Pause goal | `escalation` message |
 | `LOOP_POLL` | `/loop` or `scheduler_create` | `/loop` | Codex automations | External cron + terminal send |
 
-`LOOP_POLL` is listed in `engine.md` "THE PRIMITIVES" (primitive 13); adapters resolve it through
-the row above.
+`LOOP_POLL` is listed in `engine-workers.md` "THE PRIMITIVES" (primitive 13); adapters resolve it
+through the row above.
 
 HEADLESS CODEX CAVEAT: the `/goal` cells above are for INTERACTIVE codex (the composer). `codex exec`
 (the unattended path) is single-shot and ignores slash commands, so a `/goal ...` string in an exec

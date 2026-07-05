@@ -81,7 +81,7 @@ Record in `<LEDGER_DIR>/qa-readiness.md` under **Recommended next missions**.
 | Backend-only bug (no browser repro) | `bug-batch` (exploratory) |
 | Systemic architecture issue | `adversarial-review-and-fix` (shipped) |
 | Missing test coverage for fixed area | `test-coverage` (shipped) |
-| Full design parity drift | `landing-page-convergence` (exploratory) |
+| Full design parity drift | `design-integration` (exploratory) |
 
 ## TARGET URL (user supplies)
 

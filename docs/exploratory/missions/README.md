@@ -57,7 +57,8 @@ archive.
 
 [Tier 1] Behaviour-preserving code-health pass — dead-code removal,
 duplication kill, named anti-pattern fix — without re-architecting. If
-promoted, would be the lightest counterpart to `legacy-rebuild`.
+promoted, would be the lightest counterpart to the archived
+[`legacy-rebuild`](archive/legacy-rebuild/) design.
 Currently: a readiness doc exists (`docs/cleanup-readiness.md`) but no
 progress doc and no external-repo run-archive. Demoted because the
 three-artifact rule requires BOTH progress AND external archive.
@@ -73,9 +74,9 @@ progress, no readiness, no external archive.
 
 [Tier 2] Adopt a fresh design across an existing product to full parity
 (visual AND feature-wise) — reskin every screen and build the features the
-design implies but the product lacks. If promoted, would be the
-whole-app-redesign counterpart to single-page `landing-page-convergence`.
-Currently: no progress, no readiness, no external archive.
+design implies but the product lacks. If promoted, would subsume the
+narrower archived [`landing-page-convergence`](archive/landing-page-convergence/)
+design. Currently: no progress, no readiness, no external archive.
 
 ### `inference-cost/`
 
@@ -86,22 +87,6 @@ subscription-token-as-backend hacks. If promoted, would address one of the
 clearest measurable outcomes a mission can ship. Currently: no progress,
 no readiness, no external archive.
 
-### `landing-page-convergence/`
-
-[Tier 2] Force a production landing page that has DIVERGED from an
-approved design back to full fidelity, section by section, with a named
-divergence checklist as the forcing function. If promoted, would handle
-single-page design-drift convergence (sibling to `design-integration`).
-Currently: no progress, no readiness, no external archive.
-
-### `legacy-rebuild/`
-
-[Tier 3] Adversarially review a legacy app, research the best current
-architecture, and rebuild end-to-end on a modern foundation while
-preserving everything it currently does — incremental and shippable per
-PR, against a captured behaviour floor. If promoted, would be the
-highest-blast-radius mission with the strongest preservation guarantee.
-Currently: no progress, no readiness, no external archive.
 
 ### `take-product-to-completion/`
 
@@ -116,47 +101,33 @@ Currently: no progress, no readiness, no external archive.
 [Tier 2] Migrate ONE axis of a codebase (framework version, library swap,
 language/runtime bump, DB/ORM change, API-version move) while preserving
 everything else and keeping the suite green. If promoted, would handle
-the one-axis-at-a-time slot between `dependency-update` and full
-`legacy-rebuild`. Currently: no progress, no readiness, no external
-archive.
+the one-axis-at-a-time slot between `dependency-update` and the archived
+[`legacy-rebuild`](archive/legacy-rebuild/) design. Currently: no
+progress, no readiness, no external archive.
 
 ## gstack-derived missions (2026-06-27)
 
 Mapped from [garrytan/gstack](https://github.com/garrytan/gstack) specialist skills into
 fleet frozen-ledger missions. Research: [`docs/gstack-missions-research.md`](../../gstack-missions-research.md).
 
-### `product-framing/`
-
-[Tier 2] Pre-build framing: office-hours forcing questions + CEO/design/eng plan reviews →
-frozen `docs/product-spec.md`. No implementation PRs. gstack sources: `office-hours`, `autoplan`,
-`plan-*`, `spec`.
 
 ### `browser-qa-fix/`
 
 [Tier 2] Browser-grounded QA with screenshot EVID and fix loop until health threshold met.
 gstack sources: `qa`, `qa-only`, `browse`, `health`.
 
-### `security-cso-audit/`
-
-[Tier 2] Infrastructure-first CSO audit (secrets, supply chain, CI/CD, OWASP, STRIDE, LLM/skill
-chain) with skeptic narrowing and one-PR-per-finding remediation. gstack sources: `cso`,
-`investigate`, `careful`.
-
-### `devex-audit/`
-
-[Tier 2] Live developer-experience walkthrough → frozen `docs/devex-scorecard.md` and
-`docs/devex-gaps-index.md`. gstack sources: `devex-review`, `plan-devex-review`,
-`document-generate`.
-
-### `release-document/`
-
-[Tier 2] Post-ship documentation sweep and deploy checklist after VERSION lands. gstack sources:
-`document-release`, `ship`, `land-and-deploy`, `canary`.
 
 ### `incident-investigate/`
 
 [Tier 2] Root-cause analysis with frozen `docs/incident-rca.md` and mandatory regression test.
 gstack sources: `investigate`, `retro`, `learn`.
+
+## Archived
+
+Some former exploratory missions are parked under [`archive/`](archive/).
+They are excluded from the active exploratory set until they satisfy the
+standard evidence triple and, where they overlap another mission, a written
+differentiation argument. See [`archive/README.md`](archive/README.md).
 
 ## Promotion process
 

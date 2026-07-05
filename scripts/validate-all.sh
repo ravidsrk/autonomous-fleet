@@ -22,7 +22,7 @@ echo "== validate-goal-condition =="
 
 echo ""
 echo "== validate-run-archive =="
-# Run-archive scheme (engine.md ARCHIVE_ENABLED). Default scan looks under
+# Run-archive scheme (engine-recovery.md ARCHIVE_ENABLED). Default scan looks under
 # .fleet/runs/ for any run_id-shaped directories. No archives = exit 0 (the
 # discipline is gated on artifact production, not on a directory existing).
 "$VENV_PYTHON" scripts/validate_run_archive.py
@@ -181,7 +181,7 @@ fi
 
 echo ""
 echo "== validate-trace (telemetry contract) =="
-# Trace stream (engine.md TRACE EMISSION). One JSONL line per state
+# Trace stream (trace.md TRACE EMISSION). One JSONL line per state
 # transition; the schema is the dashboard contract (vibe-kanban, Agent View,
 # custom). Empty/missing = exit 0 (the discipline is gated on artifact
 # production, not on a directory existing). Picks up the example-fixture
@@ -202,6 +202,10 @@ fi
 echo ""
 echo "== validate-mission-promotion (exploratory archive triple) =="
 "$VENV_PYTHON" scripts/validate_mission_promotion.py
+
+echo ""
+echo "== validate-mission-promotion (shipped archive triple) =="
+"$VENV_PYTHON" scripts/validate_mission_promotion.py --require-shipped
 
 echo ""
 echo "== sync-guide-starlight (docs-site source sync) =="

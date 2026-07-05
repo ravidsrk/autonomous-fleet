@@ -4,7 +4,7 @@
 Each archive directory must contain manifest.json conforming to
 fleet-run-manifest.schema.json, with every listed file present, the
 recorded sha256/size matching disk, and the cross-cutting mtime-ordering
-invariants from engine.md ARCHIVE_ENABLED satisfied:
+invariants from engine-recovery.md ARCHIVE_ENABLED satisfied:
 
   - blind_fix mtime < findings mtime (per producer)
   - verify_summary mtime > findings mtime (per producer)

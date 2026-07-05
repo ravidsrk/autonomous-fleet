@@ -1,6 +1,6 @@
 """Evidence detection library for the stop-verify hook gate.
 
-The stop-verify gate is the runtime counterpart of the engine.md disciplines
+The stop-verify gate is the runtime counterpart of the engine-recovery.md disciplines
 EVID, WT_CLEAN, and e2e_verified. Today those disciplines are aspirational —
 the builder self-attests in the readiness doc. This library, paired with
 `scripts/stop_verify.py`, makes them ENFORCEABLE by refusing to let a worker
@@ -58,7 +58,7 @@ MIN_WINDOW_SEC = 30
 # (any artifact from the previous workday "proves" today's run). Cap it.
 MAX_WINDOW_SEC = 24 * 60 * 60
 
-# YAML directives lifted into engine.md flags. Detector greps progress docs
+# YAML directives lifted into engine-recovery.md flags. Detector greps progress docs
 # for these literal substrings since the ledger format is markdown, not
 # parseable YAML. The flag MUST appear with "=true" (not bare "EVID") so a
 # discussion of EVID in prose can't satisfy the gate.

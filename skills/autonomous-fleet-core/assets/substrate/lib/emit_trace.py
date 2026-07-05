@@ -16,7 +16,7 @@ Layered like ``verify_findings`` / ``verify_blind_fix``:
   malformed lines so a half-written trace from a crashed run is still
   partially renderable.
 
-See ``skills/autonomous-fleet-core/references/engine.md`` § TRACE EMISSION for
+See ``skills/autonomous-fleet-core/references/trace.md`` § TRACE EMISSION for
 the doctrine. The "every state transition that writes to the ledger MUST
 emit a trace event before the ledger write commits" rule is enforced
 behaviourally by ``tests/test_emit_trace.py``.
@@ -129,7 +129,7 @@ _HOST_PATH_RE = re.compile(
 def _scan_details(details: dict) -> list[str]:
     """Flag secrets / host-absolute paths in a free-form details payload.
 
-    The trace stream is published to external dashboards, so engine.md TRACE EMISSION
+    The trace stream is published to external dashboards, so trace.md TRACE EMISSION
     forbids secrets and host-absolute paths in details. This makes that rule enforced
     (validate_event + emit both call it), not prose.
     """

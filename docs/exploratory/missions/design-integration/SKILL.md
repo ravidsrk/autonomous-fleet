@@ -5,9 +5,10 @@ description: >-
   product to full parity - VISUAL and FEATURE-WISE. Import the design (Claude Design
   export/URL or the claude_design MCP connector), reskin every existing screen to it, and
   where the design implies a feature the product lacks, design-and-build it; nothing the old
-  product did is lost. Use for a whole-app redesign adoption, not a single page (that's
-  landing-page-convergence). Reuses the existing backend; rewires the UI to the new design
-  and fills gaps to full depth. Runs via the autonomous-fleet-core engine. Trigger on:
+  product did is lost. Use for a whole-app redesign adoption, not a single page (the parked
+  single-page variant lives under docs/exploratory/missions/archive/landing-page-convergence/).
+  Reuses the existing backend; rewires the UI to the new design and fills gaps to full depth.
+  Runs via the autonomous-fleet-core engine. Trigger on:
   "adopt this design across the product", "integrate the new design end to end", "make the
   app match this design fully", "redesign the whole app to this".
 license: MIT
@@ -64,8 +65,8 @@ Record in `<LEDGER_DIR>/parity-readiness.md` under **Recommended next missions**
 
 | Finding type | Route to |
 |--------------|----------|
-| Scope is one landing page only | `landing-page-convergence` |
-| Backend rewrite needed (not UI rewire) | `legacy-rebuild` |
+| Scope is one landing page only | `docs/exploratory/missions/archive/landing-page-convergence/` (parked) |
+| Backend rewrite needed (not UI rewire) | `docs/exploratory/missions/archive/legacy-rebuild/` (parked) |
 | Bugs found during parity work | `bug-batch` |
 
 **Empirical note:** No matching task category in arXiv 2601.15195 - full review gate required,

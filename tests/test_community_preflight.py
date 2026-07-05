@@ -23,11 +23,11 @@ from lib.community_preflight import (  # noqa: E402
 
 
 def test_gstack_slugs_count() -> None:
-    assert len(GSTACK_MISSION_SLUGS) == 6
+    assert GSTACK_MISSION_SLUGS == frozenset({"browser-qa-fix", "incident-investigate"})
 
 
 @pytest.mark.parametrize("slug", sorted(GSTACK_MISSION_SLUGS))
-def test_load_recommends_from_gstack_missions(slug: str) -> None:
+def test_load_recommends_from_active_gstack_missions(slug: str) -> None:
     mission_dir = ROOT / "docs" / "exploratory" / "missions" / slug
     recommends = load_recommends(mission_dir)
     assert recommends is not None
@@ -70,15 +70,19 @@ def test_probe_skill_installed_finds_skill_under_home(tmp_path: Path) -> None:
     assert probe_skill_installed("qa", home=str(tmp_path))
 
 
-def test_mission_skill_path_resolves_exploratory() -> None:
-    path = mission_skill_path(ROOT, "product-framing")
+def test_mission_skill_path_resolves_active_exploratory() -> None:
+    path = mission_skill_path(ROOT, "browser-qa-fix")
     assert path is not None
-    assert path.name == "product-framing"
+    assert path.name == "browser-qa-fix"
     assert (path / "SKILL.md").is_file()
 
 
-def test_product_framing_load_and_check_integration() -> None:
-    mission_dir = mission_skill_path(ROOT, "product-framing")
+def test_mission_skill_path_excludes_archived_exploratory() -> None:
+    assert mission_skill_path(ROOT, "product-framing") is None
+
+
+def test_browser_qa_load_and_check_integration() -> None:
+    mission_dir = mission_skill_path(ROOT, "browser-qa-fix")
     assert mission_dir is not None
     recommends = load_recommends(mission_dir)
     assert recommends is not None

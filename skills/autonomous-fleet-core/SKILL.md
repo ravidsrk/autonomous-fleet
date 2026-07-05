@@ -34,9 +34,8 @@ runtime mechanics.
 
 ## Instructions
 
-Read and follow [references/engine.md](references/engine.md) in full before coordinating any run — it is the slim ALWAYS-READ core; sections marked TRIGGER point at references you load only when their trigger applies (issue #84).
-It contains self-orientation, autonomy enforcement, worker placement, the PR pipeline, safety
-rails, and all other engine rules.
+Read and follow [references/engine.md](references/engine.md) in full before coordinating any run — it is the slim ALWAYS-READ core capped at 300 lines. Its trigger map tells you when to load [references/engine-autonomy.md](references/engine-autonomy.md), [references/engine-workers.md](references/engine-workers.md), [references/engine-review.md](references/engine-review.md), and [references/engine-recovery.md](references/engine-recovery.md) (issue #84).
+It contains the engine identity, coordinator loop contract, ledger boolean gates, the 4-layer index, and trigger stubs for full doctrine.
 
 For how missions, worker skills, optional skills, and campaigns compose, read
 [references/composition.md](references/composition.md), [references/community-skills.md](references/community-skills.md),
@@ -78,4 +77,4 @@ When the host supports goal mode, also implement: `SET_GOAL`, `UPDATE_GOAL`, `GO
 `GOAL_BLOCKED`, and `LOOP_POLL` (host-native scheduler; Orca exempt — see `runtime-goals.md`).
 Optional primitive 14, `CONTINUE_WORKER` (re-attach an existing resumable session for an in-flight
 task), is implemented by adapters whose runtime exposes a restore command and ALIASED to
-`SPAWN_WORKER` (idempotent relaunch) otherwise — see `engine.md`.
+`SPAWN_WORKER` (idempotent relaunch) otherwise — see `engine-workers.md`.

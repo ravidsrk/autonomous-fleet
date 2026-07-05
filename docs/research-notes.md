@@ -1,6 +1,6 @@
 # Research notes (test-coverage dogfood, 2026-06-21)
 
-Per engine.md RESEARCH DISCIPLINE: log every external fact the build relies on with a source +
+Per engine-workers.md RESEARCH DISCIPLINE: log every external fact the build relies on with a source +
 verified flag. This is a test-coverage mission over the repo's OWN python CLIs, so the expected
 behaviors derive from in-repo code, not external sources. The discipline fires minimally here, which
 is the honest case: when there is no stale-prone external fact, the gate is satisfied by recording

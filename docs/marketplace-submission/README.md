@@ -50,7 +50,7 @@ consumers. Closes landscape Gap 8 without building UI.
 
 🟢 **Write-lock discipline** — construction + request locks under
 `.fleet/runs/<run_id>/locks/` with confirmed-dead-only steal mechanism.
-Engine block in `engine.md` § WRITE-LOCK DISCIPLINE.
+Engine block in `locks.md` § WRITE-LOCK DISCIPLINE.
 
 🟢 **Seat-analysis primitive** — `scripts/analyze_seat.py` computes per-run and
 aggregate findings/cost/wallclock metrics across all archives, surfacing the

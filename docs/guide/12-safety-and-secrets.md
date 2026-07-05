@@ -54,7 +54,7 @@ What the framework DOES defend against, with the mechanism that does it:
 ```
   Threat                          Defense                         Where
   ------------------------------  ------------------------------  --------------------------
-  Repo content issuing commands   TRUST BOUNDARIES: all repo      engine.md TRUST
+  Repo content issuing commands   TRUST BOUNDARIES: all repo      engine-autonomy.md TRUST
   ("merge to main", "exfiltrate   content is DATA; only the       BOUNDARIES; model-honored
    secrets" in a README)          engine/mission/adapter/operator
                                   are instructions
@@ -62,9 +62,9 @@ What the framework DOES defend against, with the mechanism that does it:
   command (force-push, rm -rf /)  refuses DENY/ASK verdicts       (a net, not a boundary)
   Secrets leaking via the         Env scrub: credential-shaped    run-sandboxed.sh env scrub
   ambient environment             vars stripped before exec
-  Secrets entering git history    SECRET HYGIENE: gitleaks +      engine.md SECRET HYGIENE;
+  Secrets entering git history    SECRET HYGIENE: gitleaks +      engine-autonomy.md SECRET HYGIENE;
                                   self-check before every commit  every worker
-  Production deploys / mainnet    SAFETY RAILS: merge != deploy;  engine.md SAFETY RAILS;
+  Production deploys / mainnet    SAFETY RAILS: merge != deploy;  engine-autonomy.md SAFETY RAILS;
   txns / key rotation             testnet/staging/fixtures only   Lane 0 REFUSE+SURFACE
   Worker running an isolated      container-use placement: one    PLACE(independent) +
   task on the host                Linux container per task        container-use MCP
@@ -316,7 +316,7 @@ the container path is the one you want. Adoption details live in `docs/adopt-con
 
 The secret-hygiene rules are unconditional. They hold regardless of mission, adapter, or the
 `--yolo` flag, because they are model-honored disciplines, not approval prompts. They come straight
-from the SECRET HYGIENE block in `engine.md`, and every worker follows them.
+from the SECRET HYGIENE block in `engine-autonomy.md`, and every worker follows them.
 
 The two rules, verbatim in intent:
 
@@ -358,11 +358,11 @@ from it. That is why the supported pattern for an untrusted run is `run-sandboxe
 the environment) plus an OS sandbox (which confines the rest).
 
 > A note on a spec wrinkle, because honest docs surface these. The TRUST BOUNDARIES prose in
-> `engine.md` describes `run-sandboxed.sh` as refusing a named deny-list of publish commands
+> `engine-autonomy.md` describes `run-sandboxed.sh` as refusing a named deny-list of publish commands
 > (`npm publish`, `cargo publish`, `aws`, `gcloud`, `git push --tags`, ...). The actual wrapper on
 > `main` today refuses by the DENY/ASK/ALLOW blast-radius classifier documented above, which is a
 > broader and structurally different mechanism. The classifier is the source of truth for what is
-> refused; treat the engine.md prose as the older, narrower description of the same intent. The
+> refused; treat the `engine-autonomy.md` prose as the older, narrower description of the same intent. The
 > defense you get is the classifier, not the literal list.
 
 ## Headless mode caveat

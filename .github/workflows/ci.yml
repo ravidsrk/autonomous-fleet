@@ -38,7 +38,12 @@ jobs:
           cache: pip
 
       - name: Install skill-creator
-        run: npx skills@1.5.12 add https://github.com/anthropics/skills --skill skill-creator -y -p
+        run: |
+          npx skills@1.5.12 add https://github.com/anthropics/skills --skill skill-creator -y -p
+          # npx skills rewrites skills-lock.json without the committed ref pin;
+          # restore the tracked (pinned) lock so registry-lint validates the
+          # committed state, not the installer's transient unpinned rewrite.
+          git checkout -- skills-lock.json
 
       - name: Install Python test deps
         run: |

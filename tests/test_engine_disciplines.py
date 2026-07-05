@@ -82,6 +82,11 @@ def banner_pos(text: str, title_prefix: str) -> int:
             return m.start()
     raise ValueError(f"banner not found: {title_prefix!r}")
 
+def test_engine_core_stays_within_always_read_line_budget() -> None:
+    """The always-read core must stay slim; full doctrine lives in trigger-loaded references."""
+    assert len(ENGINE.read_text(encoding="utf-8").splitlines()) <= 300
+
+
 
 def test_continue_worker_is_optional_with_spawn_fallback() -> None:
     """CONTINUE_WORKER must be an OPTIONAL primitive that aliases to SPAWN_WORKER.
@@ -773,9 +778,10 @@ def test_engine_defers_knob_registry_and_ledger_authority() -> None:
     contradiction) and must state ledger-authoritative / trace-telemetry
     consistently with the fail-soft emission bullet."""
     engine = (ROOT / "skills/autonomous-fleet-core/references/engine.md").read_text(encoding="utf-8")
+    recovery = (_REFS_DIR / "engine-recovery.md").read_text(encoding="utf-8")
     corpus = read_engine()
     assert "substrate-disable-knobs.md" in engine
-    assert "nine knobs" in engine
+    assert "nine knobs" in recovery
     # ledger-authority doctrine moved to references/trace.md in #84; the
     # corpus must state it exactly once-and-consistently, nowhere the inverse.
     assert "the LEDGER is the authoritative loop state" in corpus
@@ -786,10 +792,10 @@ def test_research_discipline_is_host_conditional() -> None:
     """Issue #86: the worker preamble must not mandate a tool most hosts lack;
     tool binding resolves at SELF-ORIENTATION with a native-web-search
     fallback, and workers may only invoke confirmed-present tools."""
-    engine = (ROOT / "skills/autonomous-fleet-core/references/engine.md").read_text(encoding="utf-8")
-    assert "host-conditional tooling" in engine
-    assert "NEVER invoke a research tool it has not confirmed exists" in engine
-    preamble = engine.split("RESEARCH: before coding against any external fact")[1][:500]
+    workers = (_REFS_DIR / "engine-workers.md").read_text(encoding="utf-8")
+    assert "host-conditional tooling" in workers
+    assert "NEVER invoke a research tool it has not confirmed exists" in workers
+    preamble = workers.split("RESEARCH: before coding against any external fact")[1][:500]
     assert "monid" not in preamble
     assert "native web" in preamble
 
@@ -797,9 +803,9 @@ def test_research_discipline_is_host_conditional() -> None:
 def test_authorship_mode_is_a_deliberate_documented_policy() -> None:
     """Issue #102: authorship is an explicit policy with rationale, defaulting
     to attributed (agent trailers), never an inherited no-trailer default."""
-    engine = (ROOT / "skills/autonomous-fleet-core/references/engine.md").read_text(encoding="utf-8")
-    assert "AUTHORSHIP_MODE" in engine
-    assert "`attributed` (DEFAULT)" in engine
-    assert "Co-Authored-By" in engine
-    assert "never impersonate a DIFFERENT human" in engine
-    assert "No agent/tool trailers." not in engine
+    autonomy = (_REFS_DIR / "engine-autonomy.md").read_text(encoding="utf-8")
+    assert "AUTHORSHIP_MODE" in autonomy
+    assert "`attributed` (DEFAULT)" in autonomy
+    assert "Co-Authored-By" in autonomy
+    assert "never impersonate a DIFFERENT human" in autonomy
+    assert "No agent/tool trailers." not in autonomy

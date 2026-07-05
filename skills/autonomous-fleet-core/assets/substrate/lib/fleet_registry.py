@@ -84,6 +84,7 @@ MISSIONS: dict[str, dict[str, object]] = {
     },
     "landing-page-convergence": {
         "shipped": False,
+        "archived": True,
         "skill_dir": "landing-page-convergence",
         "progress_doc": "landing-progress.md",
         "readiness_doc": "landing-readiness.md",
@@ -93,6 +94,7 @@ MISSIONS: dict[str, dict[str, object]] = {
     },
     "legacy-rebuild": {
         "shipped": False,
+        "archived": True,
         "skill_dir": "legacy-rebuild",
         "progress_doc": "rebuild-progress.md",
         "readiness_doc": "rebuild-readiness.md",
@@ -120,6 +122,7 @@ MISSIONS: dict[str, dict[str, object]] = {
     },
     "product-framing": {
         "shipped": False,
+        "archived": True,
         "skill_dir": "product-framing",
         "progress_doc": "framing-progress.md",
         "readiness_doc": "framing-readiness.md",
@@ -138,6 +141,7 @@ MISSIONS: dict[str, dict[str, object]] = {
     },
     "security-cso-audit": {
         "shipped": False,
+        "archived": True,
         "skill_dir": "security-cso-audit",
         "progress_doc": "security-progress.md",
         "readiness_doc": "security-readiness.md",
@@ -152,6 +156,7 @@ MISSIONS: dict[str, dict[str, object]] = {
     },
     "devex-audit": {
         "shipped": False,
+        "archived": True,
         "skill_dir": "devex-audit",
         "progress_doc": "devex-progress.md",
         "readiness_doc": "devex-readiness.md",
@@ -161,6 +166,7 @@ MISSIONS: dict[str, dict[str, object]] = {
     },
     "release-document": {
         "shipped": False,
+        "archived": True,
         "skill_dir": "release-document",
         "progress_doc": "release-doc-progress.md",
         "readiness_doc": "release-doc-readiness.md",

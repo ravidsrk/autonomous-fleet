@@ -37,23 +37,18 @@ for the promotion criteria.
 | 2 | `bug-batch` | `docs/exploratory/missions/bug-batch/` |
 | 2 | `targeted-migration` | `docs/exploratory/missions/targeted-migration/` |
 | 2 | `design-integration` | `docs/exploratory/missions/design-integration/` |
-| 2 | `landing-page-convergence` | `docs/exploratory/missions/landing-page-convergence/` |
 | 2 | `inference-cost` | `docs/exploratory/missions/inference-cost/` |
-| 3 | `legacy-rebuild` | `docs/exploratory/missions/legacy-rebuild/` |
 | 3 | `take-product-to-completion` | `docs/exploratory/missions/take-product-to-completion/` |
 | — | `agents-layer` | `docs/exploratory/missions/agents-layer/` |
 | — | `contract-first-build` | `docs/exploratory/missions/contract-first-build/` |
 | — | `scaffold-align` | `docs/exploratory/missions/scaffold-align/` |
-| 2 | `product-framing` | `docs/exploratory/missions/product-framing/` |
 | 2 | `browser-qa-fix` | `docs/exploratory/missions/browser-qa-fix/` |
-| 2 | `security-cso-audit` | `docs/exploratory/missions/security-cso-audit/` |
-| 2 | `devex-audit` | `docs/exploratory/missions/devex-audit/` |
-| 2 | `release-document` | `docs/exploratory/missions/release-document/` |
 | 2 | `incident-investigate` | `docs/exploratory/missions/incident-investigate/` |
 
-**gstack-derived (2026-06-27):** all six — `product-framing`, `browser-qa-fix`,
-`security-cso-audit`, `devex-audit`, `release-document`, `incident-investigate` — map
-gstack specialist flows into fleet frozen-ledger missions. Research:
+**gstack-derived (2026-06-27):** `browser-qa-fix` and
+`incident-investigate` remain active exploratory mappings from gstack specialist
+flows into fleet frozen-ledger missions. Four additional gstack-derived designs
+are parked under `docs/exploratory/missions/archive/`. Research:
 [`docs/gstack-missions-research.md`](../../../docs/gstack-missions-research.md).
 
 The three `—`-tier missions were demoted earlier (2026-06-22) and still carry
@@ -88,9 +83,10 @@ understanding that it has no field hours.
 
 Presets: `skills/fleet-program/references/programs.md` (linear),
 `skills/fleet-program/references/campaigns.md` (if-outcome). Headless presets also
-under `scripts/campaigns/` — only `repo-health`, `ship-with-proof`, and `quality-gate`
-remain populated; the others (`secure-ship`, `align-then-ship`, `handoff-to-product`)
-referenced demoted missions and are now archived in-place pending promotion.
+under `scripts/campaigns/` — only `repo-health`, `ship-with-proof`, and
+`quality-gate` remain populated; the others (`secure-ship`, `align-then-ship`,
+`handoff-to-product`, `gstack-quality`) reference demoted or parked missions and
+are archived in-place pending promotion.
 
 The earlier `handoff-to-product` campaign depended on three missions
 (`scaffold-align`, `contract-first-build`, `agents-layer`) that lacked real-run

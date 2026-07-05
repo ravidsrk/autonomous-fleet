@@ -33,8 +33,14 @@ def _pytest_collect_count() -> int:
 
 
 def _exploratory_mission_count() -> int:
-    """Source of truth: number of mission subdirectories on disk."""
-    return sum(1 for p in MISSIONS_DIR.iterdir() if p.is_dir())
+    """Source of truth: number of ACTIVE mission subdirectories on disk.
+
+    ``archive/`` holds parked missions (see its README) and is not a mission,
+    so it is excluded from the canonical count.
+    """
+    return sum(
+        1 for p in MISSIONS_DIR.iterdir() if p.is_dir() and p.name != "archive"
+    )
 
 
 def _mission_counts_stated_in_readme(readme: str) -> set[int]:

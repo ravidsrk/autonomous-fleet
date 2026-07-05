@@ -55,7 +55,7 @@ def test_preflight_community_emits_install_hint_with_isolated_home(tmp_path):
     probe_home.mkdir()
     env = {**os.environ, "COMMUNITY_PROBE_HOME": str(probe_home)}
     r = subprocess.run(
-        [str(PREFLIGHT_COMMUNITY), "product-framing", "--dry-run"],
+        [str(PREFLIGHT_COMMUNITY), "browser-qa-fix", "--dry-run"],
         capture_output=True,
         text=True,
         check=False,
@@ -74,7 +74,7 @@ def test_headless_dry_run_gstack_mission_surfaces_community_hints(tmp_path):
     probe_home.mkdir()
     env = {**os.environ, "COMMUNITY_PROBE_HOME": str(probe_home)}
     r = subprocess.run(
-        [str(HEADLESS), "grok", "product-framing", "--dry-run", "--repo", str(ROOT)],
+        [str(HEADLESS), "grok", "browser-qa-fix", "--dry-run", "--repo", str(ROOT)],
         capture_output=True,
         text=True,
         check=False,
@@ -87,22 +87,16 @@ def test_headless_dry_run_gstack_mission_surfaces_community_hints(tmp_path):
     assert "recommended community bundle" in combined
 
 
-def test_campaign_gstack_quality_dry_run_surfaces_community_hints(tmp_path):
-    probe_home = tmp_path / "empty-skills-home"
-    probe_home.mkdir()
-    env = {**os.environ, "COMMUNITY_PROBE_HOME": str(probe_home)}
+def test_archived_gstack_quality_preset_is_not_runnable():
     r = subprocess.run(
         [str(RUN_CAMPAIGN), "grok", "--preset", "gstack-quality", "--dry-run"],
         capture_output=True,
         text=True,
         check=False,
         cwd=ROOT,
-        env=env,
     )
-    assert r.returncode == 0, r.stderr
-    combined = r.stdout + r.stderr
-    assert "install-community.sh" in combined
-    assert "recommended community bundle" in combined
+    assert r.returncode != 0
+    assert "campaign missing 'start'" in r.stderr
 
 
 def test_headless_dry_run_external_git_repo_cleans_up(tmp_path):

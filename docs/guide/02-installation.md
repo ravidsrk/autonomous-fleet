@@ -316,7 +316,7 @@ grok mcp add container-use -- container-use stdio
 
 Once registered, the `PLACE(independent)` primitive may use a container-use environment instead of
 a host `git worktree`. The canonical placement loop (spawn / inspect / open-PR / cleanup / fallback)
-lives in `engine.md` under `CONTAINER-USE-PLACEMENT`.
+lives in `engine-workers.md` under `CONTAINER-USE-PLACEMENT`.
 
 Current verification status, straight from the adapters, because honesty matters more than a clean
 table:

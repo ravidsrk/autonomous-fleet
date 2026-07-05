@@ -3,7 +3,7 @@
 Every run that emits first-class artifacts (findings JSONs, verifier summaries,
 blind-fix files, prompts, responses, diffs, readiness docs) lives under a single
 directory: `.fleet/runs/<run_id>/`, with a `manifest.json` listing every file
-the run produced. See engine.md ARCHIVE_ENABLED for the doctrine; this module
+the run produced. See engine-recovery.md ARCHIVE_ENABLED for the doctrine; this module
 is the enforcement surface.
 
 Three responsibilities:
@@ -20,7 +20,7 @@ Three responsibilities:
 
 3. `validate_manifest(archive_dir)` — the inverse: load manifest.json, verify
    the schema, verify every file exists and its checksum + size match, and
-   verify the cross-cutting mtime-ordering invariants from engine.md
+   verify the cross-cutting mtime-ordering invariants from engine-recovery.md
    ARCHIVE_ENABLED HARD RULE on mtime ordering:
        - blind_fix mtime < findings mtime (per producer)
        - verify_summary mtime > findings mtime
@@ -626,7 +626,7 @@ def write_manifest(
     created_str = created.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     manifest_path = archive_root / "manifest.json"
-    # Doctrine (engine.md TRACE EMISSION): trace first, ledger second — never the reverse,
+    # Doctrine (trace.md TRACE EMISSION): trace first, ledger second — never the reverse,
     # or a crash leaves the manifest on disk with no externally-visible cause. Emit BEFORE write.
     if emitter is not None:
         emitter.emit(
@@ -758,7 +758,7 @@ def _validate_shape(manifest: dict[str, Any], where: str) -> list[str]:
 
 
 def _validate_ordering(files: list[dict[str, Any]], where: str) -> list[str]:
-    """Enforce the cross-cutting mtime-ordering invariants from engine.md
+    """Enforce the cross-cutting mtime-ordering invariants from engine-recovery.md
     ARCHIVE_ENABLED HARD RULE on mtime ordering. These ARE the Commits 1-3
     disciplines made auditable; a schema-clean manifest that violates them
     is still doctrine-broken."""
@@ -975,11 +975,16 @@ def _validate_files_on_disk(
 
         expected_size = entry.get("bytes")
         actual_size = abs_path.stat().st_size
-        if (
-            isinstance(expected_size, int)
-            and not isinstance(expected_size, bool)
-            and actual_size != expected_size
-        ):
+        if not (isinstance(expected_size, int) and not isinstance(expected_size, bool)):
+            # Refuse to hash a file the manifest didn't validly size. Combined
+            # with the size-cap short-circuit in validate_manifest_payload, this
+            # bounds total hashed bytes to the declared (cap-checked) total, so
+            # a hostile entry can't force hashing an arbitrarily large file.
+            errors.append(
+                f"{ewhere}: missing or non-integer 'bytes'; refusing to hash unsized file"
+            )
+            continue
+        if actual_size != expected_size:
             errors.append(
                 f"{ewhere}: size mismatch — manifest says {expected_size}, "
                 f"disk says {actual_size}"
@@ -1019,8 +1024,12 @@ def validate_manifest_payload(
     if isinstance(files, list) and files:
         errors.extend(_validate_ordering(files, label))
         errors.extend(_validate_independence(files, label))
-        errors.extend(_validate_size_cap(files, archive_root, label))
-        if check_files_on_disk and archive_root is not None:
+        size_errors = _validate_size_cap(files, archive_root, label)
+        errors.extend(size_errors)
+        # An over-cap archive is already rejected; skip walking + hashing every
+        # listed file. The run dir is attacker-controlled in the CI-gate path,
+        # so a hostile oversized archive must not force a full hash pass.
+        if check_files_on_disk and archive_root is not None and not size_errors:
             errors.extend(_validate_files_on_disk(archive_root, files, label))
     return errors
 

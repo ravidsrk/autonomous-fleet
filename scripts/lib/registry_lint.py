@@ -11,6 +11,7 @@ from typing import Any, Mapping
 
 import yaml
 
+from .exploratory_missions import list_archived_mission_dirs
 from .fleet_registry import MISSIONS
 
 LOCAL_LOCK_SOURCE = "ravidsrk/autonomous-fleet"
@@ -53,6 +54,26 @@ def shipped_missions(
     }
 
 
+def archived_missions(
+    missions: Mapping[str, Mapping[str, Any]] = MISSIONS,
+) -> dict[str, Mapping[str, Any]]:
+    return {
+        mission_id: row
+        for mission_id, row in missions.items()
+        if row.get("archived") is True
+    }
+
+
+def active_exploratory_missions(
+    missions: Mapping[str, Mapping[str, Any]] = MISSIONS,
+) -> dict[str, Mapping[str, Any]]:
+    return {
+        mission_id: row
+        for mission_id, row in missions.items()
+        if row.get("shipped") is not True and row.get("archived") is not True
+    }
+
+
 def _skill_dirs_on_disk(root: Path) -> set[str]:
     return {path.parent.name for path in (root / "skills").glob("*/SKILL.md")}
 
@@ -86,6 +107,30 @@ def lint_shipped_mission_dirs(
             f"skills/{skill_dir}/SKILL.md is a mission skill but has no shipped:true registry row"
         )
 
+    return errors
+
+def lint_archived_mission_dirs(
+    root: Path, missions: Mapping[str, Mapping[str, Any]] = MISSIONS
+) -> list[str]:
+    """Reconcile archived:true registry rows with archive/ dirs on disk.
+
+    Mirrors lint_shipped_mission_dirs for the archived axis so un-parking a
+    mission (moving its dir out of archive/) without clearing the registry
+    flag — or vice versa — is caught instead of silently drifting.
+    """
+    errors: list[str] = []
+    registry_archived = set(archived_missions(missions))
+    disk_archived = {p.name for p in list_archived_mission_dirs(root)}
+    for mission_id in sorted(registry_archived - disk_archived):
+        errors.append(
+            f"{mission_id}: archived:true but no "
+            f"docs/exploratory/missions/archive/{mission_id}/ on disk"
+        )
+    for slug in sorted(disk_archived - registry_archived):
+        errors.append(
+            f"docs/exploratory/missions/archive/{slug}/ exists but has no "
+            f"archived:true registry row"
+        )
     return errors
 
 
@@ -274,7 +319,7 @@ _ROUTING_DOCS = (
     "skills/autonomous-fleet-core/references/community-skills.md",
 )
 
-_EXPLORATORY_MARKERS = ("exploratory", "archived", "demoted", "not yet", "pending promotion")
+_EXPLORATORY_MARKERS = ("exploratory", "archived", "demoted", "not yet", "pending promotion", "parked")
 
 
 _ADAPTER_CONTRACT = "skills/autonomous-fleet-core/references/adapter-contract.md"
@@ -321,13 +366,13 @@ def lint_mission_state_docs(
     root: Path, missions: Mapping[str, Mapping[str, Any]] = MISSIONS
 ) -> list[str]:
     """The registry (fleet_registry.MISSIONS) is the single source of mission
-    state (issue #92). Routing docs must not present an exploratory mission as
+    state (issue #92). Routing docs must not present an unshipped mission as
     first-class: any line naming one must carry an exploratory/archived marker
     on the line or in its enclosing section heading; and every shipped mission
     must appear in the missions catalog."""
     errors: list[str] = []
-    shipped = {m for m, row in missions.items() if row["shipped"] is True}
-    exploratory = {m for m, row in missions.items() if row["shipped"] is not True}
+    shipped = set(shipped_missions(missions))
+    inactive = set(active_exploratory_missions(missions)) | set(archived_missions(missions))
 
     catalog = root / "skills/autonomous-fleet/references/missions.md"
     if catalog.is_file():
@@ -368,10 +413,10 @@ def lint_mission_state_docs(
             if marked:
                 continue
             for offset, line in enumerate(block):
-                for m in exploratory:
+                for m in inactive:
                     if f"`{m}`" in line or f" {m} " in f" {line} ":
                         errors.append(
-                            f"{rel}:{start + offset + 1}: exploratory mission {m!r} "
+                            f"{rel}:{start + offset + 1}: unshipped mission {m!r} "
                             f"presented without an exploratory/archived marker in its "
                             f"block or section heading (registry is the single source "
                             f"— issue #92)"
@@ -420,7 +465,7 @@ def lint_campaign_missions(
 ) -> list[str]:
     errors: list[str] = []
     shipped_ids = set(shipped_missions(missions))
-
+    archived_ids = set(archived_missions(missions))
     for path in _campaign_yaml_paths(root):
         try:
             spec = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -443,6 +488,11 @@ def lint_campaign_missions(
                 errors.append(
                     f"{path.relative_to(root)}: node {node_id!r} references unknown mission {mission!r}"
                 )
+            elif mission in archived_ids:
+                errors.append(
+                    f"{path.relative_to(root)}: node {node_id!r} references archived mission {mission!r} "
+                    f"(campaign {campaign_id!r}; un-archive the mission with evidence or promote it)"
+                )
             elif mission not in shipped_ids:
                 if _campaign_allows_exploratory_nodes(spec):
                     if not _exploratory_mission_skill_exists(root, mission):
@@ -464,6 +514,7 @@ def lint_registry(
 ) -> list[str]:
     return (
         lint_shipped_mission_dirs(root, missions)
+        + lint_archived_mission_dirs(root, missions)
         + lint_catalog_mentions(root, missions)
         + lint_skills_lock(root)
         + lint_lock_hashes(root)
