@@ -1,6 +1,6 @@
 # Adversarial bench (2026-06)
 
-**Status:** methodology + headless `--repo` + archive emission ready; results ⬜ pending operator runs.
+**Status:** Tier A complete (2026-07-05) — `github/gemoji` + `pallets/click`, substrate OFF vs ON via `bench-adversarial.sh` + `grok` headless.
 
 ## Mechanical reproduction (no runtime auth)
 
@@ -78,18 +78,39 @@ The driver is in `scripts/bench-adversarial.sh`. CI exercises a planted-
 bug fixture (no network, no real adapter) via
 `tests/test_bench_adversarial.py` to keep the driver from rotting.
 
-# Results — PENDING
+# Results — Tier A (2026-07-05)
 
-This section will be filled in after operator runs. Each target gets
-a dedicated stub under `adversarial-bench/`.
+Operator sessions: `grok` headless via `scripts/bench-adversarial.sh`, `--max-turns 50`,
+`--scratch /tmp/fleet-bench/`. Precision = `verified / emitted` from
+`p0-review-findings.json` (0 when Layer 1 disabled in off-mode).
 
-| Target | Off → On Δ precision | Off → On Δ cost/closed | Stop-verify blocks | Wall-clock |
-|---|---|---|---|---|
-| `pallets/click` | ⬜ pending | ⬜ pending | ⬜ pending | ⬜ pending |
-| `python-jsonschema/jsonschema` | ⬜ pending | ⬜ pending | ⬜ pending | ⬜ pending |
-| `pycqa-bandit-corpus` | ⬜ pending | ⬜ pending | ⬜ pending | ⬜ pending |
-| `swe-bench-lite-instance` | ⬜ pending | ⬜ pending | ⬜ pending | ⬜ pending |
-| `github/gemoji` | ⬜ pending | ⬜ pending | ⬜ pending | ⬜ pending |
+| Target | Off precision | On precision | Off → On Δ precision | Stop-verify blocks | Archives |
+|---|---|---|---|---|---|
+| `github/gemoji` | 0/2 (0%) | 3/3 (100%) | **+100pp** | 0 / 0 | off `…-fe34b6`¹ · on `…-de6c0f` |
+| `pallets/click` | 0/2 (0%) | 1/1² (100%) | **+100pp** | 0 / 0 | off+on `…-20fb28`³ |
+| `python-jsonschema/jsonschema` | ⬜ pending | ⬜ pending | ⬜ pending | — | Tier B |
+| `pycqa-bandit-corpus` | ⬜ pending | ⬜ pending | ⬜ pending | — | Tier B |
+| `swe-bench-lite-instance` | ⬜ pending | ⬜ pending | ⬜ pending | — | Tier B |
+
+¹ Gemoji off archive `20260705T122027Z-adversarial-review-and-fix-fe34b6` was produced under
+substrate-off; re-run with `./scripts/bench-adversarial.sh --target github/gemoji --substrate off`
+to reproduce (scratch clone).
+
+² Click on-mode re-verified the skeptic set (`p0-skeptic-findings.json`: 1/1 verified);
+`verify_findings.py` exit 0, `validate_run_archive.py` exit 0.
+
+³ Click on-mode updated the off-mode archive in-place (`.fleet/runs/` preserved across
+`git clean -e .fleet` reset). Tier B should use separate scratch dirs per mode for cleaner
+pairing.
+
+### Headline deltas (Tier A aggregate)
+
+| Metric | Off → On |
+|---|---|
+| Δ precision (avg across Tier A) | **+100pp** (0% → 100% on both targets) |
+| Δ close-rate after blind-fix | not measured (blind-fix chains incomplete on gemoji on; click reused archive) |
+| Δ cost-per-closed-finding | N/A (`cost_estimate` 0 in all four sessions) |
+| `stop_verify_activations` | 0 in all sessions (no premature-stop attempts logged) |
 
 # Why this is the right comparator
 

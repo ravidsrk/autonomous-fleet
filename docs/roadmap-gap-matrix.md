@@ -10,7 +10,7 @@ Legend: **Code** = shipped in repo · **Operator** = human/authenticated run · 
 |--------|------|------------|------------------|------------------|
 | A-real | Real `.fleet/runs/<run_id>/` from live adversarial run on main | Lane 1 archive + example-fixture | — | closed (PR #55, `first-substrate-run.md`) |
 | B-blind | Blind-fix mechanical guard (Layer 3) | Shipped (`verify_blind_fix.py`) | — | — (already closed) |
-| C-bench | Public bench numbers (5 OSS repos) | `bench-adversarial.sh` + headless `--repo` + archive keep | PENDING: authenticated A/B runs | headless + archive path complete |
+| C-bench | Public bench numbers (5 OSS repos) | `bench-adversarial.sh` auto-dispatch + Tier A numbers | Tier A done (2/5); Tier B pending | Tier A closed 2026-07-05 |
 | D-demote | Demote 9 unproven missions | Shipped → `docs/exploratory/missions/` | — | — (already closed) |
 | E-trace | Full 11-primitive trace per run | `plan_dryrun_trace_from_progress` + `headless_trace` + `emit_dryrun_lifecycle_trace` + `emit_trace.py emit` + `fleet_run.write_manifest` | Coordinator must call emit at transitions | closed (v0.2.1 live emit path) |
 | F-seat | Seat analysis + write locks | Shipped (`analyze_seat.py`, `locks.py`) | — | — (already closed) |
@@ -21,7 +21,7 @@ Legend: **Code** = shipped in repo · **Operator** = human/authenticated run · 
 | Gap ID | Item | Code state | Operator / human | This goal closes |
 |--------|------|------------|------------------|------------------|
 | W-proof | Mission proof for ≥10/12 missions | 3 shipped + `validate_mission_promotion.py` | PENDING per mission | promotion criteria enforced in CI |
-| W-bench-pub | Public benchmark citation artifact | Methodology + headless/archive ready | PENDING numbers | adversarial-bench-2026-06.md updated |
+| W-bench-pub | Public benchmark citation artifact | Tier A numbers in adversarial-bench-2026-06.md | Tier B (3 targets) pending | Tier A closed 2026-07-05 |
 | W-adopt | External adopters / install metrics | Marketplace packet | PENDING submit + feedback | marketplace README |
 | W-gap1 | Non-busy WAIT (Codex/Grok ledger-poll) | `poll-ledger.sh` + adapter SKILL.md | — | closed (v0.2.1 mechanical helper) |
 | W-telemetry | analyze.js "earns its seat" lens | `analyze_seat.py` scaffold | PENDING bench archives | bench docs |

@@ -12,7 +12,7 @@ Per `docs/external-dogfood/adversarial-bench-2026-06.md`. Two runs:
 Driver:
 
 ```
-scripts/bench-adversarial.sh --target swe-bench-lite --both
+scripts/bench-adversarial.sh --target swe-bench-lite-instance --both
 ```
 
 # Results

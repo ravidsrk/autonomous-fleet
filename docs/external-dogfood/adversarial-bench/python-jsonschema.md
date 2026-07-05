@@ -12,7 +12,7 @@ Per `docs/external-dogfood/adversarial-bench-2026-06.md`. Two runs:
 Driver:
 
 ```
-scripts/bench-adversarial.sh --target python-jsonschema --both
+scripts/bench-adversarial.sh --target python-jsonschema/jsonschema --both
 ```
 
 # Results
