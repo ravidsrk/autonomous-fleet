@@ -17,6 +17,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SANDBOX = REPO_ROOT / "scripts" / "run-sandboxed.sh"
 RUN_ID = "20260624T000000Z-doc-sync-abcdef"
+_HAS_REAL_SANDBOX = bool(shutil.which("sandbox-exec") or shutil.which("bwrap"))
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from lib.reviewer_sandbox import (  # noqa: E402
@@ -152,6 +153,12 @@ def _run_cli(*argv: str, env: dict[str, str] | None = None) -> tuple[int, str, s
     return rc, out.getvalue(), err.getvalue()
 
 
+@pytest.mark.skipif(
+    not _HAS_REAL_SANDBOX,
+    reason="reviewer write PREVENTION needs sandbox-exec (macOS) or bwrap (Linux); "
+    "without one, run-sandboxed.sh falls back to post-exec detection that cannot "
+    "roll the write back",
+)
 def test_run_sandboxed_role_reviewer_blocks_tracked_file_write(
     git_repo: Path, tmp_path: Path
 ) -> None:
