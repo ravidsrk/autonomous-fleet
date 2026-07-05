@@ -1,6 +1,6 @@
-# Adversarial bench — github-gemoji
+# Adversarial bench — github/gemoji
 
-**Status:** Infrastructure ready (headless `--repo`, archive emission); metrics ⬜ pending. Lane 2 gemoji baseline: `gemoji-headless-run.md`.
+**Status:** Tier A DONE (2026-07-05) · Lane 3 operator run
 
 # Methodology
 
@@ -11,15 +11,28 @@ Per `docs/external-dogfood/adversarial-bench-2026-06.md`. Two runs:
 
 Driver:
 
-```
-scripts/bench-adversarial.sh --target github-gemoji --both
+```bash
+./scripts/bench-adversarial.sh --target github/gemoji --both --adapter grok
 ```
 
 # Results
 
-Pending operator runs. Will be populated with:
+| Mode | run_id | Precision | Closed findings | validate_run_archive |
+|---|---|---|---|---|
+| off | `20260705T122027Z-adversarial-review-and-fix-fe34b6` | 0/2 | REL-002 (local merge) | disabled (Layer 4 off) |
+| on | `20260705T122446Z-adversarial-review-and-fix-de6c0f` | 3/3 review; 1/1 skeptic | REL-001 | OK |
 
-- Per-mode archive paths under `.fleet/runs/github-gemoji-{off,on}-<ts>/`
-- Output of `scripts/analyze_seat.py per-run` filtered to this target
-- The substrate-on vs substrate-off DELTA on the four headline metrics
-- Notes on any planted-bug recovery (bandit corpus only)
+**Δ precision:** 0% → 100% (+100pp). Substrate-on run caught quote-grounding via
+`verify_findings.py` (3/3) where off-mode accepted unverified review JSON.
+
+Archive paths (on-mode survives on disk):
+
+```
+/tmp/fleet-bench/github-gemoji/.fleet/runs/20260705T122446Z-adversarial-review-and-fix-de6c0f/
+```
+
+Reproduce off-mode:
+
+```bash
+./scripts/bench-adversarial.sh --target github/gemoji --substrate off --adapter grok --scratch /tmp/fleet-bench
+```
