@@ -229,7 +229,7 @@ print(json.dumps(analyze_run(Path('$archive')), indent=2))
 adapter_skill_name() {
   case "$ADAPTER" in
     grok) echo "autonomous-fleet-adapter-grok" ;;
-    claude-code) echo "autonomous-fleet-adapter-claude-code" ;;
+    claude|claude-code) echo "autonomous-fleet-adapter-claude-code" ;;
     codex) echo "autonomous-fleet-adapter-codex" ;;
     autonomous-fleet-adapter-*) echo "$ADAPTER" ;;
     *) echo "autonomous-fleet-adapter-grok" ;;
@@ -278,10 +278,14 @@ run_one_mode() {
   fi
 
   local runs_before_id=""
+  local runs_before_score=-1
   local runs_dir="$clone_dir/.fleet/runs"
   mkdir -p "$runs_dir"
   if [[ -n "$(latest_archive_in "$runs_dir" || true)" ]]; then
-    runs_before_id="$(basename "$(latest_archive_in "$runs_dir")")"
+    local before_archive
+    before_archive="$(latest_archive_in "$runs_dir")"
+    runs_before_id="$(basename "$before_archive")"
+    runs_before_score="$(archive_score "$before_archive")"
   fi
 
   if [[ "$mode" == "off" ]]; then
@@ -324,20 +328,24 @@ run_one_mode() {
     return 1
   fi
   if [[ -n "$runs_before_id" && "$(basename "$archive")" == "$runs_before_id" ]]; then
-    # Prefer any newer non-dryrun archive created during this dispatch.
-    local candidate
-    for candidate in $(ls -1t "$runs_dir" 2>/dev/null); do
-      [[ "$candidate" == "$runs_before_id" ]] && continue
-      [[ -d "$runs_dir/$candidate" ]] || continue
-      if [[ -f "$runs_dir/$candidate/p0-review-findings.json" ]]; then
-        archive="$runs_dir/$candidate"
-        break
+    local score_now
+    score_now="$(archive_score "$archive")"
+    if [[ "$score_now" -le "$runs_before_score" ]]; then
+      # Prefer any newer non-dryrun archive created during this dispatch.
+      local candidate
+      for candidate in $(ls -1t "$runs_dir" 2>/dev/null); do
+        [[ "$candidate" == "$runs_before_id" ]] && continue
+        [[ -d "$runs_dir/$candidate" ]] || continue
+        if [[ -f "$runs_dir/$candidate/p0-review-findings.json" ]]; then
+          archive="$runs_dir/$candidate"
+          break
+        fi
+      done
+      if [[ "$(basename "$archive")" == "$runs_before_id" ]]; then
+        echo "  error: no new mission archive under $runs_dir (only dryrun trace?)" >&2
+        record_run_summary "$name" "$mode" "" 1 1
+        return 1
       fi
-    done
-    if [[ "$(basename "$archive")" == "$runs_before_id" ]]; then
-      echo "  error: no new mission archive under $runs_dir (only dryrun trace?)" >&2
-      record_run_summary "$name" "$mode" "" 1 1
-      return 1
     fi
   fi
 
@@ -356,7 +364,7 @@ while IFS= read -r target_json; do
     # Fresh checkout for substrate-on so both modes start from the same baseline.
     reset_slug="${name//\//-}"
     reset_clone_dir="$SCRATCH/$reset_slug"
-    if [[ -d "$reset_clone_dir/.git" ]]; then
+    if [[ $DRY_RUN -eq 0 && -d "$reset_clone_dir/.git" ]]; then
       echo "bench: resetting $reset_clone_dir to origin/HEAD before substrate-on"
       (cd "$reset_clone_dir" && git fetch --depth 50 origin && git reset --hard origin/HEAD && git clean -fdx -e .agents -e .fleet)
     fi
