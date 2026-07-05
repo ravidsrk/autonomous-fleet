@@ -385,7 +385,7 @@ Individual validators:
 ./scripts/validate-fleet-outcome.sh                # readiness doc fleet-outcome YAML
 ./scripts/validate-goal-condition.sh --scan-docs   # /goal binding
 python scripts/validate_run_archive.py             # Layers 3 & 4: manifest + sha256 + mtime ordering (the blind-fix anti-anchoring ordering IS Layer 3)
-pytest tests/                                      # full suite (72 files, 1522 tests; 100% line coverage of the Python tooling, scripts/*.py — shell is validated by behavioral + mutation tests, not line coverage)
+pytest tests/                                      # full suite (72 files, 1523 tests; 100% line coverage of the Python tooling, scripts/*.py — shell is validated by behavioral + mutation tests, not line coverage)
 
 # Operator gates (run on a specific run-id)
 python scripts/verify_findings.py \
@@ -491,7 +491,7 @@ autonomous-fleet/
 │   ├── lib/                             # fleet_outcome, fleet_run, verify_findings, verify_blind_fix, emit_trace, analyze_seat, analyze_cost, locks, substrate_disable, stop_verify, mission_registry, venv-bootstrap
 │   └── install-skills.sh
 ├── action.yml                           # GitHub Action: fleet-verify as a PR-side gate
-├── tests/                               # 72 test files, 1522 tests; validators + engine doctrine + 4-layer substrate
+├── tests/                               # 72 test files, 1523 tests; validators + engine doctrine + 4-layer substrate
 ├── .agents/skills/                      # installed skill copies (gitignored)
 └── skills-lock.json                     # lockfile for npx skills
 ```

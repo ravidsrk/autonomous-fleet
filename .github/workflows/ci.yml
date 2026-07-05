@@ -58,6 +58,12 @@ jobs:
         run: |
           .venv/bin/python scripts/sync_guide_starlight.py --check
 
+      - name: Install ImageMagick (banner resize)
+        # scripts/banner/sniff_and_normalize_banner.sh normalizes banners to 2:1;
+        # macOS uses sips, Linux/CI needs ImageMagick. ubuntu-latest no longer
+        # ships it, so install it explicitly (the sniff test exercises resize).
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
       - name: Run all validators and tests
         run: ./scripts/validate-all.sh
 

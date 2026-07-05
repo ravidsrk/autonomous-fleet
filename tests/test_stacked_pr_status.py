@@ -107,6 +107,27 @@ def test_aggregate_suppresses_child_mergeable() -> None:
     assert sp.aggregate_pr_status(prs_worse_child) == "mergeable"
 
 
+def test_aggregate_suppresses_child_worse_nonactionable_status() -> None:
+    # Child's review_pending outranks parent's mergeable in worst-wins, so the
+    # aggregate only stays "mergeable" if the blocked child is suppressed.
+    prs = [
+        _pr(
+            url="p1",
+            source_branch="fleet/parent",
+            target_branch="main",
+            mergeability="mergeable",
+            review="approved",
+        ),
+        _pr(
+            url="p2",
+            source_branch="fleet/child",
+            target_branch="fleet/parent",
+            review="required",
+        ),
+    ]
+    assert sp.aggregate_pr_status(prs) == "mergeable"
+
+
 def test_child_ci_failure_still_surfaces() -> None:
     prs = [
         _pr(url="p1", source_branch="fleet/parent", target_branch="main", mergeability="mergeable"),
