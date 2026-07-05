@@ -9,6 +9,19 @@ All notable changes to `autonomous-fleet` are recorded here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- **Lane 3 adversarial bench (Tier A)** — `bench-adversarial.sh` auto-dispatches
+  `run-mission-headless.sh` (skill install, substrate env, post-run validate +
+  `analyze_seat.py`). Operator handoff: `docs/handoff-adversarial-bench.md`.
+  Published A/B numbers for `github/gemoji` and `pallets/click` in
+  `docs/external-dogfood/adversarial-bench-2026-06.md` (closes issue #62 Tier A).
+
+### Changed
+
+- Per-target bench stubs use correct `--target` names (`github/gemoji`, `pallets/click`, …).
+- `bench-adversarial.sh` default adapter is `grok` (Lanes 1–2 validated Grok headless).
+
 ## [0.3.0] - 2026-07-05
 
 Trust-layer repositioning: standalone verification, mechanical gates for the shipped

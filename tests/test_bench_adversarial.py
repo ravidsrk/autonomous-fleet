@@ -187,8 +187,8 @@ def test_per_target_stubs_exist() -> None:
     assert len(stubs) == 5
 
 
-def test_summary_doc_exists_with_pending_status() -> None:
+def test_summary_doc_exists_with_bench_status() -> None:
     summary = (REPO_ROOT / "docs/external-dogfood/adversarial-bench-summary.md").read_text()
-    assert "pending" in summary.lower()
-    assert "ready for operator" in summary.lower() or "infrastructure ready" in summary.lower()
-    assert "substrate-off-vs-on" in summary or "substrate" in summary
+    assert "tier a" in summary.lower()
+    assert "substrate" in summary.lower()
+    assert "bench-adversarial.sh" in summary

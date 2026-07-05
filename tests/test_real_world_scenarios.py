@@ -258,10 +258,12 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("target", targets, ids=[t["name"] for t in targets])
 
 
-def test_bench_methodology_documents_pending_operator_runs() -> None:
+def test_bench_methodology_documents_bench_status() -> None:
     text = (REPO_ROOT / "docs" / "external-dogfood" / "adversarial-bench-2026-06.md").read_text()
-    assert "PENDING" in text
+    assert "Tier A" in text
     assert "bench-adversarial.sh" in text
+    # Tier B targets remain pending until operator runs complete.
+    assert "pending" in text.lower()
 
 
 def test_bench_adversarial_script_help_lists_targets() -> None:
