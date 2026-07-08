@@ -324,6 +324,54 @@ def _pipe_row_task_id(line: str) -> str | None:
     return first_cell[len("TASK ") :].strip("`* ")
 
 
+def _split_md_table_cells(line: str) -> list[str]:
+    """Split a markdown table line into cells (preserves cell text, not padding)."""
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def _table_header_from_line(line: str) -> list[str] | None:
+    """Return uppercased header cells when ``line`` is a task-table header."""
+    if "|" not in line:
+        return None
+    cells = _split_md_table_cells(line)
+    upper = [cell.upper() for cell in cells]
+    if ("TASK" in upper or "ID" in upper) and ("BRANCH" in upper or "WT" in upper):
+        return upper
+    return None
+
+
+def _is_md_table_separator(cells: list[str]) -> bool:
+    return bool(cells) and set("".join(cells)) <= set("-: ")
+
+
+def _table_row_task_id(line: str, header: list[str]) -> str | None:
+    """Return the task id of a markdown table data row under ``header``, else ``None``.
+
+    Mirrors :func:`_parse_task_table_rows` so the resume writer rewrites the same
+    row the scanner classifies.
+    """
+    if "|" not in line:
+        return None
+    cells = _split_md_table_cells(line)
+    if _is_md_table_separator(cells) or len(cells) != len(header):
+        return None
+    values = dict(zip(header, (_clean(cell) for cell in cells)))
+    task_id = values.get("TASK") or values.get("ID") or ""
+    return task_id or None
+
+
+def _format_md_table_row(cells: list[str], *, leading_pipe: bool, trailing_pipe: bool) -> str:
+    body = "|".join(f" {cell} " for cell in cells)
+    left = "|" if leading_pipe else ""
+    right = "|" if trailing_pipe else ""
+    return f"{left}{body}{right}"
+
+
+def _md_table_pipe_style(line: str) -> tuple[bool, bool]:
+    stripped = line.strip()
+    return stripped.startswith("|"), stripped.endswith("|")
+
+
 def _bump_resume_count_in_line(line: str) -> tuple[str, int]:
     """Return ``(rewritten_line, new_count)`` with ``RESUME_COUNT`` incremented.
 
@@ -355,6 +403,94 @@ def _bump_resume_count_in_line(line: str) -> tuple[str, int]:
     return rewritten + newline, new_count
 
 
+def _bump_resume_count_in_table_line(
+    line: str, header: list[str]
+) -> tuple[str, int, list[str]]:
+    """Bump ``RESUME_COUNT`` on a markdown table data row.
+
+    Returns ``(rewritten_line, new_count, effective_header)``. When the table
+    has no ``RESUME_COUNT`` column yet, the column is appended and the updated
+    header is returned so the caller can rewrite the header/separator lines too.
+    """
+    newline = "\n" if line.endswith("\n") else ""
+    body = line[: -len(newline)] if newline else line
+    leading, trailing = _md_table_pipe_style(body)
+    cells = _split_md_table_cells(body)
+    working_header = list(header)
+    if "RESUME_COUNT" not in working_header:
+        working_header.append("RESUME_COUNT")
+        cells.append("0")
+    idx = working_header.index("RESUME_COUNT")
+    while len(cells) < len(working_header):
+        cells.append("")
+    raw = _clean(cells[idx])
+    current = int(raw) if raw.isdecimal() else 0
+    new_count = current + 1
+    cells[idx] = str(new_count)
+    rewritten = _format_md_table_row(cells, leading_pipe=leading, trailing_pipe=trailing)
+    return rewritten + newline, new_count, working_header
+
+
+def _extend_md_table_line(line: str, extra_cells: list[str]) -> str:
+    """Append ``extra_cells`` to a markdown table line, preserving pipe style."""
+    newline = "\n" if line.endswith("\n") else ""
+    body = line[: -len(newline)] if newline else line
+    leading, trailing = _md_table_pipe_style(body)
+    cells = _split_md_table_cells(body) + extra_cells
+    return _format_md_table_row(cells, leading_pipe=leading, trailing_pipe=trailing) + newline
+
+
+def _find_resume_target(
+    lines: list[str], task_id: str
+) -> tuple[str, int, list[str] | None, int | None] | None:
+    """Locate the first ledger row for ``task_id``.
+
+    Prefers a pipe row over a table row (matching :func:`parse_ledger_rows`).
+    Returns ``(kind, line_index, table_header, header_index)`` where ``kind`` is
+    ``"pipe"`` or ``"table"``, or ``None`` when no matching row exists.
+    """
+    pipe_idx: int | None = None
+    table_idx: int | None = None
+    table_header: list[str] | None = None
+    header_idx: int | None = None
+    active_header: list[str] | None = None
+    active_header_idx: int | None = None
+
+    for idx, line in enumerate(lines):
+        pipe_id = _pipe_row_task_id(line)
+        if pipe_id is not None:
+            active_header = None
+            active_header_idx = None
+            if pipe_idx is None and pipe_id == task_id:
+                pipe_idx = idx
+            continue
+
+        maybe_header = _table_header_from_line(line)
+        if maybe_header is not None and active_header is None:
+            active_header = maybe_header
+            active_header_idx = idx
+            continue
+        if active_header is None:
+            continue
+        if "|" not in line:
+            active_header = None
+            active_header_idx = None
+            continue
+        cells = _split_md_table_cells(line)
+        if _is_md_table_separator(cells):
+            continue
+        if table_idx is None and _table_row_task_id(line, active_header) == task_id:
+            table_idx = idx
+            table_header = list(active_header)
+            header_idx = active_header_idx
+
+    if pipe_idx is not None:
+        return ("pipe", pipe_idx, None, None)
+    if table_idx is not None:
+        return ("table", table_idx, table_header, header_idx)
+    return None
+
+
 def increment_resume_count(ledger_path: str | os.PathLike[str], task_id: str) -> int:
     """Atomically bump a task's ``RESUME_COUNT`` in the ledger file.
 
@@ -363,24 +499,58 @@ def increment_resume_count(ledger_path: str | os.PathLike[str], task_id: str) ->
     re-drive so the next scan sees the escalated count and stops looping once
     ``MAX_RESUME_ATTEMPTS`` is reached.
 
-    Writes follow the tmp + ``os.replace`` discipline used by the lock and
-    round-budget modules: the new ledger is staged beside the target and swapped
-    in with a single atomic rename, so a crash mid-write never leaves a
-    half-written ledger. Returns the task's new count, or ``-1`` if no matching
-    pipe row was found (the ledger is left untouched).
+    Supports both ``TASK <id> | KEY=VALUE`` pipe rows and markdown task tables
+    (the same shapes :func:`parse_ledger_rows` reads). Writes follow the tmp +
+    ``os.replace`` discipline used by the lock and round-budget modules: the new
+    ledger is staged beside the target and swapped in with a single atomic
+    rename, so a crash mid-write never leaves a half-written ledger. Returns the
+    task's new count, or ``-1`` if no matching row was found (the ledger is left
+    untouched).
     """
     path = Path(ledger_path)
     text = path.read_text(encoding="utf-8")
-    new_count = -1
-    out_lines: list[str] = []
-    for line in text.splitlines(keepends=True):
-        if new_count == -1 and _pipe_row_task_id(line) == task_id:
-            rewritten, new_count = _bump_resume_count_in_line(line)
-            out_lines.append(rewritten)
-        else:
-            out_lines.append(line)
-    if new_count == -1:
+    lines = text.splitlines(keepends=True)
+    target = _find_resume_target(lines, task_id)
+    if target is None:
         return -1
+
+    kind, match_idx, table_header, header_idx = target
+    out_lines = list(lines)
+    if kind == "pipe":
+        rewritten, new_count = _bump_resume_count_in_line(lines[match_idx])
+        out_lines[match_idx] = rewritten
+    else:
+        assert table_header is not None and header_idx is not None
+        rewritten, new_count, updated_header = _bump_resume_count_in_table_line(
+            lines[match_idx], table_header
+        )
+        out_lines[match_idx] = rewritten
+        if "RESUME_COUNT" not in table_header:
+            extras = updated_header[len(table_header) :]
+            out_lines[header_idx] = _extend_md_table_line(lines[header_idx], extras)
+            sep_idx = header_idx + 1
+            if sep_idx < len(lines):
+                sep_cells = _split_md_table_cells(lines[sep_idx])
+                if _is_md_table_separator(sep_cells):
+                    out_lines[sep_idx] = _extend_md_table_line(
+                        lines[sep_idx], ["---" for _ in extras]
+                    )
+            scan_idx = header_idx + 1
+            while scan_idx < len(lines):
+                row_line = lines[scan_idx]
+                if "|" not in row_line:
+                    break
+                row_cells = _split_md_table_cells(row_line)
+                if _is_md_table_separator(row_cells):
+                    scan_idx += 1
+                    continue
+                if len(row_cells) != len(table_header):
+                    break
+                if scan_idx != match_idx:
+                    out_lines[scan_idx] = _extend_md_table_line(
+                        row_line, ["" for _ in extras]
+                    )
+                scan_idx += 1
 
     tmp = path.with_name(f".{path.name}.{os.getpid()}.{time.monotonic_ns()}.tmp")
     try:
