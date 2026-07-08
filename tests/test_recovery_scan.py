@@ -571,6 +571,73 @@ def test_increment_resume_count_is_atomic_and_cleans_tmp_on_failure(
     assert list(tmp_path.glob(".progress.md.*.tmp")) == []
 
 
+
+def test_increment_resume_count_table_format_initializes_then_escalates(tmp_path: Path) -> None:
+    """BUG-004: table-format ledgers must receive RESUME_COUNT writes."""
+    ledger = tmp_path / "progress.md"
+    ledger.write_text(
+        "noise line\n"
+        "| TASK | BRANCH | PR | MERGED |\n"
+        "| --- | --- | --- | --- |\n"
+        "| Loop | fleet/loop | 40 | false |\n"
+        "| Other | fleet/other | 41 | false |\n",
+        encoding="utf-8",
+    )
+    prs = _prs({"number": 40, "headRefName": "fleet/loop", "state": "CLOSED", "mergedAt": None})
+
+    before = next(
+        row
+        for row in rs.scan_recovery(ledger.read_text(encoding="utf-8"), "", prs)["rows"]
+        if row.get("task_id") == "Loop"
+    )
+    assert before["action"] == rs.ACTION_RE_DRIVE
+
+    counts = [rs.increment_resume_count(ledger, "Loop") for _ in range(rs.MAX_RESUME_ATTEMPTS)]
+    assert counts == [1, 2, 3]
+    text = ledger.read_text(encoding="utf-8")
+    assert "noise line\n" in text
+    rows = {row.task_id: row for row in rs.parse_ledger_rows(text)}
+    assert rows["Loop"].flags["RESUME_COUNT"] == "3"
+    assert not (rows["Other"].flags.get("RESUME_COUNT") or "").strip()
+
+    after = next(
+        row
+        for row in rs.scan_recovery(text, "", prs)["rows"]
+        if row.get("task_id") == "Loop"
+    )
+    assert after["action"] == rs.ACTION_ESCALATE
+
+
+def test_increment_resume_count_table_format_bumps_existing_column(tmp_path: Path) -> None:
+    ledger = tmp_path / "progress.md"
+    ledger.write_text(
+        "| TASK | BRANCH | MERGED | RESUME_COUNT |\n"
+        "| --- | --- | --- | --- |\n"
+        "| Keep | fleet/keep | false | 1 |\n",
+        encoding="utf-8",
+    )
+
+    assert rs.increment_resume_count(ledger, "Keep") == 2
+    rows = rs.parse_ledger_rows(ledger.read_text(encoding="utf-8"))
+    assert rows[0].flags["RESUME_COUNT"] == "2"
+
+
+def test_increment_resume_count_prefers_pipe_row_over_table_duplicate(tmp_path: Path) -> None:
+    ledger = tmp_path / "progress.md"
+    ledger.write_text(
+        "TASK Dual | BRANCH=fleet/dual MERGED=false RESUME_COUNT=1\n"
+        "| TASK | BRANCH | MERGED | RESUME_COUNT |\n"
+        "| --- | --- | --- | --- |\n"
+        "| Dual | fleet/dual | false | 9 |\n",
+        encoding="utf-8",
+    )
+
+    assert rs.increment_resume_count(ledger, "Dual") == 2
+    lines = ledger.read_text(encoding="utf-8").splitlines()
+    assert "RESUME_COUNT=2" in lines[0]
+    assert "9" in lines[3]
+
+
 def test_pipe_row_task_id_helper_rejects_non_task_lines() -> None:
     assert rs._pipe_row_task_id("not a task | x=1\n") is None
     assert rs._pipe_row_task_id("TASK NoPipe BRANCH=fleet/x\n") is None
