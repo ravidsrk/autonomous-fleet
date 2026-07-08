@@ -90,7 +90,8 @@ split rm flags (-rf, -r -f, --recursive --force), and +/: push refspecs.
             .fleet/runs/<run_id>/ writable. Uses sandbox-exec on macOS, bwrap on Linux, else a
             best-effort post-exec tracked-file hash assertion. The bwrap mount binds ONLY the repo
             (ro), the run dir (rw), and minimal system paths (ro) — no host RW of $HOME or /.
---run-id    run archive id for reviewer writable output. Defaults to FLEET_RUN_ID, then a generated
+--run-id    run archive id for reviewer writable output. Must match fleet_run.RUN_ID_PATTERN
+            (rejects /, .., and other path escapes). Defaults to FLEET_RUN_ID, then a generated
             reviewer-sandbox id.
 
 This is NOT a general sandbox. It does not confine fs/network/syscalls. Combine with a
@@ -726,10 +727,35 @@ if [[ "$verdict" == "ASK" ]]; then
   exit 3
 fi
 
+# Must stay identical to fleet_run.RUN_ID_PATTERN (SEC-002: path-escape via --run-id / FLEET_RUN_ID).
+_RUN_ID_RE='^[0-9]{8}T[0-9]{6}Z-[a-z][a-z0-9-]*[a-z0-9]-[0-9a-f]{6}$'
+
 _generated_run_id() {
   # Regex-compatible enough for run-archive naming, but only used when the caller has not supplied
   # the real run id yet.
   printf '%s-reviewer-sandbox-%06x' "$(date -u +%Y%m%dT%H%M%SZ)" "$(( $$ & 0xffffff ))"
+}
+
+_validate_run_id() {
+  # Reject path traversal / malformed ids before any mkdir or bwrap bind (SEC-002).
+  local rid="$1"
+  if [[ -z "$rid" ]]; then
+    echo "run-sandboxed: REFUSED: empty run_id" >&2
+    exit 1
+  fi
+  # Fast rejects for path metacharacters (defense in depth ahead of the regex).
+  # Note: bash case patterns cannot reliably match embedded NUL; the RUN_ID regex
+  # below is the authoritative shape check.
+  case "$rid" in
+    */*|*..*)
+      echo "run-sandboxed: REFUSED: invalid run_id (path characters): ${rid@Q}" >&2
+      exit 1
+      ;;
+  esac
+  if [[ ! "$rid" =~ $_RUN_ID_RE ]]; then
+    echo "run-sandboxed: REFUSED: run_id does not match RUN_ID_PATTERN: ${rid@Q}" >&2
+    exit 1
+  fi
 }
 
 _repo_root() {
@@ -950,8 +976,21 @@ if [[ "$role" == "reviewer" ]]; then
   if [[ -z "$run_id" ]]; then
     run_id="$(_generated_run_id)"
   fi
-  reviewer_run_dir="$repo_root/.fleet/runs/$run_id"
+  # SEC-002: validate --run-id / FLEET_RUN_ID before mkdir or sandbox mounts.
+  _validate_run_id "$run_id"
+  runs_root="$repo_root/.fleet/runs"
+  mkdir -p "$runs_root"
+  runs_root="$(cd "$runs_root" && pwd -P)"
+  reviewer_run_dir="$runs_root/$run_id"
   reviewer_run_dir="$(mkdir -p "$reviewer_run_dir" && cd "$reviewer_run_dir" && pwd -P)"
+  # Containment: resolved path must stay under .fleet/runs/ (realpath check).
+  case "$reviewer_run_dir" in
+    "$runs_root"|"$runs_root"/*) ;;
+    *)
+      echo "run-sandboxed: REFUSED: resolved run dir escapes .fleet/runs/: $reviewer_run_dir" >&2
+      exit 1
+      ;;
+  esac
   reviewer_tmp="$reviewer_run_dir/tmp"
   reviewer_test_output="$reviewer_run_dir/test-output"
   reviewer_home="$reviewer_run_dir/home"
