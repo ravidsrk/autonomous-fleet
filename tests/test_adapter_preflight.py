@@ -1,17 +1,23 @@
 """Tests for adapter requires-block preflight checks."""
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
 
-import sys
-
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from lib.adapter_preflight import Intent, activity_hooks_advisory, check, load_requires  # noqa: E402
+from lib.adapter_preflight import (  # noqa: E402
+    DEFAULT_AUTH_TIMEOUT_S,
+    Intent,
+    activity_hooks_advisory,
+    check,
+    load_requires,
+)
 
 
 def _which_factory(found: set[str]):
@@ -21,11 +27,25 @@ def _which_factory(found: set[str]):
     return which
 
 
-def _runner(returncode: int, calls: list[list[str]]):
+def _runner(returncode: int, calls: list[list[str]], *, timeout_s: float = DEFAULT_AUTH_TIMEOUT_S):
     def run(args: list[str], **kwargs):
         calls.append(args)
-        assert kwargs == {"capture_output": True, "text": True, "check": False}
+        assert kwargs == {
+            "capture_output": True,
+            "text": True,
+            "check": False,
+            "timeout": timeout_s,
+        }
         return SimpleNamespace(returncode=returncode)
+
+    return run
+
+
+def _timeout_runner(calls: list[list[str]], *, timeout_s: float = DEFAULT_AUTH_TIMEOUT_S):
+    def run(args: list[str], **kwargs):
+        calls.append(args)
+        assert kwargs["timeout"] == timeout_s
+        raise subprocess.TimeoutExpired(cmd=args, timeout=timeout_s)
 
     return run
 
@@ -149,6 +169,50 @@ def test_auth_entry_with_empty_check_reports_failure() -> None:
 
     assert failures == ["malformed auth entry (missing 'check'): {'check': ''}"]
     assert calls == []
+
+
+def test_auth_timeout_reports_clear_failure_via_injected_run() -> None:
+    calls: list[list[str]] = []
+    failures = check(
+        {"bins": [], "env": [], "auth": [{"check": "gh auth status"}]},
+        Intent(scm=True),
+        which=_which_factory(set()),
+        run=_timeout_runner(calls),
+        environ={},
+    )
+
+    assert failures == [
+        f"auth check timed out after {DEFAULT_AUTH_TIMEOUT_S:g}s: gh auth status"
+    ]
+    assert calls == [["gh", "auth", "status"]]
+
+
+def test_auth_timeout_honors_fleet_adapter_auth_timeout_env() -> None:
+    calls: list[list[str]] = []
+    failures = check(
+        {"bins": [], "env": [], "auth": [{"check": "gh auth status"}]},
+        Intent(scm=True),
+        which=_which_factory(set()),
+        run=_timeout_runner(calls, timeout_s=12.5),
+        environ={"FLEET_ADAPTER_AUTH_TIMEOUT_S": "12.5"},
+    )
+
+    assert failures == ["auth check timed out after 12.5s: gh auth status"]
+    assert calls == [["gh", "auth", "status"]]
+
+
+def test_auth_timeout_invalid_env_falls_back_to_default() -> None:
+    calls: list[list[str]] = []
+    failures = check(
+        {"bins": [], "env": [], "auth": [{"check": "gh auth status"}]},
+        Intent(scm=True),
+        which=_which_factory({"gh"}),
+        run=_runner(0, calls),
+        environ={"FLEET_ADAPTER_AUTH_TIMEOUT_S": "nope"},
+    )
+
+    assert failures == []
+    assert calls == [["gh", "auth", "status"]]
 
 
 def test_load_requires_reads_fenced_yaml_requires_block(tmp_path: Path) -> None:

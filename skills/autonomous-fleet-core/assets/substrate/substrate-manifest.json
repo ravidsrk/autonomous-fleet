@@ -3,7 +3,7 @@
   "files": {
     "emit_trace.py": "4425a4dd35f40b230eb566330bb2c28fd487892a717e440947c31327388805ad",
     "lib/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "lib/adapter_preflight.py": "c0c5a7a57840374b92cca95e7ea043ecfcd499ab2f27d01cedc53f0ed72b8ed5",
+    "lib/adapter_preflight.py": "4cfd48fb36ce2c0216c9d5112d76864c5710dcafe561e7942ae1aa059c150b24",
     "lib/analyze_cost.py": "e0359e9eabfc0c01dd5241bce8c1c124698da3a62a9fee9fbfcaa023a849b645",
     "lib/analyze_seat.py": "ee0faf086e679fd50315f2f4b0293590e8e73a0961fcad9388899902700d1c67",
     "lib/community_preflight.py": "94a6eb2d68397db7c0f8dad36d5ce88b40893f12fd40765a97d9aab0946f2d4c",
