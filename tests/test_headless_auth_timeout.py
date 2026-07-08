@@ -213,3 +213,33 @@ def test_campaign_passes_timeout_and_skip_auth_through(tmp_path: Path) -> None:
     assert r.returncode == 0, r.stdout + r.stderr
     assert "auth-check: skipped" in r.stdout
     assert "timeout:  300s" in r.stdout
+
+
+def test_real_run_emit_failure_is_fatal(tmp_path: Path) -> None:
+    """OPS-001: archive emit failure on a real run must make headless exit non-zero."""
+    repo = _external_repo(tmp_path)
+    # Block archive creation: .fleet/runs as a file makes ensure_archive_dir raise.
+    fleet = repo / ".fleet"
+    fleet.mkdir()
+    (fleet / "runs").write_text("not-a-directory\n", encoding="utf-8")
+    fake_bin = _fake_codex(tmp_path)
+
+    r = _run(["codex", "doc-sync", "--repo", str(repo)], _env_with(fake_bin))
+
+    assert r.returncode != 0, r.stdout + r.stderr
+    assert "emit_headless_dryrun_trace failed" in (r.stderr + r.stdout)
+    assert "non-fatal" not in (r.stderr + r.stdout)
+
+
+def test_dry_run_emit_failure_stays_non_fatal(tmp_path: Path) -> None:
+    """OPS-001 narrowed: dry-run cleanup path keeps emit failure non-fatal."""
+    repo = _external_repo(tmp_path)
+    fleet = repo / ".fleet"
+    fleet.mkdir()
+    (fleet / "runs").write_text("not-a-directory\n", encoding="utf-8")
+    fake_bin = _fake_codex(tmp_path)
+
+    r = _run(["codex", "doc-sync", "--repo", str(repo), "--dry-run"], _env_with(fake_bin))
+
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "emit_headless_dryrun_trace failed (non-fatal)" in (r.stderr + r.stdout)
