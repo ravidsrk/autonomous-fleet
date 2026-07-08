@@ -237,6 +237,10 @@ def _build_e2e_harness(tmp_path: Path, stub_body: str, campaign: str) -> Path:
     subprocess.run(["git", "add", "-A"], cwd=e, check=True)
     subprocess.run(["git", "commit", "-qm", "init"], cwd=e, check=True)
     os.environ.pop("VIRTUAL_ENV", None)
+    # Campaign e2e stubs write unkeyed docs/<mission>-readiness.md; clear
+    # ambient ledger/run-short so resolve_readiness_file matches those paths.
+    os.environ.pop("FLEET_LEDGER_DIR", None)
+    os.environ.pop("FLEET_RUN_SHORT", None)
     return e
 
 
@@ -511,9 +515,13 @@ def test_blocked_node_halts_campaign(tmp_path: Path):
 
     shutil.copy(ROOT / "scripts" / "emit_headless_dryrun_trace.py", e / "scripts" / "emit_headless_dryrun_trace.py")
     shutil.copy(ROOT / "scripts" / "emit_trace.py", e / "scripts" / "emit_trace.py")
+    env = os.environ.copy()
+    env.pop("FLEET_LEDGER_DIR", None)
+    env.pop("FLEET_RUN_SHORT", None)
+    env.pop("VIRTUAL_ENV", None)
     r = subprocess.run(
         [str(e / "scripts" / "run-campaign.sh"), "codex", "--campaign", "scripts/campaigns/t.yaml", "--repo", str(e)],
-        cwd=e, capture_output=True, text=True, check=False,
+        cwd=e, capture_output=True, text=True, check=False, env=env,
     )
     assert r.returncode == 2, (r.stdout, r.stderr)
     assert "BLOCKED" in r.stderr, r.stderr
@@ -523,6 +531,94 @@ def test_blocked_node_halts_campaign(tmp_path: Path):
     # And it must NOT have advanced to the deps node.
     assert "node=deps" not in (r.stdout + r.stderr)
 
+
+def test_readiness_status_parse_failure_halts_campaign(tmp_path: Path) -> None:
+    """BUG-002: NODE_STATUS parse must not use || true; a parse failure exits non-zero
+    instead of falling through to 'Campaign complete'."""
+    import shutil
+
+    stub = (
+        "#!/usr/bin/env bash\nset -euo pipefail\nMISSION=\"$2\"; shift 2\nREPO=\"\"\n"
+        "while [[ $# -gt 0 ]]; do case \"$1\" in --repo) REPO=\"$2\"; shift 2;; *) shift;; esac; done\n"
+        "mkdir -p \"$REPO/docs\"\n"
+        "printf -- '---\\nfleet-outcome:\\n  mission: doc-sync\\n  status: done\\n"
+        "  repo: r\\n  base_branch: b\\n  prs_merged: 1\\n  metrics: {drift_open: 0, "
+        "code_bug_findings: 0}\\n---\\n' > \"$REPO/docs/doc-sync-readiness.md\"\n"
+    )
+    campaign = (
+        "campaign: t\nstart: docs\nnodes:\n  docs: { mission: doc-sync }\nedges:\n  docs: []\n"
+    )
+    e = _build_e2e_harness(tmp_path, stub, campaign)
+    shutil.copy(ROOT / "scripts" / "emit_headless_dryrun_trace.py", e / "scripts" / "emit_headless_dryrun_trace.py")
+    shutil.copy(ROOT / "scripts" / "emit_trace.py", e / "scripts" / "emit_trace.py")
+
+    # validate-fleet-outcome and NODE_STATUS parse run in separate Python
+    # processes. Stub the validator so it always passes, then poison
+    # parse_readiness so the status-read subprocess fails. Without || true
+    # the campaign must exit non-zero (not "Campaign complete").
+    (e / "scripts" / "validate-fleet-outcome.sh").write_text(
+        "#!/usr/bin/env bash\necho OK stub\nexit 0\n",
+        encoding="utf-8",
+    )
+    (e / "scripts" / "validate-fleet-outcome.sh").chmod(0o755)
+    fo = e / "scripts" / "lib" / "fleet_outcome.py"
+    fo.write_text(
+        fo.read_text(encoding="utf-8")
+        + (
+            "\n\ndef parse_readiness(path):  # noqa: F811 — test poison\n"
+            "    raise RuntimeError(\"injected parse failure for BUG-002\")\n"
+        ),
+        encoding="utf-8",
+    )
+    env = os.environ.copy()
+    env.pop("FLEET_LEDGER_DIR", None)
+    env.pop("FLEET_RUN_SHORT", None)
+    env.pop("VIRTUAL_ENV", None)
+    r = subprocess.run(
+        [str(e / "scripts" / "run-campaign.sh"), "codex", "--campaign", "scripts/campaigns/t.yaml", "--repo", str(e)],
+        cwd=e, capture_output=True, text=True, check=False, env=env,
+    )
+    combined = r.stdout + r.stderr
+    assert r.returncode != 0, combined
+    assert "Campaign complete" not in r.stdout, combined
+    assert "injected parse failure" in combined or "RuntimeError" in combined, combined
+
+
+
+# --- exec-time archived gate (ARCH-002) -------------------------------------
+
+
+def _archived_campaign(tmp_path: Path, *, flagged: bool) -> Path:
+    campaign = tmp_path / "archived.yaml"
+    flag = "allow_archived_nodes: true\n" if flagged else ""
+    campaign.write_text(
+        f"campaign: arch\n{flag}start: rebuild\nnodes:\n"
+        f"  rebuild: {{ mission: legacy-rebuild }}\nedges:\n  rebuild: []\n",
+        encoding="utf-8",
+    )
+    return campaign
+
+
+def test_unflagged_archived_campaign_refused_at_exec_time(tmp_path: Path) -> None:
+    """ARCH-002: hand-written --campaign YAML naming an archived mission must
+    exit non-zero at the exec-time loader (not only at author-time lint)."""
+    r = subprocess.run(
+        [str(SCRIPT), "grok", "--campaign", str(_archived_campaign(tmp_path, flagged=False)), "--dry-run"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    assert r.returncode != 0
+    assert "ARCHIVED mission 'legacy-rebuild'" in r.stderr
+    assert "allow_archived_nodes" in r.stderr
+    assert "Campaign dry-run complete" not in r.stdout
+
+
+def test_flagged_archived_campaign_warns_and_proceeds(tmp_path: Path) -> None:
+    r = subprocess.run(
+        [str(SCRIPT), "grok", "--campaign", str(_archived_campaign(tmp_path, flagged=True)), "--dry-run"],
+        cwd=ROOT, capture_output=True, text=True, check=False,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "warning: node 'rebuild' runs ARCHIVED mission 'legacy-rebuild'" in r.stderr
 
 # --- exec-time exploratory gate (issue #94) ---------------------------------
 
