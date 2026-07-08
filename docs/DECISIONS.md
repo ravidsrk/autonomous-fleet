@@ -93,3 +93,32 @@ Decisions:
 - **Independent review:** each of the 6 fix branches was reviewed by a FRESH read-only reviewer
   subagent (distinct instance from its coder) that re-ran the finding's proving commands and checked
   test quality (non-tautology) before integration. All 6: VERDICT PASS.
+
+## Adversarial review-and-fix (2026-07-08) — fresh run c6c486
+
+Fresh-run: prior review docs / in-flight review branches are OUT OF SCOPE. Code-grounded only.
+Outputs: `docs/adversarial-review-fresh.md`, `.fleet/runs/20260708T184204Z-adversarial-review-and-fix-c6c486/`.
+
+| Field | Value |
+|-------|-------|
+| RUN_ID | `20260708T184204Z-adversarial-review-and-fix-c6c486` |
+| RUN_SHORT | `c6c486` |
+| REPO_ROOT | `/workspace` |
+| PRODUCT | autonomous-fleet |
+| MAINTAINER | Cursor Agent `<cursoragent@cursor.com>` |
+| BRANCH_PREFIX | `cursor/` (cloud-agent host policy; suffix `-256a`) |
+| BASE | `cursor/adversarial-review-base-256a` @ `e9e541b` |
+| Adapter | `autonomous-fleet-adapter-grok` |
+| LEDGER_DIR | `.fleet/docs` (Starlight docs-site probe) |
+| SUBSTRATE | `/workspace/scripts` |
+| AUTHORSHIP_MODE | `attributed` |
+| reviewer_mode | `same-vendor-instructed` |
+| Strict mode | Loose (Layer 2 Claude-Code-only; recorded) |
+
+ASSUMPTIONS:
+1. Entire-app adversarial review + fix of confirmed findings only.
+2. Ignore existing adversarial-*.md / arch-build-* as inputs (fresh-run note).
+3. Cloud PR/branch naming uses `cursor/*-256a`; merge into BASE not main.
+4. No money/keys/custody surface; SAFETY RAILS = staging/fixtures only.
+→ Proceeding.
+
