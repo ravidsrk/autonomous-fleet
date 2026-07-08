@@ -16,7 +16,8 @@
 #      they've eyeballed it.
 #   3. With `--role reviewer`, runs the command after classification with the candidate git tree
 #      read-only and `.fleet/runs/<run_id>/` writable. It prefers macOS sandbox-exec, then Linux
-#      bwrap. If neither exists, it falls back to a post-exec tracked-file hash assertion.
+#      bwrap. If neither exists, the reviewer role REFUSES unless
+#      FLEET_SECURITY_OVERRIDE_ACK=1 (then a post-exec tracked-file hash assertion runs).
 #
 # What it is NOT: an OS sandbox. It does not confine filesystem, network, or syscall reach. Run it
 # INSIDE a container / VM / restricted user account when the target is genuinely untrusted, and
@@ -30,9 +31,8 @@
 # `$1`) it FAILS SAFE to ASK; where it is not, a determined caller CAN evade it. It is a net against
 # accidental / obvious damage. Pair it with real OS-level sandboxing (container-use) for untrusted
 # targets — that, not this script, is the boundary.
-# Reviewer-role read-only placement is also best-effort when neither sandbox-exec nor bwrap is
-# present: the fallback detects tracked-file changes after the command and exits non-zero, but it is
-# an audit gate, not a live filesystem boundary and it does not roll changes back.
+# Reviewer-role without sandbox-exec/bwrap REFUSES by default (SEC-005). With
+# FLEET_SECURITY_OVERRIDE_ACK=1 the post-exec hash audit runs — detect-only, not prevention.
 # It FAILS SAFE: on an ambiguous wrapper construction (e.g. an unknown wrapper's positional operand
 # preceding the real command) it errs toward DENY/ASK rather than ALLOW. Refusing a rare safe
 # command is acceptable; silently running an irreversible one is not.
@@ -87,9 +87,10 @@ split rm flags (-rf, -r -f, --recursive --force), and +/: push refspecs.
 --classify  print the verdict (DENY|ASK|ALLOW) on stdout and exit 0 without exec. For tests.
 --role reviewer
             after blast-radius classification, run with the candidate git tree read-only and only
-            .fleet/runs/<run_id>/ writable. Uses sandbox-exec on macOS, bwrap on Linux, else a
-            best-effort post-exec tracked-file hash assertion. The bwrap mount binds ONLY the repo
-            (ro), the run dir (rw), and minimal system paths (ro) — no host RW of $HOME or /.
+            .fleet/runs/<run_id>/ writable. Uses sandbox-exec on macOS, bwrap on Linux. Without
+            either binary, REFUSES unless FLEET_SECURITY_OVERRIDE_ACK=1 (then post-exec hash
+            audit). The bwrap mount binds ONLY the repo (ro), the run dir (rw), and minimal
+            system paths (ro) — no host RW of $HOME or /.
 --run-id    run archive id for reviewer writable output. Must match fleet_run.RUN_ID_PATTERN
             (rejects /, .., and other path escapes). Defaults to FLEET_RUN_ID, then a generated
             reviewer-sandbox id.
@@ -913,6 +914,20 @@ EOF
       --chdir "$PWD" \
       env -i "${reviewer_filtered[@]}" "${reviewer_cmd[@]}"
   fi
+
+  # SEC-005: no real sandbox binary — refuse by default. Override ack enables the
+  # post-exec hash-audit fallback (detects mutations; does not prevent them).
+  case "${FLEET_SECURITY_OVERRIDE_ACK:-}" in
+    1|true|TRUE|yes|YES|on|ON) ;;
+    *)
+      echo "run-sandboxed: REFUSED: --role reviewer requires sandbox-exec or bwrap" >&2
+      echo "  Install bubblewrap (Linux) or use macOS sandbox-exec, or set" >&2
+      echo "  FLEET_SECURITY_OVERRIDE_ACK=1 to acknowledge the degraded post-exec" >&2
+      echo "  hash-audit fallback (audit only — not prevention)." >&2
+      exit 4
+      ;;
+  esac
+  echo "run-sandboxed: WARNING: no sandbox-exec/bwrap; using post-exec hash audit (FLEET_SECURITY_OVERRIDE_ACK=1)" >&2
 
   local before after child_status=0
   before="$(mktemp "${TMPDIR:-/tmp}/reviewer-before.XXXXXX")"

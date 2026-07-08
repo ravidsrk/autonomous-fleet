@@ -54,6 +54,22 @@ DONE_METRIC_REQUIREMENTS: dict[str, dict[str, Any]] = {
         "quality_regressed": False,
         "levers_open": 0,
     },
+    "scaffold-align": {
+        "align_items_open": 0,
+        "check_green": True,
+        "seam_frozen": True,
+        "scaffold_ok": True,
+    },
+    "contract-first-build": {
+        "in_items_open": 0,
+        "stubs_remaining": 0,
+    },
+    "agents-layer": {
+        "migration_items_open": 0,
+        "seam_unwired_open": 0,
+        "old_axis_removed": True,
+        "evals_passing": True,
+    },
 }
 DONE_OPTIONAL_METRIC_REQUIREMENTS: dict[str, dict[str, Any]] = {
     "adversarial-review-and-fix": {"unverified_findings": 0},

@@ -183,4 +183,38 @@ MISSIONS: dict[str, dict[str, object]] = {
         "adapters_required": RUNTIME_ADAPTERS,
         "tier": "2",
     },
+    # Exploratory handoff-to-product triad (on-disk SKILL trees; not yet shipped).
+    "scaffold-align": {
+        "shipped": False,
+        "skill_dir": "scaffold-align",
+        "progress_doc": "scaffold-align-progress.md",
+        "readiness_doc": "scaffold-align-readiness.md",
+        "metrics": ("align_items_open", "check_green", "seam_frozen", "scaffold_ok"),
+        "adapters_required": RUNTIME_ADAPTERS,
+        "tier": "1",
+    },
+    "contract-first-build": {
+        "shipped": False,
+        "skill_dir": "contract-first-build",
+        "progress_doc": "contract-build-progress.md",
+        "readiness_doc": "contract-build-readiness.md",
+        "metrics": ("in_items_open", "roadmap_count", "stubs_remaining", "ops_queue_count"),
+        "adapters_required": RUNTIME_ADAPTERS,
+        "tier": "3",
+    },
+    "agents-layer": {
+        "shipped": False,
+        "skill_dir": "agents-layer",
+        "progress_doc": "agents-layer-progress.md",
+        "readiness_doc": "agents-layer-readiness.md",
+        "metrics": (
+            "migration_items_open",
+            "seam_unwired_open",
+            "old_axis_removed",
+            "evals_passing",
+            "deploy_pending_ops",
+        ),
+        "adapters_required": RUNTIME_ADAPTERS,
+        "tier": "3",
+    },
 }

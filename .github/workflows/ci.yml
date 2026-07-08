@@ -13,26 +13,27 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Pin third-party Actions to full commit SHAs (SEC-004). Floating @vN tags are mutable.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.0
 
       - name: ShellCheck
         # -S warning: fail on warnings + errors (genuine bugs); advisory info-level checks vary by
         # shellcheck version across runners, so don't gate CI on them.
         run: shellcheck -S warning scripts/*.sh scripts/lib/*.sh
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
 
       # No package-lock.json to key on, so cache ~/.npm by the pinned skills CLI version.
       # Bump the key when SKILLS_CLI in scripts/install-skills.sh changes.
       - name: Cache npx skills CLI
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.2.3
         with:
           path: ~/.npm
           key: npx-skills-1.5.12
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
           cache: pip

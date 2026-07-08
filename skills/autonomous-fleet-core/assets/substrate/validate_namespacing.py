@@ -10,15 +10,13 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from lib.fleet_run import collect_run_archives  # noqa: E402
 from lib.namespace import progress_paths_from_manifest, validate_archive_namespacing  # noqa: E402
 
 
 def collect_archives(root: Path) -> list[Path]:
-    """Return manifest-bearing run archive directories under ``.fleet/runs``."""
-    runs = root / ".fleet" / "runs"
-    if not runs.is_dir():
-        return []
-    return sorted(path for path in runs.iterdir() if path.is_dir() and (path / "manifest.json").is_file())
+    """Return canonical run-id archive directories under ``.fleet/runs`` (ARCH-005)."""
+    return collect_run_archives(root)
 
 
 def _archive_child(archive: Path, rel_path: str) -> Path:

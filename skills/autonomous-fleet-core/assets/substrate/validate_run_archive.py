@@ -28,19 +28,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lib.fleet_run import RUN_ID_PATTERN, load_and_validate_manifest
+from lib.fleet_run import collect_run_archives, load_and_validate_manifest
 
 
 def collect_archives(root: Path) -> list[Path]:
     """Return every .fleet/runs/<run_id>/ directory whose basename matches
     the run_id regex. Non-matching names are skipped (operator scratch dirs
     like `tmp/` or `notes/` don't get picked up)."""
-    base = root / ".fleet" / "runs"
-    if not base.is_dir():
-        return []
-    return sorted(
-        d for d in base.iterdir() if d.is_dir() and RUN_ID_PATTERN.match(d.name)
-    )
+    return collect_run_archives(root)
 
 
 def main() -> int:

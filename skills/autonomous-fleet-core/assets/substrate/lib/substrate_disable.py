@@ -75,11 +75,11 @@ def is_security_disable_acknowledged() -> bool:
     This distinguishes the two knob classes:
 
     * **Operator escape-hatch knobs** (verify-findings, stop-verify, blind-fix,
-      run-archive, registry-lint, round-budget) treat a bare truthy
+      run-archive, round-budget) treat a bare truthy
       ``FLEET_DISABLE_*`` as "no-op to PASS" via :func:`announce_disabled`.
-    * **Security / integrity knobs** (sha-pin, reviewer-sandbox, namespacing)
-      FAIL CLOSED. A bare truthy ``FLEET_DISABLE_*`` is NOT sufficient to drop
-      the check — the operator must *also* set
+    * **Security / integrity knobs** (sha-pin, reviewer-sandbox, namespacing,
+      registry-lint) FAIL CLOSED. A bare truthy ``FLEET_DISABLE_*`` is NOT
+      sufficient to drop the check — the operator must *also* set
       ``FLEET_SECURITY_OVERRIDE_ACK`` truthy to confirm that dropping a
       supply-chain / isolation invariant is a deliberate, recorded decision.
 

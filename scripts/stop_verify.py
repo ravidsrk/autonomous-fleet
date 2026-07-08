@@ -199,9 +199,22 @@ def main(argv: list[str] | None = None) -> int:
 
         repo = _resolve_repo(args.repo, hook_input)
         if not repo.is_dir():
-            # An ALLOW with a warning is the right call here — a bad --repo
-            # is an operator config error, not a builder discipline failure,
-            # and we already said the hook never traps a session.
+            # Default: ALLOW with a warning (operator config error, not builder
+            # discipline). SEC-010: FLEET_STOP_VERIFY_STRICT=1 → BLOCK instead so
+            # a miswired hooks.json cannot silently disable the evidence gate.
+            from lib.substrate_disable import is_truthy
+
+            if is_truthy(os.environ.get("FLEET_STOP_VERIFY_STRICT")):
+                print(
+                    f"stop-verify: BLOCK — repo not a directory: {repo} "
+                    f"(FLEET_STOP_VERIFY_STRICT=1).",
+                    file=sys.stderr,
+                )
+                _emit_decision(
+                    Verdict(allow=False, reason="repo not found (strict)"),
+                    force_json=args.json_out,
+                )
+                return 2
             print(
                 f"stop-verify: warning — repo not a directory: {repo}; allowing session end.",
                 file=sys.stderr,

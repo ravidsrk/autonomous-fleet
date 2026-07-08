@@ -40,7 +40,6 @@ can be waved through for a single run.
 
 | Layer | Script | Env var |
 |---|---|---|
-| registry-lint | `scripts/registry_lint.py` | `FLEET_DISABLE_REGISTRY_LINT` |
 | round-budget | `<SUBSTRATE>/verify_round_budget.py` | `FLEET_DISABLE_ROUND_BUDGET` |
 | nudge-dedup | `<SUBSTRATE>/verify_nudge_dedup.py` | `FLEET_DISABLE_NUDGE_DEDUP` |
 | stacked-pr | `<SUBSTRATE>/verify_stacked_pr.py` | `FLEET_DISABLE_STACKED_PR` |
@@ -48,18 +47,19 @@ can be waved through for a single run.
 
 ## Security / integrity knobs (FAIL-CLOSED — explicit operator override required)
 
-These three guard supply-chain and isolation invariants, not advisory
-quality gates. They do **not** silently no-op on a bare truthy value:
-disabling them requires an explicit operator override (per the integrity
-agents' fail-closed change), so a stray env var in CI cannot quietly
-drop a security check. Treat a request to disable one of these as an
-operator decision that must be recorded in `DECISIONS.md`.
+These guard supply-chain and isolation invariants, not advisory quality
+gates. They do **not** silently no-op on a bare truthy value: disabling
+them requires an explicit operator override (per the integrity agents'
+fail-closed change), so a stray env var in CI cannot quietly drop a
+security check. Treat a request to disable one of these as an operator
+decision that must be recorded in `DECISIONS.md`.
 
 | Layer | Script | Env var |
 |---|---|---|
 | sha-pin | `<SUBSTRATE>/verify_sha_pin.py` | `FLEET_DISABLE_SHA_PIN` |
 | reviewer-sandbox | `<SUBSTRATE>/verify_reviewer_sandbox.py` | `FLEET_DISABLE_REVIEWER_SANDBOX` |
 | namespacing | `<SUBSTRATE>/validate_namespacing.py` | `FLEET_DISABLE_NAMESPACING` |
+| registry-lint | `scripts/registry_lint.py` | `FLEET_DISABLE_REGISTRY_LINT` |
 
 There is exactly ONE env var per layer; no legacy aliases, no fallbacks.
 Do not invent additional `FLEET_DISABLE_*` names — the registry above is
