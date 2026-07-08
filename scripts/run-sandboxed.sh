@@ -895,7 +895,11 @@ EOF
     elif command -v capsh >/dev/null 2>&1; then
       cap_drop=(capsh --inh= --drop=all --)
     fi
+    # --unshare-net drops the host network namespace so the reviewer cannot open outbound
+    # sockets (exfiltration). Matches the "Network is DROPPED" contract documented above for
+    # sandbox-exec; without this flag bwrap would inherit the host netns.
     exec "${cap_drop[@]}" bwrap \
+      --unshare-net \
       --ro-bind /usr /usr \
       --ro-bind /bin /bin \
       --ro-bind-try /sbin /sbin \

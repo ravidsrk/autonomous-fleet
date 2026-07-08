@@ -178,6 +178,29 @@ def test_run_sandboxed_role_reviewer_blocks_tracked_file_write(
     assert tracked.read_text(encoding="utf-8") == "old\n"
 
 
+def test_bwrap_reviewer_argv_includes_unshare_net() -> None:
+    """SEC-003: Linux bwrap reviewer placement must drop the host network namespace.
+
+    The macOS sandbox-exec path relies on ``(deny default)`` (no network allow rules).
+    The Linux bwrap path must pass ``--unshare-net`` so the child does not inherit the
+    host netns — otherwise the "Network is DROPPED" contract is comment-only.
+    """
+    source = SANDBOX.read_text(encoding="utf-8")
+    # Isolate the bwrap reviewer branch so we do not match unrelated mentions.
+    marker = "if command -v bwrap >/dev/null 2>&1; then"
+    start = source.index(marker)
+    # Next top-level sibling after the bwrap block is the fallback snapshot path.
+    end = source.index("local before after child_status=0", start)
+    bwrap_block = source[start:end]
+    assert "--unshare-net" in bwrap_block
+    # Flag must appear on the bwrap argv (after `bwrap`, before env -i), not only in comments.
+    assert "bwrap \\\n      --unshare-net \\" in bwrap_block
+    # macOS sandbox-exec profile must remain free of bwrap-only flags.
+    sb_start = source.index("if command -v sandbox-exec >/dev/null 2>&1; then")
+    sb_end = source.index(marker, sb_start)
+    assert "--unshare-net" not in source[sb_start:sb_end]
+
+
 def test_run_sandboxed_role_reviewer_allows_run_tmp_and_test_output(
     git_repo: Path, tmp_path: Path
 ) -> None:
