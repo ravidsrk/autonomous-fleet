@@ -80,3 +80,7 @@ SEC-004, SEC-005, SEC-009, ARCH-004, ARCH-005, SEC-010
 ## CONTEXT HANDOFF
 
 Wave 1 in flight next. Hot files: install-community.sh, run-sandboxed.sh, fleet_verify.py, run-campaign.sh, fleet_run.py.
+
+## DONE
+
+Lane A CLOSED; Lane B HUMAN_GATED; readiness + archive validated; BASE pushed.
