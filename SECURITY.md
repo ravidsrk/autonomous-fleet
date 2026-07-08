@@ -58,9 +58,13 @@ outward-facing actions before exec:
 
 ```
   DENY (exit 2)  force-push, remote-branch delete, rm -rf of a critical/system path,
-                 git reset --hard to a remote ref, gh pr merge, gh repo delete
+                 git reset --hard to a remote ref, gh pr merge, gh repo delete,
+                 shred, dd of=/dev/*, chmod|chown|chgrp -R of an absolute system path,
+                 find <abs-system-path> with -delete / -exec / -ok
   ASK  (exit 3)  ordinary git push, gh release, rm -rf of a scoped path,
-                 terraform|tofu|kubectl|helm|databricks apply|deploy|destroy|delete
+                 terraform|tofu|kubectl|helm|databricks apply|deploy|destroy|delete,
+                 npm|pnpm|yarn|cargo publish, aws|gcloud destructive verbs,
+                 curl|wget piped into a shell
   ALLOW          everything else (reads, tests, edits, local git, and — by default —
                  any command the wrapper does not specifically inspect; see below)
 ```
@@ -103,15 +107,18 @@ Concretely, the framework does not protect you from:
   every defense above is something you chose to wave through.
 - Most destructive commands. The classifier is not an allowlist of safe commands — it is a small
   best-effort blocklist of the most common destructive ones, and **everything it does not specifically
-  recognize is ALLOW by default**. Today the wrapper inspects only `rm`, `git push`/`git reset`, `gh`,
-  and a handful of infra tools (`terraform`/`tofu`/`kubectl`/`helm`/`databricks`). Plainly-written
-  destructive commands outside that set pass straight through — for example `curl … | bash`,
-  `find / -delete`, `dd of=/dev/sda`, and `chmod -R 000 /` all classify as ALLOW today. (Work is
-  underway to add several of these to the blocklist, but that does not change the shape: it is a
-  best-effort blocklist of common destructive commands, **NOT** a security boundary. Rely on OS-level
-  sandboxing — `container-use`, a VM, or a restricted account — for the boundary.) And even within the
-  set it inspects, it is a static heuristic over tokens: a command constructed at shell runtime
-  (command substitution, `eval` of a built string, base64 payloads) can evade it.
+  recognize is ALLOW by default**. Today the wrapper inspects `rm`, `git push`/`git reset`, `gh`,
+  infra tools (`terraform`/`tofu`/`kubectl`/`helm`/`databricks`), plus the catastrophic / outward
+  heads covered by the DENY/ASK matrix above (`shred`, `dd` to a device, recursive
+  `chmod`/`chown`/`chgrp` on a system path, `find` with `-delete`/`-exec` on a system path,
+  package `publish`, `aws`/`gcloud` destructive verbs, and `curl`/`wget` piped into a shell). Those
+  plainly-written forms classify DENY or ASK (and are refused) — they are **not** residual ALLOW
+  examples. What still slips through is everything outside that inspected set, plus constructions
+  the static token heuristic cannot see: runtime command substitution (`$(...)` / backticks),
+  `eval` of a built string, base64-decoded payloads, and unknown or renamed binaries the wrapper
+  does not specifically inspect — those still classify as ALLOW today. The shape does not change:
+  it is a best-effort blocklist of common destructive commands, **NOT** a security boundary. Rely
+  on OS-level sandboxing — `container-use`, a VM, or a restricted account — for the boundary.
 - A compromised upstream agent CLI. The fleet drives Claude Code, Codex, Grok, and Orca. If one of
   those binaries is backdoored, it runs with your privileges and the wrapper cannot see inside it.
 - Supply-chain attacks on `npm` packages (the skills install path, your repo's own dependencies).
