@@ -169,6 +169,9 @@ CAMPAIGN_INFO="$("$VENV_PYTHON" - <<'PY' "$CAMPAIGN_FILE" "$ROOT"
 import sys, yaml
 from pathlib import Path
 
+sys.path.insert(0, sys.argv[2] + "/scripts")
+from lib.fleet_registry import MISSIONS
+
 data = yaml.safe_load(Path(sys.argv[1]).read_text(encoding="utf-8"))
 root = Path(sys.argv[2])
 if not isinstance(data, dict):
@@ -181,6 +184,7 @@ if not isinstance(data.get("nodes"), dict):
     print("error: campaign 'nodes' must be a mapping", file=sys.stderr)
     raise SystemExit(1)
 allow_exploratory = data.get("allow_exploratory_nodes") is True
+allow_archived = data.get("allow_archived_nodes") is True
 for node, spec in (data.get("nodes") or {}).items():
     if not isinstance(spec, dict) or "mission" not in spec:
         print(f"error: node '{node}' missing 'mission'", file=sys.stderr)
@@ -189,12 +193,36 @@ for node, spec in (data.get("nodes") or {}).items():
     # hand-written --campaign YAML run an unproven mission. A node whose
     # mission is not shipped (skills/) but exists under
     # docs/exploratory/missions/ requires the campaign to opt in explicitly.
+    #
+    # ARCH-002: also refuse archived missions. Author-time lint rejects
+    # MISSIONS[mission]["archived"] and archive/ paths; the exec-time loader
+    # previously only probed docs/exploratory/missions/<slug>/ (not archive/),
+    # so hand-written YAML could still invoke parked missions like legacy-rebuild.
     mission = spec["mission"]
     shipped = (root / "skills" / mission / "SKILL.md").is_file()
     exploratory = (
         root / "docs" / "exploratory" / "missions" / mission / "SKILL.md"
     ).is_file()
-    if not shipped and exploratory:
+    archived_on_disk = (
+        root / "docs" / "exploratory" / "missions" / "archive" / mission / "SKILL.md"
+    ).is_file()
+    registry_archived = MISSIONS.get(mission, {}).get("archived") is True
+    if registry_archived or archived_on_disk:
+        if not allow_archived:
+            print(
+                f"error: node '{node}' runs ARCHIVED mission '{mission}' "
+                f"(fleet_registry.MISSIONS archived:true and/or "
+                f"docs/exploratory/missions/archive/{mission}/). Set "
+                f"'allow_archived_nodes: true' in the campaign YAML to opt in.",
+                file=sys.stderr,
+            )
+            raise SystemExit(1)
+        print(
+            f"warning: node '{node}' runs ARCHIVED mission '{mission}' "
+            f"(allow_archived_nodes: true — parked; expect gaps)",
+            file=sys.stderr,
+        )
+    elif not shipped and exploratory:
         if not allow_exploratory:
             print(
                 f"error: node '{node}' runs EXPLORATORY mission '{mission}' "
@@ -209,22 +237,44 @@ for node, spec in (data.get("nodes") or {}).items():
             file=sys.stderr,
         )
 print(data["start"])
+print("1" if allow_archived else "0")
 for node, spec in data.get("nodes", {}).items():
     print(f"{node}\t{spec['mission']}")
 PY
 )"
 
 START="$(echo "$CAMPAIGN_INFO" | head -1)"
+ALLOW_ARCHIVED_NODES="$(echo "$CAMPAIGN_INFO" | sed -n '2p')"
+# Node map starts at line 3 (start + allow_archived flag precede it).
+CAMPAIGN_NODES="$(echo "$CAMPAIGN_INFO" | tail -n +3)"
 
 mission_for_node() {
   local nid="$1"
-  echo "$CAMPAIGN_INFO" | awk -F'\t' -v n="$nid" 'NF>=2 && $1==n {print $2; exit}'
+  echo "$CAMPAIGN_NODES" | awk -F'\t' -v n="$nid" 'NF>=2 && $1==n {print $2; exit}'
 }
 
 validate_mission() {
   local mission="$1"
-  "$VENV_PYTHON" -c 'import sys; sys.path.insert(0, sys.argv[1]+"/scripts"); from lib.mission_registry import MISSION_DOCS; mission=sys.argv[2]; sys.exit(0 if mission in MISSION_DOCS else 1)' "$ROOT" "$mission" \
-    || { echo "error: unknown mission '$mission' (not in mission registry)" >&2; return 1; }
+  # ARCH-002 / VAL-006: MISSION_DOCS includes archived rows for schema/path
+  # resolution; campaign execution must deny them unless allow_archived_nodes.
+  "$VENV_PYTHON" -c '
+import sys
+sys.path.insert(0, sys.argv[1] + "/scripts")
+from lib.mission_registry import MISSION_DOCS
+from lib.fleet_registry import MISSIONS
+mission = sys.argv[2]
+allow_archived = sys.argv[3] == "1"
+if mission not in MISSION_DOCS:
+    print(f"error: unknown mission {mission!r} (not in mission registry)", file=sys.stderr)
+    raise SystemExit(1)
+if MISSIONS.get(mission, {}).get("archived") is True and not allow_archived:
+    print(
+        f"error: mission {mission!r} is archived (parked); "
+        f"refuse unless campaign allow_archived_nodes: true",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+' "$ROOT" "$mission" "${ALLOW_ARCHIVED_NODES:-0}" || return 1
 }
 
 readiness_for_mission() {
@@ -420,8 +470,9 @@ while [[ -n "$CURRENT" ]]; do
       # fall through to "Campaign complete". status:blocked is a VALID outcome that passes validation.
       # parse_readiness takes a Path, not a str (it calls .read_text). Passing a str raised an
       # AttributeError that the old `2>/dev/null || true` SILENTLY swallowed, so this halt never
-      # fired. Pass Path(...) and let errors surface (validate already parsed the doc above).
-      NODE_STATUS="$("$VENV_PYTHON" -c 'import sys; from pathlib import Path; sys.path.insert(0, sys.argv[1]+"/scripts"); from lib.fleet_outcome import parse_readiness; print(parse_readiness(Path(sys.argv[2])).get("status", ""))' "$ROOT" "$READINESS_ABS" || true)"
+      # fired. BUG-002: do NOT swallow parse failures with `|| true` — a readiness parse error
+      # must fail the campaign (set -e) rather than skip the blocked gate and print complete.
+      NODE_STATUS="$("$VENV_PYTHON" -c 'import sys; from pathlib import Path; sys.path.insert(0, sys.argv[1]+"/scripts"); from lib.fleet_outcome import parse_readiness; print(parse_readiness(Path(sys.argv[2])).get("status", ""))' "$ROOT" "$READINESS_ABS")"
       if [[ "$NODE_STATUS" == "blocked" ]]; then
         echo "" >&2
         echo "Campaign BLOCKED at node $CURRENT (fleet-outcome.status: blocked). Halting; this is a human gate, not a completed campaign." >&2
