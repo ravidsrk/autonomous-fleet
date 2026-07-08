@@ -17,7 +17,7 @@
     "lib/headless_trace.py": "92fc184a208bda3ba710b4d920d7fd3ff26e5f8154957a5bd2c9d0d661c2cc10",
     "lib/hook_signal.py": "9c901b576aa49d242d40944982b247706be34d3f7d670838106ae20ef932adb1",
     "lib/locks.py": "04f04c169e43eed41cba965abbebb1ed40b35defa4ce81e5b731f639db668d05",
-    "lib/mission_promotion.py": "72a773256169455b7a88bfd3916fd5a1fc44e920ee67909cf5e356340b26757d",
+    "lib/mission_promotion.py": "4aed17712dedbeb2cb728a5a58109e63a241dcfd8ce9d2f6146e15bef2634d3a",
     "lib/mission_registry.py": "676a1ad98229e549339fdeca889758a97263fd041306df3d3d11f6cebafb98f0",
     "lib/namespace.py": "4764d277bc1eedfc959bc0c770733c0fd1b8d3b6a865889eeb061649b37637df",
     "lib/nudge_dedup.py": "9e36a47c4796d4508f3eba7556ba3b15a1a0df59327d9eac125b4e4091d6ecd6",
