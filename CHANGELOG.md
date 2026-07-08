@@ -65,7 +65,7 @@ surface, an instruction-budget diet, and a pruned mission catalog.
   single-agent-first critique, documents `fleet-verify`, and fixes the dead Orca link
   (`diggerhq/orca` → `stablyai/orca`).
 - Architecture/menu counts, plugin description, and guide/docs-site catalog updated to
-  12 exploratory + 6 archived; test suite now 72 files / 1523 tests.
+  12 exploratory + 6 archived; test suite now 73 files / 1576 tests.
 
 ### Removed
 

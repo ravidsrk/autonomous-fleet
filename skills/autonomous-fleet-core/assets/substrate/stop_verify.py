@@ -214,7 +214,9 @@ def main(argv: list[str] | None = None) -> int:
                     Verdict(allow=False, reason="repo not found (strict)"),
                     force_json=args.json_out,
                 )
-                return 2
+                # Exit 0 always: Claude Code treats non-zero as a hook error,
+                # not a block. The JSON decision field carries the block.
+                return 0
             print(
                 f"stop-verify: warning — repo not a directory: {repo}; allowing session end.",
                 file=sys.stderr,

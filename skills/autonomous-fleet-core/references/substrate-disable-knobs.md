@@ -98,7 +98,7 @@ For the **security / integrity** class (`FLEET_DISABLE_SHA_PIN`,
 `FLEET_DISABLE_REGISTRY_LINT`) the contract is different — these knobs
 FAIL CLOSED. A bare truthy value is not sufficient to drop the check;
 the operator must also set `FLEET_SECURITY_OVERRIDE_ACK=1` (see
-`scripts/lib/substrate_disable.py`) and record the decision in
+`<SUBSTRATE>/lib/substrate_disable.py`) and record the decision in
 `DECISIONS.md`. Without that ack the CLI exits non-zero rather than
 silently no-opping to PASS.
 

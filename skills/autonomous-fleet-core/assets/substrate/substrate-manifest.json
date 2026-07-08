@@ -1,5 +1,5 @@
 {
-  "core_version": "1.3.3",
+  "core_version": "1.3.4",
   "files": {
     "emit_trace.py": "4425a4dd35f40b230eb566330bb2c28fd487892a717e440947c31327388805ad",
     "lib/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -35,7 +35,7 @@
     "lib/verify_sha_pin.py": "10c4d68983c4185d9d3006a030ffef6055cfd1690028bc66a64c7324c3205123",
     "recovery_scan.py": "e816bc52cf8215047c9fd63eda8b25aebe2e0c94126e07a45ea33b1e2aabdb7a",
     "requirements.txt": "71749243f84428fee225bfaa796dca5ef6c1e83a98f6d2a407df615b0390d6fb",
-    "stop_verify.py": "833a089df9f18f02552217a88c8ae7091c11df86b587d36e72661de8474fe1e2",
+    "stop_verify.py": "149d1172aa3874afcca90dbc2cfa285e01a8f4c070825db4ec8dcac9ceff8430",
     "validate_fleet_outcome.py": "7218d101bea0c932347c827adef5a128160018dfeabfe66e07cf4f19a3e3c492",
     "validate_namespacing.py": "aacb7397706f307ab50435b47a9761ca41031e478961b41f4627cd28c8807065",
     "validate_run_archive.py": "7169c736e4e81d9d4db9d531e45bf0f6aa3323594c5ff0c9999ffd8f643fcc8c",
