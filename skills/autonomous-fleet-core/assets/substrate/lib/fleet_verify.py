@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,8 +15,10 @@ import yaml
 from .emit_trace import TraceScanStats, health_rollup, iter_trace_file, validate_event
 from .fleet_outcome import parse_readiness, validate_outcome
 from .fleet_run import load_and_validate_manifest, parse_run_id
+from .reviewer_sandbox import verify_reviewer_sandbox_manifest
 from .verify_blind_fix import verify_blind_fix_doc
 from .verify_findings import load_findings_doc, validate_findings_doc, verify_findings_doc
+from .verify_sha_pin import verify_sha_pin
 
 PASS = "PASS"
 FAIL = "FAIL"
@@ -286,6 +290,126 @@ def _check_identity(run_dir: Path) -> LayerResult:
     )
 
 
+_MERGED_MARKERS = (
+    re.compile(r"\bmerged\s*[:=]\s*(?:true|t|yes)\b", re.IGNORECASE),
+    re.compile(r"\bstatus\s*:\s*done\b", re.IGNORECASE),
+)
+
+
+def _sha_pin_paths(run_dir: Path) -> list[Path]:
+    paths = sorted(run_dir.glob("sha-pin*.json"))
+    pins_dir = run_dir / "sha-pins"
+    if pins_dir.is_dir():
+        paths.extend(sorted(pins_dir.glob("*.json")))
+    return paths
+
+
+def _sibling_readiness_says_merged(run_dir: Path) -> bool:
+    readiness_paths = sorted(
+        path
+        for path in run_dir.iterdir()
+        if path.is_file() and ("readiness" in path.name or path.name.startswith("fleet-outcome"))
+    )
+    for path in readiness_paths:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        if any(pattern.search(text) for pattern in _MERGED_MARKERS):
+            return True
+    return False
+
+
+def _load_sha_pin_records(paths: list[Path], run_dir: Path) -> tuple[list[dict[str, Any]], list[str]]:
+    records: list[dict[str, Any]] = []
+    errors: list[str] = []
+    for path in paths:
+        try:
+            record = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            errors.append(f"cannot read {path.name}: {exc}")
+            continue
+        if isinstance(record, dict) and record.get("merged") is not True:
+            if _sibling_readiness_says_merged(run_dir):
+                record = {**record, "merged": True}
+        records.append(record)
+    return records, errors
+
+
+def _git_head(repo: Path, branch: str) -> str | None:
+    # Match verify_sha_pin CLI: terminate option parsing before the branch so a
+    # crafted name cannot be interpreted as a git option.
+    result = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "--verify", "--end-of-options", branch],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+    stdout = result.stdout.strip()
+    return stdout.splitlines()[0] if stdout else None
+
+
+def _check_sha_pin(run_dir: Path, repo: Path) -> LayerResult:
+    artifact = "sha-pin.json"
+    paths = _sha_pin_paths(run_dir)
+    if not paths:
+        return _skip("sha-pin", artifact, "artifact absent")
+    records, load_errors = _load_sha_pin_records(paths, run_dir)
+    heads: dict[str, str | None] = {}
+
+    def resolve(branch: str) -> str | None:
+        if branch not in heads:
+            heads[branch] = _git_head(repo, branch)
+        return heads[branch]
+
+    errors = list(load_errors)
+    errors.extend(verify_sha_pin(records, resolve))
+    if errors:
+        return _fail("sha-pin", artifact, f"{len(errors)} sha-pin error(s)", errors)
+    return _pass(
+        "sha-pin",
+        artifact,
+        f"{len(records)} record(s) checked",
+        records=len(records),
+    )
+
+
+def _check_reviewer_sandbox(run_dir: Path) -> LayerResult:
+    artifact = "manifest.json"
+    path = run_dir / artifact
+    if not path.exists():
+        return _skip("reviewer-sandbox", artifact, "artifact absent")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        return _fail(
+            "reviewer-sandbox",
+            artifact,
+            "manifest unreadable",
+            [str(exc)],
+        )
+    summary = verify_reviewer_sandbox_manifest(payload, label=str(path))
+    if not summary.get("ok"):
+        errors = [str(v.get("message", v)) for v in summary.get("violations", [])]
+        if not errors:
+            errors = ["reviewer-sandbox verification failed"]
+        return _fail(
+            "reviewer-sandbox",
+            artifact,
+            f"{len(errors)} reviewer-sandbox violation(s)",
+            errors,
+        )
+    checked = summary.get("checked_files", 0)
+    return _pass(
+        "reviewer-sandbox",
+        artifact,
+        f"{checked} reviewer file(s) checked",
+        summary=summary,
+    )
+
+
 def verify_layers(run_dir: Path, repo: Path) -> list[LayerResult]:
     manifest = _check_manifest(run_dir)
     findings = _check_findings(run_dir, repo)
@@ -311,6 +435,8 @@ def verify_layers(run_dir: Path, repo: Path) -> list[LayerResult]:
         _check_outcome(run_dir),
         _check_trace(run_dir),
         _check_identity(run_dir),
+        _check_sha_pin(run_dir, repo),
+        _check_reviewer_sandbox(run_dir),
     ]
 
 
