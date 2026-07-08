@@ -435,12 +435,18 @@ def write_headless_dryrun_archive(
     Archives are always written to disk; shell entry points remove ephemeral
     copies only on --dry-run (see run-mission-headless.sh).
     Returns (archive_dir, run_id, sorted primitive names).
+
+    ``created_utc`` is stamped at run-start (allocation time), not finalize
+    time, so it precedes every ``files[].mtime_utc`` in the archive.
     """
     from .emit_trace import TraceEmitter, iter_trace_file
     import shutil
 
     source = progress_source_root if progress_source_root is not None else repo_root
-    run_id = allocate_run_id(mission)
+    # Capture run-start before any archive artifacts are written so
+    # manifest.created_utc precedes every files[].mtime_utc.
+    run_start = _utc_now()
+    run_id = allocate_run_id(mission, now=run_start)
     arch = ensure_archive_dir(repo_root, run_id)
 
     progress_archive = progress_excerpt_for_mission(source, mission)
@@ -454,7 +460,9 @@ def write_headless_dryrun_archive(
     ):
         dest_name = _runtime_response_archive_name(runtime_response_path)
         runtime_response_dest = arch / dest_name
-        shutil.copy2(runtime_response_path, runtime_response_dest)
+        # copy (not copy2): archive mtime must reflect accretion time so it
+        # cannot predate created_utc when the source capture is older.
+        shutil.copy(runtime_response_path, runtime_response_dest)
 
     with TraceEmitter(arch, mission=mission, run_id=run_id) as emitter:
         emit_dryrun_lifecycle_trace(
@@ -502,6 +510,7 @@ def write_headless_dryrun_archive(
             coordinator=f"headless-dryrun-{runtime}",
             base_branch="main",
             notes=notes,
+            created_utc=run_start,
             emitter=emitter,
         )
 
@@ -609,10 +618,14 @@ def write_manifest(
     files is non-empty; manifest's `created_utc` is no later than any file's
     mtime (the manifest is created at the START of the run; if it's somehow
     newer than a listed file we caught a clock-skew bug).
+
+    When ``created_utc`` is omitted, default to the run-id timestamp (run
+    start), not finalize time — finalize-time stamps violate the
+    created_utc <= min(files[].mtime_utc) invariant once artifacts exist.
     """
     if not RUN_ID_PATTERN.match(run_id):
         raise ValueError(f"invalid run_id for manifest: {run_id!r}")
-    _, parsed_mission, _ = parse_run_id(run_id)
+    run_ts, parsed_mission, _ = parse_run_id(run_id)
     if mission != parsed_mission:
         raise ValueError(
             f"mission {mission!r} does not match run_id slug {parsed_mission!r}"
@@ -622,7 +635,7 @@ def write_manifest(
     if not file_list:
         raise ValueError("manifest requires at least one file entry")
 
-    created = (created_utc or _utc_now()).astimezone(timezone.utc).replace(microsecond=0)
+    created = (created_utc or run_ts).astimezone(timezone.utc).replace(microsecond=0)
     created_str = created.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     manifest_path = archive_root / "manifest.json"
@@ -847,6 +860,54 @@ def _validate_ordering(files: list[dict[str, Any]], where: str) -> list[str]:
     return errors
 
 
+def _parse_utc_iso(value: str) -> datetime | None:
+    """Parse a UTC ISO 8601 string (Z-terminated) to an aware datetime.
+
+    Returns None when the string is not parseable. Callers that already
+    shape-checked via UTC_ISO_PATTERN treat None as "skip" rather than
+    double-reporting a format error.
+    """
+    if not isinstance(value, str) or not UTC_ISO_PATTERN.match(value):
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _validate_created_precedes_files(
+    created_utc: Any, files: list[dict[str, Any]], where: str
+) -> list[str]:
+    """Enforce created_utc <= every files[].mtime_utc (equality allowed).
+
+    Doctrine (run-archive.md / guide 15): the manifest is opened at run
+    start, then files accrete — so created_utc must not be later than any
+    listed file's mtime. Equality is compliant (same-second start + first
+    write); only a strictly later created_utc is a clock-skew / finalize-
+    stamp bug (BUG-001 / ARCHIVE-01).
+    """
+    created = _parse_utc_iso(created_utc) if isinstance(created_utc, str) else None
+    if created is None:
+        return []
+
+    errors: list[str] = []
+    for idx, entry in enumerate(files):
+        if not isinstance(entry, dict):
+            continue
+        mtime_str = entry.get("mtime_utc")
+        mt = _parse_utc_iso(mtime_str) if isinstance(mtime_str, str) else None
+        if mt is None:
+            continue
+        if created > mt:
+            path = entry.get("path", f"files[{idx}]")
+            errors.append(
+                f"{where}: created_utc-precedes-files violation: "
+                f"created_utc {created_utc!r} is after files[{idx}] "
+                f"{path!r} mtime_utc {mtime_str!r}"
+            )
+    return errors
+
+
 def _validate_independence(files: list[dict[str, Any]], where: str) -> list[str]:
     """Reject byte-identical `findings` artifacts from DIFFERENT producers.
 
@@ -1022,6 +1083,11 @@ def validate_manifest_payload(
         return errors
     files = manifest.get("files")
     if isinstance(files, list) and files:
+        errors.extend(
+            _validate_created_precedes_files(
+                manifest.get("created_utc"), files, label
+            )
+        )
         errors.extend(_validate_ordering(files, label))
         errors.extend(_validate_independence(files, label))
         size_errors = _validate_size_cap(files, archive_root, label)
