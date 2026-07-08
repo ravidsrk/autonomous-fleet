@@ -684,16 +684,32 @@ def test_increment_resume_count_table_stops_at_blank_and_ragged_rows(tmp_path: P
         "| TASK | BRANCH | MERGED |\n"
         "| --- | --- | --- |\n"
         "| Keep | fleet/keep | false |\n"
-        "| --- | --- | --- |\n"
         "| Other | fleet/other | false |\n"
-        "not a table row\n"
-        "| Ragged | only-two |\n",
+        "not a table row\n",
         encoding="utf-8",
     )
     assert rs.increment_resume_count(ledger, "Keep") == 1
     text = ledger.read_text(encoding="utf-8")
     assert "RESUME_COUNT" in text
-    # Keep bumped; Other (same width) got empty RESUME_COUNT cell; ragged left alone.
     assert "| Keep | fleet/keep | false | 1 |" in text or "| Keep | fleet/keep | false | 1" in text
     assert "Other" in text
+
+
+def test_increment_resume_count_table_stops_on_ragged_pipe_row(tmp_path: Path) -> None:
+    """A pipe-bearing row with the wrong cell count ends the sibling rewrite (line 548)."""
+    ledger = tmp_path / "progress.md"
+    ledger.write_text(
+        "| TASK | BRANCH | MERGED |\n"
+        "| --- | --- | --- |\n"
+        "| Keep | fleet/keep | false |\n"
+        "| Ragged | only-two |\n"
+        "| Other | fleet/other | false |\n",
+        encoding="utf-8",
+    )
+    assert rs.increment_resume_count(ledger, "Keep") == 1
+    text = ledger.read_text(encoding="utf-8")
+    assert "| Keep | fleet/keep | false | 1 |" in text or "| Keep | fleet/keep | false | 1" in text
+    # Ragged row must not receive a RESUME_COUNT cell; rewrite stopped there.
+    assert "| Ragged | only-two |" in text
+    assert "RESUME_COUNT" not in text.split("Ragged")[1].split("\n")[0]
 
