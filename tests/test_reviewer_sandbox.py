@@ -209,6 +209,9 @@ def test_run_sandboxed_role_reviewer_allows_run_tmp_and_test_output(
         'echo tmp > "$TMPDIR/tmp.txt"; '
         'echo test > "$FLEET_TEST_OUTPUT_DIR/out.txt"'
     )
+    # Without a real sandbox binary, SEC-005 requires an explicit ack for the
+    # post-exec hash-audit fallback path.
+    env = {**_sandbox_env(tmp_path), "FLEET_SECURITY_OVERRIDE_ACK": "1"}
 
     result = subprocess.run(
         [str(SANDBOX), "--role", "reviewer", "--run-id", RUN_ID, "--", "sh", "-c", command],
@@ -216,7 +219,7 @@ def test_run_sandboxed_role_reviewer_allows_run_tmp_and_test_output(
         capture_output=True,
         text=True,
         check=False,
-        env=_sandbox_env(tmp_path),
+        env=env,
     )
 
     run_dir = git_repo / ".fleet" / "runs" / RUN_ID
@@ -288,6 +291,7 @@ def test_run_sandboxed_rejects_fleet_run_id_path_traversal(
 
 def test_run_sandboxed_accepts_valid_run_id(git_repo: Path, tmp_path: Path) -> None:
     """SEC-002: a well-formed RUN_ID still reaches exec and writes under .fleet/runs/."""
+    env = {**_sandbox_env(tmp_path), "FLEET_SECURITY_OVERRIDE_ACK": "1"}
     result = subprocess.run(
         [
             str(SANDBOX),
@@ -304,7 +308,7 @@ def test_run_sandboxed_accepts_valid_run_id(git_repo: Path, tmp_path: Path) -> N
         capture_output=True,
         text=True,
         check=False,
-        env=_sandbox_env(tmp_path),
+        env=env,
     )
 
     run_dir = git_repo / ".fleet" / "runs" / RUN_ID
@@ -312,10 +316,44 @@ def test_run_sandboxed_accepts_valid_run_id(git_repo: Path, tmp_path: Path) -> N
     assert (run_dir / "accepted.txt").read_text(encoding="utf-8") == "ok\n"
 
 
+def test_run_sandboxed_refuses_reviewer_without_sandbox_or_ack(
+    git_repo: Path, tmp_path: Path
+) -> None:
+    """SEC-005: no sandbox-exec/bwrap and no ack → refuse before exec."""
+    env = {**_sandbox_env(tmp_path), "PATH": _fallback_only_path(tmp_path)}
+    env.pop("FLEET_SECURITY_OVERRIDE_ACK", None)
+
+    result = subprocess.run(
+        [
+            str(SANDBOX),
+            "--role",
+            "reviewer",
+            "--run-id",
+            RUN_ID,
+            "--",
+            "echo",
+            "ok",
+        ],
+        cwd=git_repo,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+
+    assert result.returncode == 4
+    assert "requires sandbox-exec or bwrap" in result.stderr
+    assert "ok" not in result.stdout
+
+
 def test_run_sandboxed_fallback_detects_untracked_file_write(
     git_repo: Path, tmp_path: Path
 ) -> None:
-    env = {**_sandbox_env(tmp_path), "PATH": _fallback_only_path(tmp_path)}
+    env = {
+        **_sandbox_env(tmp_path),
+        "PATH": _fallback_only_path(tmp_path),
+        "FLEET_SECURITY_OVERRIDE_ACK": "1",
+    }
 
     result = subprocess.run(
         [

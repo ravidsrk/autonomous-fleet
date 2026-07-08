@@ -33,7 +33,7 @@ cd ~/.claude/skills/gstack && ./setup
 /plugin install agent-skills@addy-agent-skills
 
 # mattpocock/skills
-npx skills@latest add mattpocock/skills
+npx skills@1.5.12 add mattpocock/skills
 # Then run /setup-matt-pocock-skills in the agent
 ```
 

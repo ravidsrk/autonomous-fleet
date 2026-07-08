@@ -433,7 +433,7 @@ python3 scripts/registry_lint.py .
 
 Notes. Externally-sourced skills (e.g. `skill-creator` vendored from `anthropics/skills`) are
 excluded from the skills-lock cross-check, so only fleet-owned drift surfaces. Kill switch:
-`FLEET_DISABLE_REGISTRY_LINT` (the CLI early-exits 0 with a stderr notice).
+`FLEET_DISABLE_REGISTRY_LINT` (fail-closed: bare disable exits 1 unless `FLEET_SECURITY_OVERRIDE_ACK=1`, then early-exits 0 with a stderr notice).
 
 ## render-dashboard.py
 

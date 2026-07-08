@@ -71,12 +71,12 @@ Blast-radius verdicts:
                             remote-branch delete (--delete / --prune / -d / :refspec),
                             rm -rf of / ~ $HOME or a system dir (any flag spelling),
                             git reset --hard origin/*, gh pr merge / gh repo delete,
-                            terraform|tofu|kubectl|helm|databricks apply|deploy|destroy|delete,
                             shred, dd of=/dev/*, chmod|chown|chgrp -R of an absolute system path,
                             find <abs-system-path> with -delete / -exec / -ok.
   ASK  (refused, exit 3)  — outward / recoverable: ordinary git push, gh release,
                             rm -rf of a scoped path, npm|pnpm|yarn|cargo publish,
                             aws|gcloud destructive verbs (delete/rm/terminate/...),
+                            terraform|tofu|kubectl|helm|databricks apply|deploy|destroy|delete,
                             curl|wget piped into a shell. Non-interactive: re-run by hand.
   ALLOW                   — reads, tests, edits, local git (commit/merge/worktree): exec.
 

@@ -229,17 +229,13 @@ committed secret, treat it as compromised and rotate it.
 
 ### Can I turn off a gate that is blocking me?
 
-Most gates, yes, with a deliberate env var, but think before you do. Each validator that can be
-disabled reads one `FLEET_DISABLE_*` knob, set truthy (`1`/`true`/`yes`/`on`), and exits 0 with a
-`DISABLED` notice instead of running. The newer run gates each have one: `FLEET_DISABLE_SHA_PIN`
-(the sha-pin OUTDATED check), `FLEET_DISABLE_ROUND_BUDGET` (the review round-budget circuit breaker),
-`FLEET_DISABLE_REGISTRY_LINT` (the mission/adapter registry drift check),
-`FLEET_DISABLE_REVIEWER_SANDBOX` (the reviewer-write attribution check), and `FLEET_DISABLE_NAMESPACING`
-(the branch/worktree run-suffix check). The substrate layers have their own knobs
+Most gates, yes, with a deliberate env var, but think before you do. Escape-hatch knobs
 (`FLEET_DISABLE_VERIFY_FINDINGS`, `FLEET_DISABLE_STOP_VERIFY`, `FLEET_DISABLE_BLIND_FIX`,
-`FLEET_DISABLE_RUN_ARCHIVE`). The strict truthy allow-list means a typo never silently disables a
-gate. The mutation gate (Layer 4) has no knob on purpose. Disabling a gate turns its verdict into PASS
-for the run, so reach for it only when you understand exactly what you are silencing.
+`FLEET_DISABLE_RUN_ARCHIVE`, `FLEET_DISABLE_ROUND_BUDGET`, and the nudge/stacked-pr/hook-signal
+verifiers) exit 0 with a `DISABLED` notice when set truthy. Security/integrity knobs
+(`FLEET_DISABLE_SHA_PIN`, `FLEET_DISABLE_REVIEWER_SANDBOX`, `FLEET_DISABLE_NAMESPACING`,
+`FLEET_DISABLE_REGISTRY_LINT`) **fail closed**: a bare truthy value is refused unless you also set
+`FLEET_SECURITY_OVERRIDE_ACK=1` and record the decision. The mutation gate has no knob on purpose.
 See [The substrate](07-the-substrate.md) and [Troubleshooting](14-troubleshooting.md).
 
 ### How do I report a vulnerability?

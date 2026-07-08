@@ -690,7 +690,7 @@ Registry lint + `validate-headless.sh` iterate `doc-sync`, `test-coverage`,
 
 ### Invocation — demoted missions stay exploratory
 
-Nine missions under `docs/exploratory/missions/` await external archive triple promotion —
+Twelve missions under `docs/exploratory/missions/` await external archive triple promotion —
 documented in `docs/roadmap-gap-matrix.md` gap M-promote.
 
 ### Real run on adversarial fixture mission

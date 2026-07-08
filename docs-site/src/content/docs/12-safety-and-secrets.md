@@ -143,13 +143,15 @@ policy. The verdict is the most severe across every statement on the line (chain
   |         |           |   rm -rf of / ~ $HOME or a system dir                    |
   |         |           |   git reset --hard origin/* (remote-tracking ref)        |
   |         |           |   gh pr merge / gh repo delete                           |
-  |         |           |   terraform|tofu|kubectl|helm|databricks                 |
-  |         |           |     apply|deploy|destroy|delete                          |
+  |         |           |   shred; dd of=/dev/*; chmod|chown|chgrp -R system path  |
+  |         |           |   find <abs-system-path> -delete|-exec|-ok               |
   +---------+-----------+----------------------------------------------------------+
   | ASK     |     3     | Outward / destructive-but-recoverable. Refused.          |
-  |         |           |   ordinary git push                                      |
-  |         |           |   gh release                                             |
-  |         |           |   rm -rf of a scoped path                                |
+  |         |           |   ordinary git push; gh release; scoped rm -rf           |
+  |         |           |   terraform|tofu|kubectl|helm|databricks                 |
+  |         |           |     apply|deploy|destroy|delete                          |
+  |         |           |   npm|pnpm|yarn|cargo publish; aws|gcloud destructive     |
+  |         |           |   curl|wget piped into a shell                            |
   +---------+-----------+----------------------------------------------------------+
   | ALLOW   |     0     | Reads, tests, edits, local git (commit/merge/worktree).  |
   |         |  (execs)  | Env is scrubbed, then the command runs.                  |

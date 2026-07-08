@@ -49,7 +49,18 @@ def test_cli_passes_on_real_repo():
 
 
 def test_cli_kill_switch_disables():
+    # SEC-009: bare disable fails closed without ack.
     rc, _, err = _run_cli(str(REPO_ROOT), env={"FLEET_DISABLE_REGISTRY_LINT": "1"})
+    assert rc == 1
+    assert "REFUSING" in err and "FLEET_SECURITY_OVERRIDE_ACK" in err
+
+    rc, _, err = _run_cli(
+        str(REPO_ROOT),
+        env={
+            "FLEET_DISABLE_REGISTRY_LINT": "1",
+            "FLEET_SECURITY_OVERRIDE_ACK": "1",
+        },
+    )
     assert rc == 0
     assert "DISABLED" in err and "FLEET_DISABLE_REGISTRY_LINT" in err
 

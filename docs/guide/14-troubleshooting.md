@@ -519,7 +519,7 @@ out of date: re-run the installer so the lock matches disk.
 
 How to prevent: when you ship or rename a mission, edit `MISSIONS` in the same change, then run
 `./scripts/validate-all.sh` (or `scripts/registry_lint.py .`) before you push. To silence it for a
-run, set `FLEET_DISABLE_REGISTRY_LINT=1`.
+run, set `FLEET_DISABLE_REGISTRY_LINT=1` **and** `FLEET_SECURITY_OVERRIDE_ACK=1` (registry-lint is fail-closed; bare disable exits 1).
 
 ### reviewer-sandbox: a reviewer was attributed a write on the candidate
 

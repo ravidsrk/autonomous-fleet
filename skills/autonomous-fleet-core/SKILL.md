@@ -17,7 +17,7 @@ license: MIT
 compatibility: Requires git and gh CLI in the target repository
 metadata:
   author: "ravidsrk"
-  version: "1.3.2"
+  version: "1.3.3"
   fleet-component: "core"
 ---
 # Autonomous Fleet — Core Engine (tool-agnostic)

@@ -16,7 +16,7 @@ This exists for two reasons:
 
 # Env-var registry
 
-The substrate ships **nine** live knobs across three classes. There is
+The substrate ships **twelve** live knobs across three classes. There is
 exactly ONE env var per layer, and the helper
 (`<SUBSTRATE>/lib/substrate_disable.py`) is the only place the truthy rule
 and the stderr-notice format live.
@@ -81,7 +81,7 @@ running the substrate but quietly weren't."
 # Disable contract
 
 For the **verification-substrate** and **contract/budget** classes
-(the six escape-hatch knobs), when the env var is truthy the CLI must:
+(the eight escape-hatch knobs), when the env var is truthy the CLI must:
 
 1. Exit code **0** (success / no-op).
 2. Print exactly `<layer-label>: DISABLED via <ENV_VAR>=1 (no-op exit 0)`
@@ -91,16 +91,16 @@ For the **verification-substrate** and **contract/budget** classes
 
 The semantics: "disabled" means "treat the substrate's verdict as PASS
 for this run." If you want fail-closed behavior instead for one of these
-six, do not use the disable knob — fix the upstream problem.
+eight, do not use the disable knob — fix the upstream problem.
 
 For the **security / integrity** class (`FLEET_DISABLE_SHA_PIN`,
-`FLEET_DISABLE_REVIEWER_SANDBOX`, `FLEET_DISABLE_NAMESPACING`) the
-contract is different — these knobs FAIL CLOSED. A bare truthy value is
-not sufficient to drop the check; the layer requires the integrity
-agents' explicit operator-override gate and records the decision rather
-than silently no-opping to PASS. (The runtime fail-closed behaviour is
-owned by those scripts under the integrity package; this doc states the
-contract, it does not implement it.)
+`FLEET_DISABLE_REVIEWER_SANDBOX`, `FLEET_DISABLE_NAMESPACING`,
+`FLEET_DISABLE_REGISTRY_LINT`) the contract is different — these knobs
+FAIL CLOSED. A bare truthy value is not sufficient to drop the check;
+the operator must also set `FLEET_SECURITY_OVERRIDE_ACK=1` (see
+`scripts/lib/substrate_disable.py`) and record the decision in
+`DECISIONS.md`. Without that ack the CLI exits non-zero rather than
+silently no-opping to PASS.
 
 # Bench-driver wiring
 
