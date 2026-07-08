@@ -127,7 +127,17 @@ def test_assess_promotion_prefers_unkeyed_readiness_over_newer_run_keyed(
     _write_ready_shipped_fixture(tmp_path)
     canonical = tmp_path / "docs" / "doc-sync-readiness.md"
     keyed = tmp_path / "docs" / "doc-sync-abc123-readiness.md"
+    # Make the keyed file strictly newer so a mutation that skips the
+    # canonical is_file() short-circuit falls through to mtime-sorted
+    # glob and picks the blocked keyed doc (ready=False). Same-second
+    # mtimes previously let name-sort still prefer the canonical path.
     keyed.write_text("---\nfleet-outcome:\n  status: blocked\n---\n", encoding="utf-8")
+    import os
+    import time
+
+    now = time.time()
+    os.utime(canonical, (now - 10, now - 10))
+    os.utime(keyed, (now, now))
     monkeypatch.setenv("FLEET_RUN_SHORT", "abc123")
 
     report = assess_promotion(tmp_path, "doc-sync")
