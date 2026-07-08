@@ -6,22 +6,21 @@ in-memory data and returns errors.
 """
 from __future__ import annotations
 
-import re
 from typing import Any
 
+from .fleet_run import RUN_ID_PATTERN
 from .recovery_scan import parse_ledger_rows
 
-_RUN_ID_RE = re.compile(
-    r"^[0-9]{8}T[0-9]{6}Z-[a-z](?:[a-z0-9-]*[a-z0-9])?-(?P<short>[0-9a-f]{6})$"
-)
+# MUST stay identical to fleet_run.RUN_ID_PATTERN (imported; drift-tested).
+_RUN_ID_RE = RUN_ID_PATTERN
 
 
 def derive_run_short(run_id: str) -> str:
     """Return the 6-hex run suffix from a fleet run_id."""
-    match = _RUN_ID_RE.match(run_id)
-    if not match:
+    if not _RUN_ID_RE.match(run_id):
         raise ValueError(f"run_id must end with a 6-hex suffix, got {run_id!r}")
-    return match.group("short")
+    # Suffix is always the trailing 6 hex chars (mission may contain hyphens).
+    return run_id[-6:]
 
 
 def namespaced_branch(prefix: str, slug: str, run_id: str) -> str:

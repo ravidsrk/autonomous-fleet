@@ -19,7 +19,7 @@
     "lib/locks.py": "04f04c169e43eed41cba965abbebb1ed40b35defa4ce81e5b731f639db668d05",
     "lib/mission_promotion.py": "72a773256169455b7a88bfd3916fd5a1fc44e920ee67909cf5e356340b26757d",
     "lib/mission_registry.py": "676a1ad98229e549339fdeca889758a97263fd041306df3d3d11f6cebafb98f0",
-    "lib/namespace.py": "9a67056568aa62b6ebdbe0e9935c1d16df929ce0555f1d1ca41c75b6502968c0",
+    "lib/namespace.py": "4764d277bc1eedfc959bc0c770733c0fd1b8d3b6a865889eeb061649b37637df",
     "lib/nudge_dedup.py": "9e36a47c4796d4508f3eba7556ba3b15a1a0df59327d9eac125b4e4091d6ecd6",
     "lib/png_banner.py": "f19ca77fd426b380c7bee1be1b189cdb055b979be7c9fa71cca13d5fd71a25eb",
     "lib/recovery_scan.py": "3b70799e9ff6a8b3dd71e87cee4578681e82ce55aca5f43d0fa0612ee0048958",
