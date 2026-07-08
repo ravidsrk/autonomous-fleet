@@ -4,6 +4,7 @@ RUN_ID: 20260708T184204Z-adversarial-review-and-fix-c6c486
 RUN_SHORT: c6c486
 BASE: cursor/adversarial-review-base-256a
 PHASE: FIXING
+LAST_UPDATE: wave1 SEC-001/002/003/008 merged into BASE
 ADAPTER: autonomous-fleet-adapter-grok
 REPO_ROOT: /workspace
 MAINTAINER: Cursor Agent <cursoragent@cursor.com>
@@ -25,16 +26,16 @@ LAST_UPDATE: BOOTSTRAP complete — 15 Lane A + 6 Lane B; SEC-006 DO_NOT_FIX
 
 | ID | lane | state |
 |----|------|-------|
-| SEC-001 | A | OPEN |
-| SEC-002 | A | OPEN |
-| SEC-003 | A | OPEN |
+| SEC-001 | A | CLOSED via #135 |
+| SEC-002 | A | CLOSED via #136 |
+| SEC-003 | A | CLOSED via #137 |
 | SEC-004 | B | OPEN |
 | ARCH-001 | A | OPEN |
 | ARCH-002 | A | OPEN |
 | BUG-001 | A | OPEN |
 | SEC-005 | B | OPEN |
 | SEC-007 | A | OPEN |
-| SEC-008 | A | OPEN |
+| SEC-008 | A | CLOSED via #135 |
 | SEC-009 | B | OPEN |
 | BUG-002 | A | OPEN |
 | BUG-003 | A | OPEN |
