@@ -39,14 +39,14 @@ LAST_UPDATE: BOOTSTRAP complete — 15 Lane A + 6 Lane B; SEC-006 DO_NOT_FIX
 | SEC-009 | B | OPEN |
 | BUG-002 | A | CLOSED via #139 |
 | BUG-003 | A | CLOSED via #142 |
-| BUG-004 | A | OPEN |
-| ARCH-003 | A | OPEN |
+| BUG-004 | A | CLOSED via #143 |
+| ARCH-003 | A | CLOSED via #144 |
 | ARCH-004 | B | OPEN |
-| OPS-001 | A | OPEN |
-| OPS-002 | A | OPEN |
+| OPS-001 | A | CLOSED via #145 |
+| OPS-002 | A | CLOSED via #146 |
 | ARCH-005 | B | OPEN |
 | SEC-010 | B | OPEN |
-| SEC-011 | A | OPEN |
+| SEC-011 | A | CLOSED via #147 |
 | SEC-006 | — | DO_NOT_FIX |
 
 ## Fix tasks
