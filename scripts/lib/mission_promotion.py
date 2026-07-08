@@ -13,7 +13,7 @@ from pathlib import Path
 
 import yaml
 
-from .mission_registry import MISSION_DOCS
+from .mission_registry import MISSION_DOCS, ledger_dir
 
 _PROGRESS_RE = re.compile(r"PHASE:\s*(DONE|BLOCKED)", re.IGNORECASE)
 _ARCHIVE_RUN_ID_RE = re.compile(
@@ -74,7 +74,7 @@ def _canonical_registry_doc(
     repo_root: Path, mission: str, key: str, suffix: str
 ) -> Path:
     doc = MISSION_DOCS.get(mission, {}).get(key, f"{mission}-{suffix}.md")
-    return repo_root / "docs" / doc
+    return repo_root / ledger_dir() / doc
 
 
 def _promotion_readiness_path(repo_root: Path, mission: str) -> Path:
