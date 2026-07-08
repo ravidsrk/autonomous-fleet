@@ -30,15 +30,15 @@ LAST_UPDATE: BOOTSTRAP complete — 15 Lane A + 6 Lane B; SEC-006 DO_NOT_FIX
 | SEC-002 | A | CLOSED via #136 |
 | SEC-003 | A | CLOSED via #137 |
 | SEC-004 | B | OPEN |
-| ARCH-001 | A | OPEN |
-| ARCH-002 | A | OPEN |
-| BUG-001 | A | OPEN |
+| ARCH-001 | A | CLOSED via #138 |
+| ARCH-002 | A | CLOSED via #139 |
+| BUG-001 | A | CLOSED via #140 |
 | SEC-005 | B | OPEN |
-| SEC-007 | A | OPEN |
+| SEC-007 | A | CLOSED via #141 |
 | SEC-008 | A | CLOSED via #135 |
 | SEC-009 | B | OPEN |
-| BUG-002 | A | OPEN |
-| BUG-003 | A | OPEN |
+| BUG-002 | A | CLOSED via #139 |
+| BUG-003 | A | CLOSED via #142 |
 | BUG-004 | A | OPEN |
 | ARCH-003 | A | OPEN |
 | ARCH-004 | B | OPEN |
