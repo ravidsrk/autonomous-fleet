@@ -18,6 +18,25 @@ _REQUIRES_BLOCK_RE = re.compile(
     re.MULTILINE | re.DOTALL,
 )
 
+# Auth probes must not hang forever (OPS-002 / PREFLIGHT-01). Override via
+# FLEET_ADAPTER_AUTH_TIMEOUT_S (seconds); non-positive or invalid values fall
+# back to the default.
+DEFAULT_AUTH_TIMEOUT_S = 30.0
+_AUTH_TIMEOUT_ENV = "FLEET_ADAPTER_AUTH_TIMEOUT_S"
+
+
+def _auth_timeout_s(environ: Mapping[str, str] = os.environ) -> float:
+    raw = environ.get(_AUTH_TIMEOUT_ENV)
+    if raw is None or raw == "":
+        return DEFAULT_AUTH_TIMEOUT_S
+    try:
+        value = float(raw)
+    except ValueError:
+        return DEFAULT_AUTH_TIMEOUT_S
+    if value <= 0:
+        return DEFAULT_AUTH_TIMEOUT_S
+    return value
+
 
 @dataclass(frozen=True)
 class Intent:
@@ -124,7 +143,20 @@ def check(
             continue
         if entry.get("skip_if_intent") == intent_name:
             continue
-        result = run(shlex.split(command), capture_output=True, text=True, check=False)
+        timeout_s = _auth_timeout_s(environ)
+        try:
+            result = run(
+                shlex.split(command),
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=timeout_s,
+            )
+        except subprocess.TimeoutExpired:
+            failures.append(
+                f"auth check timed out after {timeout_s:g}s: {command}"
+            )
+            continue
         if result.returncode != 0:
             failures.append(f"auth check failed ({result.returncode}): {command}")
 
