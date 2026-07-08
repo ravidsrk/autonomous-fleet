@@ -13,7 +13,7 @@
     "lib/fleet_outcome.py": "b82a8008caf5a70c4ea348270974f080ca02bd7c770c4bf5ef0a2b26610e511c",
     "lib/fleet_registry.py": "ac3d727eb3ebe95da65a92b21d1cd239d3ce7ff0757dc5c02169ee21ed5898f2",
     "lib/fleet_run.py": "a7d57c6b0d7c1133511e46180e03150ee68567189831680817b25c9c4389bb28",
-    "lib/fleet_verify.py": "5559592718a26a40de3d1ba9dc62fa0e3a683ed95fa30135da27a9f6ec6984a6",
+    "lib/fleet_verify.py": "4eb4b54c967d0c944c70cd399ec9926ea98a972bd8a45af94908d1bf27fd431e",
     "lib/headless_trace.py": "92fc184a208bda3ba710b4d920d7fd3ff26e5f8154957a5bd2c9d0d661c2cc10",
     "lib/hook_signal.py": "9c901b576aa49d242d40944982b247706be34d3f7d670838106ae20ef932adb1",
     "lib/locks.py": "04f04c169e43eed41cba965abbebb1ed40b35defa4ce81e5b731f639db668d05",
