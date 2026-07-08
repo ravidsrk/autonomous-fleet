@@ -741,3 +741,70 @@ def test_run_mission_headless_keeps_archive_after_runtime(tmp_path: Path) -> Non
     assert (runs[0] / "manifest.json").is_file()
     assert (runs[0] / "trace.jsonl").is_file()
     assert (runs[0] / "headless-runtime-response.json").is_file()
+
+
+def test_run_mission_headless_emit_failure_fatal_on_real_run(tmp_path: Path) -> None:
+    """OPS-001 / HEADLESS-03: successful runtime + failed archive emit => non-zero exit."""
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_grok = fake_bin / "grok"
+    fake_grok.write_text('#!/bin/sh\necho \'{"stopReason":"EndTurn","text":"ok"}\'\n')
+    fake_grok.chmod(0o755)
+
+    external = tmp_path / "repo"
+    external.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=external, check=True)
+    fleet = external / ".fleet"
+    fleet.mkdir()
+    (fleet / "runs").write_text("not-a-directory\n", encoding="utf-8")
+
+    env = os.environ.copy()
+    env["PATH"] = f"{fake_bin}:{env.get('PATH', '')}"
+
+    r = subprocess.run(
+        [
+            str(REPO_ROOT / "scripts" / "run-mission-headless.sh"),
+            "grok",
+            "doc-sync",
+            "--repo",
+            str(external),
+            "--max-turns",
+            "1",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=REPO_ROOT,
+        env=env,
+    )
+    assert r.returncode != 0, r.stderr + r.stdout
+    assert "emit_headless_dryrun_trace failed" in (r.stderr + r.stdout)
+    assert "non-fatal" not in (r.stderr + r.stdout)
+    assert "archive emitted for --repo:" not in r.stdout
+
+
+def test_run_mission_headless_dry_run_emit_failure_non_fatal(tmp_path: Path) -> None:
+    """Dry-run cleanup path: emit failure warns but still exits 0."""
+    external = tmp_path / "repo"
+    external.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=external, check=True)
+    fleet = external / ".fleet"
+    fleet.mkdir()
+    (fleet / "runs").write_text("not-a-directory\n", encoding="utf-8")
+
+    r = subprocess.run(
+        [
+            str(REPO_ROOT / "scripts" / "run-mission-headless.sh"),
+            "grok",
+            "doc-sync",
+            "--repo",
+            str(external),
+            "--dry-run",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=REPO_ROOT,
+    )
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "emit_headless_dryrun_trace failed (non-fatal)" in (r.stderr + r.stdout)

@@ -214,19 +214,28 @@ if [[ "$YOLO" -eq 1 ]]; then
   echo "warning: --yolo auto-approves all agent tool calls; untrusted --repo/--campaign + yolo = full RCE surface" >&2
 fi
 
+# Emit a headless archive under --repo. cleanup=1 is the dry-run path (ephemeral;
+# emit failure stays non-fatal). cleanup=0 is a real run (audit trail required;
+# emit failure is fatal — OPS-001 / HEADLESS-03).
 emit_headless_trace_archive() {
   local emit_mission="$1"
   local cleanup="${2:-0}"
   local runtime_capture="${3:-}"
-  local out archive emit_args
+  local out archive emit_args emit_rc=0
   emit_args=(--mission "$emit_mission" --repo "$REPO_ROOT" --runtime "$RUNTIME" --fleet-root "$ROOT")
   if [[ -n "$runtime_capture" && -f "$runtime_capture" ]]; then
     emit_args+=(--runtime-response "$runtime_capture")
   fi
-  out="$("$VENV_PYTHON" "$ROOT/scripts/emit_headless_dryrun_trace.py" "${emit_args[@]}" 2>&1)" || {
-    echo "warning: emit_headless_dryrun_trace failed (non-fatal)" >&2
-    return 0
-  }
+  out="$("$VENV_PYTHON" "$ROOT/scripts/emit_headless_dryrun_trace.py" "${emit_args[@]}" 2>&1)" || emit_rc=$?
+  if [[ "$emit_rc" -ne 0 ]]; then
+    if [[ "$cleanup" -eq 1 ]]; then
+      echo "warning: emit_headless_dryrun_trace failed (non-fatal)" >&2
+      return 0
+    fi
+    echo "error: emit_headless_dryrun_trace failed (rc=$emit_rc)" >&2
+    [[ -n "$out" ]] && echo "$out" >&2
+    return "$emit_rc"
+  fi
   echo "$out"
   archive="$(echo "$out" | sed -n 's/^emit_headless_dryrun_trace: archive=//p' | head -1)"
   if [[ -n "$archive" && -d "$archive" ]]; then
@@ -327,10 +336,10 @@ run_with_timeout() {
 
 # Run a runtime command, stream output live via tee, and capture a merged transcript
 # for the archive (stdout+stderr interleaved as the runtime produced them).
-# Returns the runtime exit code so callers (e.g. run-campaign.sh) can emit before exiting.
+# Archive emit failure is fatal (OPS-001); otherwise returns the runtime exit code.
 run_runtime_emit() {
   local -a cmd=("$@")
-  local runtime_capture runtime_rc=0
+  local runtime_capture runtime_rc=0 emit_rc=0
   runtime_capture="$(mktemp "${TMPDIR:-/tmp}/headless-runtime-XXXXXX")" || {
     echo "error: mktemp failed for runtime capture" >&2
     "${cmd[@]}"
@@ -344,11 +353,18 @@ run_runtime_emit() {
     echo "error: runtime timed out after ${TIMEOUT_SECS}s (killed; transcript archived)" >&2
     printf '\n[run-mission-headless] RUNTIME TIMEOUT after %ss\n' "$TIMEOUT_SECS" >>"$runtime_capture"
   fi
+  set +e
   emit_headless_trace_archive "$(dryrun_emit_mission)" 0 "$runtime_capture"
+  emit_rc=$?
+  set -e
   rm -f "$runtime_capture"
+  if [[ "$emit_rc" -ne 0 ]]; then
+    return "$emit_rc"
+  fi
   return "$runtime_rc"
 }
 
+# Dry-run only: emit then delete the archive. Emit failure stays non-fatal.
 emit_and_cleanup_dryrun_trace() {
   emit_headless_trace_archive "$1" 1
 }
