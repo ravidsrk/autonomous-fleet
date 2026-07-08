@@ -66,6 +66,40 @@ def test_assess_promotion_uses_registry_doc_paths(tmp_path: Path) -> None:
     assert report.readiness_path == tmp_path / "docs" / "arch-build-readiness.md"
 
 
+def test_assess_promotion_honors_fleet_ledger_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """ARCH-003 / PROMO-002: progress and readiness resolve under FLEET_LEDGER_DIR."""
+    from lib.mission_promotion import assess_promotion
+    from lib.mission_registry import MISSION_DOCS
+
+    monkeypatch.setenv("FLEET_LEDGER_DIR", ".fleet/docs")
+    ledger = tmp_path / ".fleet" / "docs"
+    ledger.mkdir(parents=True)
+    mission = "adversarial-review-and-fix"
+    mission_docs = MISSION_DOCS[mission]
+    (ledger / mission_docs["progress"]).write_text(
+        "PHASE: DONE\nTASK T1 | CODED=fixture\n", encoding="utf-8"
+    )
+    (ledger / mission_docs["readiness"]).write_text(
+        "---\nfleet-outcome:\n  status: done\n---\n", encoding="utf-8"
+    )
+    run_id = f"20260627T120000Z-{mission}-abc123"
+    run_dir = tmp_path / ".fleet" / "runs" / run_id
+    run_dir.mkdir(parents=True)
+    (run_dir / "manifest.json").write_text(
+        json.dumps({"mission": mission, "run_id": run_id}),
+        encoding="utf-8",
+    )
+
+    report = assess_promotion(tmp_path, mission)
+    assert report.ready
+    assert report.progress_path == ledger / mission_docs["progress"]
+    assert report.readiness_path == ledger / mission_docs["readiness"]
+    assert "progress" not in report.missing
+    assert "readiness" not in report.missing
+
+
 def test_promotion_uses_unkeyed_ledgers_when_run_short_is_set(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
