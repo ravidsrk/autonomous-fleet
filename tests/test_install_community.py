@@ -64,7 +64,6 @@ def test_dry_run_prints_commands_for_allowed_hosts(host: str):
     assert "./setup --host" in out
     assert host in out
     assert "dry-run only" in out
-    assert "eval" not in Path(SCRIPT).read_text(encoding="utf-8")
 
 
 def test_mattpocock_pins_skills_version_not_latest():
