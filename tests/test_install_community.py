@@ -59,10 +59,10 @@ def test_dry_run_prints_commands_for_allowed_hosts(host: str):
     r = _run(["gstack-browser", "--host", host, "--dry-run"])
     assert r.returncode == 0, r.stderr
     out = r.stdout
-    # Dry-run uses shell-quoted argv display ('git' 'clone' ...).
-    assert "'git'" in out and "'clone'" in out
+    # Dry-run prints human-readable argv lines (unquoted) before execute.
+    assert "git clone" in out and "--single-branch" in out
     assert "./setup --host" in out
-    assert f"'{host}'" in out
+    assert host in out
     assert "dry-run only" in out
     assert "eval" not in Path(SCRIPT).read_text(encoding="utf-8")
 
@@ -75,7 +75,7 @@ def test_mattpocock_pins_skills_version_not_latest():
     r = _run(["mattpocock", "--dry-run"])
     assert r.returncode == 0, r.stderr
     assert "skills@1.5.12" in r.stdout
-    assert "'npx'" in r.stdout
+    assert "npx" in r.stdout
     assert "skills@latest" not in r.stdout
 
 
