@@ -523,6 +523,15 @@ def test_cli_exit_2_on_oversized_findings_doc(tmp_path: Path):
     assert "read cap" in err
 
 
+
+
+def test_load_findings_doc_rejects_invalid_utf8(tmp_path: Path):
+    """SEC-011: non-UTF-8 findings bytes fail closed with a clear ValueError."""
+    doc_path = tmp_path / "bad-utf8.json"
+    doc_path.write_bytes(b'{"schema_version": "1.0", "x": "\xff"}')
+    with pytest.raises(ValueError, match="invalid UTF-8"):
+        load_findings_doc(doc_path)
+
 def test_cli_exit_2_on_schema_violation(tmp_path: Path):
     bad = _minimal_doc(findings=[_minimal_finding(severity="nuclear")])
     doc_path = tmp_path / "bad.json"

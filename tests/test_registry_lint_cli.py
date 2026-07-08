@@ -231,3 +231,27 @@ def test_external_pins_reject_placeholder_values(tmp_path: Path) -> None:
 
 def test_external_pins_propagates_load_errors(tmp_path: Path):
     assert rl.lint_external_source_pins(tmp_path) == ["skills-lock.json: missing"]
+
+
+def test_exploratory_on_disk_registered_flags_orphan_and_skips_archive(tmp_path: Path):
+    """ARCH-004: active exploratory SKILL trees need a MISSIONS row; archive/ is ignored."""
+    base = tmp_path / "docs" / "exploratory" / "missions"
+    orphan = base / "orphan-mission"
+    orphan.mkdir(parents=True)
+    (orphan / "SKILL.md").write_text("# orphan\n", encoding="utf-8")
+    archived = base / "archive" / "parked"
+    archived.mkdir(parents=True)
+    (archived / "SKILL.md").write_text("# parked\n", encoding="utf-8")
+    # A directory named archive under missions/ with SKILL.md must also be skipped
+    # (glob is */SKILL.md — archive/SKILL.md would be the only archive hit).
+    (base / "archive" / "SKILL.md").write_text("# not a mission\n", encoding="utf-8")
+
+    errors = rl.lint_exploratory_on_disk_registered(tmp_path, missions={})
+    assert len(errors) == 1
+    assert "orphan-mission" in errors[0]
+    assert not any("archive/" in e.split("has no")[0] for e in errors)
+
+
+def test_exploratory_on_disk_registered_empty_when_base_missing(tmp_path: Path):
+    assert rl.lint_exploratory_on_disk_registered(tmp_path, missions={}) == []
+

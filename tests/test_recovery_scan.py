@@ -642,3 +642,58 @@ def test_pipe_row_task_id_helper_rejects_non_task_lines() -> None:
     assert rs._pipe_row_task_id("not a task | x=1\n") is None
     assert rs._pipe_row_task_id("TASK NoPipe BRANCH=fleet/x\n") is None
     assert rs._pipe_row_task_id("TASK Yes | BRANCH=fleet/x\n") == "Yes"
+
+
+def test_table_row_task_id_helper_rejects_non_rows() -> None:
+    """BUG-004 helpers: non-table / separator / width-mismatch lines return None."""
+    header = ["TASK", "BRANCH", "MERGED"]
+    assert rs._table_row_task_id("no pipes here", header) is None
+    assert rs._table_row_task_id("| --- | --- | --- |", header) is None
+    assert rs._table_row_task_id("| Only | Two |", header) is None
+    assert rs._table_row_task_id("| Keep | fleet/keep | false |", header) == "Keep"
+
+
+def test_locate_resume_target_clears_table_on_blank_line(tmp_path: Path) -> None:
+    """A blank line after a table header ends the active table scan."""
+    ledger = tmp_path / "progress.md"
+    ledger.write_text(
+        "| TASK | BRANCH | MERGED |\n"
+        "| --- | --- | --- |\n"
+        "\n"
+        "| Keep | fleet/keep | false |\n",
+        encoding="utf-8",
+    )
+    # Row after blank is outside the active table; locate should miss it.
+    assert rs._find_resume_target(ledger.read_text(encoding="utf-8").splitlines(True), "Keep") is None
+
+
+def test_bump_resume_count_pads_short_cells() -> None:
+    """When RESUME_COUNT exists in the header but the row is short, pad then bump."""
+    header = ["TASK", "BRANCH", "MERGED", "RESUME_COUNT"]
+    line = "| Keep | fleet/keep | false |\n"
+    rewritten, new_count, working = rs._bump_resume_count_in_table_line(line, header)
+    assert new_count == 1
+    assert working == header
+    assert "1" in rewritten
+
+
+def test_increment_resume_count_table_stops_at_blank_and_ragged_rows(tmp_path: Path) -> None:
+    """When adding RESUME_COUNT, sibling-row rewrite stops at blank / ragged lines."""
+    ledger = tmp_path / "progress.md"
+    ledger.write_text(
+        "| TASK | BRANCH | MERGED |\n"
+        "| --- | --- | --- |\n"
+        "| Keep | fleet/keep | false |\n"
+        "| --- | --- | --- |\n"
+        "| Other | fleet/other | false |\n"
+        "not a table row\n"
+        "| Ragged | only-two |\n",
+        encoding="utf-8",
+    )
+    assert rs.increment_resume_count(ledger, "Keep") == 1
+    text = ledger.read_text(encoding="utf-8")
+    assert "RESUME_COUNT" in text
+    # Keep bumped; Other (same width) got empty RESUME_COUNT cell; ragged left alone.
+    assert "| Keep | fleet/keep | false | 1 |" in text or "| Keep | fleet/keep | false | 1" in text
+    assert "Other" in text
+
