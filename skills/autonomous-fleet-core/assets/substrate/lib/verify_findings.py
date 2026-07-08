@@ -25,6 +25,9 @@ from typing import Any
 MIN_QUOTE_NORM_LEN = 12
 LINE_ANCHOR_SLACK = 2
 MAX_SOURCE_BYTES = 8_000_000
+# Cap findings-doc loads the same way: a multi-GB JSON artifact (or symlink to
+# one) must not OOM the verifier before schema validation even starts (SEC-011).
+MAX_FINDINGS_DOC_BYTES = 8_000_000
 
 # Schema fields the verifier touches. Full schema is the JSON Schema file; this
 # duplicates only what the verifier needs to function without pulling jsonschema
@@ -61,8 +64,24 @@ def load_findings_doc(path: Path) -> dict[str, Any]:
     The schema is JSON. We intentionally do NOT accept YAML here to keep the
     artifact format stable across hosts and to make grep/diff over historical
     archives predictable.
+
+    Reads are capped at MAX_FINDINGS_DOC_BYTES so a hostile or pathological
+    findings artifact cannot OOM the process (mirrors MAX_SOURCE_BYTES).
     """
-    raw = path.read_text(encoding="utf-8")
+    try:
+        with path.open("rb") as fh:
+            raw_bytes = fh.read(MAX_FINDINGS_DOC_BYTES + 1)
+    except OSError as exc:
+        raise ValueError(f"{path}: unreadable ({exc})") from exc
+    if len(raw_bytes) > MAX_FINDINGS_DOC_BYTES:
+        raise ValueError(
+            f"{path}: findings document exceeds "
+            f"{MAX_FINDINGS_DOC_BYTES}-byte read cap"
+        )
+    try:
+        raw = raw_bytes.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"{path}: invalid UTF-8 ({exc})") from exc
     try:
         return json.loads(raw)
     except json.JSONDecodeError as exc:

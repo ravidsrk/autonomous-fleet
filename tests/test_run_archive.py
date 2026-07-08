@@ -3,6 +3,7 @@
 The discipline being protected:
   - Deterministic run_id format (sortable, greppable, collision-resistant)
   - Manifest schema (path-escape safety, kind enum, sha256 integrity, size)
+  - created_utc <= every files[].mtime_utc (run-start precedes accretion)
   - Cross-cutting mtime-ordering invariants that ENCODE Commits 1-3 disciplines:
     * blind_fix < findings (per producer)        — ANTI-ANCHORING
     * verify_summary > findings (per producer)   — stale-audit prevention
@@ -515,6 +516,66 @@ def test_validate_same_second_blind_fix_and_findings_pass(tmp_path):
         ],
     )
     errs = validate_manifest_payload(payload, check_files_on_disk=False)
+    assert errs == [], errs
+
+
+def test_validate_created_utc_after_file_mtime_fails():
+    """BUG-001 / ARCHIVE-01: created_utc later than any files[].mtime_utc MUST
+    fail validation. Format-only checks previously let finalize-time stamps
+    pass even when they post-dated accretion mtimes."""
+    rid = allocate_run_id("doc-sync")
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "run_id": rid,
+        "mission": "doc-sync",
+        # created_utc AFTER the only file mtime — clock-skew / finalize stamp.
+        "created_utc": "2026-06-23T15:00:00Z",
+        "files": [
+            _ofile(
+                "findings.json",
+                "findings",
+                "reviewer-a",
+                "2026-06-23T14:18:33Z",
+            ),
+        ],
+    }
+    errs = validate_manifest_payload(payload, check_files_on_disk=False)
+    assert any("created_utc-precedes-files" in e for e in errs), errs
+    assert any("findings.json" in e for e in errs), errs
+
+
+def test_validate_created_utc_equal_to_file_mtime_passes():
+    """Equality policy: created_utc <= min(mtime) — same-second run-start and
+    first artifact write are compliant (not a strict <)."""
+    rid = allocate_run_id("doc-sync")
+    same = "2026-06-23T14:18:33Z"
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "run_id": rid,
+        "mission": "doc-sync",
+        "created_utc": same,
+        "files": [_ofile("findings.json", "findings", "reviewer-a", same)],
+    }
+    errs = validate_manifest_payload(payload, check_files_on_disk=False)
+    assert errs == [], errs
+
+
+def test_write_manifest_defaults_created_utc_to_run_id_timestamp(tmp_path):
+    """BUG-001 / ARCHIVE-02: omitting created_utc must stamp run-start (from
+    the run_id), not finalize/_utc_now, so created_utc precedes file mtimes."""
+    fixed = datetime(2026, 6, 23, 14, 18, 0, tzinfo=timezone.utc)
+    rid = allocate_run_id("doc-sync", now=fixed)
+    arch = ensure_archive_dir(tmp_path, rid)
+    entry = _make_entry(arch, "a.json", "findings", "reviewer-x")
+    path = write_manifest(arch, run_id=rid, mission="doc-sync", files=[entry])
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert payload["created_utc"] == "2026-06-23T14:18:00Z"
+    created_dt = datetime.fromisoformat(payload["created_utc"].replace("Z", "+00:00"))
+    mtime_dt = datetime.fromisoformat(
+        payload["files"][0]["mtime_utc"].replace("Z", "+00:00")
+    )
+    assert mtime_dt >= created_dt
+    _, errs = load_and_validate_manifest(arch)
     assert errs == [], errs
 
 
@@ -1123,9 +1184,11 @@ def test_progress_parsing_and_headless_archive_capture_runtime_response(tmp_path
     """A headless dry-run archive is the public audit artifact for a runtime
     probe: progress text drives trace statuses, JSON runtime output is archived,
     and the manifest validates after T-FINAL refreshes the trace checksum."""
+    from lib.mission_registry import progress_path as mission_progress_path
+
     source = tmp_path / "source"
-    progress = source / "docs" / "doc-sync-progress.md"
-    progress.parent.mkdir(parents=True)
+    progress = source / mission_progress_path("doc-sync")
+    progress.parent.mkdir(parents=True, exist_ok=True)
     progress.write_text(
         "TASK task-9\nPHASE: DONE\nREVIEWED=t\nMERGED=f\nMISSION: doc-sync\n"
         + ("x" * 3000),
@@ -1166,6 +1229,20 @@ def test_progress_parsing_and_headless_archive_capture_runtime_response(tmp_path
     assert payload["base_branch"] == "main"
     assert "Runtime capture: headless-runtime-response.json." in payload["notes"]
     assert any(entry["path"] == "headless-runtime-response.json" for entry in payload["files"])
+    # ARCHIVE-02: created_utc is run-start (run_id timestamp), not finalize.
+    run_ts, _, _ = parse_run_id(run_id)
+    assert payload["created_utc"] == run_ts.strftime("%Y-%m-%dT%H:%M:%SZ")
+    created_dt = datetime.fromisoformat(
+        payload["created_utc"].replace("Z", "+00:00")
+    )
+    for entry in payload["files"]:
+        mtime_dt = datetime.fromisoformat(
+            entry["mtime_utc"].replace("Z", "+00:00")
+        )
+        assert mtime_dt >= created_dt, (
+            f"{entry['path']}: mtime {entry['mtime_utc']} < created_utc "
+            f"{payload['created_utc']}"
+        )
 
     empty_response = tmp_path / "empty-response.out"
     empty_response.write_text("", encoding="utf-8")

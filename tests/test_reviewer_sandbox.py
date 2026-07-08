@@ -178,6 +178,29 @@ def test_run_sandboxed_role_reviewer_blocks_tracked_file_write(
     assert tracked.read_text(encoding="utf-8") == "old\n"
 
 
+def test_bwrap_reviewer_argv_includes_unshare_net() -> None:
+    """SEC-003: Linux bwrap reviewer placement must drop the host network namespace.
+
+    The macOS sandbox-exec path relies on ``(deny default)`` (no network allow rules).
+    The Linux bwrap path must pass ``--unshare-net`` so the child does not inherit the
+    host netns — otherwise the "Network is DROPPED" contract is comment-only.
+    """
+    source = SANDBOX.read_text(encoding="utf-8")
+    # Isolate the bwrap reviewer branch so we do not match unrelated mentions.
+    marker = "if command -v bwrap >/dev/null 2>&1; then"
+    start = source.index(marker)
+    # Next top-level sibling after the bwrap block is the fallback snapshot path.
+    end = source.index("local before after child_status=0", start)
+    bwrap_block = source[start:end]
+    assert "--unshare-net" in bwrap_block
+    # Flag must appear on the bwrap argv (after `bwrap`, before env -i), not only in comments.
+    assert "bwrap \\\n      --unshare-net \\" in bwrap_block
+    # macOS sandbox-exec profile must remain free of bwrap-only flags.
+    sb_start = source.index("if command -v sandbox-exec >/dev/null 2>&1; then")
+    sb_end = source.index(marker, sb_start)
+    assert "--unshare-net" not in source[sb_start:sb_end]
+
+
 def test_run_sandboxed_role_reviewer_allows_run_tmp_and_test_output(
     git_repo: Path, tmp_path: Path
 ) -> None:
@@ -201,6 +224,92 @@ def test_run_sandboxed_role_reviewer_allows_run_tmp_and_test_output(
     assert (run_dir / "out.txt").read_text(encoding="utf-8") == "run\n"
     assert (run_dir / "tmp" / "tmp.txt").read_text(encoding="utf-8") == "tmp\n"
     assert (run_dir / "test-output" / "out.txt").read_text(encoding="utf-8") == "test\n"
+
+
+@pytest.mark.parametrize(
+    "bad_run_id",
+    [
+        "../../tmp/evil",
+        "../evil",
+        "foo/bar",
+        "not-a-run-id",
+        "20260624T000000Z-doc-sync-ABCDEF",  # uppercase hex rejected
+    ],
+)
+def test_run_sandboxed_rejects_path_traversal_run_id(
+    git_repo: Path, tmp_path: Path, bad_run_id: str
+) -> None:
+    """SEC-002: --run-id must match RUN_ID_PATTERN before mkdir / bwrap mounts."""
+    result = subprocess.run(
+        [
+            str(SANDBOX),
+            "--role",
+            "reviewer",
+            "--run-id",
+            bad_run_id,
+            "--",
+            "echo",
+            "ok",
+        ],
+        cwd=git_repo,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_sandbox_env(tmp_path),
+    )
+
+    assert result.returncode != 0
+    assert "REFUSED" in result.stderr
+    # Must refuse before creating escaped paths outside .fleet/runs/.
+    assert not (git_repo / "tmp" / "evil").exists()
+    assert not (tmp_path / "evil").exists()
+    if bad_run_id and "/" not in bad_run_id and ".." not in bad_run_id:
+        assert not (git_repo / ".fleet" / "runs" / bad_run_id).exists()
+
+
+def test_run_sandboxed_rejects_fleet_run_id_path_traversal(
+    git_repo: Path, tmp_path: Path
+) -> None:
+    """SEC-002: FLEET_RUN_ID is validated the same way as --run-id."""
+    env = {**_sandbox_env(tmp_path), "FLEET_RUN_ID": "../../tmp/evil"}
+    result = subprocess.run(
+        [str(SANDBOX), "--role", "reviewer", "--", "echo", "ok"],
+        cwd=git_repo,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+
+    assert result.returncode != 0
+    assert "REFUSED" in result.stderr
+    assert "ok" not in result.stdout
+
+
+def test_run_sandboxed_accepts_valid_run_id(git_repo: Path, tmp_path: Path) -> None:
+    """SEC-002: a well-formed RUN_ID still reaches exec and writes under .fleet/runs/."""
+    result = subprocess.run(
+        [
+            str(SANDBOX),
+            "--role",
+            "reviewer",
+            "--run-id",
+            RUN_ID,
+            "--",
+            "sh",
+            "-c",
+            'echo ok > "$FLEET_RUN_DIR/accepted.txt"',
+        ],
+        cwd=git_repo,
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_sandbox_env(tmp_path),
+    )
+
+    run_dir = git_repo / ".fleet" / "runs" / RUN_ID
+    assert result.returncode == 0, result.stderr
+    assert (run_dir / "accepted.txt").read_text(encoding="utf-8") == "ok\n"
 
 
 def test_run_sandboxed_fallback_detects_untracked_file_write(

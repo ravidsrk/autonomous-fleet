@@ -5,6 +5,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -132,7 +133,16 @@ def test_fixture_cli_json_reports_real_layer_mix() -> None:
     by_name = {layer["name"]: layer for layer in payload["layers"]}
 
     assert rc == payload["exit_code"] == 1
-    assert set(by_name) == {"run-archive", "findings", "blind-fix", "fleet-outcome", "trace", "identity"}
+    assert set(by_name) == {
+        "run-archive",
+        "findings",
+        "blind-fix",
+        "fleet-outcome",
+        "trace",
+        "identity",
+        "sha-pin",
+        "reviewer-sandbox",
+    }
     assert by_name["findings"]["status"] == fv.FAIL
     assert by_name["findings"]["errors"] == ["unverified finding(s): F-002"]
     assert by_name["blind-fix"]["status"] == fv.PASS
@@ -141,7 +151,9 @@ def test_fixture_cli_json_reports_real_layer_mix() -> None:
     assert by_name["run-archive"]["status"] == fv.PASS
     assert by_name["identity"]["status"] == fv.PASS
     assert by_name["identity"]["data"]["run_id"] == "20260623T000000Z-adversarial-review-and-fix-000001"
-    assert payload["summary"] == {fv.PASS: 5, fv.FAIL: 1, fv.SKIP: 0}
+    assert by_name["sha-pin"]["status"] == fv.SKIP
+    assert by_name["reviewer-sandbox"]["status"] == fv.PASS
+    assert payload["summary"] == {fv.PASS: 6, fv.FAIL: 1, fv.SKIP: 1}
 
 
 def test_corrupted_manifest_cli_prints_table_and_exits_one(tmp_path: Path) -> None:
@@ -178,7 +190,7 @@ def test_empty_run_dir_is_not_success(tmp_path: Path) -> None:
 
     assert rc == 2
     assert err == ""
-    assert out.count("SKIP") == 6
+    assert out.count("SKIP") == 8
 
 
 def test_identity_fails_manifest_outcome_run_id_mismatch_and_exits_one(tmp_path: Path) -> None:
@@ -483,3 +495,269 @@ def test_action_yaml_is_minimal_composite_and_references_existing_cli() -> None:
     assert '"$RUN_DIR"' in verify_step["run"] and '--repo "$REPO"' in verify_step["run"]
     assert "--json" in verify_step["run"] and "tee" in verify_step["run"]
     assert (ROOT / "scripts" / "fleet_verify.py").is_file()
+
+
+def _git(repo: Path, *args: str) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(repo), *args],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
+
+
+def _sha_pin_record(reviewed_sha: str, branch: str = "fleet/sha-pin") -> dict[str, Any]:
+    return {
+        "schema_version": "1.0",
+        "review_id": "review-1",
+        "reviewed_sha": reviewed_sha,
+        "branch": branch,
+        "verdict": "approve",
+    }
+
+
+def test_sha_pin_layer_fails_when_reviewed_sha_diverges(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    _git(repo, "config", "user.name", "Test User")
+    _git(repo, "config", "user.email", "test@example.com")
+    _git(repo, "checkout", "-b", "fleet/sha-pin")
+    (repo / "a.txt").write_text("one\n", encoding="utf-8")
+    _git(repo, "add", "a.txt")
+    _git(repo, "commit", "-m", "c1")
+    c1 = _git(repo, "rev-parse", "HEAD")
+    (repo / "a.txt").write_text("two\n", encoding="utf-8")
+    _git(repo, "add", "a.txt")
+    _git(repo, "commit", "-m", "c2")
+    c2 = _git(repo, "rev-parse", "HEAD")
+
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    notes = run_dir / "notes.txt"
+    notes.write_text("evidence\n", encoding="utf-8")
+    _write_manifest(run_dir, [(notes, "other")])
+    (run_dir / "sha-pin.json").write_text(
+        json.dumps(_sha_pin_record(c1)) + "\n", encoding="utf-8"
+    )
+
+    rc, out, _err = _run_cli(str(run_dir), "--repo", str(repo), "--json")
+    payload = json.loads(out)
+    by_name = {layer["name"]: layer for layer in payload["layers"]}
+
+    assert rc == payload["exit_code"] == 1
+    assert "sha-pin" in by_name
+    assert by_name["sha-pin"]["status"] == fv.FAIL
+    assert any("OUTDATED" in err and c1 in err and c2 in err for err in by_name["sha-pin"]["errors"])
+
+
+def test_sha_pin_layer_passes_when_pin_matches_head(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    _git(repo, "config", "user.name", "Test User")
+    _git(repo, "config", "user.email", "test@example.com")
+    _git(repo, "checkout", "-b", "fleet/sha-pin")
+    (repo / "a.txt").write_text("one\n", encoding="utf-8")
+    _git(repo, "add", "a.txt")
+    _git(repo, "commit", "-m", "c1")
+    head = _git(repo, "rev-parse", "HEAD")
+
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    notes = run_dir / "notes.txt"
+    notes.write_text("evidence\n", encoding="utf-8")
+    _write_manifest(run_dir, [(notes, "other")])
+    (run_dir / "sha-pin.json").write_text(
+        json.dumps(_sha_pin_record(head)) + "\n", encoding="utf-8"
+    )
+
+    rc, out, _err = _run_cli(str(run_dir), "--repo", str(repo), "--json")
+    payload = json.loads(out)
+    by_name = {layer["name"]: layer for layer in payload["layers"]}
+
+    assert by_name["sha-pin"]["status"] == fv.PASS
+    assert by_name["sha-pin"]["data"]["records"] == 1
+    assert by_name["run-archive"]["status"] == fv.PASS
+    assert rc == payload["exit_code"] == 0
+
+
+def test_reviewer_sandbox_layer_fails_on_reviewer_diff_attribution(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    patch = run_dir / "patch.diff"
+    patch.write_text("diff --git a/x b/x\n", encoding="utf-8")
+    manifest = {
+        "schema_version": "1.0",
+        "run_id": TEST_RUN_ID,
+        "mission": TEST_MISSION,
+        "candidate_branch": "fleet/candidate",
+        "created_utc": "2026-01-01T00:00:00Z",
+        "files": [
+            {
+                "path": "patch.diff",
+                "kind": "diff",
+                "sha256": "0" * 64,
+                "mtime_utc": "2026-01-01T00:01:00Z",
+                "producer": "p0-reviewer-codex",
+                "bytes": patch.stat().st_size,
+            }
+        ],
+    }
+    (run_dir / "manifest.json").write_text(json.dumps(manifest) + "\n", encoding="utf-8")
+
+    rc, out, _err = _run_cli(str(run_dir), "--repo", str(ROOT), "--json")
+    payload = json.loads(out)
+    by_name = {layer["name"]: layer for layer in payload["layers"]}
+
+    assert rc == payload["exit_code"] == 1
+    assert by_name["reviewer-sandbox"]["status"] == fv.FAIL
+    assert any("candidate branch" in err for err in by_name["reviewer-sandbox"]["errors"])
+
+
+def test_reviewer_sandbox_layer_passes_on_clean_reviewer_manifest(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    findings = run_dir / "p0-review-findings.json"
+    findings.write_text(json.dumps(_minimal_findings()), encoding="utf-8")
+    # Manifest with reviewer-safe kinds only (no write attribution).
+    # Use write_manifest so run-archive layer can PASS checksum validation.
+    _write_manifest(run_dir, [(findings, "findings")])
+    # Rewrite producer to a reviewer slug so the sandbox layer actually checks files.
+    payload = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    payload["candidate_branch"] = "fleet/candidate"
+    for entry in payload["files"]:
+        entry["producer"] = "p0-reviewer-codex"
+    (run_dir / "manifest.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    # Recompute sha after rewrite? write_manifest already hashed findings; producer change
+    # does not affect sha256 of the file content. Good.
+    report = fv.verify_run(run_dir, ROOT)
+    by_name = {layer["name"]: layer for layer in report["layers"]}
+
+    assert by_name["reviewer-sandbox"]["status"] == fv.PASS
+    assert by_name["reviewer-sandbox"]["data"]["summary"]["checked_files"] >= 1
+    assert by_name["sha-pin"]["status"] == fv.SKIP
+
+def test_sha_pin_unreadable_record_and_merged_marker_paths(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    notes = run_dir / "notes.txt"
+    notes.write_text("evidence\n", encoding="utf-8")
+    _write_manifest(run_dir, [(notes, "other")])
+    (run_dir / "sha-pin.json").write_bytes(b"\xff\xfe\xfa")
+    (run_dir / "fleet-outcome.yaml").write_text("status: done\n", encoding="utf-8")
+
+    sha = {layer["name"]: layer for layer in fv.verify_run(run_dir, ROOT)["layers"]}["sha-pin"]
+    assert sha["status"] == fv.FAIL
+    assert any("cannot read" in err for err in sha["errors"])
+
+    # Merged marker + unknown branch is N/A (PASS) once a valid pin is present.
+    run2 = tmp_path / "run2"
+    run2.mkdir()
+    notes2 = run2 / "notes.txt"
+    notes2.write_text("evidence\n", encoding="utf-8")
+    _write_manifest(run2, [(notes2, "other")])
+    (run2 / "fleet-outcome.yaml").write_text("status: done\nmerged: true\n", encoding="utf-8")
+    (run2 / "sha-pin.json").write_text(
+        json.dumps(_sha_pin_record("a" * 40, branch="fleet/gone")) + "\n",
+        encoding="utf-8",
+    )
+    sha2 = {layer["name"]: layer for layer in fv.verify_run(run2, ROOT)["layers"]}["sha-pin"]
+    assert sha2["status"] == fv.PASS
+
+
+def test_sha_pin_subdir_and_reviewer_sandbox_unreadable(tmp_path: Path) -> None:
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    notes = run_dir / "notes.txt"
+    notes.write_text("evidence\n", encoding="utf-8")
+    _write_manifest(run_dir, [(notes, "other")])
+    pins = run_dir / "sha-pins"
+    pins.mkdir()
+    (pins / "pin.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "review_id": "r1",
+                "reviewed_sha": "b" * 40,
+                "branch": "fleet/sha-pin",
+                "verdict": "request_changes",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    sha = {layer["name"]: layer for layer in fv.verify_run(run_dir, ROOT)["layers"]}["sha-pin"]
+    assert sha["status"] == fv.PASS
+
+    bad = tmp_path / "bad"
+    bad.mkdir()
+    (bad / "manifest.json").write_bytes(b"\xff\xfe\xfa")
+    sandbox = {layer["name"]: layer for layer in fv.verify_run(bad, ROOT)["layers"]}["reviewer-sandbox"]
+    assert sandbox["status"] == fv.FAIL
+    assert sandbox["detail"] == "manifest unreadable"
+
+def test_sha_pin_skips_unreadable_readiness_sibling(tmp_path: Path) -> None:
+    """Unreadable readiness siblings must not crash the sha-pin layer."""
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    notes = run_dir / "notes.txt"
+    notes.write_text("ok\n", encoding="utf-8")
+    _write_manifest(run_dir, [(notes, "other")])
+    # Unreadable sibling that matches the readiness name filter — exercised
+    # when loading sha-pin records (merged-marker scan).
+    (run_dir / "readiness.md").write_bytes(b"\xff\xfe\xfa")
+    (run_dir / "sha-pin.json").write_text(
+        json.dumps(_sha_pin_record("a" * 40, branch="fleet/gone-branch")) + "\n",
+        encoding="utf-8",
+    )
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    # Unreadable readiness → no merged marker; unknown branch → FAIL (not crash).
+    report = fv.verify_run(run_dir, repo)
+    by_name = {layer["name"]: layer for layer in report["layers"]}
+    assert by_name["sha-pin"]["status"] == fv.FAIL
+    assert any("HEAD unknown" in err for err in by_name["sha-pin"]["errors"])
+
+
+def test_sha_pin_merged_marker_via_readiness_sibling(tmp_path: Path) -> None:
+    """A readiness sibling with merged=true marks the pin merged (N/A on unknown branch)."""
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    notes = run_dir / "notes.txt"
+    notes.write_text("ok\n", encoding="utf-8")
+    _write_manifest(run_dir, [(notes, "other")])
+    (run_dir / "readiness.md").write_text("status: done\nmerged: true\n", encoding="utf-8")
+    (run_dir / "sha-pin.json").write_text(
+        json.dumps(_sha_pin_record("a" * 40, branch="fleet/gone-branch")) + "\n",
+        encoding="utf-8",
+    )
+    # Repo with no such branch → HEAD unknown; merged marker makes it N/A (PASS).
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    report = fv.verify_run(run_dir, repo)
+    by_name = {layer["name"]: layer for layer in report["layers"]}
+    assert by_name["sha-pin"]["status"] == fv.PASS
+
+
+def test_reviewer_sandbox_fail_without_violation_messages(tmp_path: Path, monkeypatch) -> None:
+    """Fallback error when ok=False but violations list is empty."""
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    notes = run_dir / "notes.txt"
+    notes.write_text("ok\n", encoding="utf-8")
+    _write_manifest(run_dir, [(notes, "other")])
+
+    def fake_verify(manifest, **kwargs):
+        return {"ok": False, "violations": [], "checked_files": 0}
+
+    monkeypatch.setattr(fv, "verify_reviewer_sandbox_manifest", fake_verify)
+    report = fv.verify_run(run_dir, ROOT)
+    by_name = {layer["name"]: layer for layer in report["layers"]}
+    assert by_name["reviewer-sandbox"]["status"] == fv.FAIL
+    assert by_name["reviewer-sandbox"]["errors"] == ["reviewer-sandbox verification failed"]
+

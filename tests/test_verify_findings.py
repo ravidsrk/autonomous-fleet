@@ -27,6 +27,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from lib.verify_findings import (  # noqa: E402
+    MAX_FINDINGS_DOC_BYTES,
+    load_findings_doc,
     validate_findings_doc,
     verify_finding_against_source,
     verify_findings_doc,
@@ -492,6 +494,33 @@ def test_cli_exit_2_on_invalid_json(tmp_path: Path):
     rc, _out, err = _run_cli([str(doc_path), "--repo", str(tmp_path)])
     assert rc == 2
     assert "invalid JSON" in err
+
+
+def test_load_findings_doc_rejects_oversized_file(tmp_path: Path):
+    """SEC-011: findings JSON larger than the read cap must fail closed with a
+    clear ValueError — never slurp the whole file into memory."""
+    doc_path = tmp_path / "huge.json"
+    doc_path.write_bytes(b"x" * (MAX_FINDINGS_DOC_BYTES + 1))
+    with pytest.raises(ValueError, match="read cap"):
+        load_findings_doc(doc_path)
+
+
+def test_load_findings_doc_accepts_normal_sized_doc(tmp_path: Path):
+    """Normal findings docs under the cap still load unchanged."""
+    doc_path = tmp_path / "ok.json"
+    doc_path.write_text(json.dumps(_minimal_doc()), encoding="utf-8")
+    loaded = load_findings_doc(doc_path)
+    assert loaded["schema_version"] == "1.0"
+    assert loaded["mission"] == "adversarial-review-and-fix"
+
+
+def test_cli_exit_2_on_oversized_findings_doc(tmp_path: Path):
+    """Oversized findings file is a schema/usage error exit (no OOM)."""
+    doc_path = tmp_path / "huge.json"
+    doc_path.write_bytes(b"x" * (MAX_FINDINGS_DOC_BYTES + 1))
+    rc, _out, err = _run_cli([str(doc_path), "--repo", str(tmp_path)])
+    assert rc == 2
+    assert "read cap" in err
 
 
 def test_cli_exit_2_on_schema_violation(tmp_path: Path):

@@ -14,17 +14,20 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
+from lib import fleet_run  # noqa: E402
 from lib import namespace as ns  # noqa: E402
 
-RUN_ID = "20260623T141522Z-m-3a9c2f"
-RUN_ID_2 = "20260623T141522Z-m-aabbcc"
+# Multi-char mission slug required by fleet_run.RUN_ID_PATTERN (BUG-003).
+RUN_ID = "20260623T141522Z-doc-sync-3a9c2f"
+RUN_ID_2 = "20260623T141522Z-doc-sync-aabbcc"
+SHORT_SLUG_RUN_ID = "20260623T141522Z-m-3a9c2f"
 
 
 def _manifest(run_id: str = RUN_ID, progress_path: str = "progress.md") -> dict[str, object]:
     return {
         "schema_version": "1.0",
         "run_id": run_id,
-        "mission": "m",
+        "mission": "doc-sync",
         "files": [
             {"path": "notes.txt", "kind": "other"},
             {"path": progress_path, "kind": "progress"},
@@ -151,7 +154,25 @@ def test_manifest_shape_errors_and_missing_ledger_are_reported() -> None:
 
 def test_invalid_run_id_rejected() -> None:
     with pytest.raises(ValueError, match="run_id must end"):
-        ns.derive_run_short("20260623T141522Z-m-nothex")
+        ns.derive_run_short("20260623T141522Z-doc-sync-nothex")
+
+
+def test_one_char_mission_slug_rejected() -> None:
+    """BUG-003 / NAMESPACE-01: 1-char slugs match the old loose regex but not
+    fleet_run.RUN_ID_PATTERN — derive_run_short must raise."""
+    with pytest.raises(ValueError, match="run_id must end"):
+        ns.derive_run_short(SHORT_SLUG_RUN_ID)
+
+
+def test_multi_char_mission_slug_still_works() -> None:
+    assert ns.derive_run_short(RUN_ID) == "3a9c2f"
+    assert ns.derive_run_short("20260623T141522Z-ab-3a9c2f") == "3a9c2f"
+
+
+def test_run_id_pattern_matches_fleet_run() -> None:
+    """namespace._RUN_ID_RE MUST stay identical to fleet_run.RUN_ID_PATTERN."""
+    assert ns._RUN_ID_RE.pattern == fleet_run.RUN_ID_PATTERN.pattern
+    assert ns._RUN_ID_RE is fleet_run.RUN_ID_PATTERN
 
 
 def test_cli_accepts_suffixed_archive_from_default_scan(tmp_path: Path) -> None:
