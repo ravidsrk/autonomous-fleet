@@ -255,3 +255,20 @@ def test_exploratory_on_disk_registered_flags_orphan_and_skips_archive(tmp_path:
 def test_exploratory_on_disk_registered_empty_when_base_missing(tmp_path: Path):
     assert rl.lint_exploratory_on_disk_registered(tmp_path, missions={}) == []
 
+
+def test_cli_does_not_duplicate_exploratory_on_disk_errors(tmp_path: Path):
+    """Greptile #148: CLI must call lint_exploratory_on_disk_registered once.
+
+    An unregistered exploratory mission should emit exactly one registry-lint
+    line for that slug — not a duplicated pair from a double append.
+    """
+    base = tmp_path / "docs" / "exploratory" / "missions" / "orphan-mission"
+    base.mkdir(parents=True)
+    (base / "SKILL.md").write_text("# orphan\n", encoding="utf-8")
+    # Minimal skills/ so other lints don't drown the assertion; empty root still
+    # produces many shipped-dir errors, so filter to the exploratory message.
+    rc, _out, err = _run_cli(str(tmp_path))
+    assert rc == 1
+    hits = [line for line in err.splitlines() if "orphan-mission" in line]
+    assert len(hits) == 1, f"expected one orphan-mission error, got {hits!r}"
+
