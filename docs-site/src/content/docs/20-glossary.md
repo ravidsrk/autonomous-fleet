@@ -314,9 +314,9 @@ forced merge. See [Troubleshooting](/14-troubleshooting/).
 
 The read-only placement for the reviewer role plus its audit-side check. Live enforcement is
 `scripts/run-sandboxed.sh --role reviewer`, which runs the reviewer with the candidate git tree
-read-only and only `.fleet/runs/<run_id>/` writable, using `sandbox-exec` on macOS, `bwrap` on Linux,
-or, when neither exists, a best-effort post-exec tracked-file hash assertion (it exits 4 if the
-reviewer modified any tracked file outside the run dir). The audit companion is
+read-only and only `.fleet/runs/<run_id>/` writable, using `sandbox-exec` on macOS or `bwrap` on Linux.
+If neither exists, the role REFUSES (exit 4) unless `FLEET_SECURITY_OVERRIDE_ACK=1`, which enables a
+detect-only post-exec hash audit. The audit companion is
 `verify_reviewer_sandbox.py` (wired into `validate-all`): in each archive manifest, a reviewer
 producer slug may only emit `blind_fix`, `findings`, and `verify_summary` entries, and is a hard
 failure if attributed any `diff` or `commit` on the candidate branch. The kill switch is

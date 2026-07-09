@@ -630,8 +630,10 @@ the substrate has grown more checkable gates around that spine. These are not ne
 each with its own `FLEET_DISABLE_*` kill switch, and most of them wired into `scripts/validate-all.sh`
 so they run on every validation pass. They follow the same discipline as the four layers: the library
 is side-effect free and the CLI does the filesystem and git work, each kill switch routes through the
-same `scripts/lib/substrate_disable.py` helper, and a truthy env var makes the CLI early-exit 0 with the
-pinned `<label>: DISABLED via <ENV_VAR>=1 (no-op exit 0)` stderr notice.
+same `scripts/lib/substrate_disable.py` helper. Escape-hatch knobs early-exit 0 with the pinned
+`<label>: DISABLED via <ENV_VAR>=1 (no-op exit 0)` stderr notice; security/integrity knobs
+(sha-pin, reviewer-sandbox, namespacing, registry-lint) fail closed unless
+`FLEET_SECURITY_OVERRIDE_ACK=1` is also set.
 
 Five of them are gates in `validate-all.sh`, one (the recovery scanner) is an advisory tool that runs at
 resume rather than as a standing gate:

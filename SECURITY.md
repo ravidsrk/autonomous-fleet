@@ -91,10 +91,13 @@ a run against an untrusted target. The registry has grown past the original four
 `FLEET_DISABLE_RUN_ARCHIVE`); the live set now also includes `FLEET_DISABLE_SHA_PIN`,
 `FLEET_DISABLE_ROUND_BUDGET`, `FLEET_DISABLE_REGISTRY_LINT`, `FLEET_DISABLE_REVIEWER_SANDBOX`, and
 `FLEET_DISABLE_NAMESPACING`. The canonical registry and per-knob semantics live in
-`skills/autonomous-fleet-core/references/substrate-disable-knobs.md`. The security-critical gates —
-the SHA-pin and reviewer-sandbox attribution checks — are being moved to fail closed (a missing or
-unreadable manifest fails the gate) rather than fail open, so a malformed run archive cannot silently
-pass them.
+`skills/autonomous-fleet-core/references/substrate-disable-knobs.md`. The security/integrity gates — SHA-pin, reviewer-sandbox attribution, namespacing, and
+registry-lint — **fail closed**. A bare `FLEET_DISABLE_*=1` is not enough to drop them;
+operators must also set `FLEET_SECURITY_OVERRIDE_ACK=1` and record the decision in
+`DECISIONS.md`. Without that ack the CLI exits non-zero, so a stray env var in CI cannot
+quietly disable a supply-chain or isolation check. Separately, `--role reviewer` in
+`run-sandboxed.sh` refuses when neither `sandbox-exec` nor `bwrap` is present unless the
+same ack is set (then a post-exec hash audit runs — detect-only, not prevention).
 
 ## What we do not defend against
 

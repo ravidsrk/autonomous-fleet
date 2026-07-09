@@ -666,6 +666,27 @@ def test_cli_kill_switch_short_circuits_bad_repo(tmp_path: Path, monkeypatch):
     assert "repo not a directory" not in err
 
 
+def test_cli_strict_blocks_missing_repo(tmp_path: Path, monkeypatch):
+    """SEC-010: FLEET_STOP_VERIFY_STRICT=1 blocks when --repo is missing."""
+    monkeypatch.setenv("FLEET_STOP_VERIFY_STRICT", "1")
+    rc, out, err = _run_cli(["--repo", "/this/does/not/exist", "--json"])
+    assert rc == 0  # hook always exits 0; decision is in JSON
+    assert "repo not a directory" in err
+    assert '"decision": "block"' in out
+    assert "repo not found (strict)" in out
+
+
+def test_cli_default_allows_missing_repo(tmp_path: Path, monkeypatch):
+    """SEC-010: default remains fail-open on bad --repo."""
+    monkeypatch.delenv("FLEET_STOP_VERIFY_STRICT", raising=False)
+    rc, out, err = _run_cli(["--repo", "/this/does/not/exist", "--json"])
+    assert rc == 0
+    assert "repo not a directory" in err
+    # ALLOW emits decision:"approve" (CC hook vocabulary), not "allow".
+    assert '"decision": "approve"' in out
+    assert "repo not found" in out
+
+
 def test_cli_fails_open_on_internal_error(tmp_path: Path, monkeypatch):
     """The fail-open guarantee: an internal exception must result in
     ALLOW + warning, never a non-zero exit, never a crash to the CC

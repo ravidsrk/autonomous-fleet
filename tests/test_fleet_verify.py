@@ -480,7 +480,13 @@ def test_action_yaml_is_minimal_composite_and_references_existing_cli() -> None:
     assert action["runs"]["using"] == "composite"
     assert "run-dir" in action["inputs"] and action["inputs"]["run-dir"]["required"] is True
     assert all(not str(step.get("uses", "")).startswith("actions/checkout@") for step in steps)
-    assert any(step.get("uses") == "actions/setup-python@v5" for step in steps)
+    # SEC-004: pin setup-python to a full commit SHA (tag comment optional).
+    assert any(
+        str(step.get("uses", "")).startswith(
+            "actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065"
+        )
+        for step in steps
+    )
     install_steps = [step for step in steps if step["name"] == "Install Python dependencies"]
     assert install_steps == [
         {"name": "Install Python dependencies", "shell": "bash", "run": 'python -m pip install "PyYAML>=6.0"'}

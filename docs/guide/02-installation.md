@@ -76,7 +76,7 @@ Install exactly the skills you need. This is what the Quickstart ran, with one a
 your runtime. Run this **in a terminal, in your project's root directory**:
 
 ```bash
-npx skills add https://github.com/ravidsrk/autonomous-fleet \
+npx skills@1.5.12 add https://github.com/ravidsrk/autonomous-fleet \
   --skill setup-autonomous-fleet \
   --skill autonomous-fleet \
   --skill autonomous-fleet-core \

@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from lib.adapter_preflight import (  # noqa: E402
+    _auth_timeout_s,
     DEFAULT_AUTH_TIMEOUT_S,
     Intent,
     activity_hooks_advisory,
@@ -273,3 +274,10 @@ def test_load_requires_rejects_non_mapping_block(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="must be a YAML mapping"):
         load_requires(adapter)
+
+
+def test_auth_timeout_nonpositive_env_falls_back_to_default() -> None:
+    """OPS-002: zero/negative FLEET_ADAPTER_AUTH_TIMEOUT_S must not disable the timeout."""
+    assert _auth_timeout_s({"FLEET_ADAPTER_AUTH_TIMEOUT_S": "0"}) == 30.0
+    assert _auth_timeout_s({"FLEET_ADAPTER_AUTH_TIMEOUT_S": "-5"}) == 30.0
+

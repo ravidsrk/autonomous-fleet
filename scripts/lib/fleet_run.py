@@ -79,6 +79,21 @@ RUN_ID_PATTERN = re.compile(
     r"^[0-9]{8}T[0-9]{6}Z-[a-z][a-z0-9-]*[a-z0-9]-[0-9a-f]{6}$"
 )
 
+
+def collect_run_archives(root: Path) -> list[Path]:
+    """Return ``.fleet/runs/<run_id>/`` dirs whose basename matches ``RUN_ID_PATTERN``.
+
+    Shared by ``validate_run_archive`` and ``validate_namespacing`` so both
+    gates scan the same archive set (ARCH-005). Scratch dirs (e.g. ``tmp/``)
+    and non-canonical basenames are skipped even if they contain a manifest.
+    """
+    base = Path(root) / ".fleet" / "runs"
+    if not base.is_dir():
+        return []
+    return sorted(
+        d for d in base.iterdir() if d.is_dir() and RUN_ID_PATTERN.match(d.name)
+    )
+
 # UTC ISO 8601 with optional fractional seconds, always Z-terminated.
 UTC_ISO_PATTERN = re.compile(
     r"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?Z$"

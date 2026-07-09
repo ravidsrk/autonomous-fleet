@@ -49,7 +49,18 @@ def test_cli_passes_on_real_repo():
 
 
 def test_cli_kill_switch_disables():
+    # SEC-009: bare disable fails closed without ack.
     rc, _, err = _run_cli(str(REPO_ROOT), env={"FLEET_DISABLE_REGISTRY_LINT": "1"})
+    assert rc == 1
+    assert "REFUSING" in err and "FLEET_SECURITY_OVERRIDE_ACK" in err
+
+    rc, _, err = _run_cli(
+        str(REPO_ROOT),
+        env={
+            "FLEET_DISABLE_REGISTRY_LINT": "1",
+            "FLEET_SECURITY_OVERRIDE_ACK": "1",
+        },
+    )
     assert rc == 0
     assert "DISABLED" in err and "FLEET_DISABLE_REGISTRY_LINT" in err
 
@@ -220,3 +231,44 @@ def test_external_pins_reject_placeholder_values(tmp_path: Path) -> None:
 
 def test_external_pins_propagates_load_errors(tmp_path: Path):
     assert rl.lint_external_source_pins(tmp_path) == ["skills-lock.json: missing"]
+
+
+def test_exploratory_on_disk_registered_flags_orphan_and_skips_archive(tmp_path: Path):
+    """ARCH-004: active exploratory SKILL trees need a MISSIONS row; archive/ is ignored."""
+    base = tmp_path / "docs" / "exploratory" / "missions"
+    orphan = base / "orphan-mission"
+    orphan.mkdir(parents=True)
+    (orphan / "SKILL.md").write_text("# orphan\n", encoding="utf-8")
+    archived = base / "archive" / "parked"
+    archived.mkdir(parents=True)
+    (archived / "SKILL.md").write_text("# parked\n", encoding="utf-8")
+    # A directory named archive under missions/ with SKILL.md must also be skipped
+    # (glob is */SKILL.md — archive/SKILL.md would be the only archive hit).
+    (base / "archive" / "SKILL.md").write_text("# not a mission\n", encoding="utf-8")
+
+    errors = rl.lint_exploratory_on_disk_registered(tmp_path, missions={})
+    assert len(errors) == 1
+    assert "orphan-mission" in errors[0]
+    assert not any("archive/" in e.split("has no")[0] for e in errors)
+
+
+def test_exploratory_on_disk_registered_empty_when_base_missing(tmp_path: Path):
+    assert rl.lint_exploratory_on_disk_registered(tmp_path, missions={}) == []
+
+
+def test_cli_does_not_duplicate_exploratory_on_disk_errors(tmp_path: Path):
+    """Greptile #148: CLI must call lint_exploratory_on_disk_registered once.
+
+    An unregistered exploratory mission should emit exactly one registry-lint
+    line for that slug — not a duplicated pair from a double append.
+    """
+    base = tmp_path / "docs" / "exploratory" / "missions" / "orphan-mission"
+    base.mkdir(parents=True)
+    (base / "SKILL.md").write_text("# orphan\n", encoding="utf-8")
+    # Minimal skills/ so other lints don't drown the assertion; empty root still
+    # produces many shipped-dir errors, so filter to the exploratory message.
+    rc, _out, err = _run_cli(str(tmp_path))
+    assert rc == 1
+    hits = [line for line in err.splitlines() if "orphan-mission" in line]
+    assert len(hits) == 1, f"expected one orphan-mission error, got {hits!r}"
+

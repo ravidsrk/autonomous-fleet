@@ -78,6 +78,18 @@ EXPECTED_MISSION_DOCS = {
         "progress": "incident-progress.md",
         "readiness": "incident-readiness.md",
     },
+    "scaffold-align": {
+        "progress": "scaffold-align-progress.md",
+        "readiness": "scaffold-align-readiness.md",
+    },
+    "contract-first-build": {
+        "progress": "contract-build-progress.md",
+        "readiness": "contract-build-readiness.md",
+    },
+    "agents-layer": {
+        "progress": "agents-layer-progress.md",
+        "readiness": "agents-layer-readiness.md",
+    },
 }
 
 EXPECTED_MISSION_METRICS = {
@@ -107,6 +119,21 @@ EXPECTED_MISSION_METRICS = {
     "devex-audit": frozenset({"dx_score", "doc_gaps_open"}),
     "release-document": frozenset({"doc_gaps_closed", "deploy_verified"}),
     "incident-investigate": frozenset({"rca_confirmed", "regression_tests_added"}),
+    "scaffold-align": frozenset(
+        {"align_items_open", "check_green", "seam_frozen", "scaffold_ok"}
+    ),
+    "contract-first-build": frozenset(
+        {"in_items_open", "roadmap_count", "stubs_remaining", "ops_queue_count"}
+    ),
+    "agents-layer": frozenset(
+        {
+            "migration_items_open",
+            "seam_unwired_open",
+            "old_axis_removed",
+            "evals_passing",
+            "deploy_pending_ops",
+        }
+    ),
 }
 
 

@@ -509,6 +509,26 @@ def lint_campaign_missions(
     return errors
 
 
+def lint_exploratory_on_disk_registered(
+    root: Path, missions: Mapping[str, Mapping[str, Any]] = MISSIONS
+) -> list[str]:
+    """Every active exploratory SKILL tree must have a MISSIONS registry row (ARCH-004)."""
+    errors: list[str] = []
+    base = root / "docs" / "exploratory" / "missions"
+    if not base.is_dir():
+        return errors
+    for skill in sorted(base.glob("*/SKILL.md")):
+        if skill.parent.name == "archive":
+            continue
+        slug = skill.parent.name
+        if slug not in missions:
+            errors.append(
+                f"docs/exploratory/missions/{slug}/SKILL.md has no fleet_registry.MISSIONS row "
+                f"(register the mission or move it under archive/)"
+            )
+    return errors
+
+
 def lint_registry(
     root: Path, missions: Mapping[str, Mapping[str, Any]] = MISSIONS
 ) -> list[str]:
@@ -523,4 +543,5 @@ def lint_registry(
         + lint_adapter_contract_single_source(root)
         + lint_external_source_pins(root)
         + lint_campaign_missions(root, missions)
+        + lint_exploratory_on_disk_registered(root, missions)
     )

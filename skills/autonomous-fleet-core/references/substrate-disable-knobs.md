@@ -16,7 +16,7 @@ This exists for two reasons:
 
 # Env-var registry
 
-The substrate ships **nine** live knobs across three classes. There is
+The substrate ships **twelve** live knobs across three classes. There is
 exactly ONE env var per layer, and the helper
 (`<SUBSTRATE>/lib/substrate_disable.py`) is the only place the truthy rule
 and the stderr-notice format live.
@@ -40,7 +40,6 @@ can be waved through for a single run.
 
 | Layer | Script | Env var |
 |---|---|---|
-| registry-lint | `scripts/registry_lint.py` | `FLEET_DISABLE_REGISTRY_LINT` |
 | round-budget | `<SUBSTRATE>/verify_round_budget.py` | `FLEET_DISABLE_ROUND_BUDGET` |
 | nudge-dedup | `<SUBSTRATE>/verify_nudge_dedup.py` | `FLEET_DISABLE_NUDGE_DEDUP` |
 | stacked-pr | `<SUBSTRATE>/verify_stacked_pr.py` | `FLEET_DISABLE_STACKED_PR` |
@@ -48,18 +47,19 @@ can be waved through for a single run.
 
 ## Security / integrity knobs (FAIL-CLOSED — explicit operator override required)
 
-These three guard supply-chain and isolation invariants, not advisory
-quality gates. They do **not** silently no-op on a bare truthy value:
-disabling them requires an explicit operator override (per the integrity
-agents' fail-closed change), so a stray env var in CI cannot quietly
-drop a security check. Treat a request to disable one of these as an
-operator decision that must be recorded in `DECISIONS.md`.
+These guard supply-chain and isolation invariants, not advisory quality
+gates. They do **not** silently no-op on a bare truthy value: disabling
+them requires an explicit operator override (per the integrity agents'
+fail-closed change), so a stray env var in CI cannot quietly drop a
+security check. Treat a request to disable one of these as an operator
+decision that must be recorded in `DECISIONS.md`.
 
 | Layer | Script | Env var |
 |---|---|---|
 | sha-pin | `<SUBSTRATE>/verify_sha_pin.py` | `FLEET_DISABLE_SHA_PIN` |
 | reviewer-sandbox | `<SUBSTRATE>/verify_reviewer_sandbox.py` | `FLEET_DISABLE_REVIEWER_SANDBOX` |
 | namespacing | `<SUBSTRATE>/validate_namespacing.py` | `FLEET_DISABLE_NAMESPACING` |
+| registry-lint | `scripts/registry_lint.py` | `FLEET_DISABLE_REGISTRY_LINT` |
 
 There is exactly ONE env var per layer; no legacy aliases, no fallbacks.
 Do not invent additional `FLEET_DISABLE_*` names — the registry above is
@@ -81,7 +81,7 @@ running the substrate but quietly weren't."
 # Disable contract
 
 For the **verification-substrate** and **contract/budget** classes
-(the six escape-hatch knobs), when the env var is truthy the CLI must:
+(the eight escape-hatch knobs), when the env var is truthy the CLI must:
 
 1. Exit code **0** (success / no-op).
 2. Print exactly `<layer-label>: DISABLED via <ENV_VAR>=1 (no-op exit 0)`
@@ -91,16 +91,16 @@ For the **verification-substrate** and **contract/budget** classes
 
 The semantics: "disabled" means "treat the substrate's verdict as PASS
 for this run." If you want fail-closed behavior instead for one of these
-six, do not use the disable knob — fix the upstream problem.
+eight, do not use the disable knob — fix the upstream problem.
 
 For the **security / integrity** class (`FLEET_DISABLE_SHA_PIN`,
-`FLEET_DISABLE_REVIEWER_SANDBOX`, `FLEET_DISABLE_NAMESPACING`) the
-contract is different — these knobs FAIL CLOSED. A bare truthy value is
-not sufficient to drop the check; the layer requires the integrity
-agents' explicit operator-override gate and records the decision rather
-than silently no-opping to PASS. (The runtime fail-closed behaviour is
-owned by those scripts under the integrity package; this doc states the
-contract, it does not implement it.)
+`FLEET_DISABLE_REVIEWER_SANDBOX`, `FLEET_DISABLE_NAMESPACING`,
+`FLEET_DISABLE_REGISTRY_LINT`) the contract is different — these knobs
+FAIL CLOSED. A bare truthy value is not sufficient to drop the check;
+the operator must also set `FLEET_SECURITY_OVERRIDE_ACK=1` (see
+`<SUBSTRATE>/lib/substrate_disable.py`) and record the decision in
+`DECISIONS.md`. Without that ack the CLI exits non-zero rather than
+silently no-opping to PASS.
 
 # Bench-driver wiring
 
